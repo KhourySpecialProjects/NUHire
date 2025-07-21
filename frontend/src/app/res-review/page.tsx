@@ -336,11 +336,11 @@ export default function ResumesPage() {
         <NotesPage />
       </div>
 
-      <div className="flex justify-center items-center font-rubik text-navyHeader text-3xl font-bold mb-3">
+      <div className="flex justify-center items-center font-rubik text-redHeader text-3xl font-bold mb-3">
         <h1>Resume Review Part 1</h1>
       </div>
 
-      <div className="flex flex-col items-center font-rubik text-navyHeader text-center space-y-5 mb-6">
+      <div className="flex flex-col items-center font-rubik text-redHeader text-center space-y-5 mb-6">
         <h3>
           Review the resume and decide whether to accept, reject, or mark as
           no-response.
@@ -481,13 +481,13 @@ export default function ResumesPage() {
         <div className="flex justify-between mb-4">
           <button
             onClick={() => (window.location.href = "/jobdes")}
-            className="px-4 py-2 bg-navyHeader text-white rounded-lg ml-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik"
+            className="px-4 py-2 bg-redHeader text-white rounded-lg ml-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik"
           >
             ← Back: Job Description
           </button>
           <button
             onClick={completeResumes}
-            className={`px-4 py-2 bg-navyHeader text-white rounded-lg mr-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik
+            className={`px-4 py-2 bg-redHeader text-white rounded-lg mr-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik
               ${
                 disabled
                   ? "cursor-not-allowed opacity-50"

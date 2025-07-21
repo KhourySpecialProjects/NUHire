@@ -543,7 +543,7 @@ useEffect(() => {
           <p className="mt-2">Please try refreshing the page or return to the dashboard.</p>
           <button 
             onClick={() => window.location.href = '/dashboard'}
-            className="mt-4 bg-navyHeader text-white px-4 py-2 rounded hover:bg-navy transition"
+            className="mt-4 bg-redHeader text-white px-4 py-2 rounded hover:bg-navy transition"
           >
             Return to Dashboard
           </button>
@@ -561,7 +561,7 @@ useEffect(() => {
           <p>Please log in to access this page.</p>
           <button 
             onClick={() => window.location.href = '/'}
-            className="mt-4 bg-navyHeader text-white px-4 py-2 rounded hover:bg-navy transition"
+            className="mt-4 bg-redHeader text-white px-4 py-2 rounded hover:bg-navy transition"
           >
             Go to Login
           </button>
@@ -585,13 +585,13 @@ useEffect(() => {
             <div className="flex justify-between">
               <button
                 onClick={() => window.location.href = "/res-review-group"}
-                className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+                className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
               >
                 ← Go to Resume Review Group
               </button>
               <button
                 onClick={() => window.location.href = "/dashboard"}
-                className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+                className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
               >
                 Return to Dashboard
               </button>
@@ -610,14 +610,14 @@ useEffect(() => {
       <div className="flex items-right justify-end">
         <NotesPage />
       </div>
-      <div className="flex justify-center items-center font-rubik text-navyHeader text-4xl font-bold mb-4">
+      <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
         Interview Page
       </div>
 
       <div className="relative flex flex-col md:flex-row min-h-screen mt-4">
         {/* Evaluation panel */}
         <div key={videoIndex} className="md:w-1/3 bg-blue-50 shadow-lg p-4 mx-4 my-2 flex flex-col items-center justify-start rounded-lg">
-          <h1 className="text-2xl text-navyHeader font-bold mb-4">
+          <h1 className="text-2xl text-redHeader font-bold mb-4">
             Evaluation
           </h1>
           <h3 className="font-bol text-navy text-center">
@@ -629,28 +629,28 @@ useEffect(() => {
 
           {/* Rating sliders */}
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Overall
             </h2>
             <RatingSlider onChange={handleOverallSliderChange} value={overall} />
           </div>
 
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Professional Presence
             </h2>
             <RatingSlider onChange={handleProfessionalPresenceSliderChange} value={professionalPresence} />
           </div>
 
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Quality of Answer
             </h2>
             <RatingSlider onChange={handleQualityOfAnswerSliderChange} value={qualityOfAnswer} />
           </div>
 
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Personality & Creativeness
             </h2>
             <RatingSlider onChange={handlePersonalitySliderChange} value={personality} />
@@ -679,11 +679,11 @@ useEffect(() => {
 
         {/* Completion notification */}
         {finished && (
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-springWater p-8 w-200 rounded-md shadow-lg z-50 font-bold font-rubik text-navyHeader">
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-springWater p-8 w-200 rounded-md shadow-lg z-50 font-bold font-rubik text-redHeader">
             <p className="mb-4">All Interviews have been rated! You can move onto the next stage!</p>
             <button
               onClick={completeInterview}
-              className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+              className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
             >
               Continue to Next Stage
             </button>
@@ -698,7 +698,7 @@ useEffect(() => {
              `Candidate Interview ${videoIndex + 1}` : 
              "Loading Interview..."}
           </h1>
-          <div className="w-full max-w-4xl aspect-video border-4 border-navyHeader mb-5 rounded-lg shadow-lg mx-auto">
+          <div className="w-full max-w-4xl aspect-video border-4 border-redHeader mb-5 rounded-lg shadow-lg mx-auto">
             {noShow ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-xl font-bold">
@@ -753,14 +753,14 @@ useEffect(() => {
         <div className="flex justify-between ml-4 mt-4 mb-4 mr-4">
           <button
             onClick={() => (window.location.href = "/res-review-group")}
-            className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
+            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
             disabled={true}
           >
             ← Back: Resume Review Group
           </button>
           <button
             onClick={completeInterview}
-            className={`px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md transition duration-300 font-rubik
+            className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md transition duration-300 font-rubik
             ${
               !finished
                 ? "cursor-not-allowed opacity-50"

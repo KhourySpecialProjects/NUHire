@@ -487,7 +487,7 @@ export default function MakeOffer() {
                     type="checkbox"
                     checked={checkedState[interviewNumber] || false}
                     onChange={() => handleCheckboxChange(interviewNumber)}
-                    className="h-4 w-4 text-navyHeader"
+                    className="h-4 w-4 text-redHeader"
                   />
                   <span className="ml-2 text-navy text-sm">
                     Selected for Offer
@@ -510,7 +510,7 @@ export default function MakeOffer() {
             <button
               onClick={handleMakeOffer}
               disabled={offerPending}
-              className={`px-6 py-3 bg-navyHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
+              className={`px-6 py-3 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
                 offerPending
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-blue-700"
@@ -524,14 +524,14 @@ export default function MakeOffer() {
         <footer className="flex justify-between mt-6">
           <button
             onClick={() => (window.location.href = "/jobdes")}
-            className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
+            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
             disabled={true}
           >
             ← Back: Interview Stage
           </button>
           <button
             onClick={completeMakeOffer}
-            className={`px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
+            className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
               !acceptedOffer
                 ? "cursor-not-allowed opacity-50"
                 : "hover:bg-blue-400"

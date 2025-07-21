@@ -13,13 +13,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#D3DADC",
-        foreground: "#E8E2DA",
-        springWater: "#D3DADC",
-        sand: "#E8E2DA",
+        background: "#fff",
+        foreground: "#fff",
+        northeasternRed: "#D41A2A",
+        northeasternBlack: "#000",
+        northeasternWhite: "#fff",
+        sand: "#fff",
         wood: "#D6C9B4",
-        navy: "#455763",
-        navyHeader: "#19242e",
+        navy: "#000",
+        redHeader: "#D41A2A",
       },
       fontFamily: {
         rubik: ["Rubik", "sans-serif"]

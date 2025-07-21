@@ -149,7 +149,7 @@ const Dashboard = () => {
         <NotesPage />
       </div>
 
-      <div className="flex flex-col items-center font-rubik text-navyHeader text-center space-y-7 mb-6">
+      <div className="flex flex-col items-center font-rubik text-redHeader text-center space-y-7 mb-6">
         <h1 className="text-4xl font-extrabold mb-4">Welcome to NUHire</h1>
         <p className="text-lg text-gray-800">Work in small teams to experience what it’s like to be a hiring manager.</p>
         <p className="text-lg text-gray-800">Review a job description, evaluate resumes, and decide which candidates deserve an interview.</p>
@@ -174,7 +174,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="flex font-extrabold text-3xl font-rubik text-navyHeader justify-center items-center text-center p-6">
+        <div className="flex font-extrabold text-3xl font-rubik text-redHeader justify-center items-center text-center p-6">
           <h3> Progress Bar</h3>
         </div>
 
@@ -205,7 +205,7 @@ const Dashboard = () => {
         {progress === "employerPannel" && (
           <button 
           onClick={handleCompleteSimulation}
-          className="px-6 py-3 font-semibold bg-navy text-white rounded-md shadow-lg hover:bg-navyHeader mt-6 items-center transition duration-300 mx-auto"
+          className="px-6 py-3 font-semibold bg-navy text-white rounded-md shadow-lg hover:bg-redHeader mt-6 items-center transition duration-300 mx-auto"
           >
             Complete Simulation
           </button>
