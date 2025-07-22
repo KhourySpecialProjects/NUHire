@@ -887,20 +887,22 @@ app.post("/update-job", (req, res) => {
 
   const queries = job.map(title => {
     return new Promise((resolve, reject) => {
-      db.query("UPDATE Users SET `job_des` = ? WHERE group_id = ? AND class = ?", [title, job_group_id, class_id], (err, result) => {
+      // Update job_des and reset progress to 'jobdes'
+      db.query("UPDATE Users SET `job_des` = ?, `current_page` = 'jobdes' WHERE group_id = ? AND class = ?", [title, job_group_id, class_id], (err, result) => {
         if (err) reject(err);
         resolve(result);
       });
     });
   });
-  
+
   db.query("SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'", [job_group_id, class_id], (err, results) => {
     if (!err && results.length > 0) {
       results.forEach(({ email }) => {
         const studentSocketId = onlineStudents[email];
         if (studentSocketId) {
-          io.to(studentSocketId).emit("jobUpdated", { 
+          io.to(studentSocketId).emit("jobUpdated", {
             job,
+            reset: true
           });
         }
       });
@@ -908,8 +910,8 @@ app.post("/update-job", (req, res) => {
   });
 
   Promise.all(queries)
-  .then(() => res.json({ message: "Group updated successfully!" }))
-  .catch(error => res.status(500).json({ error: error.message }));
+    .then(() => res.json({ message: "Group updated successfully!" }))
+    .catch(error => res.status(500).json({ error: error.message }));
 });
 
 // Update user's class

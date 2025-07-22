@@ -384,6 +384,7 @@ const Grouping = () => {
         const groupsResponse = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
         const groupsData = await groupsResponse.json();
         setGroups(groupsData);
+    
       } else {
         alert("Failed to assign job to group.");
       }
