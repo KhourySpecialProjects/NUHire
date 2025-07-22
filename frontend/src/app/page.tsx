@@ -23,7 +23,7 @@ export default function Home() {
         </button>
       </div>
 
-      <div className="mt-20 mb-4">
+      {/* <div className="mt-20 mb-4">
         <Image
           src="/nuhire_vector.png"
           alt="Project Mascot"
@@ -31,14 +31,44 @@ export default function Home() {
           height={300}
           priority
         />
-      </div>
+      </div> */}
 
       <main className="bg-sand justify-center items-center flex flex-col p-10 font-rubik">
-        <h1 className="text-5xl font-bold">Welcome to NUHire!</h1>
-        <p className="text-2xl italic mt-2">Step into the employer's shoes!</p>
+        <div className="flex flex-col items-center justify-center gap-2">
+          {/* Acronym with aligned words */}
+          <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap" rel="stylesheet" />
+          <style>{`.font-mono-acronym { font-family: 'Roboto Mono', monospace; }`}</style>
+          <div className="flex flex-col items-start">
+            <div className="flex items-end">
+              <span className="text-7xl font-extrabold text-northeasternRed leading-none mr-0 font-mono-acronym align-bottom">N</span>
+              <span className="text-3xl font-bold text-navy pb-0 align-bottom">ortheastern</span>
+            </div>
+            <div className="flex items-end">
+              <span className="text-7xl font-extrabold text-northeasternRed leading-none mr-0 font-mono-acronym align-bottom">U</span>
+              <span className="text-3xl font-bold text-navy pb-0 align-bottom">niversity's</span>
+            </div>
+            <div className="flex items-end">
+              <span className="text-7xl font-extrabold text-northeasternRed leading-none mr-0 font-mono-acronym align-bottom">H</span>
+              <span className="text-3xl font-bold text-navy pb-0 align-bottom">iring</span>
+            </div>
+            <div className="flex items-end">
+              <span className="text-7xl font-extrabold text-northeasternRed leading-none mr-0 font-mono-acronym align-bottom">I</span>
+              <span className="text-3xl font-bold text-navy pb-0 align-bottom">nterviewing</span>
+            </div>
+            <div className="flex items-end">
+              <span className="text-7xl font-extrabold text-northeasternRed leading-none mr-0 font-mono-acronym align-bottom">R</span>
+              <span className="text-3xl font-bold text-navy pb-0 align-bottom">ecruiting</span>
+            </div>
+            <div className="flex items-end">
+              <span className="text-7xl font-extrabold text-northeasternRed leading-none mr-0 font-mono-acronym align-bottom">E</span>
+              <span className="text-3xl font-bold text-navy pb-0 align-bottom">xercise</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-2xl italic mt-8 text-center">Step into the employer's shoes!</p>
         <button 
           onClick={handleGoogleLogin} 
-          className="mt-6 px-6 py-4 bg-white text-black border-4 border-navy rounded-md text-lg transition-opacity hover:opacity-60 active:opacity-30"
+          className="mt-8 px-6 py-4 bg-white text-northeasternRed border-4 border-northeasternRed rounded-md text-xl font-bold transition-opacity hover:opacity-60 active:opacity-30"
         >
           Click Here to Get Started
         </button>
