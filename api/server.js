@@ -734,13 +734,16 @@ app.post("/users", (req, res) => {
     // Helper function to create user with determined job assignment
     const createUser = (assignedJob) => {
       let sql, params;
-      
+      // If student is joining a group with a job, set current_page to 'jobdes'
       if (Affiliation === 'student' && group_id && course_id) {
-        // Include group_id, class, and job_des for students
-        sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+        if (assignedJob) {
+          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des, current_page) VALUES (?, ?, ?, ?, ?, ?, ?, 'jobdes')";
+          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+        } else {
+          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des) VALUES (?, ?, ?, ?, ?, ?, ?)";
+          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+        }
       } else if (Affiliation === 'student' && course_id) {
-        // Include class and job_des for students without group
         sql = "INSERT INTO Users (f_name, l_name, email, affiliation, class, job_des) VALUES (?, ?, ?, ?, ?, ?)";
         params = [First_name, Last_name, Email, Affiliation, course_id, assignedJob];
       } else {
@@ -748,7 +751,6 @@ app.post("/users", (req, res) => {
         sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
         params = [First_name, Last_name, Email, Affiliation];
       }
-      
       // Execute the query
       db.query(sql, params, (err, result) => {
         if (err) {
