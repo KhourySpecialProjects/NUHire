@@ -51,7 +51,8 @@ const NotesPage = () => {
 
   useEffect(() => {
     socket.on("jobUpdated", () => {
-      fetchNotes();
+      setNotes([]); 
+      setNote('');
     });
     return () => {
       socket.off("jobUpdated");
@@ -74,14 +75,21 @@ const NotesPage = () => {
       });
 
       if (!response.ok) throw new Error(`Failed to save note: ${userEmail}`);
-
+      console.log("Note saved successfully");
       const newNote = await response.json();
       setNotes([...notes, newNote]);
-      setNote(""); // Clear input
+      fetchNotes();
+      setNote("");
     } catch (error) {
       console.error("Error saving note:", error);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotes();
+    }
+  }, [isOpen]);
 
   return (
     <div className="relative p-4">

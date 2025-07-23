@@ -913,7 +913,11 @@ app.post("/update-job", (req, res) => {
       if (emails.length > 0) {
         // Delete all notes for these students
         db.query("DELETE FROM Notes WHERE user_email IN (?)", [emails], (err2) => {
-          if (err2) console.error("Error deleting notes for group:", err2);
+          if (err2) {
+            console.error("Error deleting notes for group:", err2);
+          } else {
+            console.log(`Deleted notes for users: ${emails.join(", ")}`);
+          }
         });
 
         // Optionally notify students via socket
@@ -922,7 +926,6 @@ app.post("/update-job", (req, res) => {
           if (studentSocketId) {
             io.to(studentSocketId).emit("jobUpdated", {
               job,
-              reset: true
             });
           }
         });
@@ -930,7 +933,7 @@ app.post("/update-job", (req, res) => {
 
       // Wait for all job updates to finish
       Promise.all(updatePromises)
-        .then(() => res.json({ message: "Group job updated and notes deleted successfully!" }))
+        .then(() => res.json({ message: "Group job updated and all notes for group/class deleted successfully!" }))
         .catch(error => res.status(500).json({ error: error.message }));
     }
   );
@@ -994,7 +997,7 @@ app.post("/notes", (req, res) => {
     [user_email, content],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ message: "Note saved successfully", id: result.insertId });
+      res.status(200).json({ content, id: result.insertId });
     }
   );
 });
