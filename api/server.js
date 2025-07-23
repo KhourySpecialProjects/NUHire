@@ -877,41 +877,67 @@ app.post("/update-currentpage", (req, res) => {
   );
 });
 
-//Updates a group of Users stored job description as long as it's given the id of the group and the job descrption title
+// Updates a group of Users' stored job description and resets their progress.
+// Also deletes all notes for affected students.
 app.post("/update-job", (req, res) => {
   const { job_group_id, class_id, job } = req.body;
 
-  if (!job_group_id || job.length === 0) {
-    return res.status(400).json({ error: "Group ID and job are required." });
+  if (!job_group_id || !class_id || !job || job.length === 0) {
+    return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
-  const queries = job.map(title => {
+  // Update job_des and reset progress for all students in the group/class
+  const updatePromises = job.map(title => {
     return new Promise((resolve, reject) => {
-      db.query("UPDATE Users SET `job_des` = ? WHERE group_id = ? AND class = ?", [title, job_group_id, class_id], (err, result) => {
-        if (err) reject(err);
-        resolve(result);
-      });
+      db.query(
+        "UPDATE Users SET `job_des` = ?, `current_page` = 'jobdes' WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+        [title, job_group_id, class_id],
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
     });
   });
-  
-  db.query("SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'", [job_group_id, class_id], (err, results) => {
-    if (!err && results.length > 0) {
-      results.forEach(({ email }) => {
-        const studentSocketId = onlineStudents[email];
-        if (studentSocketId) {
-          io.to(studentSocketId).emit("jobUpdated", { 
-            job,
-          });
-        }
-      });
+
+  // Find all student emails in the group/class
+  db.query(
+    "SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+    [job_group_id, class_id],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to fetch students for note deletion." });
+      }
+
+      const emails = results.map(({ email }) => email);
+      if (emails.length > 0) {
+        // Delete all notes for these students
+        db.query("DELETE FROM Notes WHERE user_email IN (?)", [emails], (err2) => {
+          if (err2) {
+            console.error("Error deleting notes for group:", err2);
+          } else {
+            console.log(`Deleted notes for users: ${emails.join(", ")}`);
+          }
+        });
+
+        // Optionally notify students via socket
+        results.forEach(({ email }) => {
+          const studentSocketId = onlineStudents[email];
+          if (studentSocketId) {
+            io.to(studentSocketId).emit("jobUpdated", {
+              job,
+            });
+          }
+        });
+      }
+
+      // Wait for all job updates to finish
+      Promise.all(updatePromises)
+        .then(() => res.json({ message: "Group job updated and all notes for group/class deleted successfully!" }))
+        .catch(error => res.status(500).json({ error: error.message }));
     }
-  });
-
-  Promise.all(queries)
-  .then(() => res.json({ message: "Group updated successfully!" }))
-  .catch(error => res.status(500).json({ error: error.message }));
+  );
 });
-
 // Update user's class
 app.post("/update-user-class", (req, res) => {
   if (!req.isAuthenticated()) {
@@ -946,9 +972,13 @@ app.post("/update-user-class", (req, res) => {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Notes API Routes
 
-// get route for retrieving all notes from the database
+// get route for retrieving notes for a specific user from the database
 app.get("/notes", (req, res) => {
-  db.query("SELECT * FROM Notes ORDER BY created_at DESC", (err, results) => {
+  const userEmail = req.query.user_email;
+  if (!userEmail) {
+    return res.status(400).json({ error: "user_email query parameter is required" });
+  }
+  db.query("SELECT * FROM Notes WHERE user_email = ? ORDER BY created_at DESC", [userEmail], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
@@ -967,7 +997,7 @@ app.post("/notes", (req, res) => {
     [user_email, content],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ message: "Note saved successfully", id: result.insertId });
+      res.status(200).json({ content, id: result.insertId });
     }
   );
 });
