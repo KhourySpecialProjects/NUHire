@@ -604,7 +604,7 @@ app.get("/auth/google/callback",
         if (user.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
-          return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+          return res.redirect(`${FRONT_URL}/about`);
         }
       } else {
         return res.redirect(`${FRONT_URL}/signupform?email=${email}`);
