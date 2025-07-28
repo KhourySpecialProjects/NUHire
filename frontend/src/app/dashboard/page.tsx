@@ -151,8 +151,6 @@ const Dashboard = () => {
         <div className="flex font-extrabold text-3xl font-rubik text-redHeader justify-center items-center text-center p-6">
           <h3> Progress Bar</h3>
         </div>
-
-
         <div className="flex font-rubik flex-wrap gap-4 justify-center">
           {steps.map((step) => (
             <button
