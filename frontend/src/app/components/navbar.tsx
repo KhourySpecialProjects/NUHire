@@ -86,16 +86,14 @@ const Navbar = () => {
         style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0' }}
       >
         <div className="flex flex-col gap-2 pt-24 px-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-bold text-xl text-northeasternRed">Menu</span>
-            <button
-              className="text-xl text-gray-500 hover:text-northeasternRed"
-              onClick={() => setIsOpen(false)}
-              aria-label="Close menu"
-            >
-              ✕
-            </button>
-          </div>
+          <span className="font-bold text-xl text-northeasternRed mb-2">Menu</span>
+          <button
+            className="self-end text-xl text-gray-500 hover:text-northeasternRed mb-2"
+            onClick={() => setIsOpen(false)}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
           <button
             className="block px-4 py-2 font-rubik text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
             onClick={() => { setIsOpen(false); router.push("/dashboard"); }}

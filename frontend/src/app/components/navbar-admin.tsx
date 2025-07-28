@@ -65,7 +65,6 @@ const NavbarAdmin = () => {
           </div>
         </Link>
       </div>
-      {/* Collapsible sidebar - slides in from the left */}
       <div
         ref={dropdownRef}
         className={`fixed top-0 left-0 h-full z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64 border-r-4 border-northeasternRed`}
