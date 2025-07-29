@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import NotesPage from "../components/note";
 import { useRouter } from "next/navigation";
 
 const Navbar = () => {
@@ -53,7 +54,7 @@ const Navbar = () => {
   return (
     <nav className="navbar w-full relative">
       {/* Top bar */}
-      <div className="bg-northeasternBlack text-northeasternWhite flex items-center justify-between px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
+      <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full relative">
         <button
           className="flex items-center gap-2 font-bold text-xl focus:outline-none"
           onClick={() => setIsOpen((open) => !open)}
@@ -61,23 +62,30 @@ const Navbar = () => {
           <span>Menu</span>
           <span className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>▶</span>
         </button>
-        <Link href="/dashboard" className="text-4xl font-rubik font-bold text-northeasternRed drop-shadow-lg">
-          NUHire
-        </Link>
-        <Link
-          href="/userProfile"
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-northeasternRed cursor-pointer transition duration-300 ease-in-out hover:bg-northeasternBlack hover:border-2 hover:border-northeasternRed relative"
-        >
-          <div
-            className="w-6 h-6 bg-cover bg-center rounded-full border-2 border-northeasternWhite"
-            style={{
-              backgroundImage:
-                "url('https://cdn-icons-png.flaticon.com/512/847/847969.png')",
-            }}
-          >
-            {" "}
+        <div className="absolute left-1/2 transform -translate-x-1/2">
+          <Link href="/dashboard" className="text-4xl font-rubik font-bold text-northeasternRed drop-shadow-lg">
+            NUHire
+          </Link>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <div className="w-48 flex items-center">
+            <NotesPage />
           </div>
-        </Link>
+          <Link
+            href="/userProfile"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-northeasternRed cursor-pointer transition duration-300 ease-in-out hover:bg-northeasternBlack hover:border-2 hover:border-northeasternRed relative"
+          >
+            <div
+              className="w-6 h-6 bg-cover bg-center rounded-full border-2 border-northeasternWhite"
+              style={{
+                backgroundImage:
+                  "url('https://cdn-icons-png.flaticon.com/512/847/847969.png')",
+              }}
+            >
+              {" "}
+            </div>
+          </Link>
+        </div>
       </div>
       {/* Collapsible sidebar - slides in from the left */}
       <div

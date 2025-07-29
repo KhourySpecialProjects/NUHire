@@ -122,12 +122,48 @@ const Dashboard = () => {
 
  
   const steps = [
-    { key: "jobdes", label: "Job Description", path: "/jobdes" },
-    { key: "res-review", label: "Resume Review", path: "/res-review" },
-    { key: "res-review-group", label: "Resume Review Group", path: "/res-review-group" },
-    { key: "interview-stage", label: "Interview Stage", path: "/interview-stage" },
-    { key: "makeOffer", label: "Make an Offer", path: "/makeOffer" },
-    { key: "employerPannel", label: "Employer Panel", path: "/employerPannel" },
+    {
+      key: "jobdes",
+      label: "Job Description",
+      path: "/jobdes",
+      emoji: "📝",
+      desc: "Review your assigned job description."
+    },
+    {
+      key: "res-review",
+      label: "Resume Review",
+      path: "/res-review",
+      emoji: "📄",
+      desc: "Individually review candidate resumes."
+    },
+    {
+      key: "res-review-group",
+      label: "Resume Review Group",
+      path: "/res-review-group",
+      emoji: "👥",
+      desc: "Discuss resumes with your group."
+    },
+    {
+      key: "interview-stage",
+      label: "Interview Stage",
+      path: "/interview-stage",
+      emoji: "🎤",
+      desc: "Interview selected candidates."
+    },
+    {
+      key: "makeOffer",
+      label: "Make an Offer",
+      path: "/makeOffer",
+      emoji: "💼",
+      desc: "Decide which candidate to hire."
+    },
+    {
+      key: "employerPannel",
+      label: "Employer Panel",
+      path: "/employerPannel",
+      emoji: "🏢",
+      desc: "View employer dashboard."
+    },
   ];
 
   const isStepUnlocked = (stepKey: string) => {
@@ -139,58 +175,111 @@ const Dashboard = () => {
     return stepIndex <= progressIndex;
   };
 
+  const [flipped, setFlipped] = useState(Array(steps.length).fill(false));
+
+  const handleFlip = (idx: number) => {
+    if (!isStepUnlocked(steps[idx].key)) return;
+    setFlipped((prev) => {
+      const newArr = [...prev];
+      newArr[idx] = !newArr[idx];
+      return newArr;
+    });
+  };
+
   if (loading) return <div>Loading...</div>;
   if (!user || user.affiliation !== "student") return null;
 
   return (
-    <div className="bg-sand font-rubik">
+    <div className="bg-sand font-rubik min-h-screen flex flex-col">
       <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
+      
+      {/* Main content area that fills remaining space */}
+      <div className="flex-1 flex flex-col px-4 py-8">
+        {/* Header */}
+        <div className="font-extrabold text-3xl font-rubik text-redHeader mb-6 text-center">
+          <h3>Progress Steps</h3>
+        </div>
+        
+        {/* Grid container that grows to fill available space */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+            {steps.map((step, idx) => {
+              const unlocked = isStepUnlocked(step.key);
+              return (
+                <div
+                  key={step.key}
+                  className={`flip-card w-full aspect-[4/3] min-h-[200px] max-h-[280px] max-w-[500px] mx-auto perspective cursor-pointer ${!unlocked ? "opacity-60 cursor-not-allowed" : ""}`}
+                  onClick={() => handleFlip(idx)}
+                  title={
+                    !user?.job_des && step.key !== "jobdes"
+                      ? "You need to be assigned a job description first."
+                      : step.key === "jobdes" && !user?.job_des
+                      ? "You have not been assigned a job description yet."
+                      : !unlocked
+                      ? "Complete previous steps to unlock this stage."
+                      : "Click to flip"
+                  }
+                  style={{ pointerEvents: unlocked ? "auto" : "none" }}
+                >
+                  <div className={`relative w-full h-full transition-transform duration-500 ${flipped[idx] ? "rotate-y-180" : ""}`}
+                    style={{ transformStyle: "preserve-3d" }}>
+                    {/* Front Side */}
+                    <div className="absolute w-full h-full bg-[#455763] text-white rounded-xl shadow-lg flex flex-col justify-center items-center font-semibold text-lg backface-hidden p-4">
+                      <span className="mb-2 text-center">{step.desc}</span>
+                      <span className="text-2xl">{step.emoji}</span>
+                      {!unlocked && (
+                        <span className="text-4xl mt-4" title="Locked">
+                          🔒
+                        </span>
+                      )}
+                    </div>
+                    {/* Back Side */}
+                    <div className="absolute w-full h-full bg-northeasternBlack text-northeasternRed rounded-xl shadow-lg flex flex-col justify-center items-center font-extrabold text-xl rotate-y-180 backface-hidden p-4">
+                      <span className="text-center">{step.label}</span>
+                      <span className="text-3xl mt-2">{step.emoji}</span>
+                      <a
+                        href={unlocked ? step.path : undefined}
+                        className={`mt-4 underline ${unlocked ? "text-northeasternRed" : "text-gray-400 pointer-events-none"}`}
+                        style={{ pointerEvents: unlocked ? "auto" : "none" }}
+                      >
+                        Go to Step
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
-        <div className="flex font-extrabold text-3xl font-rubik text-redHeader justify-center items-center text-center p-6">
-          <h3> Progress Bar</h3>
-        </div>
-        <div className="flex font-rubik flex-wrap gap-4 justify-center">
-          {steps.map((step) => (
-            <button
-              key={step.key}
-              onClick={() => window.location.replace(step.path)}
-              disabled={!isStepUnlocked(step.key)}
-              title={
-                !user?.job_des && step.key !== "jobdes"
-                  ? "You need to be assigned a job description first."
-                  : step.key === "jobdes" && !user?.job_des
-                  ? "You have not been assigned a job description yet."
-                  : !isStepUnlocked(step.key)
-                  ? "Complete previous steps to unlock this stage."
-                  : ""
-              }
-              className={`px-4 py-2 text-lg rounded-md transition-all mb-10
-                ${isStepUnlocked(step.key) ? "bg-[#455763] text-white cursor-pointer hover:bg-[#142050]" : "bg-gray-300 text-gray-600 cursor-not-allowed opacity-60"}`}
-            >
-              {step.label}
-            </button>
-          ))}
-        </div>
 
-        {progress === "employerPannel" && (
-          <button 
-          onClick={handleCompleteSimulation}
-          className="px-6 py-3 font-semibold bg-navy text-white rounded-md shadow-lg hover:bg-redHeader mt-6 items-center transition duration-300 mx-auto"
-          >
-            Complete Simulation
-          </button>
-        )}
+      <Footer />
 
       {popup && (
         <Popup
-        headline = {popup.headline}
-        message={popup.message}
-        onDismiss={() => setPopup(null)} 
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)} 
         />
       )}
-      <Footer />
+
+      <style jsx>{`
+        .flip-card {
+          perspective: 1000px;
+        }
+        .flip-card > div {
+          transform-style: preserve-3d;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+        .flip-card .rotate-y-180 .backface-hidden {
+          backface-visibility: hidden;
+        }
+      `}</style>
     </div>
   );
 };
