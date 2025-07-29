@@ -67,6 +67,7 @@ export default function SignupDetails() {
         // Show success message briefly before redirecting
         setTimeout(() => {
           if (affiliation === 'student') {
+            localStorage.setItem("progress", "");
             router.push('/dashboard'); 
           } else if (affiliation === 'admin') {
             router.push('/advisor-dashboard');

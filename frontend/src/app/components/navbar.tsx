@@ -113,12 +113,20 @@ const Navbar = () => {
             Notes
           </button>
           {steps
-            .filter((step) => isStepUnlocked(step.key))
             .map((step) => (
               <button
                 key={step.key}
-                className="block px-4 py-2 text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
-                onClick={() => { setIsOpen(false); router.push(step.path); }}
+                disabled={!isStepUnlocked(step.key)}
+                className={`block px-4 py-2 text-northeasternRed rounded-md text-left font-rubik transition-all
+                  ${isStepUnlocked(step.key)
+                    ? 'hover:bg-northeasternRed hover:text-northeasternWhite cursor-pointer opacity-100'
+                    : 'bg-northeasternWhite text-northeasternRed cursor-not-allowed opacity-50'}`}
+                onClick={() => {
+                  if (isStepUnlocked(step.key)) {
+                    setIsOpen(false);
+                    router.push(step.path);
+                  }
+                }}
               >
                 {step.label}
               </button>

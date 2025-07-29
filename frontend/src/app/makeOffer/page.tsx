@@ -398,7 +398,7 @@ export default function MakeOffer() {
       alert("You must select exactly 1 candidates before proceeding.");
       return;
     }
-    localStorage.setItem("progress", "makeOffer");
+    localStorage.setItem("progress", "employerPannel");
     window.location.href = "/dashboard";
   };
 
