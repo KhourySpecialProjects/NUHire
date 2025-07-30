@@ -224,8 +224,8 @@ const Dashboard = () => {
                   <div className={`relative w-full h-full transition-transform duration-500 ${flipped[idx] ? "rotate-y-180" : ""}`}
                     style={{ transformStyle: "preserve-3d" }}>
                     {/* Front Side */}
-                    <div className="absolute w-full h-full bg-[#455763] text-white rounded-xl shadow-lg flex flex-col justify-center items-center font-semibold text-lg backface-hidden p-4">
-                      <span className="mb-2 text-center">{step.desc}</span>
+                    <div className={`absolute w-full h-full ${!unlocked ? "bg-gray-300" : "bg-northeasternWhite"} border-2 border-northeasternRed text-white rounded-xl shadow-lg flex flex-col justify-center items-center font-semibold text-lg backface-hidden p-4`}>
+                      <span className="mb-2 text-northeasternRed text-center">{step.desc}</span>
                       <span className="text-2xl">{step.emoji}</span>
                       {!unlocked && (
                         <span className="text-4xl mt-4" title="Locked">
@@ -234,12 +234,12 @@ const Dashboard = () => {
                       )}
                     </div>
                     {/* Back Side */}
-                    <div className="absolute w-full h-full bg-northeasternBlack text-northeasternRed rounded-xl shadow-lg flex flex-col justify-center items-center font-extrabold text-xl rotate-y-180 backface-hidden p-4">
+                    <div className="absolute w-full h-full bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed bg-opacity-50 rounded-xl shadow-lg flex flex-col justify-center items-center font-extrabold text-xl rotate-y-180 backface-hidden p-4">
                       <span className="text-center">{step.label}</span>
                       <span className="text-3xl mt-2">{step.emoji}</span>
                       <a
                         href={unlocked ? step.path : undefined}
-                        className={`mt-4 underline ${unlocked ? "text-northeasternRed" : "text-gray-400 pointer-events-none"}`}
+                        className={`mt-4 underline ${unlocked ? "text-northeasternBlack" : "text-gray-400 pointer-events-none"}`}
                         style={{ pointerEvents: unlocked ? "auto" : "none" }}
                       >
                         Go to Step
