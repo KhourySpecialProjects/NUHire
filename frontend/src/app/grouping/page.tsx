@@ -36,7 +36,10 @@ const Grouping = () => {
   const router = useRouter();
   const [pendingOffers, setPendingOffers] = useState<
     { classId: number; groupId: number; candidateId: number }[]
-  >([]);  
+  >([]);
+  const [acceptedOffers, setAcceptedOffers] = useState<
+    { classId: number; groupId: number; candidateId: number }[]
+  >([]);
   const socket = io(API_BASE_URL);
 
   // ✅ Fetch the logged-in user
@@ -63,7 +66,7 @@ const Grouping = () => {
     fetchUser();
   }, [router]);
 
-  // ✅ Admin socket setup - Register admin and listen for offer requests
+  // ✅ Admin socket setup - Register admin and listen for offer requests and responses
   useEffect(() => {
     if (!user || user.affiliation !== "admin") return;
 
@@ -75,15 +78,24 @@ const Grouping = () => {
       setPendingOffers((prev) => [...prev, {classId, groupId, candidateId }]);
     };
 
+    const onResponse = (data: { classId: number; groupId: number; candidateId: number; accepted: boolean }) => {
+      const { classId, groupId, candidateId, accepted } = data;
+      if (accepted) {
+        setAcceptedOffers((prev) => {
+          if (prev.some(o => o.classId === classId && o.groupId === groupId && o.candidateId === candidateId)) return prev;
+          return [...prev, { classId, groupId, candidateId }];
+        });
+      }
+    };
+
     socket.on("connect", () => {
       console.log("Admin connected to socket:", socket.id);
-      
-      // Register admin as online so they can receive offer notifications
       socket.emit("studentOnline", { studentId: user.email });
       console.log("Admin registered as online with email:", user.email);
     });
     
     socket.on("makeOfferRequest", onRequest);
+    socket.on("makeOfferResponse", onResponse);
 
     socket.on("disconnect", () => {
       console.log("Admin disconnected from socket");
@@ -91,6 +103,7 @@ const Grouping = () => {
 
     return () => {
       socket.off("makeOfferRequest", onRequest);
+      socket.off("makeOfferResponse", onResponse);
       socket.off("connect");
       socket.off("disconnect");
     };
@@ -384,6 +397,7 @@ const Grouping = () => {
         const groupsResponse = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
         const groupsData = await groupsResponse.json();
         setGroups(groupsData);
+    
       } else {
         alert("Failed to assign job to group.");
       }
@@ -629,6 +643,36 @@ const Grouping = () => {
             </div>
           </div>
         ))}
+
+        {/* Accepted Offers Section */}
+        <div className="mt-8 mb-6">
+          <h2 className="text-2xl font-bold text-sand mb-4">Accepted Offers</h2>
+          {acceptedOffers.length > 0 ? (
+            <div className="bg-springWater p-4 rounded-md shadow">
+              <div className="space-y-3">
+                {acceptedOffers.map(({ classId, groupId, candidateId }) => (
+                  <div
+                    key={`accepted-offer-${classId}-${groupId}-${candidateId}`}
+                    className="bg-white p-4 rounded border border-wood flex items-center justify-between"
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-navy">
+                        Group {groupId} from Class {classId}
+                      </h3>
+                      <p className="text-gray-600">
+                        Had their offer for Candidate {candidateId} <span className="text-green-700 font-bold">ACCEPTED</span>.
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-springWater p-4 rounded-md text-center">
+              <p className="text-navy">No accepted offers yet</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

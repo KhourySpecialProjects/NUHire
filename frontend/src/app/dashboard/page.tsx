@@ -73,7 +73,11 @@ const Dashboard = () => {
 
 
   useEffect(() => {
-    socket.on("jobUpdated", ({ job }) => {
+    socket.on("jobUpdated", ({ job, reset }) => {
+      if (reset) {
+        console.log("Job updated, resetting progress and clearing localStorage");
+        localStorage.removeItem("pdf-comments");
+      }
       setPopup({ headline: "You have been assigned a new job!", 
         message: `You are an employer for ${job}!` });
       const refreshUser = async () => {
