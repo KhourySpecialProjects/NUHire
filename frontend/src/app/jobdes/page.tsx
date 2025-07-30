@@ -204,133 +204,133 @@ export default function JobDescriptionPage() {
     <div className="bg-sand font-rubik">
     
       <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
+      <div className="flex-1 flex flex-col px-4 py-8">
 
-      <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
-        Job Description
-      </div>
+        <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
+          Job Description
+        </div>
 
-      <div className="flex justify-center space-x-4 my-4">
-        <button
-          onClick={() => setTool("pointer")}
-          className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
-            tool === "pointer" ? "ring-2 ring-navy" : "hover:bg-redHeader"
+        <div className="flex justify-center space-x-4 my-4">
+          <button
+            onClick={() => setTool("pointer")}
+            className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
+              tool === "pointer" ? "ring-2 ring-navy" : "hover:bg-redHeader"
+            }`}
+          >
+            Cursor
+          </button>
+          <button
+            onClick={() => setTool("comment")}
+            className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
+              tool === "comment" ? "ring-2 ring-navy" : "hover:bg-redHeader"
+            }`}
+          >
+            Comment
+          </button>
+        </div>
+
+        <div
+          id="pdf-container"
+          className={`relative w-full mx-auto flex justify-center rounded-lg ${
+            tool === "comment" ? "cursor-crosshair" : ""
           }`}
+          onClick={handlePdfClick}
         >
-          Cursor
-        </button>
-        <button
-          onClick={() => setTool("comment")}
-          className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
-            tool === "comment" ? "ring-2 ring-navy" : "hover:bg-redHeader"
-          }`}
-        >
-          Comment
-        </button>
-      </div>
-
-      <div
-        id="pdf-container"
-        className={`relative border border-sand p-4 w-full mx-auto flex justify-center rounded-lg ${
-          tool === "comment" ? "cursor-crosshair" : ""
-        }`}
-        onClick={handlePdfClick}
-      >
-        <Document
-          file={fileUrl}
-          onLoadSuccess={({ numPages }) => {
-            setNumPages(numPages);
-            setPdfLoaded(true);
-          }}
-          className={`relative`}
-        >
-          <Page
-            pageNumber={pageNumber}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-            className="flex justify-center"
-            scale={1.3}
-          />
-
-        {comments
-          .filter((comment) => comment.page === pageNumber)
-          .map((comment) => (
-            <div
-              key={comment.id}
-              className="comment-overlay absolute bg-white shadow-md p-2 rounded-md"
-              style={{
-                left: `${comment.x}%`,
-                top: `${comment.y}%`,
+          <div className="border border-northeasternBlack p-4 rounded-lg">
+            <Document
+              file={fileUrl}
+              onLoadSuccess={({ numPages }) => {
+                setNumPages(numPages);
+                setPdfLoaded(true);
               }}
+              className={`relative`}
             >
-              {comment.isEditing ? (
-                <input
-                  type="text"
-                  placeholder="Enter comment..."
-                  autoFocus
-                  className="border border-gray-400 rounded-md p-1 text-sm"
-                  defaultValue={comment.text}
-                  onBlur={(e) => updateComment(comment.id, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      updateComment(comment.id, (e.target as HTMLInputElement).value);
-                    }
+              <Page
+                pageNumber={pageNumber}
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+                className="flex justify-center"
+                scale={1.3}
+              />
+
+            {comments
+              .filter((comment) => comment.page === pageNumber)
+              .map((comment) => (
+                <div
+                  key={comment.id}
+                  className="comment-overlay absolute bg-white shadow-md p-2 rounded-md"
+                  style={{
+                    left: `${comment.x}%`,
+                    top: `${comment.y}%`,
                   }}
-                />
-              ) : (
-                <div className="relative">
-                  <div
-                    className="bg-gray-200 text-sm p-2 rounded-md cursor-pointer"
-                    onClick={() => toggleEditComment(comment.id)}
-                  >
-                    {comment.text}
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteComment(comment.id);
-                    }}
-                    className="absolute top-0 right-0 text-red-500 text-xs"
-                  >
-                    X
-                  </button>
+                >
+                  {comment.isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="Enter comment..."
+                      autoFocus
+                      className="border border-gray-400 rounded-md p-1 text-sm"
+                      defaultValue={comment.text}
+                      onBlur={(e) => updateComment(comment.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          updateComment(comment.id, (e.target as HTMLInputElement).value);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="relative">
+                      <div
+                        className="bg-gray-200 text-sm p-2 rounded-md cursor-pointer"
+                        onClick={() => toggleEditComment(comment.id)}
+                      >
+                        {comment.text}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteComment(comment.id);
+                        }}
+                        className="absolute top-0 right-0 text-red-500 text-xs"
+                      >
+                        X
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </Document>
+              ))}
+            </Document>
+          </div>
+          {popup && (
+            <Popup
+              headline={popup.headline}
+              message={popup.message}
+              onDismiss={() => setPopup(null)}
+            />
+          )}
+        </div>
 
-        {popup && (
-          <Popup
-            headline={popup.headline}
-            message={popup.message}
-            onDismiss={() => setPopup(null)}
-          />
-        )}
-      </div>
+        <div className="flex justify-center items-center gap-5 mt-5 mb-5 w-full">
+          <button
+            disabled={pageNumber <= 1}
+            onClick={() => setPageNumber(pageNumber - 1)}
+            className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
 
-      <div className="flex justify-center items-center gap-5 mt-5 mb-5 w-full">
-        <button
-          disabled={pageNumber <= 1}
-          onClick={() => setPageNumber(pageNumber - 1)}
-          className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          ← Previous
-        </button>
+          <span className="font-bold text-lg mx-4">
+            Page {pageNumber} of {numPages}
+          </span>
 
-        <span className="font-bold text-lg mx-4">
-          Page {pageNumber} of {numPages}
-        </span>
-
-        <button
-          disabled={pageNumber >= (numPages || 1)}
-          onClick={() => setPageNumber(pageNumber + 1)}
-          className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          Next →
-        </button>
+          <button
+            disabled={pageNumber >= (numPages || 1)}
+            onClick={() => setPageNumber(pageNumber + 1)}
+            className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
+        </div>
       </div>
 
       <footer>
@@ -346,7 +346,7 @@ export default function JobDescriptionPage() {
           </button>
         </div>
       </footer>
-      <Footer />
+    <Footer />
     </div>
   );
 }

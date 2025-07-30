@@ -265,51 +265,50 @@ export default function ResReviewGroup() {
   return (
     <div className="min-h-screen bg-sand font-rubik">
       <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
-      <div className="max-w-5xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-center text-navy mb-6">
-          Resume Review as a Group
-        </h1>
-        <h2 className="text-xl italic text-center text-navy mb-6">
-          With your teammates, discuss and select the four candidates you would like to advance to the next round (interview).
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {resumes.map((resume, index) => {
-            const resumeNumber = index + 1;
-            const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
-            return (
-              <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md">
-                <h3 className="text-xl font-semibold text-navy mb-2">
-                  Resume {resumeNumber}
-                </h3>
-                <a
-                  href={`${API_BASE_URL}/${resume.file_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-navy hover:underline"
-                >
-                  View / Download Resume
-                </a>
+      <div className="flex-1 flex flex-col px-4 py-8">
+        <div className="max-w-5xl mx-auto p-6">
+          <h1 className="text-3xl font-bold text-center text-navy mb-6">
+            Resume Review as a Group
+          </h1>
+          <h2 className="text-xl italic text-center text-navy mb-6">
+            With your teammates, discuss and select the four candidates you would like to advance to the next round (interview).
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {resumes.map((resume, index) => {
+              const resumeNumber = index + 1;
+              const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
+              return (
+                <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md">
+                  <h3 className="text-xl font-semibold text-navy mb-2">
+                    Resume {resumeNumber}
+                  </h3>
+                  <a
+                    href={`${API_BASE_URL}/${resume.file_path}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-navy hover:underline"
+                  >
+                    View / Download Resume
+                  </a>
 
-                <div className="mt-4">
-                  <p className="text-green-600">Yes: {votes.yes}</p>
-                  <p className="text-red-600">No: {votes.no}</p>
-                  <p className="text-yellow-600">Undecided: {votes.undecided}</p>
+                  <div className="mt-4">
+                    <p className="text-green-600">Yes: {votes.yes}</p>
+                    <p className="text-red-600">No: {votes.no}</p>
+                    <p className="text-yellow-600">Undecided: {votes.undecided}</p>
+                  </div>
+
+                  <label className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      checked={checkedState[resumeNumber] || false}
+                      onChange={() => handleCheckboxChange(resumeNumber)}
+                    />
+                    <span className="ml-2 text-navy">Selected for Further Review</span>
+                  </label>
                 </div>
-
-                <label className="flex items-center mt-4">
-                  <input
-                    type="checkbox"
-                    checked={checkedState[resumeNumber] || false}
-                    onChange={() => handleCheckboxChange(resumeNumber)}
-                  />
-                  <span className="ml-2 text-navy">Selected for Further Review</span>
-                </label>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
       <footer>

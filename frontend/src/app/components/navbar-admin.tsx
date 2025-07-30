@@ -67,10 +67,10 @@ const NavbarAdmin = () => {
       </div>
       <div
         ref={dropdownRef}
-        className={`fixed top-0 left-0 h-full z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64 border-r-4 border-northeasternRed`}
-        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0' }}
+        className={`fixed top-0 left-0 z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-40 border-r-4 border-northeasternRed`}
+        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0', height: '440px', top: '0' }}
       >
-        <div className="flex flex-col gap-2 pt-24 px-6">
+        <div className="flex flex-col gap-2 pt-6 px-4">
           <div className="flex items-center justify-between mb-2">
             <span className="font-bold text-xl text-northeasternRed">Menu</span>
             <button

@@ -8,28 +8,6 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Code for user progress 
-  const [progress, setProgress] = useState<string>("job-description");
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedProgress = localStorage.getItem("progress") || "job-description";
-      setProgress(storedProgress);
-      
-    }
-  }, []);
-  const steps = [
-    { key: "jobdes", label: "Job Description", path: "/jobdes" },
-    { key: "res-review", label: "Resume Review", path: "/res-review" },
-    { key: "res-review-group", label: "Resume Review Group", path: "/res-review-group" },
-    { key: "interview-stage", label: "Interview Stage", path: "/interview-stage" },
-    { key: "makeOffer", label: "Make an Offer", path: "/makeOffer" },
-    { key: "employerPannel", label: "Employer Panel", path: "/employerPannel" },
-  ];
-
-  const isStepUnlocked = (stepKey: string) => {
-    const completedSteps = steps.map(s => s.key);
-    return completedSteps.indexOf(stepKey) <= completedSteps.indexOf(progress);
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -90,18 +68,20 @@ const Navbar = () => {
       {/* Collapsible sidebar - slides in from the left */}
       <div
         ref={dropdownRef}
-        className={`fixed top-0 left-0 h-full z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64 border-r-4 border-northeasternRed`}
-        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0' }}
+        className={`fixed top-0 left-0 z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-40 border-r-4 border-northeasternRed`}
+        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0', height: '220px', top: '0' }}
       >
-        <div className="flex flex-col gap-2 pt-24 px-6">
-          <span className="font-bold text-xl text-northeasternRed mb-2">Menu</span>
-          <button
-            className="self-end text-xl text-gray-500 hover:text-northeasternRed mb-2"
-            onClick={() => setIsOpen(false)}
-            aria-label="Close menu"
-          >
-            ✕
-          </button>
+        <div className="flex flex-col gap-2 pt-6 px-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-bold text-xl text-northeasternRed">Menu</span>
+            <button
+              className="text-xl text-gray-500 hover:text-northeasternRed"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+          </div>
           <button
             className="block px-4 py-2 font-rubik text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
             onClick={() => { setIsOpen(false); router.push("/dashboard"); }}
@@ -120,25 +100,6 @@ const Navbar = () => {
           >
             Notes
           </button>
-          {steps
-            .map((step) => (
-              <button
-                key={step.key}
-                disabled={!isStepUnlocked(step.key)}
-                className={`block px-4 py-2 text-northeasternRed rounded-md text-left font-rubik transition-all
-                  ${isStepUnlocked(step.key)
-                    ? 'hover:bg-northeasternRed hover:text-northeasternWhite cursor-pointer opacity-100'
-                    : 'bg-northeasternWhite text-northeasternRed cursor-not-allowed opacity-50'}`}
-                onClick={() => {
-                  if (isStepUnlocked(step.key)) {
-                    setIsOpen(false);
-                    router.push(step.path);
-                  }
-                }}
-              >
-                {step.label}
-              </button>
-            ))}
         </div>
       </div>
     </nav>

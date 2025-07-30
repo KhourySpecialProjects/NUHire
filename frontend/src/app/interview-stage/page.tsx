@@ -607,9 +607,6 @@ useEffect(() => {
   return (
     <div className="bg-sand font-rubik min-h-screen">
       <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
       <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
         Interview Page
       </div>

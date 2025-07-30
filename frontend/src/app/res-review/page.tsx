@@ -45,6 +45,7 @@ export default function ResumesPage() {
   } | null>(null);
   const pathname = usePathname();
   const [restricted, setRestricted] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
   interface User {
     id: string;
     group_id: string;
@@ -168,12 +169,13 @@ export default function ResumesPage() {
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeSpent((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [currentResumeIndex]);
+    if (!showInstructions) {
+      const timer = setInterval(() => {
+        setTimeSpent((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [currentResumeIndex, showInstructions]);
 
   const sendVoteToBackend = async (vote: "yes" | "no" | "unanswered") => {
     if (!user || !user.id || !user.group_id || !user.class) {
@@ -250,17 +252,19 @@ export default function ResumesPage() {
   };
 
   useEffect(() => {
-    if (timeRemaining > 0 && !maxDecisions) {
-      const timer = setInterval(() => {
-        setTimeRemaining((prevTime) => prevTime - 1);
-      }, 1000);
-      return () => clearInterval(timer);
-    } else if (timeRemaining === 0 && !maxDecisions && restricted) {
-      handleAccept();
-    } else if (timeRemaining === 0 && !maxDecisions) {
-      handleNoResponse();
+    if (!showInstructions) {
+      if (timeRemaining > 0 && !maxDecisions) {
+        const timer = setInterval(() => {
+          setTimeRemaining((prevTime) => prevTime - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+      } else if (timeRemaining === 0 && !maxDecisions && restricted) {
+        handleAccept();
+      } else if (timeRemaining === 0 && !maxDecisions) {
+        handleNoResponse();
+      }
     }
-  }, [timeRemaining]);
+  }, [timeRemaining, showInstructions]);
 
   const handleAccept = () => {
     if (maxDecisions) return;
@@ -331,152 +335,151 @@ export default function ResumesPage() {
   return (
     <div>
       <Navbar />
+      <div className="flex-1 flex flex-col px-4 py-8">
+        <div className="flex justify-center items-center font-rubik text-redHeader text-3xl font-bold mb-3">
+          <h1>Resume Review Part 1</h1>
+        </div>
 
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
-
-      <div className="flex justify-center items-center font-rubik text-redHeader text-3xl font-bold mb-3">
-        <h1>Resume Review Part 1</h1>
-      </div>
-
-      <div className="flex flex-col items-center font-rubik text-redHeader text-center space-y-5 mb-6">
-        <h3>
-          Review the resume and decide whether to accept, reject, or mark as
-          no-response.
-        </h3>
-        <h3> You may accept as many as you like out of the 10. </h3>
-        <h3>
-          But you are prompted to go back and select only 4 to move onto the
-          second stage the review process
-        </h3>
-        <h3>
-          Don't worry if you rejected or accepted a resume you agree/disagree
-          with. This is why it's done in groups.
-        </h3>
-      </div>
-
-      <div className="flex justify-between w-full p-6">
-        <div className="flex flex-col gap-4">
-          <div className="bg-navy shadow-lg rounded-lg p-6 text-sand text-lg text-center sticky top-0">
-            <h2 className="text-lg">Time Remaining:</h2>
-            <h2 className="text-3xl">{timeRemaining} sec</h2>
+        {showInstructions && (
+          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
+            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
+              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
+              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
+                <li>Review the resume and decide whether to accept, reject, or mark as no-response.</li>
+                <li>You may accept as many as you like out of the 10.</li>
+                <li>But you are prompted to go back and select only 4 to move onto the second stage of the review process.</li>
+                <li>Don't worry if you rejected or accepted a resume you agree/disagree with. This is why it's done in groups.</li>
+              </ul>
+              <button
+                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
+                onClick={() => setShowInstructions(false)}
+              >
+                Dismiss & Start
+              </button>
+            </div>
           </div>
+        )}
 
-          <div className="bg-navy shadow-lg rounded-lg p-6 text-sand text-lg">
-            <div className="grid grid-cols-2 gap-2">
-              <span className="text-left">Resume</span>
-              <span className="text-right">
-                {currentResumeIndex + 1} / {resumesList.length}
-              </span>
-              <span className="text-left">Accepted</span>
-              <span className="text-right">{accepted} / 10</span>
-              <span className="text-left">Rejected</span>
-              <span className="text-right">{rejected} / 10</span>
-              <span className="text-left">No-response</span>
-              <span className="text-right">{noResponse} / 10</span>
+        <div className="flex justify-between w-full p-6">
+          <div className="flex flex-col gap-4 w-[350px] min-w-[300px]">
+            <div className="bg-navy shadow-lg rounded-lg p-6 text-sand text-lg text-center sticky top-0">
+              <h2 className="text-lg">Time Remaining:</h2>
+              <h2 className="text-3xl">{timeRemaining} sec</h2>
+            </div>
+
+            <div className="bg-navy shadow-lg rounded-lg p-6 text-sand text-lg">
+              <div className="grid grid-cols-2 gap-2">
+                <span className="text-left">Resume</span>
+                <span className="text-right">
+                  {currentResumeIndex + 1} / {resumesList.length}
+                </span>
+                <span className="text-left">Accepted</span>
+                <span className="text-right">{accepted} / 10</span>
+                <span className="text-left">Rejected</span>
+                <span className="text-right">{rejected} / 10</span>
+                <span className="text-left">No-response</span>
+                <span className="text-right">{noResponse} / 10</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center text-lg space-x-4 mt-4 sticky top-0">
+              {!restricted && (
+                <>
+                  <button
+                    className={`bg-[#a2384f] text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
+                      resumes > 10 || resumeLoading 
+                        ? "opacity-50 cursor-not-allowed" 
+                        : "hover:bg-red-600 hover:scale-105"
+                    }`}
+                    onClick={handleReject}
+                    disabled={resumes > 10 || resumeLoading}
+                  >
+                    Reject
+                  </button>
+
+                  <button
+                    className={`bg-gray-500 text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
+                      resumes > 10 || resumeLoading 
+                        ? "opacity-50 cursor-not-allowed" 
+                        : "hover:bg-gray-600 hover:scale-105"
+                    }`}
+                    onClick={handleNoResponse}
+                    disabled={resumes > 10 || resumeLoading}
+                  >
+                    Skip
+                  </button>
+                </>
+              )}
+
+              <button
+                className={`bg-[#367b62] text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
+                  resumes > 10 || resumeLoading 
+                    ? "opacity-50 cursor-not-allowed" 
+                    : "hover:bg-green-600 hover:scale-105"
+                }`}
+                onClick={handleAccept}
+                disabled={resumes > 10 || resumeLoading}
+              >
+                Accept
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-center text-lg space-x-4 mt-4 sticky top-0">
-            {!restricted && (
-              <>
-                <button
-                  className={`bg-[#a2384f] text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
-                    resumes > 10 || resumeLoading 
-                      ? "opacity-50 cursor-not-allowed" 
-                      : "hover:bg-red-600 hover:scale-105"
-                  }`}
-                  onClick={handleReject}
-                  disabled={resumes > 10 || resumeLoading}
-                >
-                  Reject
-                </button>
-
-                <button
-                  className={`bg-gray-500 text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
-                    resumes > 10 || resumeLoading 
-                      ? "opacity-50 cursor-not-allowed" 
-                      : "hover:bg-gray-600 hover:scale-105"
-                  }`}
-                  onClick={handleNoResponse}
-                  disabled={resumes > 10 || resumeLoading}
-                >
-                  Skip
-                </button>
-              </>
-            )}
-
-            <button
-              className={`bg-[#367b62] text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
-                resumes > 10 || resumeLoading 
-                  ? "opacity-50 cursor-not-allowed" 
-                  : "hover:bg-green-600 hover:scale-105"
-              }`}
-              onClick={handleAccept}
-              disabled={resumes > 10 || resumeLoading}
+          <div className="flex-1 flex justify-center items-center h-screen overflow-auto bg-transparent">
+            <div
+              className={`display-resumes ${fadingEffect ? "fade-out" : "fade-in"} shadow-lg rounded-lg bg-white flex flex-col justify-center items-center"`}
+              ref={resumeRef}
+              style={{
+                maxWidth: "1000px",
+                maxHeight: "100vh"
+              }}
             >
-              Accept
-            </button>
+              {resumesList.length > 0 && resumesList[currentResumeIndex] ? (
+                <div className="flex justify-center items-center w-full">
+                  <Document
+                    file={`${API_BASE_URL}/${resumesList[currentResumeIndex].file_path}`}
+                    onLoadError={console.error}
+                    onLoadSuccess={() => {
+                      console.log("Resume loaded successfully");
+                      setResumeLoading(false);
+                    }}
+                    loading={
+                      <div className="flex justify-center items-center h-96">
+                        <div className="text-lg text-gray-600">Loading resume...</div>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={1}
+                      scale={
+                        window.innerWidth < 768
+                          ? 0.5
+                          : window.innerHeight < 800
+                          ? 1.0
+                          : 1.0
+                      }
+                      onLoadSuccess={() => {
+                        console.log("Page rendered successfully");
+                        setResumeLoading(false);
+                      }}
+                    />
+                  </Document>
+                </div>
+              ) : (
+                <p>Loading resumes...</p>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-center items-start w-4/5 h-screen overflow-auto bg-transparent">
-          <div
-            className={`display-resumes ${
-              fadingEffect ? "fade-out" : "fade-in"
-            } 
-              shadow-lg rounded-lg bg-white p-4`}
-            ref={resumeRef}
-            style={{
-              maxWidth: "1000px",
-              maxHeight: "100vh",
-            }}
-          >
-            {resumesList.length > 0 && resumesList[currentResumeIndex] ? (
-              <Document
-                file={`${API_BASE_URL}/${resumesList[currentResumeIndex].file_path}`}
-                onLoadError={console.error}
-                onLoadSuccess={() => {
-                  console.log("Resume loaded successfully");
-                  setResumeLoading(false);
-                }}
-                loading={
-                  <div className="flex justify-center items-center h-96">
-                    <div className="text-lg text-gray-600">Loading resume...</div>
-                  </div>
-                }
-              >
-                <Page
-                  pageNumber={1}
-                  scale={
-                    window.innerWidth < 768
-                      ? 0.5
-                      : window.innerHeight < 800
-                      ? 1.0
-                      : 1.0
-                  }
-                  onLoadSuccess={() => {
-                    console.log("Page rendered successfully");
-                    setResumeLoading(false);
-                  }}
-                />
-              </Document>
-            ) : (
-              <p>Loading resumes...</p>
-            )}
-          </div>
-        </div>
+        {popup && (
+          <Popup
+            headline={popup.headline}
+            message={popup.message}
+            onDismiss={() => setPopup(null)}
+          />
+        )}
       </div>
-
-      {popup && (
-        <Popup
-          headline={popup.headline}
-          message={popup.message}
-          onDismiss={() => setPopup(null)}
-        />
-      )}
-
       <footer>
         <div className="flex justify-between mb-4">
           <button

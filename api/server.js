@@ -922,7 +922,6 @@ app.post("/update-job", (req, res) => {
           }
         });
 
-        // Optionally notify students via socket
         results.forEach(({ email }) => {
           const studentSocketId = onlineStudents[email];
           if (studentSocketId) {
