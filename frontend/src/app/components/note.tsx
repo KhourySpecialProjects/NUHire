@@ -82,25 +82,25 @@ const NotesPage = () => {
     <div className="relative p-4">
   {/* Toggle Notes Button */}
   <button
-    className="bg-wood text-navy px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition"
+    className="bg-northeasternRed text-northeasterWhite px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition"
     onClick={() => setIsOpen(!isOpen)}
   >
     ☰ Notes
   </button>
 
   {isOpen && (
-    <div className="absolute top-14 right-4 w-80 bg-sand shadow-lg rounded-lg p-4 border border-gray-300">
+    <div className="absolute top-14 right-4 w-80 bg-northeasternWhite opacity-100 shadow-lg rounded-lg p-4 border border-gray-300 z-50">
       {/* Note Input Section */}
       <div className="mb-4">
         <textarea
           placeholder="Enter your notes..."
-          className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-2 border border-wood bg-northeasternWhite text-northeasternBlack rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
         <button
           onClick={saveNote}
-          className="mt-2 w-full bg-wood border-4 border-navy text-navy py-2 rounded-md hover:bg-sand transition"
+          className="mt-2 w-full bg-northeasternRed border-4 border-navy text-navy py-2 rounded-md hover:bg-sand transition"
         >
           Save Note
         </button>
