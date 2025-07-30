@@ -1,74 +1,61 @@
 "use client" // Declares that this page is a client component
 import React from "react"; // Importing React
-import Link from "next/link"; // Importing Link for client-side navigation
-import { useState } from "react"; // Importing useState for managing state
+import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const NavbarAdmin = () => {
-
-  // State variable to manage the open/close state of the dropdown menu
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const adminLinks = [
+    { label: "Dashboard", path: "/advisor-dashboard" },
+    { label: "Profile", path: "/userProfile" },
+    { label: "Create and View Groups", path: "/grouping" },
+    { label: "Send Popups", path: "/sendpopups" },
+    { label: "Upload Jobs and Resumes", path: "/new-pdf" },
+  ];
+
   return (
-    <nav className="navbar">
-      <div className="bg-[#455763] text-white flex items-center justify-between px-6 py-4 font-rubik">
-        <div
-          className="relative flex flex-col space-y-1 ml-4 cursor-pointer group"
-          onClick={() => setIsOpen(!isOpen)}
+    <nav className="navbar w-full relative">
+      {/* Top bar */}
+      <div className="bg-northeasternBlack text-northeasternWhite flex items-center justify-between px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
+        <button
+          className="flex items-center gap-2 font-bold text-xl focus:outline-none"
+          onClick={() => setIsOpen((open) => !open)}
         >
-          <div className="absolute top-0 w-5 h-1 bg-white rounded-full transition-all group-hover:w-7"></div>
-          <div className="absolute top-0.5 w-4 h-1 bg-white rounded-full transition-all group-hover:w-7"></div>
-          <div className="absolute top-2 w-3 h-1 bg-white rounded-full transition-all group-hover:w-7"></div>
-        </div>
-
-        {isOpen && (
-          <div className="absolute top-12 left-2 bg-white w-48 rounded-md shadow-lg p-3 transition-all duration-300 ease-in-out">
-            <Link
-              href="/advisor-dashboard"
-              className="block px-4 py-2 font-rubik text-[#1c2a63] hover:bg-gray-200 rounded-md"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/userProfile"
-              className="block px-4 py-2 font-rubik text-[#1c2a63] hover:bg-gray-200 rounded-md"
-            >
-              Profile
-            </Link>
-
-            <Link
-              href="/grouping"
-              className="block px-4 py-2 text-[#1c2a63] hover:bg-gray-200 rounded-md"
-            >
-              Create and View Groups
-            </Link>
-
-            <Link
-              href="/sendpopups"
-              className="block px-4 py-2 text-[#1c2a63] hover:bg-gray-200 rounded-md"
-            >
-              Send Popups
-            </Link>
-
-            <Link
-              href="/new-pdf"
-              className="block px-4 py-2 text-[#1c2a63] hover:bg-gray-200 rounded-md"
-            >
-              Upload Jobs and Resumes
-            </Link>
-          </div>
-        )}
+          <span>Menu</span>
+          <span className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>▶</span>
+        </button>
         <Link
           href="/advisor-dashboard"
-          className="text-3xl font-rubik font-bold"
+          className="text-3xl font-rubik font-bold text-northeasternRed drop-shadow-lg"
         >
           NUHire
         </Link>
-
         <Link
           href="/userProfile"
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-300 cursor-pointer transition duration-300 ease-in-out hover:bg-gray-400 relative"
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-northeasternRed cursor-pointer transition duration-300 ease-in-out hover:bg-northeasternBlack hover:border-2 hover:border-northeasternRed relative"
         >
           <div
-            className="w-6 h-6 bg-cover bg-center rounded-full"
+            className="w-6 h-6 bg-cover bg-center rounded-full border-2 border-northeasternWhite"
             style={{
               backgroundImage:
                 "url('https://cdn-icons-png.flaticon.com/512/847/847969.png')",
@@ -77,6 +64,33 @@ const NavbarAdmin = () => {
             {" "}
           </div>
         </Link>
+      </div>
+      <div
+        ref={dropdownRef}
+        className={`fixed top-0 left-0 h-full z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64 border-r-4 border-northeasternRed`}
+        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0' }}
+      >
+        <div className="flex flex-col gap-2 pt-24 px-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-bold text-xl text-northeasternRed">Menu</span>
+            <button
+              className="text-xl text-gray-500 hover:text-northeasternRed"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+          </div>
+          {adminLinks.map((link) => (
+            <button
+              key={link.path}
+              className="block px-4 py-2 font-rubik text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
+              onClick={() => { setIsOpen(false); router.push(link.path); }}
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
       </div>
     </nav>
   );

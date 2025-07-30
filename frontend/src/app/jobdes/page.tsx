@@ -208,7 +208,7 @@ export default function JobDescriptionPage() {
         <NotesPage />
       </div>
 
-      <div className="flex justify-center items-center font-rubik text-navyHeader text-4xl font-bold mb-4">
+      <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
         Job Description
       </div>
 
@@ -216,7 +216,7 @@ export default function JobDescriptionPage() {
         <button
           onClick={() => setTool("pointer")}
           className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
-            tool === "pointer" ? "ring-2 ring-navy" : "hover:bg-navyHeader"
+            tool === "pointer" ? "ring-2 ring-navy" : "hover:bg-redHeader"
           }`}
         >
           Cursor
@@ -224,7 +224,7 @@ export default function JobDescriptionPage() {
         <button
           onClick={() => setTool("comment")}
           className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
-            tool === "comment" ? "ring-2 ring-navy" : "hover:bg-navyHeader"
+            tool === "comment" ? "ring-2 ring-navy" : "hover:bg-redHeader"
           }`}
         >
           Comment
@@ -315,7 +315,7 @@ export default function JobDescriptionPage() {
         <button
           disabled={pageNumber <= 1}
           onClick={() => setPageNumber(pageNumber - 1)}
-          className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-navyHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           ← Previous
         </button>
@@ -327,7 +327,7 @@ export default function JobDescriptionPage() {
         <button
           disabled={pageNumber >= (numPages || 1)}
           onClick={() => setPageNumber(pageNumber + 1)}
-          className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-navyHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Next →
         </button>
@@ -340,7 +340,7 @@ export default function JobDescriptionPage() {
               localStorage.setItem("progress", "res-review");
               window.location.href = '/res-review';
             }}
-            className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
           >
             Next: Resume Review pt. 1 →
           </button>

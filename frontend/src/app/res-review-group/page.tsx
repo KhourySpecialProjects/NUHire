@@ -316,14 +316,14 @@ export default function ResReviewGroup() {
         <div className="flex justify-between mb-4">
           <button
             onClick={() => (window.location.href = "/jobdes")}
-            className="px-4 py-2 bg-navyHeader text-white rounded-lg ml-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik"
+            className="px-4 py-2 bg-redHeader text-white rounded-lg ml-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik"
             disabled={true}
           >
             ← Back: Job Description
           </button>
           <button
             onClick={completeResumes}
-            className={`px-4 py-2 bg-navyHeader text-white rounded-lg mr-4 shadow-md transition duration-300 font-rubik
+            className={`px-4 py-2 bg-redHeader text-white rounded-lg mr-4 shadow-md transition duration-300 font-rubik
              ${selectedCount !== 4 ? "cursor-not-allowed opacity-50" : "hover:bg-blue-400"}`}
             disabled={selectedCount !== 4}
           >

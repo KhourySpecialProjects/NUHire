@@ -604,7 +604,7 @@ app.get("/auth/google/callback",
         if (user.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
-          return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+          return res.redirect(`${FRONT_URL}/about`);
         }
       } else {
         return res.redirect(`${FRONT_URL}/signupform?email=${email}`);
@@ -934,6 +934,7 @@ app.post("/update-job", (req, res) => {
       }
 
       // Wait for all job updates to finish
+      localStorage.setItem("progress", "job-des");
       Promise.all(updatePromises)
         .then(() => res.json({ message: "Group job updated and all notes for group/class deleted successfully!" }))
         .catch(error => res.status(500).json({ error: error.message }));

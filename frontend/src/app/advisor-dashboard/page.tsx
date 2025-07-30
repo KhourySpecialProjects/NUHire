@@ -96,11 +96,11 @@ const Dashboard = () => {
 
   // Render the dashboard if the user is an admin
   return (
-    <div className="flex flex-col min-h-screen bg-sand font-rubik">
+    <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
       <NavbarAdmin />
 
       <div className="flex justify-center items-center py-10">
-        <h1 className="text-4xl font-bold text-navy text-center">
+        <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
           Welcome to NUHire
         </h1>
       </div>
@@ -109,20 +109,20 @@ const Dashboard = () => {
         <div className="mt-6 gap-5 flex flex-col justify-center items-center">
           <Link
             href="/grouping"
-            className="px-10 py-10 bg-navy text-sand border-4 border-wood font-semibold rounded-lg shadow-md hover:bg-navyHeader transition"
+            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
           >
             Create and View Groups
           </Link>
           <Link 
             href="/new-pdf" 
-            className="px-10 py-10 bg-navy text-sand border-4 border-wood font-semibold rounded-lg shadow-md hover:bg-springWater transition"
+            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
           >
             Upload Job Descriptions and Resumes
           </Link>
 
           <Link
             href="/sendpopups"
-            className="px-10 py-10 bg-navy text-sand border-4 border-wood font-semibold rounded-lg shadow-md hover:bg-navyHeader transition mt-6"
+            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition mt-6"
           >
             Send Popups
           </Link>
@@ -132,9 +132,9 @@ const Dashboard = () => {
         {pendingOffers.map(({classId, groupId, candidateId }) => (
           <div
             key={`offer-${classId}-${groupId}-${candidateId}`}
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            className="fixed inset-0 bg-northeasternBlack bg-opacity-70 flex justify-center items-center z-50"
           >
-            <div className="bg-springWater p-6 rounded-lg shadow-lg max-w-md mx-auto">
+            <div className="bg-northeasternWhite p-6 rounded-lg shadow-lg max-w-md mx-auto border-2 border-northeasternRed">
               <AdminReactionPopup
                 headline={`Group ${groupId} from Class ${classId} wants to offer Candidate ${candidateId}`}
                 message="Do you approve?"
