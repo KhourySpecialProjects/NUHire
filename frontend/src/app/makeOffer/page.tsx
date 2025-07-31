@@ -417,36 +417,29 @@ export default function MakeOffer() {
   return (
     <div className="min-h-screen bg-sand font-rubik">
       {showInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
-            <button
-              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500 font-bold"
-              onClick={() => setShowInstructions(false)}
-              aria-label="Close instructions"
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold text-navy mb-4 text-center">Instructions</h2>
-            <ul className="list-disc pl-6 text-navy text-lg space-y-2">
-              <li>Review all candidates below as a group.</li>
-              <li>Watch their interview videos and view their resumes.</li>
-              <li>Discuss with your teammates and select <span className="font-bold">one</span> candidate to make an offer.</li>
-              <li>Once selected, click <span className="font-bold">Make an Offer</span> and wait for advisor approval.</li>
-              <li>After approval, proceed to the Employer Panel.</li>
-            </ul>
+          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
+            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
+              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
+              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
+                <li>Review everything about the candidates you know.</li>
+                <li>Discuss as a team which person is getting the job offer.</li>
+                <li>Make the offer and wait for your advisor's decision.</li>
+              </ul>
+              <button
+                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
+                onClick={() => setShowInstructions(false)}
+              >
+                Dismiss & Start
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8">
         <div className="w-full p-6">
           <h1 className="text-3xl font-bold text-center text-navy mb-6">
             Make an Offer as a Group
           </h1>
-          <h2 className="text-xl italic text-center text-navy mb-6">
-            Please review the Candidates below and as a group select 1 to give an
-            offer.
-          </h2>
 
           <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
             {interviewsWithVideos.map((interview, index) => {

@@ -602,25 +602,24 @@ useEffect(() => {
   return (
     <div className="bg-sand font-rubik min-h-screen">
       {showInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
-            <button
-              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500 font-bold"
-              onClick={() => setShowInstructions(false)}
-              aria-label="Close instructions"
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold text-navy mb-4 text-center">Instructions</h2>
-            <ul className="list-disc pl-6 text-navy text-lg space-y-2">
-              <li>Watch each candidate's interview video carefully.</li>
-              <li>Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.</li>
-              <li>Discuss with your group and submit your ratings for each candidate.</li>
-              <li>After all interviews are completed, proceed to the Make Offer page.</li>
-            </ul>
+          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
+            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
+              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
+              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
+                <li>Watch each candidate's interview video carefully.</li>
+                <li>Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.</li>
+                <li>Discuss with your group and submit your ratings for each candidate.</li>
+
+              </ul>
+              <button
+                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
+                onClick={() => setShowInstructions(false)}
+              >
+                Dismiss & Start
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <Navbar />
       <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
         Interview Page

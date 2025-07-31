@@ -204,25 +204,23 @@ export default function JobDescriptionPage() {
   return (
     <div className="bg-sand font-rubik">
       {showInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
-            <button
-              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500 font-bold"
-              onClick={() => setShowInstructions(false)}
-              aria-label="Close instructions"
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold text-navy mb-4 text-center">Instructions</h2>
-            <ul className="list-disc pl-6 text-navy text-lg space-y-2">
-              <li>Read the job description.</li>
-              <li>Take notes using the notes button in the top right. You can always access them</li>
-              <li>If you comment on the job description they are not accessible again.</li>
-              <li>After you have read it, proceed to the Resume Review.</li>
-            </ul>
+          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
+            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
+              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
+              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
+                <li>Read the job description that you are hiring for.</li>
+                <li>Take notes by pressing the top right notes button, you cna always access them.</li>
+                <li>Leaving comments on the description are only accessible on this page.</li>
+              </ul>
+              <button
+                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
+                onClick={() => setShowInstructions(false)}
+              >
+                Dismiss & Start
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8">
 
