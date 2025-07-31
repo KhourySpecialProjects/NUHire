@@ -1,6 +1,7 @@
 "use client";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import React, { useState, useEffect } from "react";
+import { Document, Page } from 'react-pdf';
 import { io, Socket } from "socket.io-client";
 import Navbar from "../components/navbar";
 import { usePathname, useRouter } from "next/navigation";
@@ -43,16 +44,18 @@ export default function ResReviewGroup() {
   }
 
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>({});
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
-
+  const [hoveredResume, setHoveredResume] = useState<number | null>(null);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const router = useRouter();
   const pathname = usePathname();
-
+  const [zoomLevel, setZoomLevel] = useState(100); // zoom percentage
+  const [previewPosition, setPreviewPosition] = useState('left-1/2 -translate-x-1/2');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -284,33 +287,101 @@ export default function ResReviewGroup() {
           </div>
         )}
       <Navbar />
-      <div className="flex-1 flex flex-col px-4 py-8">
+      <div className="flex-1 flex flex-col px-12 py-12">
         <div className="w-full p-6">
           <h1 className="text-3xl font-bold text-center text-navy mb-6">
             Resume Review as a Group
           </h1>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 w-full min-h-[70vh] items-stretch">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 w-full min-h-[70vh] items-stretch">
             {resumes.map((resume, index) => {
               const resumeNumber = index + 1;
               const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
               return (
-                <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md flex flex-col justify-between h-full min-h-[250px] w-full">
+                <div
+                  key={resumeNumber}
+                  className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl flex flex-col justify-between h-full min-h-[250px] w-full p-6 transition hover:scale-[1.02]"
+                >
                   <h3 className="text-xl font-semibold text-navy mb-2">
                     Resume {resumeNumber}
                   </h3>
-                  <a
-                    href={`${API_BASE_URL}/${resume.file_path}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-navy hover:underline"
-                  >
-                    View / Download Resume
-                  </a>
-
-                  <div className="mt-4">
-                    <p className="text-green-600">Yes: {votes.yes}</p>
-                    <p className="text-red-600">No: {votes.no}</p>
-                    <p className="text-yellow-600">Undecided: {votes.undecided}</p>
+                  <div className="relative">
+                    <a
+                      href={`${API_BASE_URL}/${resume.file_path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-northeasternRed font-bold hover:underline"
+                      onMouseEnter={() => setHoveredResume(resumeNumber)}
+                      onMouseLeave={() => setHoveredResume(null)}
+                    >
+                      Hover to View / Click to Download Resume
+                    </a>
+                    {hoveredResume === resumeNumber && (
+                      <div
+                        className="fixed z-[100] bg-white border-2 border-northeasternRed rounded shadow-lg overflow-hidden"
+                        style={{
+                          width: '32rem',
+                          height: '24rem',
+                          left: '50%',
+                          top: '50%',
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                        onMouseEnter={() => setHoveredResume(resumeNumber)}
+                        onMouseLeave={() => setHoveredResume(null)}
+                      >
+                        <div className="absolute top-2 right-2 z-[1001] flex gap-1">
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setZoomLevel(prev => Math.max(prev - 25, 50));
+                            }}
+                            className="w-8 h-8 bg-northeasternRed text-white rounded hover:bg-redHeader"
+                            title="Zoom Out"
+                          >
+                            −
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setZoomLevel(prev => Math.min(prev + 25, 200));
+                            }}
+                            className="w-8 h-8 bg-northeasternRed text-white rounded hover:bg-redHeader"
+                            title="Zoom In"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <div className="w-full h-full overflow-auto flex items-center justify-center">
+                          <iframe
+                            src={`${API_BASE_URL}/${resume.file_path}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
+                            title={`Resume Preview ${resumeNumber}`}
+                            className="rounded"
+                            style={{
+                              width: `${zoomLevel}%`,
+                              height: `${zoomLevel}%`,
+                              transform: `scale(${zoomLevel / 100})`,
+                              transformOrigin: "top left",
+                              border: "none",
+                              minWidth: "100%",
+                              minHeight: "100%",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 flex flex-col gap-2 bg-gray-100 p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-green-700 bg-green-100 px-2 py-1 rounded">✔ Yes</span>
+                      <span className="text-green-700 font-semibold text-lg">{votes.yes}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-red-700 bg-red-100 px-2 py-1 rounded">✖ No</span>
+                      <span className="text-red-700 font-semibold text-lg">{votes.no}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">? Undecided</span>
+                      <span className="text-yellow-700 font-semibold text-lg">{votes.undecided}</span>
+                    </div>
                   </div>
 
                   <label className="flex items-center mt-4">
