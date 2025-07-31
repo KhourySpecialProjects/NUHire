@@ -300,20 +300,20 @@ const SendPopups = () => {
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
 
-      <div className="max-w-3xl mx-auto bg-navy justify-center rounded-md items-center p-6 mt-6">
+      <div className="max-w-3xl mx-auto bg-northeasternWhite border-northeasternBlack border-4 justify-center rounded-md items-center p-6 mt-6">
         <h1 className="text-3xl 
-        font-bold text-center text-sand mb-6">
+        font-bold text-center text-northeasternRed mb-6">
           Send Popups
         </h1>
 
-        <p className="text-lg text-center text-sand mb-4">
+        <p className="text-lg text-center text-northeasternRed mb-4">
           Select a preset or create a custom message to send to selected groups
           of students.
         </p>
 
           {/* Class Selection Dropdown */}
           <div className="mb-6">
-            <label className="text-lg text-sand font-rubik block mb-2">Select Class:</label>
+            <label className="text-lg text-northeasternBlack font-rubik block mb-2">Select Class:</label>
             <select
               value={selectedClass}
               onChange={handleClassChange}
@@ -331,7 +331,7 @@ const SendPopups = () => {
           {selectedClass && (
             <>
               <div className="mb-6">
-                <label className="text-lg font-rubik text-sand block mb-2">Choose a Preset:</label>
+                <label className="text-lg font-rubik text-northeasternBlack block mb-2">Choose a Preset:</label>
                 <select
                   value={selectedPreset}
                   onChange={(e) => handlePresetSelection(e.target.value)}
@@ -347,7 +347,7 @@ const SendPopups = () => {
               </div>
 
               <div className="flex flex-col gap-4 mb-6">
-                <label className="text-lg text-sand font-rubik">Headline:</label>
+                <label className="text-lg text-Black font-rubik">Headline:</label>
                 <input
                   type="text"
                   placeholder="Enter subject for popup"
@@ -357,7 +357,7 @@ const SendPopups = () => {
                        focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 />
 
-                <label className="text-lg text-sand font-rubik">Content:</label>
+                <label className="text-lg text-northeasternBlack font-rubik">Content:</label>
                 <textarea
                   placeholder="Enter your message here"
                   value={message}
@@ -371,15 +371,15 @@ const SendPopups = () => {
 
           {/* Groups Display Section */}
           <div className="mt-6">
-            <h2 className="text-2xl font-bold text-sand mb-4">Groups in {selectedClass ? `Class ${selectedClass}` : 'All Classes'}</h2>
+            <h2 className="text-2xl font-bold text-northeasternBlack mb-4">Groups in {selectedClass ? `Class ${selectedClass}` : 'All Classes'}</h2>
             {groups && Object.keys(groups).length > 0 ? (
               Object.entries(groups).map(([group_id, students]) => (
                 <div
                   key={group_id}
-                  className="bg-navy mb-4 p-4 border rounded-lg shadow-sm"
+                  className="bg-northeasternWhite mb-4 p-4 border rounded-lg shadow-sm"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-springWater">
+                    <h3 className="text-lg font-semibold text-northeasternBlack">
                       Group {group_id}
                     </h3>
                     <input

@@ -101,32 +101,34 @@ const Dashboard = () => {
 
       <div className="flex justify-center items-center py-10">
         <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
-          Welcome to NUHire
+          Advisor Dashboard
         </h1>
       </div>
 
       <main className="flex flex-col items-center justify-center flex-grow">
-        <div className="mt-6 gap-5 flex flex-col justify-center items-center">
-          <Link
-            href="/grouping"
-            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
-          >
-            Create and View Groups
-          </Link>
-          <Link 
-            href="/new-pdf" 
-            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
-          >
-            Upload Job Descriptions and Resumes
-          </Link>
-
-          <Link
-            href="/sendpopups"
-            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition mt-6"
-          >
-            Send Popups
-          </Link>
-        </div>
+        <div className="mt-6 gap-8 flex flex-row justify-center items-center">
+            <Link
+              href="/grouping"
+              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+            >
+              <span className="text-5xl mb-2">👥</span>
+              Create and View Groups
+            </Link>
+            <Link 
+              href="/new-pdf" 
+              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+            >
+              <span className="text-5xl mb-2">📤</span>
+              Upload Job Descriptions and Resumes
+            </Link>
+            <Link
+              href="/sendpopups"
+              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+            >
+              <span className="text-5xl mb-2">📢</span>
+              Send Popups
+            </Link>
+          </div>
 
         {/* Render pending offers as popups */}
         {pendingOffers.map(({classId, groupId, candidateId }) => (
