@@ -101,12 +101,12 @@ const Dashboard = () => {
 
       <div className="flex justify-center items-center py-10">
         <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
-          Welcome to NUHire
+          Advisor Dashboard
         </h1>
       </div>
 
       <main className="flex flex-col items-center justify-center flex-grow">
-        <div className="mt-6 gap-5 flex flex-col justify-center items-center">
+        <div className="mt-6 gap-5 flex flex-row justify-center items-center">
           <Link
             href="/grouping"
             className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
@@ -122,7 +122,7 @@ const Dashboard = () => {
 
           <Link
             href="/sendpopups"
-            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition mt-6"
+            className="px-10 py-10 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-lg shadow-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
           >
             Send Popups
           </Link>

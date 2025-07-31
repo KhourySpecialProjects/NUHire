@@ -57,7 +57,7 @@ export default function InstructionsPage() {
         </div>
         <div className="bg-white rounded-lg shadow-md p-6 border-l-8 border-northeasternRed">
           <h2 className="text-2xl font-bold mb-2"><span className="text-northeasternRed">5.</span> <span className="text-navy">Make Offer</span></h2>
-          <p className="text-gray-800">Your group will choose the top two finalists for the role and submit your hiring decision. See how your choices compare to other groups and real-world outcomes!</p>
+          <p className="text-gray-800">Your group will choose the candidate that gets a job offer for the role and submit your hiring decision.</p>
         </div>
       </div>
       <button
