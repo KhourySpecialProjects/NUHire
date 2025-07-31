@@ -47,6 +47,7 @@ export default function ResReviewGroup() {
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [showInstructions, setShowInstructions] = useState(true);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const router = useRouter();
   const pathname = usePathname();
@@ -264,21 +265,41 @@ export default function ResReviewGroup() {
 
   return (
     <div className="min-h-screen bg-sand font-rubik">
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
+            <button
+              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500 font-bold"
+              onClick={() => setShowInstructions(false)}
+              aria-label="Close instructions"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold text-navy mb-4 text-center">Instructions</h2>
+            <ul className="list-disc pl-6 text-navy text-lg space-y-2">
+              <li>Discuss with your teammates to review all resumes below.</li>
+              <li>View and download each candidate's resume for reference.</li>
+              <li>Select <span className="font-bold">four</span> candidates to advance to the interview stage.</li>
+              <li>After you have rated the resumes, proceed to the Group Resume Review.</li>
+            </ul>
+          </div>
+        </div>
+      )}
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8">
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="w-full p-6">
           <h1 className="text-3xl font-bold text-center text-navy mb-6">
             Resume Review as a Group
           </h1>
           <h2 className="text-xl italic text-center text-navy mb-6">
             With your teammates, discuss and select the four candidates you would like to advance to the next round (interview).
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 w-full min-h-[70vh] items-stretch">
             {resumes.map((resume, index) => {
               const resumeNumber = index + 1;
               const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
               return (
-                <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md">
+                <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md flex flex-col justify-between h-full min-h-[250px] w-full">
                   <h3 className="text-xl font-semibold text-navy mb-2">
                     Resume {resumeNumber}
                   </h3>

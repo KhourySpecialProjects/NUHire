@@ -931,9 +931,6 @@ app.post("/update-job", (req, res) => {
           }
         });
       }
-
-      // Wait for all job updates to finish
-      localStorage.setItem("progress", "job-des");
       Promise.all(updatePromises)
         .then(() => res.json({ message: "Group job updated and all notes for group/class deleted successfully!" }))
         .catch(error => res.status(500).json({ error: error.message }));

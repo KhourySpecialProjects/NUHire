@@ -70,10 +70,14 @@ const Dashboard = () => {
       const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
       const userData = await response.json();
       if (response.ok) {
+        console.log("inside response ok refreshDashboardUI");
         setUser(userData);
         const storedProgress = localStorage.getItem("progress") || "jobdes";
         setProgress(storedProgress);
         setFlipped(Array(steps.length).fill(false));
+      }
+      else {
+        console.error("Error refreshing dashboard UI:");
       }
     } catch (error) {
       console.error("Error refreshing dashboard UI:", error);
@@ -141,11 +145,8 @@ const Dashboard = () => {
       });
       localStorage.setItem("progress", "jobdes");
       setProgress("jobdes");
-      
-      // Force refresh the user data to unlock cards
+      console.log("about to call refreshDashboardUI");
       await refreshDashboardUI();
-      
-      // Force re-render by updating flipped state
       setFlipped(Array(steps.length).fill(false));
     });
 

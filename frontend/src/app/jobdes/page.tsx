@@ -41,6 +41,7 @@ export default function JobDescriptionPage() {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [comments, setComments] = useState<CommentType[]>([]);
+  const [showInstructions, setShowInstructions] = useState(true);
   const [tool, setTool] = useState<"pointer" | "comment">("pointer");
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
@@ -202,7 +203,26 @@ export default function JobDescriptionPage() {
 
   return (
     <div className="bg-sand font-rubik">
-    
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
+            <button
+              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500 font-bold"
+              onClick={() => setShowInstructions(false)}
+              aria-label="Close instructions"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold text-navy mb-4 text-center">Instructions</h2>
+            <ul className="list-disc pl-6 text-navy text-lg space-y-2">
+              <li>Read the job description.</li>
+              <li>Take notes using the notes button in the top right. You can always access them</li>
+              <li>If you comment on the job description they are not accessible again.</li>
+              <li>After you have read it, proceed to the Resume Review.</li>
+            </ul>
+          </div>
+        </div>
+      )}
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8">
 

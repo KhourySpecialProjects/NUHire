@@ -49,11 +49,11 @@ export default function MakeOffer() {
 
   const [user, setUser] = useState<User | null>(null);
   const [resumes, setResumes] = useState<any[]>([]);
-  const [interviewVids, setInterviewVids] = useState<any[]>([]);
   const [interviews, setInterviews] = useState<any[]>([]);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [interviewsWithVideos, setInterviewsWithVideos] = useState<any[]>([]);
   const [acceptedOffer, setAcceptedOffer] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
 
   // Load user
   useEffect(() => {
@@ -416,9 +416,30 @@ export default function MakeOffer() {
 
   return (
     <div className="min-h-screen bg-sand font-rubik">
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
+            <button
+              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500 font-bold"
+              onClick={() => setShowInstructions(false)}
+              aria-label="Close instructions"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold text-navy mb-4 text-center">Instructions</h2>
+            <ul className="list-disc pl-6 text-navy text-lg space-y-2">
+              <li>Review all candidates below as a group.</li>
+              <li>Watch their interview videos and view their resumes.</li>
+              <li>Discuss with your teammates and select <span className="font-bold">one</span> candidate to make an offer.</li>
+              <li>Once selected, click <span className="font-bold">Make an Offer</span> and wait for advisor approval.</li>
+              <li>After approval, proceed to the Employer Panel.</li>
+            </ul>
+          </div>
+        </div>
+      )}
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8">
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="w-full p-6">
           <h1 className="text-3xl font-bold text-center text-navy mb-6">
             Make an Offer as a Group
           </h1>
@@ -427,7 +448,7 @@ export default function MakeOffer() {
             offer.
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
             {interviewsWithVideos.map((interview, index) => {
               const interviewNumber = interview.candidate_id;
               const votes = voteCounts[interviewNumber];

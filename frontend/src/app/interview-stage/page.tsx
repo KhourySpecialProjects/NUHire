@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
@@ -40,6 +41,7 @@ export default function Interview() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showInstructions, setShowInstructions] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const pathname = usePathname();
   const [noShow, setNoShow] = useState(false);
@@ -369,13 +371,6 @@ useEffect(() => {
 
   // Debug logging - Add more detailed logging
   useEffect(() => {
-    console.log("=== Interview State Debug ===");
-    console.log("Interviews:", interviews);
-    console.log("Video Index:", videoIndex);
-    console.log("Current video:", currentVid);
-    console.log("Finished:", finished);
-    console.log("Loading:", loading);
-    
     if (interviews.length > 0 && videoIndex >= 0) {
       const isValidIndex = videoIndex < interviews.length;
       console.log("Is valid video index:", isValidIndex);
@@ -606,6 +601,26 @@ useEffect(() => {
   // Main content - interview page
   return (
     <div className="bg-sand font-rubik min-h-screen">
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
+            <button
+              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500 font-bold"
+              onClick={() => setShowInstructions(false)}
+              aria-label="Close instructions"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold text-navy mb-4 text-center">Instructions</h2>
+            <ul className="list-disc pl-6 text-navy text-lg space-y-2">
+              <li>Watch each candidate's interview video carefully.</li>
+              <li>Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.</li>
+              <li>Discuss with your group and submit your ratings for each candidate.</li>
+              <li>After all interviews are completed, proceed to the Make Offer page.</li>
+            </ul>
+          </div>
+        </div>
+      )}
       <Navbar />
       <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
         Interview Page
@@ -673,19 +688,6 @@ useEffect(() => {
               "Loading videos..."}
           </div>
         </div>
-
-        {/* Completion notification */}
-        {finished && (
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-springWater p-8 w-200 rounded-md shadow-lg z-50 font-bold font-rubik text-redHeader">
-            <p className="mb-4">All Interviews have been rated! You can move onto the next stage!</p>
-            <button
-              onClick={completeInterview}
-              className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
-            >
-              Continue to Next Stage
-            </button>
-          </div>
-        )}
 
         {/* Video display */}
         <div className={`md:w-2/3 flex flex-col items-center justify-center p-4 md:p-8 ${fadingEffect ? 'opacity-50 transition-opacity duration-500' : 'opacity-100 transition-opacity duration-500'}`}>
