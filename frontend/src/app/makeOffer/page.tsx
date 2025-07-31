@@ -49,11 +49,11 @@ export default function MakeOffer() {
 
   const [user, setUser] = useState<User | null>(null);
   const [resumes, setResumes] = useState<any[]>([]);
-  const [interviewVids, setInterviewVids] = useState<any[]>([]);
   const [interviews, setInterviews] = useState<any[]>([]);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [interviewsWithVideos, setInterviewsWithVideos] = useState<any[]>([]);
   const [acceptedOffer, setAcceptedOffer] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
 
   // Load user
   useEffect(() => {
@@ -416,111 +416,123 @@ export default function MakeOffer() {
 
   return (
     <div className="min-h-screen bg-sand font-rubik">
-      <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
-      <div className="max-w-5xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-center text-navy mb-6">
-          Make an Offer as a Group
-        </h1>
-        <h2 className="text-xl italic text-center text-navy mb-6">
-          Please review the Candidates below and as a group select 1 to give an
-          offer.
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {interviewsWithVideos.map((interview, index) => {
-            const interviewNumber = interview.candidate_id;
-            const votes = voteCounts[interviewNumber];
-
-            return (
-              <div
-                key={interviewNumber}
-                className="bg-wood p-6 rounded-lg shadow-md flex flex-col gap-4"
+      {showInstructions && (
+          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
+            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
+              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
+              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
+                <li>Review everything about the candidates you know.</li>
+                <li>Discuss as a team which person is getting the job offer.</li>
+                <li>Make the offer and wait for your advisor's decision.</li>
+              </ul>
+              <button
+                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
+                onClick={() => setShowInstructions(false)}
               >
-                <h3 className="text-xl font-semibold text-navy text-center">
-                  Candidate {interviewNumber}
-                </h3>
-
-                <div className="aspect-video w-full">
-                  <iframe
-                    className="w-full h-full rounded-lg shadow-md"
-                    src={interview.video_path}
-                    title="Interview Video"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-
-                <div className="mt-2 space-y-1 text-navy text-sm">
-                  <p>
-                    <span className="font-medium">Overall:</span>{" "}
-                    {votes.Overall}
-                  </p>
-                  <p>
-                    <span className="font-medium">Professional Presence:</span>{" "}
-                    {votes.Profesionality}
-                  </p>
-                  <p>
-                    <span className="font-medium">Quality of Answer:</span>{" "}
-                    {votes.Quality}
-                  </p>
-                  <p>
-                    <span className="font-medium">Personality:</span>{" "}
-                    {votes.Personality}
-                  </p>
-                </div>
-
-                <a
-                  href={`${API_BASE_URL}/${interview.resume_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-navy hover:underline"
-                >
-                  View / Download Resume
-                </a>
-
-                <label className="flex items-center mt-2">
-                  <input
-                    type="checkbox"
-                    checked={checkedState[interviewNumber] || false}
-                    onChange={() => handleCheckboxChange(interviewNumber)}
-                    className="h-4 w-4 text-redHeader"
-                  />
-                  <span className="ml-2 text-navy text-sm">
-                    Selected for Offer
-                  </span>
-                </label>
-              </div>
-            );
-          })}
-
-          {popup && (
-            <Popup
-              headline={popup.headline}
-              message={popup.message}
-              onDismiss={() => setPopup(null)}
-            />
-          )}
-        </div>
-        {selectedCount === 1 && (
-          <div className="flex justify-center my-6">
-            <button
-              onClick={handleMakeOffer}
-              disabled={offerPending}
-              className={`px-6 py-3 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
-                offerPending
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-blue-700"
-              }`}
-            >
-              {offerPending ? "Awaiting Advisor…" : "Make an Offer"}
-            </button>
+                Dismiss & Start
+              </button>
+            </div>
           </div>
         )}
+      <Navbar />
+      <div className="flex-1 flex flex-col px-4 py-8">
+        <div className="w-full p-6">
+          <h1 className="text-3xl font-bold text-center text-navy mb-6">
+            Make an Offer as a Group
+          </h1>
 
+          <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
+            {interviewsWithVideos.map((interview, index) => {
+              const interviewNumber = interview.candidate_id;
+              const votes = voteCounts[interviewNumber];
+
+              return (
+                <div
+                  key={interviewNumber}
+                  className="bg-wood p-6 rounded-lg shadow-md flex flex-col gap-4"
+                >
+                  <h3 className="text-xl font-semibold text-navy text-center">
+                    Candidate {interviewNumber}
+                  </h3>
+
+                  <div className="aspect-video w-full">
+                    <iframe
+                      className="w-full h-full rounded-lg shadow-md"
+                      src={interview.video_path}
+                      title="Interview Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+
+                  <div className="mt-2 space-y-1 text-navy text-sm">
+                    <p>
+                      <span className="font-medium">Overall:</span>{" "}
+                      {votes.Overall}
+                    </p>
+                    <p>
+                      <span className="font-medium">Professional Presence:</span>{" "}
+                      {votes.Profesionality}
+                    </p>
+                    <p>
+                      <span className="font-medium">Quality of Answer:</span>{" "}
+                      {votes.Quality}
+                    </p>
+                    <p>
+                      <span className="font-medium">Personality:</span>{" "}
+                      {votes.Personality}
+                    </p>
+                  </div>
+
+                  <a
+                    href={`${API_BASE_URL}/${interview.resume_path}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-navy hover:underline"
+                  >
+                    View / Download Resume
+                  </a>
+
+                  <label className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      checked={checkedState[interviewNumber] || false}
+                      onChange={() => handleCheckboxChange(interviewNumber)}
+                      className="h-4 w-4 text-redHeader"
+                    />
+                    <span className="ml-2 text-navy text-sm">
+                      Selected for Offer
+                    </span>
+                  </label>
+                </div>
+              );
+            })}
+
+            {popup && (
+              <Popup
+                headline={popup.headline}
+                message={popup.message}
+                onDismiss={() => setPopup(null)}
+              />
+            )}
+          </div>
+          {selectedCount === 1 && (
+            <div className="flex justify-center my-6">
+              <button
+                onClick={handleMakeOffer}
+                disabled={offerPending}
+                className={`px-6 py-3 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
+                  offerPending
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-blue-700"
+                }`}
+              >
+                {offerPending ? "Awaiting Advisor…" : "Make an Offer"}
+              </button>
+            </div>
+          )}
+        </div>
         <footer className="flex justify-between mt-6">
           <button
             onClick={() => (window.location.href = "/jobdes")}

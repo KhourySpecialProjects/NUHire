@@ -19,6 +19,70 @@ interface User {
 }
 
 const Dashboard = () => {
+  const steps = [
+    {
+      key: "jobdes",
+      label: "Job Description",
+      path: "/jobdes",
+      emoji: "📝",
+      desc: "Review your assigned job description."
+    },
+    {
+      key: "res-review",
+      label: "Resume Review",
+      path: "/res-review",
+      emoji: "📄",
+      desc: "Individually review candidate resumes."
+    },
+    {
+      key: "res-review-group",
+      label: "Resume Review Group",
+      path: "/res-review-group",
+      emoji: "👥",
+      desc: "Discuss resumes with your group."
+    },
+    {
+      key: "interview-stage",
+      label: "Interview Stage",
+      path: "/interview-stage",
+      emoji: "🎤",
+      desc: "Interview selected candidates."
+    },
+    {
+      key: "makeOffer",
+      label: "Make an Offer",
+      path: "/makeOffer",
+      emoji: "💼",
+      desc: "Decide which candidate to hire."
+    },
+    {
+      key: "employerPannel",
+      label: "Employer Panel",
+      path: "/employerPannel",
+      emoji: "🏢",
+      desc: "View employer dashboard."
+    },
+  ];
+
+  // Function to refresh user, progress bar, and menu bar
+  const refreshDashboardUI = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
+      const userData = await response.json();
+      if (response.ok) {
+        console.log("inside response ok refreshDashboardUI");
+        setUser(userData);
+        const storedProgress = localStorage.getItem("progress") || "jobdes";
+        setProgress(storedProgress);
+        setFlipped(Array(steps.length).fill(false));
+      }
+      else {
+        console.error("Error refreshing dashboard UI:");
+      }
+    } catch (error) {
+      console.error("Error refreshing dashboard UI:", error);
+    }
+  };
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
@@ -73,31 +137,17 @@ const Dashboard = () => {
 
 
   useEffect(() => {
-    socket.on("jobUpdated", ({ job, reset }) => {
-      if (reset) {
-        console.log("Job updated, resetting progress and clearing localStorage");
-        localStorage.removeItem("pdf-comments");
-      }
-      setPopup({ headline: "You have been assigned a new job!", 
-        message: `You are an employer for ${job}!` });
-      const refreshUser = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-          const userData = await response.json();
-          
-          if (response.ok) {
-            setUser(userData);
-            if (userData.job_des && (!user?.job_des || progress === "jobdes")) {
-              setProgress("jobdes");
-              localStorage.setItem("progress", "jobdes");
-            }
-          }
-        } catch (error) {
-          console.error("Error refreshing user data:", error);
-        }
-      };
-      
-      refreshUser();
+    socket.on("jobUpdated", async ({ job }) => {
+      localStorage.removeItem("pdf-comments");
+      setPopup({ 
+        headline: "You have been assigned a new job!", 
+        message: `You are an employer for ${job}!` 
+      });
+      localStorage.setItem("progress", "jobdes");
+      setProgress("jobdes");
+      console.log("about to call refreshDashboardUI");
+      await refreshDashboardUI();
+      setFlipped(Array(steps.length).fill(false));
     });
 
     socket.on("receivePopup", ({ headline, message }) => {
@@ -105,6 +155,7 @@ const Dashboard = () => {
     });
 
     return () => {
+      socket.off("jobUpdated");
       socket.off("receivePopup");
     };
   }, []);
@@ -122,53 +173,7 @@ const Dashboard = () => {
     setProgress("jobdes"); 
     localStorage.setItem("pdf-comments", "");
     router.push("/dashboard")
-  }
-
- 
-  const steps = [
-    {
-      key: "jobdes",
-      label: "Job Description",
-      path: "/jobdes",
-      emoji: "📝",
-      desc: "Review your assigned job description."
-    },
-    {
-      key: "res-review",
-      label: "Resume Review",
-      path: "/res-review",
-      emoji: "📄",
-      desc: "Individually review candidate resumes."
-    },
-    {
-      key: "res-review-group",
-      label: "Resume Review Group",
-      path: "/res-review-group",
-      emoji: "👥",
-      desc: "Discuss resumes with your group."
-    },
-    {
-      key: "interview-stage",
-      label: "Interview Stage",
-      path: "/interview-stage",
-      emoji: "🎤",
-      desc: "Interview selected candidates."
-    },
-    {
-      key: "makeOffer",
-      label: "Make an Offer",
-      path: "/makeOffer",
-      emoji: "💼",
-      desc: "Decide which candidate to hire."
-    },
-    {
-      key: "employerPannel",
-      label: "Employer Panel",
-      path: "/employerPannel",
-      emoji: "🏢",
-      desc: "View employer dashboard."
-    },
-  ];
+  } 
 
   const isStepUnlocked = (stepKey: string) => {
     if (!user?.job_des) {

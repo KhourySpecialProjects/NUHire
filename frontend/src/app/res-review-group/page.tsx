@@ -47,6 +47,8 @@ export default function ResReviewGroup() {
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [showInstructions, setShowInstructions] = useState(true);
+
   const [resumes, setResumes] = useState<Resume[]>([]);
   const router = useRouter();
   const pathname = usePathname();
@@ -264,52 +266,65 @@ export default function ResReviewGroup() {
 
   return (
     <div className="min-h-screen bg-sand font-rubik">
+      {showInstructions && (
+          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
+            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
+              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
+              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
+                <li>Review the resumes and decide as a group which 4 candidates continue.</li>
+                <li>You will then watch the interviews of the candidates selected.</li>
+              </ul>
+              <button
+                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
+                onClick={() => setShowInstructions(false)}
+              >
+                Dismiss & Start
+              </button>
+            </div>
+          </div>
+        )}
       <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
-      <div className="max-w-5xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-center text-navy mb-6">
-          Resume Review as a Group
-        </h1>
-        <h2 className="text-xl italic text-center text-navy mb-6">
-          With your teammates, discuss and select the four candidates you would like to advance to the next round (interview).
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {resumes.map((resume, index) => {
-            const resumeNumber = index + 1;
-            const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
-            return (
-              <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md">
-                <h3 className="text-xl font-semibold text-navy mb-2">
-                  Resume {resumeNumber}
-                </h3>
-                <a
-                  href={`${API_BASE_URL}/${resume.file_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-navy hover:underline"
-                >
-                  View / Download Resume
-                </a>
+      <div className="flex-1 flex flex-col px-4 py-8">
+        <div className="w-full p-6">
+          <h1 className="text-3xl font-bold text-center text-navy mb-6">
+            Resume Review as a Group
+          </h1>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 w-full min-h-[70vh] items-stretch">
+            {resumes.map((resume, index) => {
+              const resumeNumber = index + 1;
+              const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
+              return (
+                <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md flex flex-col justify-between h-full min-h-[250px] w-full">
+                  <h3 className="text-xl font-semibold text-navy mb-2">
+                    Resume {resumeNumber}
+                  </h3>
+                  <a
+                    href={`${API_BASE_URL}/${resume.file_path}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-navy hover:underline"
+                  >
+                    View / Download Resume
+                  </a>
 
-                <div className="mt-4">
-                  <p className="text-green-600">Yes: {votes.yes}</p>
-                  <p className="text-red-600">No: {votes.no}</p>
-                  <p className="text-yellow-600">Undecided: {votes.undecided}</p>
+                  <div className="mt-4">
+                    <p className="text-green-600">Yes: {votes.yes}</p>
+                    <p className="text-red-600">No: {votes.no}</p>
+                    <p className="text-yellow-600">Undecided: {votes.undecided}</p>
+                  </div>
+
+                  <label className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      checked={checkedState[resumeNumber] || false}
+                      onChange={() => handleCheckboxChange(resumeNumber)}
+                    />
+                    <span className="ml-2 text-navy">Selected for Further Review</span>
+                  </label>
                 </div>
-
-                <label className="flex items-center mt-4">
-                  <input
-                    type="checkbox"
-                    checked={checkedState[resumeNumber] || false}
-                    onChange={() => handleCheckboxChange(resumeNumber)}
-                  />
-                  <span className="ml-2 text-navy">Selected for Further Review</span>
-                </label>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
       <footer>

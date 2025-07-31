@@ -125,7 +125,7 @@ const NotesPage = () => {
         <div className="max-h-[50vh] overflow-y-auto">
           {notes.length > 0 ? (
             notes.map((n) => (
-              <p key={n.id} className="p-2 mt-2 border border-gray-200 rounded-md bg-springWater">
+              <p key={n.id} className="text-northeasternBlack p-2 mt-2 border border-gray-200 rounded-md bg-springWater">
           {n.content}
               </p>
             ))
