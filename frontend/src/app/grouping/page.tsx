@@ -414,147 +414,131 @@ const Grouping = () => {
     return <div>This account is not authorized for this page</div>;
   }
 
-  // Render the component
-  return (
-    <div className=" flex-col min-h-screen bg-sand font-rubik">
+    return (
+    <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
-      
-      <div className="max-w-3xl mx-auto bg-navy justify-center items-center shadow-md rounded-lg p-6 mt-6">
-        <h1 className="text-3xl font-bold text-center text-sand mb-6">Group Management</h1>
-        
-        {/* Class Selection Dropdown */}
-        <div className="mb-6">
-          <label className="block text-sand text-sm font-bold mb-2">
-            Select Class
-          </label>
-          <select 
-            value={selectedClass}
-            onChange={handleClassChange}
-            className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 grid-rows-2 gap-4 p-4 h-[calc(100vh-80px)]">
+        <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+          <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
+          <div className="mb-4">
+            <select
+              value={selectedClass}
+              onChange={handleClassChange}
+              className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a class</option>
+              {classes.map(classItem => (
+                <option key={classItem.id} value={classItem.id}>
+                  {classItem.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* Group ID Input */}
+          <input
+            type="text"
+            placeholder="Enter Group ID"
+            value={group_id}
+            onChange={(e) => setGroupId(e.target.value)}
+            className="w-full p-2 border border-wood bg-springWater rounded-md mb-2"
+          />
+          {/* Student Selection */}
+          <select
+            onChange={handleStudentSelection}
+            className="w-full mb-2 p-2 border border-wood bg-springWater rounded-md"
           >
-            <option value="">Select a class</option>
-            {classes.map(classItem => (
-              <option key={classItem.id} value={classItem.id}>
-                {classItem.name}
+            <option value="">Select a student</option>
+            {students.map(student => (
+              <option key={student.email} value={student.email}>
+                {student.f_name} {student.l_name} ({student.email})
               </option>
             ))}
           </select>
+          {/* Selected Students List */}
+          <div className="mb-2 space-y-2">
+            {selectedStudents.map(student => (
+              <div key={student.email} className="flex items-center justify-between p-2 bg-springWater rounded-md">
+                <span className="text-navy">{student.f_name} {student.l_name} ({student.email})</span>
+                <button
+                  onClick={() => handleRemoveStudent(student.email)}
+                  className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleAssignGroup}
+            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-blue-600 transition"
+          >
+            Assign Group
+          </button>
         </div>
 
-        {selectedClass && (
-          <>
+        <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+          <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
+          <input
+            type="text"
+            placeholder="Enter Group ID for Job Assignment"
+            value={job_group_id}
+            onChange={(e) => setGroupIdJob(e.target.value)}
+            className="w-full p-2 border border-wood bg-springWater rounded-md mb-2"
+          />
+          <select
+            onChange={handleJobSelection}
+            className="w-full mb-2 p-2 border border-wood bg-springWater rounded-md"
+          >
+            <option value="">Select a job</option>
+            {jobs.map(job => (
+              <option key={job.title} value={job.title}>
+                {job.title}
+              </option>
+            ))}
+          </select>
+          {/* Selected Jobs List */}
+          <div className="mb-2 space-y-2">
+            {selectedJobs.map(job => (
+              <div key={job.title} className="flex items-center justify-between p-2 bg-springWater rounded-md">
+                <span className="text-navy">{job.title}</span>
+                <button
+                  onClick={() => handleRemoveJob(job.title)}
+                  className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleAssignJob}
+            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-blue-600 transition"
+          >
+            Assign Job
+          </button>
+        </div>
 
-            {/* Group ID Input */}
-            <input 
-              type="text" 
-              placeholder="Enter Group ID" 
-              value={group_id}
-              onChange={(e) => setGroupId(e.target.value)}
-              className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
-            {/* Student Selection */}
-            <select 
-              onChange={handleStudentSelection} 
-              className="w-full mt-4 p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a student</option>
-              {students.map(student => (
-                <option key={student.email} value={student.email}>
-                  {student.f_name} {student.l_name} ({student.email})
-                </option>
-              ))}
-            </select>
-
-            {/* Selected Students List */}
-            <div className="mt-4 space-y-2">
-              {selectedStudents.map(student => (
-                <div key={student.email} className="flex items-center justify-between p-3 bg-springWater rounded-md">
-                  <span className="text-navy">{student.f_name} {student.l_name} ({student.email})</span>
-                  <button 
-                    onClick={() => handleRemoveStudent(student.email)} 
-                    className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Assign Group Button */}
-            <button 
-              onClick={handleAssignGroup} 
-              className="w-full mt-4 bg-sand border-4 border-wood text-navy font-bold py-3 rounded-md hover:bg-blue-600 transition"
-            >
-              Assign Group
-            </button>
-
-            {/* Group ID Input for Job Assignment */}
-            <input 
-              type="text" 
-              placeholder="Enter Group ID for Job Assignment" 
-              value={job_group_id}
-              onChange={(e) => setGroupIdJob(e.target.value)}
-              className="w-full p-3 mt-6 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
-            {/* Job Selection */}
-            <select 
-              onChange={handleJobSelection} 
-              className="w-full mt-4 p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a job</option>
-              {jobs.map(job => (
-                <option key={job.title} value={job.title}>
-                  {job.title}
-                </option>
-              ))}
-            </select>
-
-            {/* Selected Jobs List */}
-            <div className="mt-4 space-y-2">
-              {selectedJobs.map(job => (
-                <div key={job.title} className="flex items-center justify-between p-3 bg-springWater rounded-md">
-                  <span className="text-navy">{job.title}</span>
-                  <button 
-                    onClick={() => handleRemoveJob(job.title)} 
-                    className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Assign Job Button */}
-            <button 
-              onClick={handleAssignJob} 
-              className="w-full mt-4 bg-sand border-4 border-wood text-navy font-bold py-3 rounded-md hover:bg-blue-600 transition"
-            >
-              Assign Job
-            </button>
-          </>
-        )}
-
-        {/* Groups Display Section */}
-        <div className="mt-6">
-          <h2 className="text-2xl font-bold text-sand mb-4">Groups in {selectedClass ? `Class ${selectedClass}` : 'All Classes'}</h2>
-          
+        <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+          <h2 className="text-2xl font-bold text-northeasternRed mb-4">Groups {selectedClass ? `in Class ${selectedClass}` : ''}</h2>
           {groups && Object.keys(groups).length > 0 ? (
             Object.entries(groups).map(([group_id, students]) => (
-              <div key={group_id} className="bg-springWater p-4 rounded-md mb-4 shadow">
-                <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
-                <ul className="list-none pl-0 text-navy mt-2">
+              <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
+                {isNaN(Number(group_id)) ? (
+                  <h3 className="text-xl font-semibold text-red-600">No groups found</h3>
+                ) : (
+                  <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
+                )}
+                <ul className="list-none pl-0 text-navy mt-1">
                   {Array.isArray(students) && students.length > 0 ? (
                     students.map((student, index) => (
-                      <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded border">
-                        <div className="flex items-center space-x-3">
+                      <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
+                        <div className="flex items-center space-x-2">
                           <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
                           <span className="font-medium">
                             {student.name} ({student.email})
                           </span>
                         </div>
-                        <div className="flex items-center space-x-4 text-sm">
+                        <div className="flex items-center space-x-2 text-sm">
                           <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
                             {student.current_page || 'No page'}
                           </span>
@@ -571,26 +555,26 @@ const Grouping = () => {
               </div>
             ))
           ) : (
-            <p className="text-sand text-center">No groups found for this class.</p>
+            <p className="text-northeasternBlack text-center">No groups found for this class.</p>
           )}
         </div>
 
-        {/* Pending Offers Section */}
-        <div className="mt-8 mb-6">
-          <h2 className="text-2xl font-bold text-sand mb-4">Pending Offers</h2>
-          
-          {pendingOffers.length > 0 ? (
-            <div className="bg-springWater p-4 rounded-md shadow">
-              <div className="space-y-3">
-                {pendingOffers.map(({classId, groupId, candidateId }) => (
+        <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+          <h2 className="text-2xl font-bold text-northeasternRed mb-4">Pending & Accepted Offers</h2>
+          {/* Pending Offers */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-navy mb-2">Pending Offers</h3>
+            {pendingOffers.length > 0 ? (
+              <div className="space-y-2">
+                {pendingOffers.map(({ classId, groupId, candidateId }) => (
                   <div
                     key={`pending-offer-${classId}-${groupId}-${candidateId}`}
-                    className="bg-white p-4 rounded border border-wood flex items-center justify-between"
+                    className="bg-springWater p-2 rounded border border-wood flex items-center justify-between"
                   >
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-navy">
+                      <h4 className="text-base font-semibold text-navy">
                         Group {groupId} from Class {classId}
-                      </h3>
+                      </h4>
                       <p className="text-gray-600">
                         Wants to make an offer to Candidate {candidateId}
                       </p>
@@ -598,16 +582,16 @@ const Grouping = () => {
                         Awaiting your approval decision
                       </p>
                     </div>
-                    <div className="flex space-x-3 ml-4">
+                    <div className="flex space-x-2 ml-2">
                       <button
                         onClick={() => respondToOffer(classId, groupId, candidateId, true)}
-                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md font-medium transition-colors"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => respondToOffer(classId, groupId, candidateId, false)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md font-medium transition-colors"
                       >
                         Reject
                       </button>
@@ -615,50 +599,26 @@ const Grouping = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="bg-springWater p-4 rounded-md text-center">
-              <p className="text-navy">No pending offers at this time</p>
-            </div>
-          )}
-        </div>
-
-        {/* Render pending offers as popups */}
-        {pendingOffers.map(({classId, groupId, candidateId }) => (
-          <div
-            key={`offer-${classId}-${groupId}-${candidateId}`}
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-          >
-            <div className="bg-springWater p-6 rounded-lg shadow-lg max-w-md mx-auto">
-              <AdminReactionPopup
-                headline={`Group ${groupId} from Class ${classId} wants to offer Candidate ${candidateId}`}
-                message="Do you approve?"
-                onAccept={() => 
-                  respondToOffer(classId, groupId, candidateId, true)
-                }
-                onReject={() => 
-                  respondToOffer(classId, groupId, candidateId, false)
-                }
-              />
-            </div>
+            ) : (
+              <div className="bg-springWater border border-wood p-2 rounded-md text-center">
+                <p className="text-navy">No pending offers at this time</p>
+              </div>
+            )}
           </div>
-        ))}
-
-        {/* Accepted Offers Section */}
-        <div className="mt-8 mb-6">
-          <h2 className="text-2xl font-bold text-sand mb-4">Accepted Offers</h2>
-          {acceptedOffers.length > 0 ? (
-            <div className="bg-springWater p-4 rounded-md shadow">
-              <div className="space-y-3">
+          {/* Accepted Offers */}
+          <div>
+            <h3 className="text-lg font-semibold text-navy mb-2">Accepted Offers</h3>
+            {acceptedOffers.length > 0 ? (
+              <div className="space-y-2">
                 {acceptedOffers.map(({ classId, groupId, candidateId }) => (
                   <div
                     key={`accepted-offer-${classId}-${groupId}-${candidateId}`}
-                    className="bg-white p-4 rounded border border-wood flex items-center justify-between"
+                    className="bg-white p-2 rounded border border-wood flex items-center justify-between"
                   >
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-navy">
+                      <h4 className="text-base font-semibold text-navy">
                         Group {groupId} from Class {classId}
-                      </h3>
+                      </h4>
                       <p className="text-gray-600">
                         Had their offer for Candidate {candidateId} <span className="text-green-700 font-bold">ACCEPTED</span>.
                       </p>
@@ -666,12 +626,12 @@ const Grouping = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="bg-springWater p-4 rounded-md text-center">
-              <p className="text-navy">No accepted offers yet</p>
-            </div>
-          )}
+            ) : (
+              <div className="bg-springWater border border-wood p-2 rounded-md text-center">
+                <p className="text-navy">No accepted offers yet</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -39,6 +39,8 @@ const Upload = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedResume, setSelectedResume] = useState<number | null>(null);
   const router = useRouter();
+  const [jobFile, setJobFile] = useState<File | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [pendingOffers, setPendingOffers] = useState<
   { classId: number; groupId: number; candidateId: number }[]
   >([]);  
@@ -173,45 +175,60 @@ const Upload = () => {
     }
   };
 
-  const uploadFile = async (type: "job" | "resume") => {
-    if (!file) return alert("Please select a file before uploading.");
-  
-    const formData = new FormData();
-    formData.append(type === "job" ? "jobDescription" : "resume", file);
-  
-    try {
-      setUploading(true);
+const handleJobFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files && e.target.files.length > 0) {
+    setJobFile(e.target.files[0]);
+  }
+};
+const handleResumeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files && e.target.files.length > 0) {
+    setResumeFile(e.target.files[0]);
+  }
+};
 
-  
-      const response = await fetch(`${API_BASE_URL}/upload/${type}`, { 
-        method: "POST", 
-        body: formData 
+const uploadFile = async (type: "job" | "resume") => {
+  const fileToUpload = type === "job" ? jobFile : resumeFile;
+  if (!fileToUpload) return alert("Please select a file before uploading.");
+  if (type === "job" && !title.trim()) return alert("Please enter a job title before uploading.");
+  if (type === "resume" && !resTitle.trim()) return alert("Please enter a resume title before uploading.");
+
+  const formData = new FormData();
+  formData.append(type === "job" ? "jobDescription" : "resume", fileToUpload);
+
+  try {
+    setUploading(true);
+
+    const response = await fetch(`${API_BASE_URL}/upload/${type}`, { 
+      method: "POST", 
+      body: formData 
+    });
+
+    if (!response.ok) throw new Error("File upload failed");
+    const { filePath } = await response.json();
+
+    if (type === "job") {
+      await fetch(`${API_BASE_URL}/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, filePath }),
       });
-  
-      if (!response.ok) throw new Error("File upload failed");
-      const { filePath } = await response.json();
-  
-      if (type === "job") {
-        await fetch(`${API_BASE_URL}/jobs`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, filePath }),
-        });
-        fetchJobs();
-      } else if (type === "resume") {
-        await fetch(`${API_BASE_URL}/resume_pdf`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resTitle, filePath }),
-        });
-        fetchResumes();
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-    } finally {
-      setUploading(false);
+      fetchJobs();
+      setJobFile(null);
+    } else if (type === "resume") {
+      await fetch(`${API_BASE_URL}/resume_pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resTitle, filePath }),
+      });
+      fetchResumes();
+      setResumeFile(null);
     }
-  };  
+  } catch (error) {
+    console.error("Upload error:", error);
+  } finally {
+    setUploading(false);
+  }
+};
 
 const handleResumeSelection = (id: number) => {
   console.log("Selected Resume ID:", id); // Debugging log
@@ -226,34 +243,35 @@ const handleResumeSelection = (id: number) => {
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
       <div className="grid grid-cols-2 gap-4 p-4">
-        <div>
+        <div className="border-4 border-northeasternBlack rounded-lg p-4 bg-white">
           <h2 className="text-2xl font-bold text-navy">Upload Job Description</h2>
           <input type="text" placeholder="Enter job title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 border rounded mt-2" />
-          <input type="file" accept="application/pdf" onChange={saveFile} className="w-full p-2 border rounded mt-2" />
-          <button onClick={() => uploadFile("job")} disabled={uploading} className="w-full bg-wood text-navy p-2 rounded mt-2">
+          <input type="file" accept="application/pdf" onChange={handleJobFile} className="w-full p-2 border rounded mt-2" />
+          <button onClick={() => uploadFile("job")} disabled={uploading} className="w-full bg-northeasternBlack text-northeasternWhite p-2 rounded mt-2">
             {uploading ? "Uploading..." : "Upload"}
           </button>
           <h3 className="text-xl font-bold mt-4">Existing Job Descriptions</h3>
           <ul>
             {jobs.length === 0 ? <p>No job descriptions uploaded yet.</p> : jobs.map((job) => (
-              <li key={job.id} className="border-b py-2">
-                <strong>{job.title}</strong> - <a href={`${API_BASE_URL}/${job.file_path}`} target="_blank" className="text-blue-500">View PDF</a>
-                <div className="flex gap-2">
-          <button 
-            onClick={() => deleteJob(job.file_path)} 
-            className="p-1 bg-red-500 text-white rounded">
-            Delete
-          </button>
-        </div>
+              <li key={job.id} className="border-b py-2 flex justify-between items-center">
+                <div>
+                  <strong>{job.title}</strong> - 
+                  <a href={`${API_BASE_URL}/${job.file_path}`} target="_blank" className="text-blue-500 ml-2">View PDF</a>
+                </div>
+                <button 
+                  onClick={() => deleteJob(job.file_path)} 
+                  className="p-1 bg-red-500 text-white rounded ml-2">
+                  Delete
+                </button>
               </li>
             ))}
           </ul>
         </div>
-        <div>
+        <div className="border-4 border-northeasternBlack rounded-lg p-4 bg-white">
           <h2 className="text-2xl font-bold text-navy">Upload Resume</h2>
           <input type="text" placeholder="Enter resume title" value={resTitle} onChange={(e) => setResTitle(e.target.value)} className="w-full p-2 border rounded mt-2" />
-          <input type="file" accept="application/pdf" onChange={saveFile} className="w-full p-2 border rounded mt-2" />
-          <button onClick={() => uploadFile("resume")} disabled={uploading} className="w-full bg-navy text-white p-2 rounded mt-2">
+          <input type="file" accept="application/pdf" onChange={handleResumeFile} className="w-full p-2 border rounded mt-2" />
+          <button onClick={() => uploadFile("resume")} disabled={uploading} className="w-full bg-northeasternBlack text-northeasternWhite p-2 rounded mt-2">
             {uploading ? "Uploading..." : "Upload"}
           </button>
           <h3 className="text-xl font-bold mt-4">Existing Resumes</h3>
