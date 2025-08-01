@@ -296,102 +296,98 @@ export default function ResReviewGroup() {
             {resumes.map((resume, index) => {
               const resumeNumber = index + 1;
               const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
+              const isHovered = hoveredResume === resumeNumber;
+
               return (
                 <div
                   key={resumeNumber}
-                  className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl flex flex-col justify-between h-full min-h-[250px] w-full p-6 transition hover:scale-[1.02]"
+                  className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl flex flex-col justify-between h-[350px] min-h-[350px] max-h-[350px] max-w-xs mx-auto p-6 transition hover:scale-[1.02]"
+                  onMouseEnter={() => setHoveredResume(resumeNumber)}
+                  onMouseLeave={() => setHoveredResume(null)}
                 >
-                  <h3 className="text-xl font-semibold text-navy mb-2">
-                    Resume {resumeNumber}
-                  </h3>
-                  <div className="relative">
-                    <a
-                      href={`${API_BASE_URL}/${resume.file_path}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-northeasternRed font-bold hover:underline"
-                      onMouseEnter={() => setHoveredResume(resumeNumber)}
-                      onMouseLeave={() => setHoveredResume(null)}
-                    >
-                      Hover to View / Click to Download Resume
-                    </a>
-                    {hoveredResume === resumeNumber && (
-                      <div
-                        className="fixed z-[100] bg-white border-2 border-northeasternRed rounded shadow-lg overflow-hidden"
-                        style={{
-                          width: '32rem',
-                          height: '24rem',
-                          left: '50%',
-                          top: '50%',
-                          transform: 'translate(-50%, -50%)'
-                        }}
-                        onMouseEnter={() => setHoveredResume(resumeNumber)}
-                        onMouseLeave={() => setHoveredResume(null)}
+                  {isHovered ? (
+                    <div className="flex flex-col items-center justify-center h-full w-full">
+                      <div className="flex gap-2 mb-2">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setZoomLevel(prev => Math.max(prev - 25, 50));
+                          }}
+                          className="w-8 h-8 bg-northeasternRed text-white rounded hover:bg-redHeader"
+                          title="Zoom Out"
+                        >
+                          −
+                        </button>
+                        <span className="px-2 py-1 bg-gray-200 rounded text-sm">
+                          {zoomLevel}%
+                        </span>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setZoomLevel(prev => Math.min(prev + 25, 400));
+                          }}
+                          className="w-8 h-8 bg-northeasternRed text-white rounded hover:bg-redHeader"
+                          title="Zoom In"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div 
+                        className="w-full h-[250px] flex items-center justify-center rounded border border-gray-300 overflow-hidden"
                       >
-                        <div className="absolute top-2 right-2 z-[1001] flex gap-1">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setZoomLevel(prev => Math.max(prev - 25, 50));
-                            }}
-                            className="w-8 h-8 bg-northeasternRed text-white rounded hover:bg-redHeader"
-                            title="Zoom Out"
-                          >
-                            −
-                          </button>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setZoomLevel(prev => Math.min(prev + 25, 200));
-                            }}
-                            className="w-8 h-8 bg-northeasternRed text-white rounded hover:bg-redHeader"
-                            title="Zoom In"
-                          >
-                            +
-                          </button>
+                        <iframe
+                          src={`${API_BASE_URL}/${resume.file_path}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
+                          title={`Resume Preview ${resumeNumber}`}
+                          className="rounded"
+                          style={{
+                            width: "100%",
+                            height: "250px",
+                            transform: `scale(${zoomLevel / 100})`,
+                            transformOrigin: "center center",
+                            border: "none",
+                          }}
+                        />
+                      </div>
+                    </div>
+                    ) : (
+                    <>
+                      <h3 className="text-xl font-semibold text-navy mb-2">
+                        Resume {resumeNumber}
+                      </h3>
+                      <div className="relative">
+                        <a
+                          href={`${API_BASE_URL}/${resume.file_path}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-northeasternRed font-bold hover:underline"
+                        >
+                          Hover to View
+                        </a>
+                      </div>
+                      <div className="mt-4 flex flex-col gap-2 bg-gray-100 p-4">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-green-700 bg-green-100 px-2 py-1 rounded">✔ Yes</span>
+                          <span className="text-green-700 font-semibold text-lg">{votes.yes}</span>
                         </div>
-                        <div className="w-full h-full overflow-auto flex items-center justify-center">
-                          <iframe
-                            src={`${API_BASE_URL}/${resume.file_path}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
-                            title={`Resume Preview ${resumeNumber}`}
-                            className="rounded"
-                            style={{
-                              width: `${zoomLevel}%`,
-                              height: `${zoomLevel}%`,
-                              transform: `scale(${zoomLevel / 100})`,
-                              transformOrigin: "top left",
-                              border: "none",
-                              minWidth: "100%",
-                              minHeight: "100%",
-                            }}
-                          />
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-red-700 bg-red-100 px-2 py-1 rounded">✖ No</span>
+                          <span className="text-red-700 font-semibold text-lg">{votes.no}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">? Skip</span>
+                          <span className="text-yellow-700 font-semibold text-lg">{votes.undecided}</span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="mt-4 flex flex-col gap-2 bg-gray-100 p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-green-700 bg-green-100 px-2 py-1 rounded">✔ Yes</span>
-                      <span className="text-green-700 font-semibold text-lg">{votes.yes}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-red-700 bg-red-100 px-2 py-1 rounded">✖ No</span>
-                      <span className="text-red-700 font-semibold text-lg">{votes.no}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-yellow-700 bg-yellow-100 px-2 py-1 rounded">? Undecided</span>
-                      <span className="text-yellow-700 font-semibold text-lg">{votes.undecided}</span>
-                    </div>
-                  </div>
-
-                  <label className="flex items-center mt-4">
-                    <input
-                      type="checkbox"
-                      checked={checkedState[resumeNumber] || false}
-                      onChange={() => handleCheckboxChange(resumeNumber)}
-                    />
-                    <span className="ml-2 text-navy">Selected for Further Review</span>
-                  </label>
+                      <label className="flex items-center mt-4">
+                        <input
+                          type="checkbox"
+                          checked={checkedState[resumeNumber] || false}
+                          onChange={() => handleCheckboxChange(resumeNumber)}
+                        />
+                        <span className="ml-2 text-navy">Selected for Further Review</span>
+                      </label>
+                    </>
+                  )}
                 </div>
               );
             })}
