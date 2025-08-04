@@ -1,7 +1,7 @@
-//Importing necessary modules and packages
 const express = require("express"); //Api framework
 const mysql = require("mysql2"); //MySQL database driver
 const passport = require("passport"); //Authentication middleware
+const KeycloakStrategy = require("@exlinc/keycloak-passport");
 const session = require("express-session"); //Session management middleware, which is used for creating and managing user sessions
 const OpenIDConnectStrategy = require("passport-openidconnect").Strategy; //OpenID Connect authentication strategy for Passport
 const dotenv = require("dotenv");// dotenv package to load environment variables from a .env file into process.env
@@ -11,8 +11,7 @@ const multer = require("multer"); //Middleware for handling multipart/form-data,
 const fs = require("fs"); //File system module for interacting with the file system
 const path = require("path");  // Path module for working with file and directory paths
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Note: Using built-in fetch (Node.js 18+) and URLSearchParams for HTTP requests
-require('https').globalAgent.options.rejectUnauthorized = false;
+const https = require('https');
 
 // Load environment variables from .env file, creates an express server, and sets up Socket.io
 dotenv.config();
@@ -253,62 +252,66 @@ async function initializeApp() {
   server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
-}
+};
 
-const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch');
+const originalRequest = https.request;
+https.request = function(options, callback) {
+  console.log("=== HTTPS REQUEST ===");
+  console.log("URL:", `${options.protocol}//${options.hostname}:${options.port}${options.path}`);
+  console.log("Method:", options.method);
+  console.log("Headers:", options.headers);
+  
+  const req = originalRequest.call(this, options, callback);
+  
+  // Log the response
+  req.on('response', (res) => {
+    console.log("=== HTTPS RESPONSE ===");
+    console.log("Status:", res.statusCode);
+    console.log("Headers:", res.headers);
+    
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      console.log("Response Body:", data);
+    });
+  });
+  
+  req.on('error', (err) => {
+    console.log("=== HTTPS REQUEST ERROR ===");
+    console.log("Error:", err.message);
+  });
+  
+  return req;
+};
 
 function configurePassport() {
-  console.log("=== Configuring Passport with Keycloak ===");
-
-  const issuerUrl = `https://localhost:8443/realms/${process.env.KEYCLOAK_REALM}`;
-  const tokenUrl = `${issuerUrl}/protocol/openid-connect/token`;
-  const userInfoUrl = `${issuerUrl}/protocol/openid-connect/userinfo`;
-
-  passport.use('oidc', new OpenIDConnectStrategy({
-    issuer: issuerUrl,
-    authorizationURL: `${issuerUrl}/protocol/openid-connect/auth`,
-    tokenURL: tokenUrl,
-    userInfoURL: userInfoUrl,
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  
+  const browserIssuer = "https://localhost:8443/realms/NUHire-Realm";
+  
+  // Container-facing URLs (for server-to-server communication)
+  const containerIssuer = "https://host.docker.internal:8443/realms/NUHire-Realm";
+  
+  passport.use('keycloak', new KeycloakStrategy({
+    host: "https://host.docker.internal:8443", // Server-to-server
+    issuer: containerIssuer, // Server-to-server
+    userInfoURL: `${containerIssuer}/protocol/openid-connect/userinfo`, // Server-to-server
+    authorizationURL: `${browserIssuer}/protocol/openid-connect/auth`, // Browser-facing
+    tokenURL: `${containerIssuer}/protocol/openid-connect/token`, // Server-to-server
+    realm: process.env.KEYCLOAK_REALM,
     clientID: process.env.KEYCLOAK_CLIENT_ID,
     clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-    callbackURL: 'http://localhost:5001/auth/keycloak/callback',
-    skipUserProfile: true,
+    callbackURL: "http://localhost:5001/auth/keycloak/callback",
+    callbackURL: "http://localhost:5001/auth/keycloak/callback",
     scope: ['openid', 'profile', 'email'],
-    passReqToCallback: false
   }, async (accessToken, refreshToken, params, profile, done) => {
-    console.log("=== Passport Callback ===");
+    console.log("=== Passport Callback SUCCESS ===");
+    console.log("Profile:", JSON.stringify(profile, null, 2));
 
-    let email = null;
-    try {
-      // Decode ID token to extract user info
-      const idToken = params.id_token;
-      if (!idToken) {
-        console.error("❌ ID Token is missing");
-        return done(new Error("ID Token not present in token response"));
-      }
-
-      const decoded = jwt.decode(idToken);
-      console.log("🔓 Decoded ID Token:", decoded);
-
-      if (decoded?.email) {
-        email = decoded.email;
-        console.log("✅ Email extracted from ID Token:", email);
-      } else if (decoded?.preferred_username?.includes('@')) {
-        email = decoded.preferred_username;
-        console.log("✅ Email from preferred_username:", email);
-      } else {
-        console.error("❌ No email found in ID Token");
-        return done(new Error("Email not found in ID Token"));
-      }
-
-    } catch (error) {
-      console.error("❌ Error decoding ID token:", error);
-      return done(error);
-    }
-
-    // Normalize and use email to find user in DB
-    email = email.toLowerCase().trim();
+    
+    let email = profile.email.toLowerCase().trim();
 
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
       if (err) {
@@ -562,7 +565,7 @@ io.on("connection", (socket) => {
 // Keycloak OAuth 2.0 authentication routes
 
 // The "/auth/keycloak" route initiates the authentication process by redirecting the user to the Keycloak login page
-app.get("/auth/keycloak", passport.authenticate("oidc"));
+app.get("/auth/keycloak", passport.authenticate("keycloak"));
 
 // The "/auth/keycloak/callback" route is the callback URL that Keycloak redirects to after the user has authenticated
 // The server handles the authentication response and checks if the user exists in the database
@@ -573,7 +576,7 @@ app.get("/auth/keycloak/callback",
     console.log("Session before auth:", req.session);
     next();
   },
-  passport.authenticate("oidc", { 
+  passport.authenticate("keycloak", { 
     failureRedirect: "/",
     failureFlash: false
   }),
