@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import Slideshow from "../components/Slideshow";
+import Slideshow from "../components/slideshow";
 
 interface ModeratorInfo {
   id: number;
