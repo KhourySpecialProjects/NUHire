@@ -1,61 +1,38 @@
 'use client';
 import React from "react";
-import Slider from "react-slick";
 import Image from "next/image";
+import Slideshow from "./components/slideshow";
 import './globals.css';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-const SLIDESHOW_IMAGES = [
-  "/Khoury/1.jpg",
-  "/Khoury/2.jpg",
-  "/Khoury/3.jpg",
-  "/Khoury/4.jpg",
-  "/Khoury/5.jpg",
-  "/Khoury/6.jpg",
-];
 
 export default function Home() {
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
-  const sliderSettings = {
-    dots: false,
-    infinite: true,
-    speed: 1000,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 4000,
-    fade: true,
-    arrows: false,
+  const handleModeratorLogin = () => {
+    window.location.href = "/mod-signin";
   };
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center font-rubik relative overflow-hidden">
       {/* Slideshow Background */}
-      <div className="absolute inset-0 z-0">
-        <Slider {...sliderSettings} className="h-full">
-          {SLIDESHOW_IMAGES.map((image, index) => (
-            <div key={index} className="h-screen">
-              <div
-                className="h-full bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${image})`,
-                }}
-              />
-            </div>
-          ))}
-        </Slider>
-      </div>
-      
+      <Slideshow />
+
       {/* Semi-transparent overlay for better text readability */}
       <div className="absolute inset-0 bg-sand/70 z-1" />
 
       {/* Navigation Bar */}
       <div className="w-full flex justify-end p-8 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl fixed top-0 z-20">
+        <button
+            onClick={handleModeratorLogin}
+            className="mt-8 px-6 py-4 bg-white text-northeasternRed border-4 border-northeasternRed rounded-md text-xl font-bold transition-all duration-200 hover:opacity-60 active:opacity-30 hover:scale-105 shadow-lg"
+          >
+            Moderator
+          </button>
       </div>
 
       {/* Main Content */}

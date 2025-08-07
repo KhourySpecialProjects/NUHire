@@ -16,6 +16,7 @@ export default function SignupDetails() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const [modPass, setModPass] = useState('');
 
   useEffect(() => {
     // Get email from URL query parameter (passed from Google OAuth)
@@ -121,7 +122,9 @@ export default function SignupDetails() {
         >
           <option value="none">Select Affiliation *</option>
           <option value="student">Student</option>
-          <option value="admin">Faculty</option>
+          <option value="teacher">Faculty</option>
+          <option value="moderator">Faculty</option>
+
         </select>
 
         {/* Group number input - only shown for students */}
@@ -143,6 +146,20 @@ export default function SignupDetails() {
             className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={courseNumber} 
             onChange={(e) => setCourseNumber(e.target.value)} 
+            required 
+            min="1"
+          />
+          </div>
+        )}
+
+        {affiliation === 'moderator' && (
+          <div  className="w-full rounded-lg flex flex-col gap-4">
+          <input 
+            type="string" 
+            placeholder="Password" 
+            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={groupNumber} 
+            onChange={(e) => setModPass(e.target.value)} 
             required 
             min="1"
           />

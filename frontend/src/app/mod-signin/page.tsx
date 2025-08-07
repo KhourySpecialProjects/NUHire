@@ -1,0 +1,63 @@
+'use client';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Slideshow from "../components/slideshow";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+export default function ModeratorSignIn() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch(`${API_BASE_URL}/moderator-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+    });
+    if (res.ok) {
+        router.push("/mod-dashboard"); 
+    } else {
+        alert("Invalid credentials");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Slideshow Background */}
+      <Slideshow />
+
+      {/* Semi-transparent overlay for better text readability */}
+      <div className="absolute inset-0 bg-sand/70 z-1" />
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-lg shadow-md flex flex-col gap-4 w-full max-w-sm z-10"
+      >
+        <h2 className="text-2xl font-bold text-center text-northeasternRed">Moderator Sign In</h2>
+        <input
+          type="text"
+          placeholder="Moderator Username"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          className="border p-2 rounded"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          className="border p-2 rounded"
+          required
+        />
+        <button
+          type="submit"
+          className="bg-navy text-white py-2 rounded hover:bg-navy/80 transition"
+        >
+          Sign In
+        </button>
+        </form>
+    </div>
+  );
+}
