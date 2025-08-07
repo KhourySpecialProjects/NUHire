@@ -2,9 +2,9 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import Slideshow from "../components/Slideshow";
 
 interface ModeratorInfo {
   id: number;
@@ -19,7 +19,7 @@ const ModDashboard = () => {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [form, setForm] = useState({ admin_email: "", crn: "", nom_groups: "" });
   const [submitting, setSubmitting] = useState(false);
-  const router = useRouter();
+  const [deletingCRN, setDeletingCRN] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchCRNs = async () => {
@@ -38,7 +38,7 @@ const ModDashboard = () => {
       }
     };
     fetchCRNs();
-  }, [submitting]);
+  }, [submitting, deletingCRN]);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -57,7 +57,9 @@ const ModDashboard = () => {
           nom_groups: Number(form.nom_groups),
         }),
       });
-      if (res.ok) {
+      if (res.status === 409) {
+        setPopup({ headline: "Duplicate", message: "This CRN already exists." });
+      } else if (res.ok) {
         setForm({ admin_email: "", crn: "", nom_groups: "" });
         setPopup({ headline: "Success", message: "Class added!" });
       } else {
@@ -70,89 +72,115 @@ const ModDashboard = () => {
     }
   };
 
+  const handleDelete = async (crn: number) => {
+    if (!window.confirm("Are you sure you want to delete this CRN?")) return;
+    setDeletingCRN(crn);
+    try {
+      const res = await fetch(`${API_BASE_URL}/moderator-crns/${crn}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setPopup({ headline: "Success", message: "CRN deleted!" });
+      } else {
+        setPopup({ headline: "Error", message: "Failed to delete CRN." });
+      }
+    } catch {
+      setPopup({ headline: "Error", message: "Failed to delete CRN." });
+    } finally {
+      setDeletingCRN(null);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="bg-sand font-rubik min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen font-rubik relative overflow-hidden">
+      {/* Optional: Uncomment to show slideshow background */}
+      {/* <Slideshow />
+      <div className="absolute inset-0 bg-sand/70 z-1" /> */}
       <Navbar />
-
       <div className="flex-1 flex flex-col px-4 py-8">
         <div className="font-extrabold text-3xl font-rubik text-redHeader mb-6 text-center">
-          <h3>Valid CRNs & Groups</h3>
+          <h3>Moderator Class Management</h3>
         </div>
 
-        {/* Add CRN Form */}
-        <form
-          onSubmit={handleFormSubmit}
-          className="bg-white border-2 border-northeasternRed rounded-xl shadow-md p-6 mb-8 max-w-lg mx-auto flex flex-col gap-4"
-        >
-          <h4 className="text-xl font-bold text-northeasternRed mb-2">Add a Class</h4>
-          <input
-            type="email"
-            name="admin_email"
-            placeholder="Admin Email"
-            value={form.admin_email}
-            onChange={handleFormChange}
-            className="border p-2 rounded"
-            required
-          />
-          <input
-            type="number"
-            name="crn"
-            placeholder="CRN"
-            value={form.crn}
-            onChange={handleFormChange}
-            className="border p-2 rounded"
-            required
-          />
-          <input
-            type="number"
-            name="nom_groups"
-            placeholder="Number of Groups"
-            value={form.nom_groups}
-            onChange={handleFormChange}
-            className="border p-2 rounded"
-            required
-          />
-          <button
-            type="submit"
-            className="bg-navy text-white py-2 rounded hover:bg-navy/80 transition"
-            disabled={submitting}
-          >
-            {submitting ? "Adding..." : "Add Class"}
-          </button>
-        </form>
+        <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl mx-auto">
+          {/* Left: List of Classes */}
+          <div className="flex-1 bg-white border-2 border-northeasternRed rounded-xl shadow-md p-6">
+            <h4 className="text-xl font-bold text-northeasternRed mb-4 text-center">Classes</h4>
+            {info.length === 0 ? (
+              <div className="text-center text-gray-600">No CRNs found.</div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {info.map((i) => (
+                  <div
+                    key={i.id}
+                    className="w-full bg-northeasternWhite border border-northeasternRed rounded-lg shadow flex flex-col md:flex-row md:items-center justify-between p-4"
+                  >
+                    <div>
+                      <div className="font-bold text-northeasternRed">CRN: {i.crn}</div>
+                      <div className="text-navy text-sm">Groups: {i.nom_groups}</div>
+                      <div className="text-navy text-sm">Admin: {i.admin_email}</div>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(i.crn)}
+                      className="mt-2 md:mt-0 px-4 py-2 bg-northeasternRed text-white rounded hover:bg-navy transition"
+                      disabled={deletingCRN === i.crn}
+                    >
+                      {deletingCRN === i.crn ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div className="flex-1 flex items-center justify-center">
-          {info.length === 0 ? (
-            <div className="text-center text-gray-600">No CRNs found.</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-              {info.map((i) => (
-                <div
-                  key={i.id}
-                  className="w-full min-h-[180px] max-w-[500px] mx-auto bg-northeasternWhite border-2 border-northeasternRed rounded-xl shadow-lg flex flex-col justify-center items-center font-semibold text-lg p-6"
-                >
-                  <div className="text-2xl font-bold text-northeasternRed mb-2">CRN: {i.crn}</div>
-                  <div className="text-lg text-navy mb-1">
-                    <span className="font-bold">Number of Groups:</span> {i.nom_groups}
-                  </div>
-                  <div className="text-lg text-navy">
-                    <span className="font-bold">Admin Email:</span>
-                    <ul className="list-disc ml-6">
-                      <li>{i.admin_email}</li>
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Right: Add a Class */}
+          <div className="flex-1 bg-white border-2 border-northeasternRed rounded-xl shadow-md p-6">
+            <h4 className="text-xl font-bold text-northeasternRed mb-4 text-center">Add a Class</h4>
+            <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
+              <input
+                type="email"
+                name="admin_email"
+                placeholder="Admin Email"
+                value={form.admin_email}
+                onChange={handleFormChange}
+                className="border p-2 rounded"
+                required
+              />
+              <input
+                type="number"
+                name="crn"
+                placeholder="CRN"
+                value={form.crn}
+                onChange={handleFormChange}
+                className="border p-2 rounded"
+                required
+              />
+              <input
+                type="number"
+                name="nom_groups"
+                placeholder="Number of Groups"
+                value={form.nom_groups}
+                onChange={handleFormChange}
+                className="border p-2 rounded"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-navy text-white py-2 rounded hover:bg-navy/80 transition"
+                disabled={submitting}
+              >
+                {submitting ? "Adding..." : "Add Class"}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
-
       <Footer />
-    </div>
-    );
+      </div>
+  );
 };
 
 export default ModDashboard;
