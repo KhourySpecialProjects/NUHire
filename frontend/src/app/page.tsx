@@ -26,13 +26,13 @@ export default function Home() {
       <div className="absolute inset-0 bg-sand/70 z-1" />
 
       {/* Navigation Bar */}
-      <div className="w-full flex justify-end p-8 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl fixed top-0 z-20">
+      <div className="w-full flex justify-end p-4 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-lg fixed top-0 z-20">
         <button
-            onClick={handleModeratorLogin}
-            className="mt-8 px-6 py-4 bg-white text-northeasternRed border-4 border-northeasternRed rounded-md text-xl font-bold transition-all duration-200 hover:opacity-60 active:opacity-30 hover:scale-105 shadow-lg"
-          >
-            Moderator
-          </button>
+          onClick={handleModeratorLogin}
+          className="mt-2 px-4 py-2 bg-white text-northeasternRed border-2 border-northeasternRed rounded-md text-sm font-bold transition-all duration-200 hover:opacity-60 active:opacity-30 hover:scale-105 shadow-lg"
+        >
+          Moderator
+        </button>
       </div>
 
       {/* Main Content */}

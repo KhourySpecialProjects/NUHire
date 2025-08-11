@@ -71,7 +71,7 @@ export default function SignupDetails() {
       }
     }
 
-    if (affiliation === 'faculty') {
+    if (affiliation === 'admin') {
       try {
         const res = await fetch(
           `${API_BASE_URL}/moderator-classes/${email}`,
