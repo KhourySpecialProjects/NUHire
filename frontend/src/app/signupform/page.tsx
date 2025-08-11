@@ -16,9 +16,9 @@ export default function SignupDetails() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const [modPass, setModPass] = useState('');
 
   useEffect(() => {
-    // Get email from URL query parameter (passed from Google OAuth)
     const urlParams = new URLSearchParams(window.location.search);
     const userEmail = urlParams.get('email');
     if (userEmail) {
@@ -42,6 +42,54 @@ export default function SignupDetails() {
     if (affiliation === 'student' && !groupNumber && !courseNumber) {
       setError('Please enter your group number and course number'); 
       return;
+    }
+
+    if (affiliation === 'student') {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/moderator-crns/${courseNumber}`,
+          { method: 'GET', credentials: 'include' }
+        )
+        if (!res.ok) {
+          setError('Cannot get backend data.');
+          return;
+        }
+        const {id, admin_email, crn, nom_groups} = await res.json();
+        if (Number(crn) !== Number(courseNumber)) {
+          setError('This CRN does not exist. Please check with your instructor.');
+          return;
+        }
+        if (nom_groups < 1 || nom_groups < groupNumber) {
+          setError(
+            `Group number must be between 1 and ${nom_groups} for this CRN.`
+          );
+          return;
+        }
+      } catch {
+        setError('Failed to validate CRN/group number. Please try again.');
+        return;
+      }
+    }
+
+    if (affiliation === 'admin') {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/moderator-classes/${email}`,
+          { method: 'GET', credentials: 'include' }
+        )
+        if (!res.ok) {
+          setError('Cannot get backend data.');
+          return;
+        }
+        const crns = await res.json();
+        if (crns.length === 0) {
+          setError('This email is not set as a instructor.');
+          return;
+        }
+      } catch {
+        setError('Failed to validate Email. Please try again.');
+        return;
+      }
     }
 
     // Create user object

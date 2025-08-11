@@ -1358,6 +1358,78 @@ app.get("/resume_pdf/id/:id", (req, res) => {
 }
 );
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Moderator Sign in
+app.post('/moderator-login', (req, res) => {
+  const { username, password } = req.body;
+    console.log(process.env.MODERATOR_USERNAME);
+    console.log(process.env.MODERATOR_PASSWORD);
+  if (
+    username === process.env.MODERATOR_USERNAME &&
+    password === process.env.MODERATOR_PASSWORD
+  ) {
+    // Set session/cookie/token as needed
+    return res.json({ success: true });
+  }
+  res.status(401).json({ success: false, message: 'Invalid credentials' });
+});
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Moderator table
+
+app.post("/moderator-crns", (req, res) => {
+  const { admin_email, crn, nom_groups } = req.body;
+  if (!admin_email || !crn || !nom_groups) {
+    return res.status(400).json({ error: "admin_email, crn, and nom_groups are required" });
+  }
+  db.query(
+    "INSERT INTO Moderator (admin_email, crn, nom_groups) VALUES (?, ?, ?)",
+    [admin_email, crn, nom_groups],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: result.insertId, admin_email, crn, nom_groups });
+    }
+  );
+});
+
+app.get("/moderator-crns", (req, res) => {
+  db.query("SELECT * FROM Moderator", (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+app.delete("/moderator-crns/:crn", (req, res) => {
+  const { crn } = req.params;
+  console.log("Deleting CRN:", crn);
+  db.query("DELETE FROM Moderator WHERE crn = ?", [crn], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "CRN not found" });
+    }
+    res.json({ success: true });
+  });
+});
+
+app.get("/moderator-crns/:crn", (req, res) => {
+  const {crn} = req.params;
+  db.query("SELECT * FROM Moderator WHERE crn = ?", [crn], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results[0]);
+  });
+});
+
+app.get("/moderator-classes/:email", (req, res) => {
+  const { email } = req.params;
+  db.query(
+    "SELECT crn FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results.map(row => row.crn));
+    }
+  );
+});
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Canidates API routes
 
