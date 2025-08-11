@@ -45,6 +45,34 @@ export default function SignupDetails() {
       return;
     }
 
+    if (affiliation === 'student') {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/moderator-crns/${courseNumber}`,
+          { method: 'GET', credentials: 'include' }
+        )
+        if (!res.ok) {
+          setError('Cannot get backend data.');
+          return;
+        }
+        const data = await res.json();
+        console.log('CRN data:', data);
+        if (data.crn !== courseNumber) {
+          setError('This CRN does not exist. Please check with your instructor.');
+          return;
+        }
+        if (data.nom_groups < 1 || !(data.nom_groups >= groupNumber)) {
+          setError(
+            `Group number must be between 1 and ${data.nom_groups} for this CRN.`
+          );
+          return;
+        }
+      } catch {
+        setError('Failed to validate CRN/group number. Please try again.');
+        return;
+      }
+    }
+
     // Create user object
     const user = { 
       First_name: firstName, 
@@ -123,8 +151,6 @@ export default function SignupDetails() {
           <option value="none">Select Affiliation *</option>
           <option value="student">Student</option>
           <option value="teacher">Faculty</option>
-          <option value="moderator">Faculty</option>
-
         </select>
 
         {/* Group number input - only shown for students */}

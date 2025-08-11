@@ -96,7 +96,6 @@ const ModDashboard = () => {
 
   return (
     <div className="flex flex-col min-h-screen font-rubik relative overflow-hidden">
-      {/* Optional: Uncomment to show slideshow background */}
       {/* <Slideshow />
       <div className="absolute inset-0 bg-sand/70 z-1" /> */}
       <Navbar />
