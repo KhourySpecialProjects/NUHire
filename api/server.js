@@ -1416,9 +1416,18 @@ app.get("/moderator-crns/:crn", (req, res) => {
   const {crn} = req.params;
   db.query("SELECT * FROM Moderator WHERE crn = ?", [crn], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    console.log(res.json(results));
-    res.json(results);
+    res.json(results[0]);
   });
+});
+
+app.get("/moderator-classes/:email", (req, res) => {
+  const { email } = req.params;
+  db.query(
+    "SELECT crn FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results.map(row => row.crn));
+    }
+  );
 });
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

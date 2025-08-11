@@ -19,7 +19,6 @@ export default function SignupDetails() {
   const [modPass, setModPass] = useState('');
 
   useEffect(() => {
-    // Get email from URL query parameter (passed from Google OAuth)
     const urlParams = new URLSearchParams(window.location.search);
     const userEmail = urlParams.get('email');
     if (userEmail) {
@@ -55,20 +54,40 @@ export default function SignupDetails() {
           setError('Cannot get backend data.');
           return;
         }
-        const data = await res.json();
-        console.log('CRN data:', data);
-        if (data.crn !== courseNumber) {
+        const {id, admin_email, crn, nom_groups} = await res.json();
+        if (Number(crn) !== Number(courseNumber)) {
           setError('This CRN does not exist. Please check with your instructor.');
           return;
         }
-        if (data.nom_groups < 1 || !(data.nom_groups >= groupNumber)) {
+        if (nom_groups < 1 || nom_groups < groupNumber) {
           setError(
-            `Group number must be between 1 and ${data.nom_groups} for this CRN.`
+            `Group number must be between 1 and ${nom_groups} for this CRN.`
           );
           return;
         }
       } catch {
         setError('Failed to validate CRN/group number. Please try again.');
+        return;
+      }
+    }
+
+    if (affiliation === 'faculty') {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/moderator-classes/${email}`,
+          { method: 'GET', credentials: 'include' }
+        )
+        if (!res.ok) {
+          setError('Cannot get backend data.');
+          return;
+        }
+        const crns = await res.json();
+        if (crns.length === 0) {
+          setError('This email is not set as a instructor.');
+          return;
+        }
+      } catch {
+        setError('Failed to validate Email. Please try again.');
         return;
       }
     }
@@ -150,7 +169,7 @@ export default function SignupDetails() {
         >
           <option value="none">Select Affiliation *</option>
           <option value="student">Student</option>
-          <option value="teacher">Faculty</option>
+          <option value="admin">Faculty</option>
         </select>
 
         {/* Group number input - only shown for students */}
@@ -172,20 +191,6 @@ export default function SignupDetails() {
             className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={courseNumber} 
             onChange={(e) => setCourseNumber(e.target.value)} 
-            required 
-            min="1"
-          />
-          </div>
-        )}
-
-        {affiliation === 'moderator' && (
-          <div  className="w-full rounded-lg flex flex-col gap-4">
-          <input 
-            type="string" 
-            placeholder="Password" 
-            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={groupNumber} 
-            onChange={(e) => setModPass(e.target.value)} 
             required 
             min="1"
           />
