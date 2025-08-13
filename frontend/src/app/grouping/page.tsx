@@ -18,6 +18,7 @@ const Grouping = () => {
   }
   
   //Defining the constants and state variables
+  const [assignedClassIds, setAssignedClassIds] = useState<string[]>([]);
   const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
@@ -97,6 +98,47 @@ const Grouping = () => {
     socket.on("makeOfferRequest", onRequest);
     socket.on("makeOfferResponse", onResponse);
 
+    socket.on("moderatorClassAdded", (data) => {
+    if (user?.email === data.admin_email) {
+      console.log("New class assigned to you:", data);
+      // Refresh the admin's assigned classes
+      const fetchAssignedClasses = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/moderator-classes/${user.email}`);
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Updated assigned classes:", data);
+          setAssignedClassIds(data.map(String));
+        } catch (error) {
+          console.error("Error refreshing moderator classes:", error);
+        }
+      };
+      fetchAssignedClasses();
+    }
+  });
+
+  socket.on("moderatorClassRemoved", (data) => {
+    if (user?.email === data.admin_email) {
+      console.log("Class removed from your assignments:", data);
+      const fetchAssignedClasses = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/moderator-classes/${user.email}`);
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Updated assigned classes:", data);
+          setAssignedClassIds(data.map(String));
+        } catch (error) {
+          console.error("Error refreshing moderator classes:", error);
+        }
+      };
+      fetchAssignedClasses();
+    }
+  });
+
     socket.on("disconnect", () => {
       console.log("Admin disconnected from socket");
     });
@@ -125,43 +167,44 @@ const Grouping = () => {
       prev.filter((o) => o.classId != classId || o.groupId !== groupId || o.candidateId !== candidateId)
     );
   };
-  
 
-  // ✅ Fetch available classes
+  interface ModeratorClass {
+    admin_email: string;
+    crn: number;
+    nom_groups: number;
+  }
+
+  // Then update your useEffect to use this type
   useEffect(() => {
-    const fetchClasses = async () => {
+  const fetchAssignedClasses = async () => {
+    console.log("Fetching assigned classes for user:", user?.email);
+    if (user?.email && user.affiliation === "admin") {
       try {
-        const response = await fetch(`${API_BASE_URL}/classes`);
-        const data = await response.json();
-        setClasses(data);
-        if (data.length > 0) {
-          setSelectedClass(data[0].id.toString());
+        // First get the assigned class IDs
+        const response = await fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`);
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
         }
+        const data = await response.json() as ModeratorClass[];
+        console.log("Admin's assigned classes (full data):", data);
+        
+        const classIds = data.map((item: ModeratorClass) => String(item.crn));
+        console.log("Extracted class IDs:", classIds);
+        
+        setAssignedClassIds(classIds);
+        setClasses(data.map((item: ModeratorClass) => ({
+          id: item.crn,
+          name: `CRN ${item.crn} - ${item.admin_email} (${item.nom_groups} groups)`
+        })));
+        console.log("Classes set:", classes);
       } catch (error) {
-        console.error("Error fetching classes:", error);
+        console.error("Error fetching moderator classes:", error);
       }
-    };
-    fetchClasses();
-  }, []);
-
-  // ✅ Fetch students from the database filtered by class
-  useEffect(() => {
-    const fetchStudents = async () => {
-      if (!selectedClass) return;
-      
-      try { 
-        const response = await fetch(`${API_BASE_URL}/students?class=${selectedClass}`);
-        const data = await response.json();
-        setStudents(data);
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      }
-    };
-    
-    if (selectedClass) {
-      fetchStudents();
     }
-  }, [selectedClass]);
+  };
+  
+  fetchAssignedClasses();
+}, [user]);
 
   // ✅ Fetch groups filtered by class
   useEffect(() => {
@@ -177,8 +220,21 @@ const Grouping = () => {
       }
     };
   
+    const fetchStudents = async () => {
+      if (!selectedClass) return;
+      
+      try { 
+        const response = await fetch(`${API_BASE_URL}/students?class=${selectedClass}`);
+        const data = await response.json();
+        setStudents(data);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+
     if (selectedClass) {
       fetchGroups();
+      fetchStudents();
     }
   }, [selectedClass]);
 
@@ -258,16 +314,14 @@ const Grouping = () => {
       
       // Refresh groups for the specific class
       const fetchGroups = async () => {
+        if (!selectedClass) return;
+        
         try {
-          const response = await fetch(`${API_BASE_URL}/groups?class=${classId}`);
+          const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
           const data = await response.json();
-          // Only update if this is the currently selected class
-          setGroups(prevGroups => {
-            // You could add a check here to only update if classId matches current selection
-            return data;
-          });
+          setGroups(data);
         } catch (error) {
-          console.error("Error refreshing groups:", error);
+          console.error("Error fetching groups:", error);
         }
       };
       fetchGroups();
@@ -285,7 +339,16 @@ const Grouping = () => {
 
   // ✅ Handle class selection change
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedClass(e.target.value);
+    const newClass = e.target.value;
+    
+    // For admin users, verify they are assigned to this class
+    if (user?.affiliation === "admin" && newClass && 
+        !assignedClassIds.includes(newClass)) {
+      alert("You are not assigned to this class.");
+      return;
+    }
+    
+    setSelectedClass(newClass);
     setSelectedStudents([]);
     setSelectedJobs([]);
     setGroupId("");
@@ -313,6 +376,7 @@ const Grouping = () => {
       try { 
         const response = await fetch(`${API_BASE_URL}/jobs`);
         const data = await response.json();
+        console.log("Fetching jobs from:", data);
         setJobs(data);
       } catch (error) {
         console.error("Error fetching jobs:", error);
@@ -340,6 +404,11 @@ const Grouping = () => {
   const handleAssignGroup = async () => {
     if (!group_id || selectedStudents.length === 0 || !selectedClass) {
       alert("Please enter a valid group ID, select a class, and select at least one student.");
+      return;
+    }
+
+    if (user?.affiliation === "admin" && !assignedClassIds.includes(selectedClass)) {
+      alert("You are not assigned to this class.");
       return;
     }
 
@@ -377,6 +446,12 @@ const Grouping = () => {
       alert("Please enter a valid group ID, select a class, and select a Job.");
       return;
     }
+
+    if (user?.affiliation === "admin" && !assignedClassIds.includes(selectedClass)) {
+      alert("You are not assigned to this class.");
+      return;
+    }
+    
 
     try {
       const response = await fetch(`${API_BASE_URL}/update-job`, {
@@ -421,6 +496,9 @@ const Grouping = () => {
         <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
           <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
           <div className="mb-4">
+            <label className="block text-navy font-semibold mb-2">
+              Your Assigned Classes
+            </label>
             <select
               value={selectedClass}
               onChange={handleClassChange}
@@ -429,10 +507,16 @@ const Grouping = () => {
               <option value="">Select a class</option>
               {classes.map(classItem => (
                 <option key={classItem.id} value={classItem.id}>
+                  {/* Display "Class" prefix since now name is just the CRN number */}
                   {classItem.name}
                 </option>
               ))}
             </select>
+            {classes.length === 0 && (
+              <p className="text-red-500 text-sm mt-1">
+                You have no assigned classes. Please contact the administrator.
+              </p>
+            )}
           </div>
           {/* Group ID Input */}
           <input
@@ -517,10 +601,17 @@ const Grouping = () => {
             Assign Job
           </button>
         </div>
-
         <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
-          <h2 className="text-2xl font-bold text-northeasternRed mb-4">Groups {selectedClass ? `in Class ${selectedClass}` : ''}</h2>
-          {groups && Object.keys(groups).length > 0 ? (
+          <h2 className="text-2xl font-bold text-northeasternRed mb-4">
+            {selectedClass ? `Groups in Class ${selectedClass}` : 'Groups'}
+          </h2>
+          
+          {!selectedClass ? (
+            <div className="flex flex-col items-center justify-center h-48 text-center">
+              <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
+              <p className="text-gray-500 text-sm mt-1">Groups will appear here after selecting a class</p>
+            </div>
+          ) : groups && Object.keys(groups).length > 0 ? (
             Object.entries(groups).map(([group_id, students]) => (
               <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
                 {isNaN(Number(group_id)) ? (
@@ -558,7 +649,6 @@ const Grouping = () => {
             <p className="text-northeasternBlack text-center">No groups found for this class.</p>
           )}
         </div>
-
         <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
           <h2 className="text-2xl font-bold text-northeasternRed mb-4">Pending & Accepted Offers</h2>
           {/* Pending Offers */}

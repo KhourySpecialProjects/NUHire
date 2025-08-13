@@ -170,8 +170,6 @@ app.use(passport.session());
 
 // Middleware for logging session data and authenticated user information for debugging purposes
 app.use((req, res, next) => {
-  console.log("Session Data:", req.session);
-  console.log("Authenticated User:", req.user);
   next();
 });
 
@@ -227,6 +225,7 @@ async function initializeApp() {
       db = await connectToDatabase();
       global.db = db; // Make it globally available
       connected = true;
+      initializeDatabase();
       console.log("Database connection established successfully");
     } catch (error) {
       retryCount++;
@@ -279,7 +278,6 @@ function configurePassport() {
   });
   
   passport.deserializeUser((identifier, done) => {
-    console.log("Deserializing user:", identifier);
     const query = isNaN(identifier)
       ? "SELECT * FROM Users WHERE email = ?"
       : "SELECT * FROM Users WHERE id = ?";
@@ -287,10 +285,73 @@ function configurePassport() {
     db.query(query, [identifier], (err, results) => {
       if (err) return done(err);
       if (results.length === 0) return done(null, false);
-      console.log("User found:", results[0]);
       return done(null, results[0]);
     });
   });
+}
+
+const initializeDatabase = () => {
+  const queries = [
+    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@husky.neu.edu', 1, 1)",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Sample', 'uploads/jobdescription/sample-job-description.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Source One', 'uploads/jobdescription/SourceOneJobDescription.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Two Six Labs', 'uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample1', 'uploads/resumes/sample1.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample2', 'uploads/resumes/sample2.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample3', 'uploads/resumes/sample3.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample4', 'uploads/resumes/sample4.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample5', 'uploads/resumes/sample5.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample6', 'uploads/resumes/sample6.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample7', 'uploads/resumes/sample7.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample8', 'uploads/resumes/sample8.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample9', 'uploads/resumes/sample9.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample10', 'uploads/resumes/sample10.pdf')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (1, 'https://www.youtube.com/embed/OVAMb6Kui6A')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (2, 'https://www.youtube.com/embed/KCm6JVtoRdo')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (3, 'https://www.youtube.com/embed/srw4r3htm4U')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (4, 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (5, 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (6, 'https://www.youtube.com/embed/6bJTEZnTT5A')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (7, 'https://www.youtube.com/embed/es7XtrloDIQ')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (8, 'https://www.youtube.com/embed/0siE31sqz0Q')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (9, 'https://www.youtube.com/embed/5v-wyR5emRw')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (10, 'https://www.youtube.com/embed/TQHW7gGjrCQ')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (1, 'Interview1', 'https://www.youtube.com/embed/OVAMb6Kui6A')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (2, 'Interview2', 'https://www.youtube.com/embed/KCm6JVtoRdo')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (3, 'Interview3', 'https://www.youtube.com/embed/srw4r3htm4U')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (4, 'Interview5', 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (5, 'Interview5', 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (6, 'Interview6', 'https://www.youtube.com/embed/6bJTEZnTT5A')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (7, 'Interview7', 'https://www.youtube.com/embed/es7XtrloDIQ')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (8, 'Interview8', 'https://www.youtube.com/embed/0siE31sqz0Q')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (9, 'Interview9', 'https://www.youtube.com/embed/5v-wyR5emRw')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (10, 'Interview10', 'https://www.youtube.com/embed/TQHW7gGjrCQ')"
+      ];
+      
+  const executeQueries = async () => {
+    for (const query of queries) {
+      try {
+        await new Promise((resolve, reject) => {
+          db.query(query, (err, result) => {
+            if (err) {
+              console.error(`FULL ERROR for query [${query}]:`, err);
+              resolve();
+            } else {
+              resolve(result);
+            }
+          });
+         });
+      } catch (error) {
+        console.error(`Exception in query: ${query.substring(0, 60)}...`, error);
+      }
+    }
+    console.log("Database initialization completed!");
+  };
+      
+  executeQueries();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Socket.io configuration for real-time communication between the server and clients
@@ -301,8 +362,6 @@ let onlineStudents = {};
 // Listen for incoming connections from clients
 // When a client connects, the server logs the connection and sets up event listeners for various events
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
-  console.log(`User connected: ${socket.id}`);
 
   // Listen for the "studentOnline" event, which is emitted by the client when a student comes online
   socket.on("studentOnline", ({ studentId }) => {
@@ -322,8 +381,6 @@ io.on("connection", (socket) => {
     db.query("SELECT group_id, current_page FROM Users WHERE email = ?", [studentId], (err, result) => {
       if (!err && result.length > 0) {
         const { group_id, current_page } = result[0];
-        console.log(`Student ${studentId} (Group ${group_id}) is on ${current_page}`);
-
         io.emit("updateOnlineStudents", { studentId, group_id, current_page });
       }
     });
@@ -615,7 +672,6 @@ app.get("/auth/google/callback",
 
 //check if the user is authenticated and return the user information
 app.get("/auth/user", (req, res) => {
-  console.log("Checking authentication for user:", req.user);
 
   if (!req.session.passport || !req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -836,10 +892,17 @@ app.post("/users", (req, res) => {
 
 // Get all unique classes from the database
 app.get("/classes", (req, res) => {
-  db.query("SELECT DISTINCT class AS id, class AS name FROM Users WHERE class IS NOT NULL ORDER BY class", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results.length ? results : []);
-  });
+  db.query(
+    "SELECT DISTINCT crn AS id, crn AS name FROM Moderator ORDER BY crn", 
+    (err, results) => {
+      if (err) {
+        console.error("Error fetching classes from Moderator table:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log("Classes retrieved from Moderator table:", results);
+      res.json(results.length ? results : []);
+    }
+  );
 });
 
 // Update the students endpoint to filter by class
@@ -856,8 +919,8 @@ app.get("/students", async (req, res) => {
   
   db.query(query, params, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (results.length === 0) return res.status(404).json({ message: "No students found" });
     res.json(results);
+    console.log(results);
   });
 });
 
@@ -1425,7 +1488,18 @@ app.get("/moderator-classes/:email", (req, res) => {
   db.query(
     "SELECT crn FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+      console.log(results)
       res.json(results.map(row => row.crn));
+    }
+  );
+});
+
+app.get("/moderator-classes-full/:email", (req, res) => {
+  const { email } = req.params;
+  db.query(
+    "SELECT * FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
     }
   );
 });
