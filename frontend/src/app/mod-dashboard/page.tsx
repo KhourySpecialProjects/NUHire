@@ -111,11 +111,14 @@ const ModDashboard = () => {
       <div className="fixed inset-0 bg-sand/80 z-5" />
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8 z-10">
-        <div className="font-extrabold text-3xl font-rubik text-redHeader mb-6 text-center">
-          <h3>Moderator Class Management</h3>
-        </div>
+        {/* Title at the very top */}
+        <h1 className="text-3xl font-extrabold text-redHeader text-center mb-8">
+          Moderator Class Management
+        </h1>
 
-        <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl mx-auto">
+        {/* Center the two panels */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl mx-auto">
           {/* Left: List of Classes */}
           <div className="flex-1 bg-white border-2 border-northeasternRed rounded-xl shadow-md p-6">
             <h4 className="text-xl font-bold text-northeasternRed mb-4 text-center">Classes</h4>
@@ -188,8 +191,9 @@ const ModDashboard = () => {
           </div>
         </div>
       </div>
-      <Footer />
       </div>
+      <Footer />
+    </div>
   );
 };
 
