@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Slideshow from "../components/slideshow";
+import Image from "next/image";
 
 // Define API base URL with fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -133,80 +135,100 @@ export default function SignupDetails() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-sand font-rubik">
-      <h1 className="text-3xl font-bold text-navy mb-6">Complete Your Signup</h1>
-  
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-navy shadow-lg rounded-lg p-6 flex flex-col gap-4">
-        <input 
-          type="text" 
-          placeholder="First Name *" 
-          className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={firstName} 
-          onChange={(e) => setFirstName(e.target.value)} 
-          required 
-        />
+      <div className="fixed inset-0 z-0">
+        <Slideshow />
+      </div>
+      <div className="fixed inset-0 bg-sand/80 z-5" />
+      <div className="w-full flex justify-center p-4 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-lg fixed top-0 z-20">
+        <h1 className="text-6xl font-extrabold mb-1 text-northeasternRed">NUHire</h1>
+      </div>
+      <div className="z-10" >
+        <h1 className="text-3xl font-bold text-navy mb-6">Complete Your Signup</h1>
 
-        <input 
-          type="text" 
-          placeholder="Last Name *" 
-          className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={lastName} 
-          onChange={(e) => setLastName(e.target.value)} 
-          required 
-        />
-
-        <input 
-          type="email" 
-          className="w-full px-4 py-3 border border-wood bg-springWater rounded-md bg-gray-200 cursor-not-allowed"
-          value={email} 
-          disabled 
-        />
-
-        <select 
-          value={affiliation} 
-          className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
-          onChange={(e) => setAffiliation(e.target.value)} 
-          required
-        >
-          <option value="none">Select Affiliation *</option>
-          <option value="student">Student</option>
-          <option value="admin">Faculty</option>
-        </select>
-
-        {/* Group number input - only shown for students */}
-        {affiliation === 'student' && (
-          <div  className="w-full rounded-lg flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="w-full max-w-md bg-navy shadow-lg rounded-lg p-6 flex flex-col gap-4">
           <input 
-            type="number" 
-            placeholder="Group Number *" 
+            type="text" 
+            placeholder="First Name *" 
             className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={groupNumber} 
-            onChange={(e) => setGroupNumber(e.target.value)} 
+            value={firstName} 
+            onChange={(e) => setFirstName(e.target.value)} 
             required 
-            min="1"
           />
 
           <input 
-            type="number" 
-            placeholder="CRN *" 
+            type="text" 
+            placeholder="Last Name *" 
             className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={courseNumber} 
-            onChange={(e) => setCourseNumber(e.target.value)} 
+            value={lastName} 
+            onChange={(e) => setLastName(e.target.value)} 
             required 
-            min="1"
           />
-          </div>
-        )}
 
-        <button 
-          type="submit" 
-          className="w-full bg-wood text-navy font-semibold px-4 py-3 rounded-md hover:bg-sand transition"
+          <input 
+            type="email" 
+            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md bg-gray-200 cursor-not-allowed"
+            value={email} 
+            disabled 
+          />
+
+          <select 
+            value={affiliation} 
+            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            onChange={(e) => setAffiliation(e.target.value)} 
+            required
+          >
+            <option value="none">Select Affiliation *</option>
+            <option value="student">Student</option>
+            <option value="admin">Faculty</option>
+          </select>
+
+          {/* Group number input - only shown for students */}
+          {affiliation === 'student' && (
+            <div  className="w-full rounded-lg flex flex-col gap-4">
+            <input 
+              type="number" 
+              placeholder="Group Number *" 
+              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={groupNumber} 
+              onChange={(e) => setGroupNumber(e.target.value)} 
+              required 
+              min="1"
+            />
+
+            <input 
+              type="number" 
+              placeholder="CRN *" 
+              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={courseNumber} 
+              onChange={(e) => setCourseNumber(e.target.value)} 
+              required 
+              min="1"
+            />
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="w-full bg-wood text-navy font-semibold px-4 py-3 rounded-md hover:bg-sand transition"
+          >
+            Submit
+          </button>
+        </form>
+
+        {message && <p className="mt-4 text-green-600 font-semibold justify-center">{message}</p>}
+        {error && <p className="mt-4 text-red-600 font-semibold">{error}</p>}
+      </div>
+      <footer className="w-full flex justify-center p-2 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl fixed bottom-0 z-20">
+        <a
+          className="flex items-center text-wood hover:text-blue-300 transition-colors duration-200"
+          href="https://discord.gg/XNjg2VMR"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          Submit
-        </button>
-      </form>
-
-      {message && <p className="mt-4 text-green-600 font-semibold">{message}</p>}
-      {error && <p className="mt-4 text-red-600 font-semibold">{error}</p>}
+        <Image src="/discord.svg" alt="Discord icon" width={25} height={25} />
+        <span className="ml-2">Join our Discord</span>
+        </a>
+      </footer>
     </div>
   );
 }

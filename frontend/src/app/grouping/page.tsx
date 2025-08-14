@@ -31,6 +31,7 @@ const Grouping = () => {
   const [selectedJobs, setSelectedJobs] = useState<Job[]>([]);
   const [group_id, setGroupId] = useState("");
   const [job_group_id, setGroupIdJob] = useState(""); 
+  const [selectedJobClass, setSelectedJobClass] = useState("");
   const [groups, setGroups] = useState<{[key: string]: any}>({});
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
@@ -365,6 +366,10 @@ const Grouping = () => {
     setSelectedStudents(selectedStudents.filter(student => student.email !== email));
   };
 
+  const handleJobClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedJobClass(e.target.value);
+  };
+
   // ✅ Fetch available jobs
   useEffect(() => {
     const fetchJobs = async () => {
@@ -437,12 +442,12 @@ const Grouping = () => {
 
   // ✅ Handle job assignment with class
   const handleAssignJob = async () => {
-    if (!job_group_id || selectedJobs.length === 0 || !selectedClass) {
+    if (!job_group_id || selectedJobs.length === 0 || !selectedJobClass) {
       alert("Please enter a valid group ID, select a class, and select a Job.");
       return;
     }
 
-    if (user?.affiliation === "admin" && !assignedClassIds.includes(selectedClass)) {
+    if (user?.affiliation === "admin" && !assignedClassIds.includes(selectedJobClass)) {
       alert("You are not assigned to this class.");
       return;
     }
@@ -454,7 +459,7 @@ const Grouping = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           job_group_id,
-          class_id: selectedClass,
+          class_id: selectedJobClass,
           job: selectedJobs.map(job => job.title)
         }),
       });
@@ -554,9 +559,26 @@ const Grouping = () => {
             Assign Group
           </button>
         </div>
-
+        
         <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
           <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
+          <div className="mb-2">
+            <label className="block text-navy font-semibold mb-1">
+              Class for Job Assignment
+            </label>
+            <select
+              value={selectedJobClass}
+              onChange={handleJobClassChange}
+              className="w-full p-2 border border-wood bg-springWater rounded-md"
+            >
+              <option value="">Select a class</option>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <input
             type="text"
             placeholder="Enter Group ID for Job Assignment"

@@ -9,6 +9,7 @@ import Footer from "../components/footer";
 import io from "socket.io-client";
 import { usePathname } from "next/navigation";
 import Popup from "../components/popup";
+import Slideshow from "../components/slideshow";
 
 const socket = io(API_BASE_URL); 
 
@@ -200,16 +201,16 @@ const Dashboard = () => {
 
   return (
     <div className="bg-sand font-rubik min-h-screen flex flex-col">
+      <div className="fixed inset-0 z-0">
+        <Slideshow />
+      </div>
+                  
+      <div className="fixed inset-0 bg-sand/80 z-5" />
       <Navbar />
-      
-      {/* Main content area that fills remaining space */}
-      <div className="flex-1 flex flex-col px-4 py-8">
-        {/* Header */}
+      <div className="flex-1 flex flex-col px-4 py-8 relative z-10">
         <div className="font-extrabold text-3xl font-rubik text-redHeader mb-6 text-center">
           <h3>Progress Steps</h3>
         </div>
-        
-        {/* Grid container that grows to fill available space */}
         <div className="flex-1 flex items-center justify-center">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
             {steps.map((step, idx) => {
@@ -261,9 +262,9 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      <Footer />
-
+      <div className="relative z-10">
+        <Footer />
+      </div>
       {popup && (
         <Popup
           headline={popup.headline}
