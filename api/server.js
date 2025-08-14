@@ -1348,6 +1348,18 @@ app.delete("/resume_pdf/:file_path", (req, res) => {
 }
 );
 
+app.get('/resume_pdf/resumes/:fileName', (req, res) => {
+  const { fileName } = req.params;
+  const fullPath = path.join(__dirname, 'uploads', 'resumes', fileName);
+  console.log('Serving resume file:', fullPath);
+
+  if (fs.existsSync(fullPath)) {
+    return res.sendFile(fullPath);
+  } else {
+    return res.status(404).json({ error: `Resume not found: ${fileName}` });
+  }
+});
+
 //Deletes a stored resume as long as it's given the resumes file path
 app.get("/resume_pdf/id/:id", (req, res) => {
   const { id } = req.params;
