@@ -52,10 +52,9 @@ export default function ResumesPage() {
   }
 
   const [user, setUser] = useState<User | null>(null);
-
+  const [donePopup, setDonePopup] = useState(false);
   const totalDecisions = accepted + rejected + noResponse;
   const maxDecisions = totalDecisions >= 10;
-
   const resumeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -248,6 +247,12 @@ export default function ResumesPage() {
       }, 500);
     }
   };
+
+  useEffect(() => {
+    if (totalDecisions === 10) {
+      setDonePopup(true);
+    }
+  }, [totalDecisions]);
 
   useEffect(() => {
     if (!showInstructions) {
@@ -475,6 +480,13 @@ export default function ResumesPage() {
             headline={popup.headline}
             message={popup.message}
             onDismiss={() => setPopup(null)}
+          />
+        )}
+        {donePopup && (
+          <Popup
+            headline="Review Complete"
+            message="You have made 10 resume decisions."
+            onDismiss={() => setDonePopup(false)}
           />
         )}
       </div>
