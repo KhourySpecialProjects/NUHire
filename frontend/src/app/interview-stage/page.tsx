@@ -45,6 +45,7 @@ export default function Interview() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const pathname = usePathname();
   const [noShow, setNoShow] = useState(false);
+  const [donePopup, setDonePopup] = useState(false);
   
   // Rating states
   const [overall, setOverall] = useState(5); 
@@ -77,6 +78,12 @@ export default function Interview() {
   useEffect(() => {
     setVideoLoaded(false);
   }, [videoIndex]);
+
+  useEffect(() => {
+    if (finished) {
+      setDonePopup(true);
+    }
+  }, [finished]);
 
   // Fetch user data
   useEffect(() => {
@@ -742,6 +749,13 @@ useEffect(() => {
             headline={popup.headline}
             message={popup.message}
             onDismiss={() => setPopup(null)}
+          />
+        )}
+        {donePopup && (
+          <Popup
+            headline="Interview Complete"
+            message="You have completed all interviews and ratings."
+            onDismiss={() => setDonePopup(false)}
           />
         )}
       </div>

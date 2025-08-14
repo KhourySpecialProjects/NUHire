@@ -377,8 +377,6 @@ export default function MakeOffer() {
     if (selectedIds.length !== 1) return;
     const candidateId = selectedIds[0];
 
-    console.log("user class: ", user!.class); // delete later -> seeing if user class is being fetched.  
-
     socket?.emit("makeOfferRequest", {
       classId: user!.class,
       groupId: user!.group_id,
