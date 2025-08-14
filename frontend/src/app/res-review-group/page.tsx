@@ -1,6 +1,7 @@
 "use client";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import React, { useState, useEffect } from "react";
+import { Document, Page } from 'react-pdf';
 import { io, Socket } from "socket.io-client";
 import Navbar from "../components/navbar";
 import { usePathname, useRouter } from "next/navigation";
@@ -48,11 +49,11 @@ export default function ResReviewGroup() {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
-
   const [resumes, setResumes] = useState<Resume[]>([]);
   const router = useRouter();
   const pathname = usePathname();
-
+  const [selectedResumeNumber, setSelectedResumeNumber] = useState<number | "">("");
+  const [selectedFilePath, setSelectedFilePath] = useState<string>('');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -164,14 +165,31 @@ export default function ResReviewGroup() {
       updateCurrentPage(); 
     }
   }, [user, pathname]);
+
   const fetchResumes = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/resume_pdf`);
-      const data = await response.json();
-      setResumes(data);
+      const data: { file_path: string; id: number; title: string; uploaded_at: string }[] = await response.json();
+      const formatted: Resume[] = data.map(item => ({
+      resume_number: item.id,
+      file_path: item.file_path,
+      checked: checkedState[item.id] || false,
+      vote: voteCounts[item.id]
+        ? voteCounts[item.id].yes > voteCounts[item.id].no
+          ? "yes"
+          : "no"
+        : "unanswered",
+    }));
+
+      setResumes(formatted);
     } catch (error) {
       console.error("Error fetching resumes:", error);
     }
+  };
+
+  const getResumeUrl = (filePath: string) => {
+    const fileName = filePath.split('/').pop()!;
+    return `${API_BASE_URL}/resume_pdf/resumes/${encodeURIComponent(fileName)}`;
   };
 
   useEffect(() => {
@@ -242,6 +260,15 @@ export default function ResReviewGroup() {
     });
   };
 
+  const handleSelectPreview = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const num = parseInt(e.target.value, 10);
+    setSelectedResumeNumber(isNaN(num) ? '' : num);
+    const resume = resumes.find(r => r.resume_number === num);
+    if (resume) console.log('Selected file path:', resume.file_path);
+  };
+
+  const selectedResume = resumes.find(r => r.resume_number === selectedResumeNumber);
+
   const completeResumes = () => {
     const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
     if (selectedCount !== 4) {
@@ -284,68 +311,106 @@ export default function ResReviewGroup() {
           </div>
         )}
       <Navbar />
-      <div className="flex-1 flex flex-col px-4 py-8">
-        <div className="w-full p-6">
-          <h1 className="text-3xl font-bold text-center text-navy mb-6">
-            Resume Review as a Group
-          </h1>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 w-full min-h-[70vh] items-stretch">
-            {resumes.map((resume, index) => {
-              const resumeNumber = index + 1;
-              const votes = voteCounts[resumeNumber] || { yes: 0, no: 0, undecided: 0 };
-              return (
-                <div key={resumeNumber} className="bg-wood p-6 rounded-lg shadow-md flex flex-col justify-between h-full min-h-[250px] w-full">
-                  <h3 className="text-xl font-semibold text-navy mb-2">
-                    Resume {resumeNumber}
-                  </h3>
-                  <a
-                    href={`${API_BASE_URL}/${resume.file_path}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-navy hover:underline"
-                  >
-                    View / Download Resume
-                  </a>
 
-                  <div className="mt-4">
-                    <p className="text-green-600">Yes: {votes.yes}</p>
-                    <p className="text-red-600">No: {votes.no}</p>
-                    <p className="text-yellow-600">Undecided: {votes.undecided}</p>
-                  </div>
-
-                  <label className="flex items-center mt-4">
-                    <input
-                      type="checkbox"
-                      checked={checkedState[resumeNumber] || false}
-                      onChange={() => handleCheckboxChange(resumeNumber)}
-                    />
-                    <span className="ml-2 text-navy">Selected for Further Review</span>
-                  </label>
-                </div>
-              );
-            })}
+      <div className="flex flex-1 px-12 py-8 gap-8">
+        {/* LEFT: select & preview box */}
+        <div className="w-1/2 flex flex-col">
+          <div className="mb-4 p-4 bg-white border-4 border-northeasternRed rounded-lg">
+            <label className="block mb-2 font-semibold text-navy">
+              Select a resume to preview
+            </label>
+            <select
+              className="w-full p-2 border border-wood bg-springWater rounded-md"
+              value={selectedResumeNumber}
+              onChange={handleSelectPreview}
+            >
+              <option value="">— choose resume —</option>
+              {resumes.map(r => (
+                <option key={r.resume_number} value={r.resume_number}>
+                  Resume {r.resume_number}
+                </option>
+              ))}
+            </select>
           </div>
+          {selectedResume && (
+            <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden">
+              <iframe
+                src={`${getResumeUrl(selectedResume.file_path)}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
+                title={`Resume Preview ${selectedResume.resume_number}`}
+                className="w-full h-full rounded border-none"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: 2 columns × 5 rows of cards */}
+        <div className="w-1/2 grid grid-cols-2 grid-rows-5 gap-4 overflow-y-auto">
+          {resumes.map((resume) => {
+            const n = resume.resume_number;
+            const votes = voteCounts[n] || { yes: 0, no: 0, undecided: 0 };
+            return (
+              <div
+                key={n}
+                className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl p-6 flex flex-col justify-between transition hover:scale-105"
+              >
+                <h3 className="text-xl font-semibold text-navy mb-2">
+                  Resume {n}
+                </h3>
+                <a
+                  href={`${API_BASE_URL}/${resume.file_path}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-northeasternRed font-bold underline mb-4"
+                >
+                  View Full
+                </a>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded">✔ Yes</span>
+                    <span className="font-semibold">{votes.yes}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded">✖ No</span>
+                    <span className="font-semibold">{votes.no}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">? Skip</span>
+                    <span className="font-semibold">{votes.undecided}</span>
+                  </div>
+                </div>
+                <label className="flex items-center mt-4">
+                  <input
+                    type="checkbox"
+                    checked={checkedState[n] || false}
+                    onChange={() => handleCheckboxChange(n)}
+                  />
+                  <span className="ml-2 text-navy">Select</span>
+                </label>
+              </div>
+            );
+          })}
         </div>
       </div>
-      <footer>
-        <div className="flex justify-between mb-4">
-          <button
-            onClick={() => (window.location.href = "/jobdes")}
-            className="px-4 py-2 bg-redHeader text-white rounded-lg ml-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik"
-            disabled={true}
-          >
-            ← Back: Job Description
-          </button>
-          <button
-            onClick={completeResumes}
-            className={`px-4 py-2 bg-redHeader text-white rounded-lg mr-4 shadow-md transition duration-300 font-rubik
-             ${selectedCount !== 4 ? "cursor-not-allowed opacity-50" : "hover:bg-blue-400"}`}
-            disabled={selectedCount !== 4}
-          >
-            Next: Interview Stage →
-          </button>
-        </div>
-      </footer>
+
+      <div className="flex justify-between px-12 py-6">
+        <button
+          onClick={() => (window.location.href = "/jobdes")}
+          className="px-4 py-2 bg-redHeader text-white rounded-lg shadow hover:bg-blue-400 transition"
+        >
+          ← Back: Job Description
+        </button>
+        <button
+          onClick={completeResumes}
+          disabled={selectedCount !== 4}
+          className={`px-4 py-2 rounded-lg shadow font-bold transition ${
+            selectedCount === 4
+              ? "bg-redHeader text-white hover:bg-blue-400"
+              : "bg-gray-300 text-gray-600 cursor-not-allowed"
+          }`}
+        >
+          Next: Interview Stage →
+        </button>
+      </div>
 
       <Footer />
     </div>

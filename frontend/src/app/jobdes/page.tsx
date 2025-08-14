@@ -209,7 +209,7 @@ export default function JobDescriptionPage() {
               <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
               <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
                 <li>Read the job description that you are hiring for.</li>
-                <li>Take notes by pressing the top right notes button, you cna always access them.</li>
+                <li>Take notes by pressing the top right notes button, you can always access them.</li>
                 <li>Leaving comments on the description are only accessible on this page.</li>
               </ul>
               <button

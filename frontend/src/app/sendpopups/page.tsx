@@ -392,7 +392,7 @@ const SendPopups = () => {
                   <ul className="list-none pl-0 text-navy mt-2">
                     {Array.isArray(students) && students.length > 0 ? (
                       students.map((student, index) => (
-                        <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded border">
+                        <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded ">
                           <div className="flex items-center space-x-3">
                             <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
                             <span className="font-medium">
@@ -428,7 +428,7 @@ const SendPopups = () => {
                           ${
                             sending || selectedGroups.length === 0
                               ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
+                              : "bg-northeasternRed text-white"
                           }`}
           >
             {sending ? "Sending..." : "Send Popups"}
