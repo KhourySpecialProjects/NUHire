@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Slideshow from "../components/slideshow";
+import { io } from "socket.io-client";
 
 interface ModeratorInfo {
   id: number;
@@ -20,6 +21,8 @@ const ModDashboard = () => {
   const [form, setForm] = useState({ admin_email: "", crn: "", nom_groups: "" });
   const [submitting, setSubmitting] = useState(false);
   const [deletingCRN, setDeletingCRN] = useState<number | null>(null);
+
+  const socket = io(API_BASE_URL)
 
   useEffect(() => {
     const fetchCRNs = async () => {
@@ -62,6 +65,9 @@ const ModDashboard = () => {
       } else if (res.ok) {
         setForm({ admin_email: "", crn: "", nom_groups: "" });
         setPopup({ headline: "Success", message: "Class added!" });
+        socket.emit("moderatorClassAdded", {
+            admin_email: form.admin_email,
+        });
       } else {
         setPopup({ headline: "Error", message: "Failed to add class." });
       }
@@ -82,6 +88,9 @@ const ModDashboard = () => {
       });
       if (res.ok) {
         setPopup({ headline: "Success", message: "CRN deleted!" });
+        socket.emit("moderatorClassDeleted", {
+          admin_email: form.admin_email,
+        });
       } else {
         setPopup({ headline: "Error", message: "Failed to delete CRN." });
       }
