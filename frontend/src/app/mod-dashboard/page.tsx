@@ -105,10 +105,12 @@ const ModDashboard = () => {
 
   return (
     <div className="flex flex-col min-h-screen font-rubik relative overflow-hidden">
-      {/* <Slideshow />
-      <div className="absolute inset-0 bg-sand/70 z-1" /> */}
+      <div className="fixed inset-0 z-0">
+        <Slideshow />
+      </div>       
+      <div className="fixed inset-0 bg-sand/80 z-5" />
       <Navbar />
-      <div className="flex-1 flex flex-col px-4 py-8">
+      <div className="flex-1 flex flex-col px-4 py-8 z-10">
         <div className="font-extrabold text-3xl font-rubik text-redHeader mb-6 text-center">
           <h3>Moderator Class Management</h3>
         </div>

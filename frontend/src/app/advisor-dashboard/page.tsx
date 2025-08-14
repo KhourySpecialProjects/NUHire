@@ -6,6 +6,7 @@ import Link from "next/link"; // Importing Link for client-side navigation
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
 import { io } from "socket.io-client"; // Importing Socket.IO for real-time communication
 import AdminReactionPopup from "../components/adminReactionPopup"; // Importing popup component for offers
+import Slideshow from "../components/slideshow"; // Importing slideshow component for background
 
 const Dashboard = () => {
 
@@ -97,15 +98,19 @@ const Dashboard = () => {
   // Render the dashboard if the user is an admin
   return (
     <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+      <div className="fixed inset-0 z-0">
+          <Slideshow />
+      </div>        
+      <div className="fixed inset-0 bg-sand/80 z-5" />
       <NavbarAdmin />
-
-      <div className="flex justify-center items-center py-10">
+      <div className="mt-6"/>
+      <div className="flex justify-center items-center py-1 z-10">
         <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
           Advisor Dashboard
         </h1>
       </div>
 
-      <main className="flex flex-col items-center justify-center flex-grow">
+      <main className="flex flex-col items-center justify-center flex-grow z-10">
         <div className="mt-6 gap-8 flex flex-row justify-center items-center">
             <Link
               href="/grouping"
