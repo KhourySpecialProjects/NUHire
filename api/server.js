@@ -818,10 +818,8 @@ app.post("/users", (req, res) => {
         console.log(`User created: ${First_name} ${Last_name} (${Email}) as ${Affiliation}${group_id ? `, group: ${group_id}` : ''}${course_id ? `, class: ${course_id}` : ''}${assignedJob ? `, job: ${assignedJob}` : ' with no job'}`);
         
         if (Affiliation === 'student') {
+          console.log(`New student ${Email} added to group ${group_id} in class ${course_id}`);
           io.emit("newStudent", { 
-            id: result.insertId, 
-            First_name, 
-            Last_name,
             classId: course_id
           });
 
@@ -1454,6 +1452,7 @@ app.post("/moderator-crns", (req, res) => {
       res.status(201).json({ id: result.insertId, admin_email, crn, nom_groups });
     }
   );
+  console.log(`Added CRN ${crn} for admin ${admin_email} with ${nom_groups} groups`);
 });
 
 app.get("/moderator-crns", (req, res) => {

@@ -41,7 +41,6 @@ const Grouping = () => {
   const [acceptedOffers, setAcceptedOffers] = useState<
     { classId: number; groupId: number; candidateId: number }[]
   >([]);
-  const socket = io(API_BASE_URL);
 
   // ✅ Fetch the logged-in user
   useEffect(() => {
@@ -69,6 +68,7 @@ const Grouping = () => {
 
   // ✅ Admin socket setup - Register admin and listen for offer requests and responses
   useEffect(() => {
+    const socketUpdate = io(API_BASE_URL);
     if (!user || user.affiliation !== "admin") return;
 
     console.log("Setting up admin socket connection");
@@ -89,65 +89,46 @@ const Grouping = () => {
       }
     };
 
-    socket.on("connect", () => {
-      console.log("Admin connected to socket:", socket.id);
-      socket.emit("studentOnline", { studentId: user.email });
+    socketUpdate.on("connect", () => {
+      console.log("Admin connected to socketUpdate:", socketUpdate.id);
+      socketUpdate.emit("studentOnline", { studentId: user.email });
       console.log("Admin registered as online with email:", user.email);
     });
     
-    socket.on("makeOfferRequest", onRequest);
-    socket.on("makeOfferResponse", onResponse);
+    socketUpdate.on("makeOfferRequest", onRequest);
+    socketUpdate.on("makeOfferResponse", onResponse);
 
-    socket.on("moderatorClassAdded", (data) => {
-    if (user?.email === data.admin_email) {
-      console.log("New class assigned to you:", data);
-      // Refresh the admin's assigned classes
-      const fetchAssignedClasses = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/moderator-classes/${user.email}`);
-          if (!response.ok) {
-            throw new Error(`Error: ${response.status}`);
-          }
-          const data = await response.json();
-          console.log("Updated assigned classes:", data);
-          setAssignedClassIds(data.map(String));
-        } catch (error) {
-          console.error("Error refreshing moderator classes:", error);
-        }
-      };
+    socketUpdate.on("moderatorClassAdded", ({admin_email}) => {
+      console.log(user.email);
+      console.log(admin_email);
+      if (user?.email === admin_email) {
+        fetchAssignedClasses();
+        console.log("Moderator class deleted, fetching updated classes");
+        console.log("Updated assigned class IDs:", assignedClassIds);
+        console.log("Updated classes:", classes);
+      }
+  });
+
+  socketUpdate.on("moderatorClassDeleted", ({admin_email}) => {
+    console.log(user.email);
+    console.log(admin_email);
+    if (user?.email === admin_email) {
       fetchAssignedClasses();
+      console.log("Moderator class deleted, fetching updated classes");
+      console.log("Updated assigned class IDs:", assignedClassIds);
+      console.log("Updated classes:", classes);
     }
   });
 
-  socket.on("moderatorClassRemoved", (data) => {
-    if (user?.email === data.admin_email) {
-      console.log("Class removed from your assignments:", data);
-      const fetchAssignedClasses = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/moderator-classes/${user.email}`);
-          if (!response.ok) {
-            throw new Error(`Error: ${response.status}`);
-          }
-          const data = await response.json();
-          console.log("Updated assigned classes:", data);
-          setAssignedClassIds(data.map(String));
-        } catch (error) {
-          console.error("Error refreshing moderator classes:", error);
-        }
-      };
-      fetchAssignedClasses();
-    }
-  });
-
-    socket.on("disconnect", () => {
-      console.log("Admin disconnected from socket");
+    socketUpdate.on("disconnect", () => {
+      console.log("Admin disconnected from socketUpdate");
     });
 
     return () => {
-      socket.off("makeOfferRequest", onRequest);
-      socket.off("makeOfferResponse", onResponse);
-      socket.off("connect");
-      socket.off("disconnect");
+      socketUpdate.off("makeOfferRequest", onRequest);
+      socketUpdate.off("makeOfferResponse", onResponse);
+      socketUpdate.off("connect");
+      socketUpdate.off("disconnect");
     };
   }, [user]);
 
@@ -157,7 +138,8 @@ const Grouping = () => {
     candidateId: number,
     accepted: boolean
   ) => {
-    socket.emit("makeOfferResponse", {
+    const socketOffer = io(API_BASE_URL);
+    socketOffer.emit("makeOfferResponse", {
       classId,
       groupId,
       candidateId,
@@ -174,8 +156,6 @@ const Grouping = () => {
     nom_groups: number;
   }
 
-  // Then update your useEffect to use this type
-  useEffect(() => {
   const fetchAssignedClasses = async () => {
     console.log("Fetching assigned classes for user:", user?.email);
     if (user?.email && user.affiliation === "admin") {
@@ -194,7 +174,7 @@ const Grouping = () => {
         setAssignedClassIds(classIds);
         setClasses(data.map((item: ModeratorClass) => ({
           id: item.crn,
-          name: `CRN ${item.crn} - ${item.admin_email} (${item.nom_groups} groups)`
+          name: `CRN ${item.crn} - (${item.nom_groups} groups)`
         })));
         console.log("Classes set:", classes);
       } catch (error) {
@@ -203,35 +183,37 @@ const Grouping = () => {
     }
   };
   
-  fetchAssignedClasses();
+  // Then update your useEffect to use this type
+  useEffect(() => {
+    fetchAssignedClasses();
 }, [user]);
+
+  const fetchGroups = async () => {
+    if (!selectedClass) return;
+      
+    try {
+      const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
+      const data = await response.json();
+      setGroups(data);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+    }
+  };
+  
+  const fetchStudents = async () => {
+    if (!selectedClass) return;
+      
+    try { 
+      const response = await fetch(`${API_BASE_URL}/students?class=${selectedClass}`);
+      const data = await response.json();
+      setStudents(data);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    }
+  };
 
   // ✅ Fetch groups filtered by class
   useEffect(() => {
-    const fetchGroups = async () => {
-      if (!selectedClass) return;
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
-        const data = await response.json();
-        setGroups(data);
-      } catch (error) {
-        console.error("Error fetching groups:", error);
-      }
-    };
-  
-    const fetchStudents = async () => {
-      if (!selectedClass) return;
-      
-      try { 
-        const response = await fetch(`${API_BASE_URL}/students?class=${selectedClass}`);
-        const data = await response.json();
-        setStudents(data);
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      }
-    };
-
     if (selectedClass) {
       fetchGroups();
       fetchStudents();
@@ -310,21 +292,34 @@ const Grouping = () => {
 
     // Listen for new student events and refresh groups
     socket.on("newStudent", ({ classId }) => {
-      console.log(`New student added to class ${classId}`);
-      
-      // Refresh groups for the specific class
-      const fetchGroups = async () => {
-        if (!selectedClass) return;
-        
-        try {
-          const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
-          const data = await response.json();
-          setGroups(data);
-        } catch (error) {
-          console.error("Error fetching groups:", error);
+      console.log(`New student added to class ${classId}, selectedClass: ${selectedClass}`);
+      if (assignedClassIds.includes(String(classId))) {
+        console.log(`Class ${classId} is assigned to you`);
+        if (selectedClass === String(classId)) {
+          console.log(`Refreshing data for currently selected class ${selectedClass}`);
+          Promise.all([
+            fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
+              .then(response => response.json())
+              .then(data => {
+                console.log("Updated groups data:", data);
+                setGroups(data);
+              })
+              .catch(error => console.error("Error refreshing groups:", error)),
+              
+            fetch(`${API_BASE_URL}/students?class=${selectedClass}`)
+              .then(response => response.json())
+              .then(data => {
+                console.log("Updated students data:", data);
+                setStudents(data);
+              })
+              .catch(error => console.error("Error refreshing students:", error))
+          ]);
+        } else {
+          console.log(`Not refreshing because selected class is ${selectedClass}, not ${classId}`);
         }
-      };
-      fetchGroups();
+      } else {
+        console.log(`Class ${classId} is not assigned to you. Assigned classes:`, assignedClassIds);
+      }
     });
 
     socket.on("disconnect", () => {
@@ -335,7 +330,7 @@ const Grouping = () => {
     return () => {
       socket.disconnect();
     };
-  }, []); 
+  }, [user, selectedClass, assignedClassIds]); 
 
   // ✅ Handle class selection change
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

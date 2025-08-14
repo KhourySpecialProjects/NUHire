@@ -67,7 +67,6 @@ const ModDashboard = () => {
         setPopup({ headline: "Success", message: "Class added!" });
         socket.emit("moderatorClassAdded", {
             admin_email: form.admin_email,
-            crn: form.crn,
         });
       } else {
         setPopup({ headline: "Error", message: "Failed to add class." });
@@ -91,7 +90,6 @@ const ModDashboard = () => {
         setPopup({ headline: "Success", message: "CRN deleted!" });
         socket.emit("moderatorClassDeleted", {
           admin_email: form.admin_email,
-          crn: form.crn,
         });
       } else {
         setPopup({ headline: "Error", message: "Failed to delete CRN." });
