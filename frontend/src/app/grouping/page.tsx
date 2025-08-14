@@ -96,7 +96,10 @@ const Grouping = () => {
       console.log("Admin registered as online with email:", user.email);
     });
     
-    socketUpdate.on("makeOfferRequest", onRequest);
+    socketUpdate.on('makeOfferRequest', (data) => {
+      console.log('Received offer request:', data);
+      setPendingOffers(prev => [...prev, data]);
+    });
     socketUpdate.on("makeOfferResponse", onResponse);
 
     socketUpdate.on("moderatorClassAdded", ({admin_email}) => {

@@ -351,7 +351,7 @@ export default function ResReviewGroup() {
             return (
               <div
                 key={n}
-                className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl p-6 flex flex-col justify-between transition hover:scale-105"
+                className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl p-6 flex flex-col justify-between transition"
               >
                 <h3 className="text-xl font-semibold text-navy mb-2">
                   Resume {n}
