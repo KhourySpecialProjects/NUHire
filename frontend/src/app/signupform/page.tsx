@@ -52,11 +52,20 @@ export default function SignupDetails() {
           `${API_BASE_URL}/moderator-crns/${courseNumber}`,
           { method: 'GET', credentials: 'include' }
         )
-        if (!res.ok) {
+        const emailRes = await fetch(
+          `${API_BASE_URL}/moderator-classes/${email}`,
+          { method: 'GET', credentials: 'include' }
+        )
+        if (!res.ok || !emailRes.ok) {
           setError('Cannot get backend data.');
           return;
         }
         const {id, admin_email, crn, nom_groups} = await res.json();
+        const emailData = await emailRes.json();
+        if (emailData.length !== 0) {
+          setError('This email is set as an instructor.');
+          return;
+        }
         if (Number(crn) !== Number(courseNumber)) {
           setError('This CRN does not exist. Please check with your instructor.');
           return;
@@ -214,9 +223,8 @@ export default function SignupDetails() {
             Submit
           </button>
         </form>
-
-        {message && <p className="mt-4 text-green-600 font-semibold justify-center">{message}</p>}
-        {error && <p className="mt-4 text-red-600 font-semibold">{error}</p>}
+        {message && <p className="mt-4 text-green-600 font-semibold text-center">{message}</p>}
+        {error && <p className="mt-4 text-red-600 font-semibold text-center">{error}</p>}
       </div>
       <footer className="w-full flex justify-center p-2 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl fixed bottom-0 z-20">
         <a
