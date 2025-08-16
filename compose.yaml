@@ -28,7 +28,7 @@ services:
     container_name: keycloak
     entrypoint: /bin/bash
     command: >
-      -c "/opt/keycloak/bin/kc.sh build && /opt/keycloak/bin/kc.sh start --optimized --hostname=localhost --https-certificate-file=/etc/x509/https/tls.crt --https-certificate-key-file=/etc/x509/https/tls.key"
+      -c "/opt/keycloak/bin/kc.sh build && /opt/keycloak/bin/kc.sh start --optimized  --hostname=localhost --https-certificate-file=/etc/x509/https/tls.crt --https-certificate-key-file=/etc/x509/https/tls.key  --import-realm"
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
@@ -36,8 +36,24 @@ services:
       KC_DB_URL: jdbc:mysql://db:3306/pandployer
       KC_DB_USERNAME: root
       KC_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      KC_SPI_EMAILSENDER_FROM: ${KC_SPI_EMAILSENDER_FROM}
+      KC_SPI_EMAILSENDER_FROM_DISPLAY_NAME: ${KC_SPI_EMAILSENDER_FROM_DISPLAY_NAME}
+      KC_SPI_EMAILSENDER_HOST: ${KC_SPI_EMAILSENDER_HOST}
+      KC_SPI_EMAILSENDER_PORT: ${KC_SPI_EMAILSENDER_PORT}
+      KC_SPI_EMAILSENDER_USER: ${KC_SPI_EMAILSENDER_USER}
+      KC_SPI_EMAILSENDER_PASSWORD: ${KC_SPI_EMAILSENDER_PASSWORD}
+      KC_SPI_EMAILSENDER_ENABLE_SSL: ${KC_SPI_EMAILSENDER_ENABLE_SSL}
+      KC_SPI_EMAILSENDER_ENABLE_TLS: ${KC_SPI_EMAILSENDER_ENABLE_TLS}
+      KC_SPI_EMAILSENDER_ENABLE_AUTH: ${KC_SPI_EMAILSENDER_ENABLE_AUTH}
+      KC_SPI_EMAILSENDER_REPLY_TO: ${KC_SPI_EMAILSENDER_REPLY_TO}
+      KC_SPI_EMAILSENDER_REPLY_TO_DISPLAY_NAME: ${KC_SPI_EMAILSENDER_REPLY_TO_DISPLAY_NAME}
+      KC_EMAIL_TEMPLATE_STARTTLS: ${KC_EMAIL_TEMPLATE_STARTTLS}
+      KC_FEATURES: "preview"
+      KC_IMPORT_FILES_LOCATIONS: "/opt/keycloak/data/import/realm-export.json"
     volumes:
       - ./certs:/etc/x509/https
+      - keycloak_data:/opt/keycloak/data
+      - ./keycloak-import:/opt/keycloak/data/import
     ports:
       - "8443:8443"
     depends_on:

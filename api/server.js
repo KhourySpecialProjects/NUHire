@@ -304,7 +304,6 @@ function configurePassport() {
     clientID: process.env.KEYCLOAK_CLIENT_ID,
     clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
     callbackURL: "http://localhost:5001/auth/keycloak/callback",
-    callbackURL: "http://localhost:5001/auth/keycloak/callback",
     scope: ['openid', 'profile', 'email'],
   }, async (accessToken, refreshToken, params, profile, done) => {
     console.log("=== Passport Callback SUCCESS ===");
