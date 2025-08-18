@@ -28,8 +28,8 @@ export default function Home() {
       {/* Navigation Bar */}
       <div className="w-full flex justify-end p-2 bg-navy shadow-md font-rubik text-2xl fixed top-0">
         <button 
-          onClick={handleKeycloakLogin} 
-          className="m-2 px-2 py-2 bg-wood text-black border-4 border-sand rounded-md text-lg transition-opacity hover:opacity-60 active:opacity-30"
+          onClick={handleModeratorLogin} 
+          className="m-2 px-2 py-2 bg-northeasternWhite text-black border-4 border-northeasternRed rounded-md text-lg transition-opacity hover:opacity-60 active:opacity-30"
         >
           Moderator
         </button>

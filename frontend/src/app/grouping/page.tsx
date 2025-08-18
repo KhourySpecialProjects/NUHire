@@ -565,7 +565,7 @@ const Grouping = () => {
           </div>
           <button
             onClick={handleAssignGroup}
-            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-blue-600 transition"
+            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed transition"
           >
             Assign Group
           </button>
@@ -624,7 +624,7 @@ const Grouping = () => {
           </div>
           <button
             onClick={handleAssignJob}
-            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-blue-600 transition"
+            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed transition"
           >
             Assign Job
           </button>
