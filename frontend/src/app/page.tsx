@@ -9,8 +9,8 @@ import "slick-carousel/slick/slick-theme.css";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function Home() {
-  const handleGoogleLogin = () => {
-    window.location.href = `${API_BASE_URL}/auth/google`;
+  const handleKeycloakLogin = () => {
+    window.location.href = `${API_BASE_URL}/auth/keycloak`;
   };
 
   const handleModeratorLogin = () => {
@@ -26,10 +26,10 @@ export default function Home() {
       <div className="absolute inset-0 bg-sand/70 z-1" />
 
       {/* Navigation Bar */}
-      <div className="w-full flex justify-end p-4 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-lg fixed top-0 z-20">
-        <button
-          onClick={handleModeratorLogin}
-          className="mt-2 px-4 py-2 bg-white text-northeasternRed border-2 border-northeasternRed rounded-md text-sm font-bold transition-all duration-200 hover:opacity-60 active:opacity-30 hover:scale-105 shadow-lg"
+      <div className="w-full flex justify-end p-2 bg-navy shadow-md font-rubik text-2xl fixed top-0">
+        <button 
+          onClick={handleKeycloakLogin} 
+          className="m-2 px-2 py-2 bg-wood text-black border-4 border-sand rounded-md text-lg transition-opacity hover:opacity-60 active:opacity-30"
         >
           Moderator
         </button>
@@ -70,8 +70,8 @@ export default function Home() {
           Step into the employer's shoes!
         </p>
         <button 
-          onClick={handleGoogleLogin} 
-          className="mt-8 px-6 py-4 bg-white text-northeasternRed border-4 border-northeasternRed rounded-md text-xl font-bold transition-all duration-200 hover:opacity-60 active:opacity-30 hover:scale-105 shadow-lg"
+          onClick={handleKeycloakLogin} 
+          className="mt-6 px-6 py-4 bg-white text-black border-4 border-navy rounded-md text-lg transition-opacity hover:opacity-60 active:opacity-30"
         >
           Click Here to Get Started
         </button>

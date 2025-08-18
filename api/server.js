@@ -1,9 +1,9 @@
-//Importing necessary modules and packages
 const express = require("express"); //Api framework
 const mysql = require("mysql2"); //MySQL database driver
 const passport = require("passport"); //Authentication middleware
+const KeycloakStrategy = require("@exlinc/keycloak-passport");
 const session = require("express-session"); //Session management middleware, which is used for creating and managing user sessions
-const GoogleStrategy = require("passport-google-oauth20").Strategy; // Google OAuth 2.0 authentication strategy for Passport
+const OpenIDConnectStrategy = require("passport-openidconnect").Strategy; //OpenID Connect authentication strategy for Passport
 const dotenv = require("dotenv");// dotenv package to load environment variables from a .env file into process.env
 const cors = require("cors"); //CORS middleware for enabling Cross-Origin Resource Sharing
 const bodyParser = require("body-parser"); //Middleware for parsing incoming request bodies in a middleware before your handlers, available under the req.body property.
@@ -11,6 +11,7 @@ const multer = require("multer"); //Middleware for handling multipart/form-data,
 const fs = require("fs"); //File system module for interacting with the file system
 const path = require("path");  // Path module for working with file and directory paths
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const https = require('https');
 
 // Load environment variables from .env file, creates an express server, and sets up Socket.io
 dotenv.config();
@@ -250,38 +251,89 @@ async function initializeApp() {
   server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
-}
+};
 
-// Separate passport configuration function
-function configurePassport() {
-  // Passport.js configuration for Google OAuth 2.0 authentication
-  passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/auth/google/callback"
-  }, (accessToken, refreshToken, profile, done) => {
-    const email = profile.emails[0].value.toLowerCase();
+const originalRequest = https.request;
+https.request = function(options, callback) {
+  console.log("=== HTTPS REQUEST ===");
+  console.log("URL:", `${options.protocol}//${options.hostname}:${options.port}${options.path}`);
+  console.log("Method:", options.method);
+  console.log("Headers:", options.headers);
+  
+  const req = originalRequest.call(this, options, callback);
+  
+  // Log the response
+  req.on('response', (res) => {
+    console.log("=== HTTPS RESPONSE ===");
+    console.log("Status:", res.statusCode);
+    console.log("Headers:", res.headers);
     
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      console.log("Response Body:", data);
+    });
+  });
+  
+  req.on('error', (err) => {
+    console.log("=== HTTPS REQUEST ERROR ===");
+    console.log("Error:", err.message);
+  });
+  
+  return req;
+};
+
+function configurePassport() {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  
+  const browserIssuer = "https://localhost:8443/realms/NUHire-Realm";
+  
+  // Container-facing URLs (for server-to-server communication)
+  const containerIssuer = "https://host.docker.internal:8443/realms/NUHire-Realm";
+  
+  passport.use('keycloak', new KeycloakStrategy({
+    host: "https://host.docker.internal:8443", // Server-to-server
+    issuer: containerIssuer, // Server-to-server
+    userInfoURL: `${containerIssuer}/protocol/openid-connect/userinfo`, // Server-to-server
+    authorizationURL: `${browserIssuer}/protocol/openid-connect/auth`, // Browser-facing
+    tokenURL: `${containerIssuer}/protocol/openid-connect/token`, // Server-to-server
+    realm: process.env.KEYCLOAK_REALM,
+    clientID: process.env.KEYCLOAK_CLIENT_ID,
+    clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
+    callbackURL: "http://localhost:5001/auth/keycloak/callback",
+    scope: ['openid', 'profile', 'email'],
+  }, async (accessToken, refreshToken, params, profile, done) => {
+    console.log("=== Passport Callback SUCCESS ===");
+    console.log("Profile:", JSON.stringify(profile, null, 2));
+
+    
+    let email = profile.email.toLowerCase().trim();
+
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
-      if (err) return done(err);
+      if (err) {
+        console.error("❌ DB error:", err);
+        return done(err);
+      }
+
       if (results.length > 0) {
         return done(null, results[0]);
       } else {
-        return done(null, { email });
+        return done(null, { email }); // let app handle first-time user
       }
     });
   }));
-  
-  // serializeUser and deserializeUser methods
+
   passport.serializeUser((user, done) => {
     done(null, user.id || user.email);
   });
-  
+
   passport.deserializeUser((identifier, done) => {
     const query = isNaN(identifier)
       ? "SELECT * FROM Users WHERE email = ?"
       : "SELECT * FROM Users WHERE id = ?";
-  
+
     db.query(query, [identifier], (err, results) => {
       if (err) return done(err);
       if (results.length === 0) return done(null, false);
@@ -353,6 +405,7 @@ const initializeDatabase = () => {
       
   executeQueries();
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Socket.io configuration for real-time communication between the server and clients
 
@@ -636,39 +689,57 @@ io.on("connection", (socket) => {
 });
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Google OAuth 2.0 authentication routes
+// Keycloak OAuth 2.0 authentication routes
 
-// The "/auth/google" route initiates the authentication process by redirecting the user to the Google login page
-app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+// The "/auth/keycloak" route initiates the authentication process by redirecting the user to the Keycloak login page
+app.get("/auth/keycloak", passport.authenticate("keycloak"));
 
-// The "/auth/google/callback" route is the callback URL that Google redirects to after the user has authenticated
+// The "/auth/keycloak/callback" route is the callback URL that Keycloak redirects to after the user has authenticated
 // The server handles the authentication response and checks if the user exists in the database
-app.get("/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/" }),
+app.get("/auth/keycloak/callback",
+  (req, res, next) => {
+    console.log("=== Callback route hit ===");
+    console.log("Query params:", req.query);
+    console.log("Session before auth:", req.session);
+    next();
+  },
+  passport.authenticate("keycloak", { 
+    failureRedirect: "/",
+    failureFlash: false
+  }),
   (req, res) => {
-    const email = req.user.email;
+    console.log("=== Authentication successful ===");
+
+    const user = req.user;
+    if (!user || !user.email) {
+      console.error("No user or email found after authentication");
+      return res.redirect(`${FRONT_URL}/?error=no_user`);
+    }
+
+    const email = user.email;
 
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
       if (err) {
         console.error("Database error:", err);
         return res.redirect("/");
       }
-      if (results.length > 0) {
-        const user = results[0];
-        const fullName = encodeURIComponent(`${user.First_name} ${user.Last_name}`);
 
-        // Check the Affiliation field
-        if (user.affiliation === "admin") {
+      if (results.length > 0) {
+        const dbUser = results[0];
+        const fullName = encodeURIComponent(`${dbUser.First_name || ""} ${dbUser.Last_name || ""}`.trim());
+
+        if (dbUser.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
           return res.redirect(`${FRONT_URL}/about`);
         }
       } else {
-        return res.redirect(`${FRONT_URL}/signupform?email=${email}`);
+        return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}`);
       }
     });
   }
 );
+
 
 //check if the user is authenticated and return the user information
 app.get("/auth/user", (req, res) => {
