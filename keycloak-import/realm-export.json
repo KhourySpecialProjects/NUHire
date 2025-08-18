@@ -390,28 +390,6 @@
     "realmRoles" : [ "default-roles-nuhire-realm" ],
     "notBefore" : 0,
     "groups" : [ ]
-  }, {
-    "id" : "2d7db995-c384-4d5d-9be1-7f626bf8994d",
-    "username" : "zbranden6@gmail.com",
-    "firstName" : "z",
-    "lastName" : "z",
-    "email" : "zbranden6@gmail.com",
-    "emailVerified" : true,
-    "createdTimestamp" : 1755291439360,
-    "enabled" : true,
-    "totp" : false,
-    "credentials" : [ {
-      "id" : "a20ef48b-53cf-4fb2-a413-d4c9b28a2097",
-      "type" : "password",
-      "createdDate" : 1755291439555,
-      "secretData" : "{\"value\":\"bPrWXm54gb1zqccF5tl677is77Y2GvFRBLR/31J4j3z7ymBEFUJ/gHnYApwfoZpOnHPjnPfdXBM3VmDO5IYPBQ==\",\"salt\":\"SpWOZEKuBNUP750Y91NrCA==\",\"additionalParameters\":{}}",
-      "credentialData" : "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
-    } ],
-    "disableableCredentialTypes" : [ ],
-    "requiredActions" : [ ],
-    "realmRoles" : [ "default-roles-nuhire-realm" ],
-    "notBefore" : 0,
-    "groups" : [ ]
   } ],
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
@@ -1215,7 +1193,7 @@
     "strictTransportSecurity" : "max-age=31536000; includeSubDomains"
   },
   "smtpServer" : {
-    "replyToDisplayName" : "",
+    "replyToDisplayName" : "NUHire Support",
     "starttls" : "true",
     "auth" : "true",
     "envelopeFrom" : "",
@@ -1225,7 +1203,7 @@
     "host" : "smtp.gmail.com",
     "replyTo" : "",
     "from" : "nuhire0207@gmail.com",
-    "fromDisplayName" : "NUHire",
+    "fromDisplayName" : "NUHire Application",
     "user" : "nuhire0207@gmail.com"
   },
   "eventsEnabled" : false,
@@ -1262,7 +1240,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "saml-user-property-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "oidc-address-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "saml-user-property-mapper", "oidc-address-mapper", "saml-role-list-mapper", "oidc-usermodel-property-mapper" ]
       }
     }, {
       "id" : "82a5f72b-ca7c-4071-80ed-feb5349ce206",
@@ -1303,7 +1281,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "saml-user-property-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "oidc-full-name-mapper", "saml-user-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "saml-user-property-mapper", "saml-role-list-mapper", "oidc-usermodel-property-mapper", "oidc-usermodel-attribute-mapper" ]
       }
     } ],
     "org.keycloak.keys.KeyProvider" : [ {
