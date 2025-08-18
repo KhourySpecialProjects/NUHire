@@ -7,7 +7,6 @@ import Image from "next/image";
 // Define API base URL with fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-
 export default function SignupDetails() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
