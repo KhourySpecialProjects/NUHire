@@ -24,9 +24,6 @@ export default function UserProfile() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [classes, setClasses] = useState<ClassItem[]>([]);
-    const [selectedClass, setSelectedClass] = useState("");
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [updateSuccess, setUpdateSuccess] = useState(false);
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);  
     const router = useRouter();
   
@@ -38,9 +35,6 @@ export default function UserProfile() {
   
           if (response.ok) {
             setUser(userData);
-            if (userData.class) {
-              setSelectedClass(userData.class.toString());
-            }
           } else {
             setUser(null);
             router.push("/");
@@ -70,45 +64,6 @@ export default function UserProfile() {
 
       fetchClasses();
     }, []);
-
-    const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setSelectedClass(e.target.value);
-    };
-
-    const updateClass = async () => {
-      if (!selectedClass) {
-        alert("Please select a class");
-        return;
-      }
-
-      setIsUpdating(true);
-      setUpdateSuccess(false);
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/update-user-class`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            email: user!.email,
-            class: selectedClass
-          }),
-        });
-
-        if (response.ok) {
-          setUpdateSuccess(true);
-          // Update the user state with the new class
-          setUser(prev => prev ? { ...prev, class: parseInt(selectedClass, 10) } : prev);
-        } else {
-          alert("Failed to update class. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error updating class:", error);
-        alert("An error occurred while updating your class.");
-      } finally {
-        setIsUpdating(false);
-      }
-    };
 
     const handleLogout = async () => {
       try {
@@ -160,46 +115,6 @@ export default function UserProfile() {
                     <p className="text-black"><span className="font-semibold">Class:</span> {user.class}</p>
                   )}
                 </div>
-                
-                {user.affiliation === "student" && (
-                  <div className="bg-springWater p-4 rounded-lg border border-black">
-                    <h2 className="text-xl font-semibold text-northeasternRed mb-2">Update Class</h2>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-black mb-1">Select Class</label>
-                        <select 
-                          value={selectedClass}
-                          onChange={handleClassChange}
-                          className="w-full p-2 border border-black rounded-md focus:outline-none focus:ring-2"
-                        >
-                          <option value="">Select a class</option>
-                          {classes.map(classItem => (
-                            <option key={classItem.id} value={classItem.id}>
-                              {classItem.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <button
-                        onClick={updateClass}
-                        disabled={isUpdating || !selectedClass}
-                        className={`w-full py-2 rounded-md font-semibold text-white border border-black
-                          ${isUpdating || !selectedClass 
-                            ? "bg-gray-400 cursor-not-allowed" 
-                            : "bg-wood text-navy hover:opacity-90"}`}
-                      >
-                        {isUpdating ? "Updating..." : "Update Class"}
-                      </button>
-                      
-                      {updateSuccess && (
-                        <div className="bg-green-100 text-green-700 p-2 rounded-md text-center border border-black">
-                          Class updated successfully!
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
       
