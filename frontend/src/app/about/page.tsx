@@ -31,7 +31,7 @@ export default function AboutPage() {
           <p className="text-lg text-gray-800">Review a job description, evaluate resumes, and decide which candidates deserve an interview.</p>
           <p className="text-lg text-gray-800">Then, watch interview clips and choose the top two finalists for the role.</p>
           <p className="text-lg text-gray-800">Who will your group select to be your NUHire?</p>
-          <p className="text-xl font-rubik mb-4">An Applicant Tracking System (ATS) is a software that streamlines the hiring process by automating tasks like resume screening and applicant tracking. It helps organizations manage the flow of applications and identify qualified candidates.</p>
+          <p className="text-xl font-rubik mb-4 max-w-3xl">An Applicant Tracking System (ATS) is a software that streamlines the hiring process by automating tasks like resume screening and applicant tracking. It helps organizations manage the flow of applications and identify qualified candidates.</p>
           <h1 className="text-2xl font-rubik font-bold mb-4">Before you get started on this activity, watch the short video below:</h1>
           <div className="w-full max-w-5xl aspect-video border-4 border-[#1c2a63] mb-5 rounded-lg shadow-lg">
             <iframe

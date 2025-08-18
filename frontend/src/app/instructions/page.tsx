@@ -32,10 +32,20 @@ export default function InstructionsPage() {
     fetchUser();
   }, [router]);
 
- const handleContinue = () => {
+  const handleContinue = () => {
     window.location.href = `${FRONT_URL}/dashboard?name=${encodeURIComponent(name)}`;
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    );
+  }  
 
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
@@ -47,7 +57,7 @@ export default function InstructionsPage() {
       
       <div className="z-10 flex flex-col items-center relative flex-grow p-8 overflow-y-auto">
         <h1 className="text-4xl font-extrabold text-northeasternRed mb-8 text-center">NUHire Progress Steps</h1>
-        <div className="max-w-2xl w-full space-y-8">
+        <div className="max-w-2xl w-full space-y-8 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-md p-6 border-l-8 border-northeasternRed">
             <h2 className="text-2xl font-bold mb-2"><span className="text-northeasternRed">1.</span> <span className="text-navy">Job Description</span></h2>
             <p className="text-gray-800">Your group will be assigned a real job description. Read it carefully to understand the role and what the employer is looking for in a candidate.</p>

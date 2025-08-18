@@ -61,7 +61,7 @@ const Dashboard = () => {
       label: "Employer Panel",
       path: "/employerPannel",
       emoji: "🏢",
-      desc: "View employer dashboard."
+      desc: "Hear from an employer."
     },
   ];
 
@@ -196,7 +196,17 @@ const Dashboard = () => {
     });
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    );
+  }  
+  
   if (!user || user.affiliation !== "student") return null;
 
   return (
@@ -215,13 +225,16 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
             {steps.map((step, idx) => {
               const unlocked = isStepUnlocked(step.key);
+              const isEmployerPanel = step.key === "employerPannel";
               return (
                 <div
                   key={step.key}
                   className={`flip-card w-full aspect-[4/3] min-h-[200px] max-h-[280px] max-w-[500px] mx-auto perspective cursor-pointer ${!unlocked ? "opacity-60 cursor-not-allowed" : ""}`}
                   onClick={() => handleFlip(idx)}
                   title={
-                    !user?.job_des && step.key !== "jobdes"
+                    isEmployerPanel
+                      ? "Coming Soon"
+                      : !user?.job_des && step.key !== "jobdes"
                       ? "You need to be assigned a job description first."
                       : step.key === "jobdes" && !user?.job_des
                       ? "You have not been assigned a job description yet."
@@ -251,6 +264,9 @@ const Dashboard = () => {
                         href={unlocked ? step.path : undefined}
                         className={`mt-4 underline ${unlocked ? "text-northeasternBlack" : "text-gray-400 pointer-events-none"}`}
                         style={{ pointerEvents: unlocked ? "auto" : "none" }}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                        }}
                       >
                         Go to Step
                       </a>

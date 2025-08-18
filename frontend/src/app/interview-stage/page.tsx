@@ -533,7 +533,8 @@ useEffect(() => {
         </div>
       </div>
     );
-  }
+  }  
+  
   
   // Error state
   if (error) {

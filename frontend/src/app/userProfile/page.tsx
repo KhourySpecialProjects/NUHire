@@ -143,34 +143,34 @@ export default function UserProfile() {
         {user?.affiliation !== "admin" ? <Navbar /> : <NavbarAdmin />}
         <div className="bg-sand flex flex-col items-center justify-center p-6 min-h-screen">
       
-          <div className="bg-navy p-8 rounded-2xl shadow-lg w-full max-w-lg">
-            <h1 className="text-4xl font-bold mb-4 text-sand text-center">User Profile</h1>
+          <div className="bg-norteasternWhite p-8 rounded-2xl shadow-lg w-full max-w-lg border-2 border-black">
+            <h1 className="text-4xl font-bold mb-4 text-northeasternRed text-center">User Profile</h1>
             
             {user && (
               <div className="space-y-6">
-                <div className="bg-springWater p-4 rounded-lg">
-                  <h2 className="text-xl font-semibold text-navy mb-2">Personal Information</h2>
-                  <p className="text-navy"><span className="font-semibold">Name:</span> {user.f_name} {user.l_name}</p>
-                  <p className="text-navy"><span className="font-semibold">Email:</span> {user.email}</p>
-                  <p className="text-navy"><span className="font-semibold">Role:</span> {user.affiliation}</p>
+                <div className="bg-northeasternWHite p-4 rounded-lg border border-black">
+                  <h2 className="text-xl font-semibold text-northeasternRed mb-2">Personal Information</h2>
+                  <p className="text-black"><span className="font-semibold">Name:</span> {user.f_name} {user.l_name}</p>
+                  <p className="text-black"><span className="font-semibold">Email:</span> {user.email}</p>
+                  <p className="text-black"><span className="font-semibold">Role:</span> {user.affiliation}</p>
                   {user.group_id && (
-                    <p className="text-navy"><span className="font-semibold">Group:</span> {user.group_id}</p>
+                    <p className="text-black"><span className="font-semibold">Group:</span> {user.group_id}</p>
                   )}
                   {user.class && (
-                    <p className="text-navy"><span className="font-semibold">Class:</span> {user.class}</p>
+                    <p className="text-black"><span className="font-semibold">Class:</span> {user.class}</p>
                   )}
                 </div>
                 
                 {user.affiliation === "student" && (
-                  <div className="bg-springWater p-4 rounded-lg">
-                    <h2 className="text-xl font-semibold text-navy mb-2">Update Class</h2>
+                  <div className="bg-springWater p-4 rounded-lg border border-black">
+                    <h2 className="text-xl font-semibold text-northeasternRed mb-2">Update Class</h2>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-navy mb-1">Select Class</label>
+                        <label className="block text-black mb-1">Select Class</label>
                         <select 
                           value={selectedClass}
                           onChange={handleClassChange}
-                          className="w-full p-2 border border-wood rounded-md focus:outline-none focus:ring-2"
+                          className="w-full p-2 border border-black rounded-md focus:outline-none focus:ring-2"
                         >
                           <option value="">Select a class</option>
                           {classes.map(classItem => (
@@ -184,7 +184,7 @@ export default function UserProfile() {
                       <button
                         onClick={updateClass}
                         disabled={isUpdating || !selectedClass}
-                        className={`w-full py-2 rounded-md font-semibold text-white
+                        className={`w-full py-2 rounded-md font-semibold text-white border border-black
                           ${isUpdating || !selectedClass 
                             ? "bg-gray-400 cursor-not-allowed" 
                             : "bg-wood text-navy hover:opacity-90"}`}
@@ -193,7 +193,7 @@ export default function UserProfile() {
                       </button>
                       
                       {updateSuccess && (
-                        <div className="bg-green-100 text-green-700 p-2 rounded-md text-center">
+                        <div className="bg-green-100 text-green-700 p-2 rounded-md text-center border border-black">
                           Class updated successfully!
                         </div>
                       )}
@@ -205,7 +205,7 @@ export default function UserProfile() {
       
             <button
               onClick={handleLogout}
-              className="mt-6 px-6 py-3 bg-red-600 hover:bg-red-700 transition-all duration-300 rounded-lg shadow-md text-white font-semibold text-lg w-full"
+              className="mt-6 px-6 py-3 bg-red-600 hover:bg-red-700 transition-all duration-300 rounded-lg shadow-md text-white font-semibold text-lg w-full border border-black"
             >
               Logout
             </button>

@@ -93,51 +93,52 @@ const NotesPage = () => {
 
   return (
     <div className="relative p-4">
-  {/* Toggle Notes Button */}
-  <button
-    className="bg-northeasternRed text-northeasterWhite px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition"
-    onClick={() => setIsOpen(!isOpen)}
-  >
-    ☰ Notes
-  </button>
+      {/* Toggle Notes Button */}
+      <button
+        className="bg-northeasternRed text-northeasterWhite px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        ☰ Notes
+      </button>
 
-  {isOpen && (
-    <div className="absolute top-14 right-4 w-80 bg-northeasternWhite opacity-100 shadow-lg rounded-lg p-4 border border-gray-300 z-50">
-      {/* Note Input Section */}
-      <div className="mb-4">
-        <textarea
-          placeholder="Enter your notes..."
-          className="w-full p-2 border border-wood bg-northeasternWhite text-northeasternBlack rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        <button
-          onClick={saveNote}
-          className="mt-2 w-full bg-northeasternRed border-4 border-navy text-navy py-2 rounded-md hover:bg-sand transition"
-        >
-          Save Note
-        </button>
-      </div>
+      {isOpen && (
+        <div className="absolute top-14 right-4 w-80 bg-northeasternWhite opacity-100 shadow-lg rounded-lg p-4 border border-gray-300 z-50">
+          {/* Note Input Section */}
+          <div className="mb-4">
+            <textarea
+              placeholder="Enter your notes..."
+              className="w-full p-2 border border-gray-300 bg-northeasternWhite text-northeasternBlack rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+            <button
+              onClick={saveNote}
+              className="mt-2 w-full bg-northeasternWhite border border-gray-300 text-northeasternBlack py-2 rounded-md hover:bg-sand transition"
+            >
+              Save Note
+            </button>
+          </div>
 
-      {/* Display Saved Notes */}
-      <div className="mt-4">
-        <h2 className="font-bold text-navy">Saved Notes:</h2>
-        <div className="max-h-[50vh] overflow-y-auto">
-          {notes.length > 0 ? (
-            notes.map((n) => (
-              <p key={n.id} className="text-northeasternBlack p-2 mt-2 border border-gray-200 rounded-md bg-springWater">
-          {n.content}
-              </p>
-            ))
-          ) : (
-            <p className="text-navy mt-2">No notes found.</p>
-          )}
+          {/* Display Saved Notes */}
+          <div className="mt-4">
+            <h2 className="font-bold text-navy">Saved Notes:</h2>
+            <div className="max-h-60 overflow-y-auto pr-1">
+              {notes.length > 0 ? (
+                notes.map((n) => (
+                  <div key={n.id} className="mt-2 border border-gray-200 rounded-md bg-springWater">
+                    <p className="text-northeasternBlack p-2 max-h-24 overflow-y-auto break-words">
+                      {n.content}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-navy mt-2">No notes found.</p>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
-  )}
-</div>
-
   );
 };
 
