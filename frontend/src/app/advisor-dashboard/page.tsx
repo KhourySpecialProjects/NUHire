@@ -6,6 +6,7 @@ import Link from "next/link"; // Importing Link for client-side navigation
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
 import { io } from "socket.io-client"; // Importing Socket.IO for real-time communication
 import AdminReactionPopup from "../components/adminReactionPopup"; // Importing popup component for offers
+import Slideshow from "../components/slideshow"; // Importing slideshow component for background
 
 const Dashboard = () => {
 
@@ -66,10 +67,16 @@ const Dashboard = () => {
     };
   }, []);
 
-  // If loading, show a loading message
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-xl">Loading...</div>;
-  }
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    );
+  }  
 
   if (!user || user.affiliation !== "admin") {
     // If the user is not an admin, redirect to the home page
@@ -96,45 +103,51 @@ const Dashboard = () => {
 
   // Render the dashboard if the user is an admin
   return (
-    <div className="flex flex-col min-h-screen bg-sand font-rubik">
+    <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+      <div className="fixed inset-0 z-0">
+          <Slideshow />
+      </div>        
+      <div className="fixed inset-0 bg-sand/80 z-5" />
       <NavbarAdmin />
-
-      <div className="flex justify-center items-center py-10">
-        <h1 className="text-4xl font-bold text-navy text-center">
-          Welcome to NUHire
+      <div className="mt-6"/>
+      <div className="flex justify-center items-center py-1 z-10">
+        <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
+          Advisor Dashboard
         </h1>
       </div>
 
-      <main className="flex flex-col items-center justify-center flex-grow">
-        <div className="mt-6 gap-5 flex flex-col justify-center items-center">
-          <Link
-            href="/grouping"
-            className="px-10 py-10 bg-navy text-sand border-4 border-wood font-semibold rounded-lg shadow-md hover:bg-navyHeader transition"
-          >
-            Create and View Groups
-          </Link>
-          <Link 
-            href="/new-pdf" 
-            className="px-10 py-10 bg-navy text-sand border-4 border-wood font-semibold rounded-lg shadow-md hover:bg-springWater transition"
-          >
-            Upload Job Descriptions and Resumes
-          </Link>
-
-          <Link
-            href="/sendpopups"
-            className="px-10 py-10 bg-navy text-sand border-4 border-wood font-semibold rounded-lg shadow-md hover:bg-navyHeader transition mt-6"
-          >
-            Send Popups
-          </Link>
-        </div>
+      <main className="flex flex-col items-center justify-center flex-grow z-10">
+        <div className="mt-6 gap-8 flex flex-row justify-center items-center">
+            <Link
+              href="/grouping"
+              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+            >
+              <span className="text-5xl mb-2">👥</span>
+              Create and View Groups
+            </Link>
+            <Link 
+              href="/new-pdf" 
+              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+            >
+              <span className="text-5xl mb-2">📤</span>
+              Upload Job Descriptions and Resumes
+            </Link>
+            <Link
+              href="/sendpopups"
+              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+            >
+              <span className="text-5xl mb-2">📢</span>
+              Send Popups
+            </Link>
+          </div>
 
         {/* Render pending offers as popups */}
         {pendingOffers.map(({classId, groupId, candidateId }) => (
           <div
             key={`offer-${classId}-${groupId}-${candidateId}`}
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            className="fixed inset-0 bg-northeasternBlack bg-opacity-70 flex justify-center items-center z-50"
           >
-            <div className="bg-springWater p-6 rounded-lg shadow-lg max-w-md mx-auto">
+            <div className="bg-northeasternWhite p-6 rounded-lg shadow-lg max-w-md mx-auto border-2 border-northeasternRed">
               <AdminReactionPopup
                 headline={`Group ${groupId} from Class ${classId} wants to offer Candidate ${candidateId}`}
                 message="Do you approve?"

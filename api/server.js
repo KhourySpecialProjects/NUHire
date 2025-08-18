@@ -171,8 +171,6 @@ app.use(passport.session());
 
 // Middleware for logging session data and authenticated user information for debugging purposes
 app.use((req, res, next) => {
-  console.log("Session Data:", req.session);
-  console.log("Authenticated User:", req.user);
   next();
 });
 
@@ -228,6 +226,7 @@ async function initializeApp() {
       db = await connectToDatabase();
       global.db = db; // Make it globally available
       connected = true;
+      initializeDatabase();
       console.log("Database connection established successfully");
     } catch (error) {
       retryCount++;
@@ -343,6 +342,70 @@ function configurePassport() {
   });
 }
 
+const initializeDatabase = () => {
+  const queries = [
+    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@husky.neu.edu', 1, 1)",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Sample', 'uploads/jobdescription/sample-job-description.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Source One', 'uploads/jobdescription/SourceOneJobDescription.pdf')",
+    "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Two Six Labs', 'uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample1', 'uploads/resumes/sample1.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample2', 'uploads/resumes/sample2.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample3', 'uploads/resumes/sample3.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample4', 'uploads/resumes/sample4.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample5', 'uploads/resumes/sample5.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample6', 'uploads/resumes/sample6.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample7', 'uploads/resumes/sample7.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample8', 'uploads/resumes/sample8.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample9', 'uploads/resumes/sample9.pdf')",
+    "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample10', 'uploads/resumes/sample10.pdf')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (1, 'https://www.youtube.com/embed/OVAMb6Kui6A')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (2, 'https://www.youtube.com/embed/KCm6JVtoRdo')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (3, 'https://www.youtube.com/embed/srw4r3htm4U')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (4, 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (5, 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (6, 'https://www.youtube.com/embed/6bJTEZnTT5A')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (7, 'https://www.youtube.com/embed/es7XtrloDIQ')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (8, 'https://www.youtube.com/embed/0siE31sqz0Q')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (9, 'https://www.youtube.com/embed/5v-wyR5emRw')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (10, 'https://www.youtube.com/embed/TQHW7gGjrCQ')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (1, 'Interview1', 'https://www.youtube.com/embed/OVAMb6Kui6A')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (2, 'Interview2', 'https://www.youtube.com/embed/KCm6JVtoRdo')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (3, 'Interview3', 'https://www.youtube.com/embed/srw4r3htm4U')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (4, 'Interview5', 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (5, 'Interview5', 'https://www.youtube.com/embed/sjTxmq68RXU')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (6, 'Interview6', 'https://www.youtube.com/embed/6bJTEZnTT5A')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (7, 'Interview7', 'https://www.youtube.com/embed/es7XtrloDIQ')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (8, 'Interview8', 'https://www.youtube.com/embed/0siE31sqz0Q')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (9, 'Interview9', 'https://www.youtube.com/embed/5v-wyR5emRw')",
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (10, 'Interview10', 'https://www.youtube.com/embed/TQHW7gGjrCQ')"
+      ];
+      
+  const executeQueries = async () => {
+    for (const query of queries) {
+      try {
+        await new Promise((resolve, reject) => {
+          db.query(query, (err, result) => {
+            if (err) {
+              console.error(`FULL ERROR for query [${query}]:`, err);
+              resolve();
+            } else {
+              resolve(result);
+            }
+          });
+         });
+      } catch (error) {
+        console.error(`Exception in query: ${query.substring(0, 60)}...`, error);
+      }
+    }
+    console.log("Database initialization completed!");
+  };
+      
+  executeQueries();
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Socket.io configuration for real-time communication between the server and clients
 
@@ -352,8 +415,6 @@ let onlineStudents = {};
 // Listen for incoming connections from clients
 // When a client connects, the server logs the connection and sets up event listeners for various events
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
-  console.log(`User connected: ${socket.id}`);
 
   // Listen for the "studentOnline" event, which is emitted by the client when a student comes online
   socket.on("studentOnline", ({ studentId }) => {
@@ -373,8 +434,6 @@ io.on("connection", (socket) => {
     db.query("SELECT group_id, current_page FROM Users WHERE email = ?", [studentId], (err, result) => {
       if (!err && result.length > 0) {
         const { group_id, current_page } = result[0];
-        console.log(`Student ${studentId} (Group ${group_id}) is on ${current_page}`);
-
         io.emit("updateOnlineStudents", { studentId, group_id, current_page });
       }
     });
@@ -392,6 +451,8 @@ io.on("connection", (socket) => {
   // The server emits the checkbox update to all clients in the specified group room    
   // Listen for the "check" event
   socket.on("check", ({ group_id, resume_number, checked }) => {
+    console.log(`Checkbox update received: Room ${group_id}, Resume ${resume_number}, Checked: ${checked}`);
+    
     // Extract class information from the group_id if it contains the new format
     let actualGroupId = group_id;
     let classId = null;
@@ -418,8 +479,11 @@ io.on("connection", (socket) => {
             return; // Stop execution on error
         }
         
-        // Emit the update to all clients in the same room
-        socket.to(group_id).emit("checkboxUpdated", { resume_number, checked });
+        console.log(`Database updated successfully for resume ${resume_number}`);
+        
+        // Emit the update to ALL clients in the same room (including sender)
+        io.to(group_id).emit("checkboxUpdated", { resume_number, checked });
+        console.log(`Emitted checkboxUpdated to room ${group_id}: Resume ${resume_number}, Checked: ${checked}`);
     });
   });
 
@@ -468,13 +532,77 @@ io.on("connection", (socket) => {
   // Listen for the "makeOfferRequest" event, which is emitted by the client when a student group wants to make an offer to a candidate
   socket.on("makeOfferRequest", ({classId, groupId, candidateId }) => {
     console.log(`Student in class ${classId}, group ${groupId} wants to offer candidate ${candidateId}`);
-    io.emit("makeOfferRequest", {classId, groupId, candidateId});
+    
+    // Find and notify all admin users about the new offer request
+    db.query("SELECT email FROM Users WHERE affiliation = 'admin'", (err, admins) => {
+      if (!err && admins.length > 0) {
+        console.log(`Notifying ${admins.length} admin(s) about offer request`);
+        admins.forEach(({ email }) => {
+          const adminSocketId = onlineStudents[email];
+          if (adminSocketId) {
+            console.log(`Sending offer request notification to admin: ${email}`);
+            io.to(adminSocketId).emit("makeOfferRequest", {
+              classId, 
+              groupId, 
+              candidateId,
+              message: `Group ${groupId} in Class ${classId} wants to make an offer to Candidate ${candidateId}`,
+              timestamp: new Date().toISOString()
+            });
+          } else {
+            console.log(`Admin ${email} is not currently online`);
+          }
+        });
+      } else {
+        console.log("No admin users found or database error:", err);
+      }
+    });
+
+    const roomId = `group_${groupId}_class_${classId}`;
+    io.to(roomId).emit("groupMemberOffer");
   });
 
   // Advisor’s decision → notify the student group
   socket.on('makeOfferResponse', ({classId, groupId, candidateId, accepted }) => {
     console.log(`Advisor responded to class ${classId}, group ${groupId} for candidate ${candidateId}: accepted=${accepted}`);
     io.emit('makeOfferResponse', {classId, groupId, candidateId, accepted });
+  });
+
+  // Listen for the "moveGroup" event, that will move all students in the same group to the target page
+  socket.on("moveGroup", ({classId, groupId, targetPage}) => {
+    console.log(`Moving group ${groupId} in class ${classId} to ${targetPage}`);
+    const roomId = `group_${groupId}_class_${classId}`;
+    console.log(`Emitting moveGroup to room: ${roomId}`);
+    io.to(roomId).emit("moveGroup", {classId, groupId, targetPage});
+  });
+
+  // Listen for rating updates during interviews
+  socket.on("updateRating", ({ratingType, value, groupId, classId}) => {
+    console.log(`Rating update from group ${groupId}, class ${classId}: ${ratingType} = ${value}`);
+    const roomId = `group_${groupId}_class_${classId}`;
+    // Broadcast to all members in the room including sender
+    io.to(roomId).emit("ratingUpdated", {ratingType, value, groupId, classId});
+  });
+
+  // Listen for interview submissions
+  socket.on("submitInterview", ({currentVideoIndex, nextVideoIndex, isLastInterview, groupId, classId}) => {
+    console.log(`Interview ${currentVideoIndex + 1} submitted by group ${groupId}, class ${classId}, moving to video ${nextVideoIndex + 1}, isLast: ${isLastInterview}`);
+    const roomId = `group_${groupId}_class_${classId}`;
+    // Broadcast to all members in the room including sender
+    io.to(roomId).emit("interviewSubmitted", {currentVideoIndex, nextVideoIndex, isLastInterview, groupId, classId});
+  });
+
+  // Listen for offer candidate selection
+  socket.on("offerSelected", ({candidateId, groupId, classId, roomId, checked}) => {
+    console.log(`Candidate ${candidateId} ${checked ? 'selected' : 'deselected'} for offer by group ${groupId}, class ${classId}`);
+    // Broadcast to all members in the room except sender (sender already updated their state)
+    socket.to(roomId).emit("offerSelected", {candidateId, groupId, classId, checked});
+  });
+
+  // Listen for offer submissions
+  socket.on("offerSubmitted", ({candidateId, groupId, classId, roomId}) => {
+    console.log(`Offer submitted for candidate ${candidateId} by group ${groupId}, class ${classId}`);
+    // Broadcast to all members in the room except sender (sender already updated their state)
+    socket.to(roomId).emit("offerSubmitted", {candidateId, groupId, classId});
   });
 
   // Listen for user completion of res-review stage
@@ -603,7 +731,7 @@ app.get("/auth/keycloak/callback",
         if (dbUser.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
-          return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+          return res.redirect(`${FRONT_URL}/about`);
         }
       } else {
         return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}`);
@@ -615,7 +743,6 @@ app.get("/auth/keycloak/callback",
 
 //check if the user is authenticated and return the user information
 app.get("/auth/user", (req, res) => {
-  console.log("Checking authentication for user:", req.user);
 
   if (!req.session.passport || !req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -734,13 +861,16 @@ app.post("/users", (req, res) => {
     // Helper function to create user with determined job assignment
     const createUser = (assignedJob) => {
       let sql, params;
-      
+      // If student is joining a group with a job, set current_page to 'jobdes'
       if (Affiliation === 'student' && group_id && course_id) {
-        // Include group_id, class, and job_des for students
-        sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+        if (assignedJob) {
+          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des, current_page) VALUES (?, ?, ?, ?, ?, ?, ?, 'jobdes')";
+          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+        } else {
+          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des) VALUES (?, ?, ?, ?, ?, ?, ?)";
+          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+        }
       } else if (Affiliation === 'student' && course_id) {
-        // Include class and job_des for students without group
         sql = "INSERT INTO Users (f_name, l_name, email, affiliation, class, job_des) VALUES (?, ?, ?, ?, ?, ?)";
         params = [First_name, Last_name, Email, Affiliation, course_id, assignedJob];
       } else {
@@ -748,7 +878,6 @@ app.post("/users", (req, res) => {
         sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
         params = [First_name, Last_name, Email, Affiliation];
       }
-      
       // Execute the query
       db.query(sql, params, (err, result) => {
         if (err) {
@@ -760,10 +889,8 @@ app.post("/users", (req, res) => {
         console.log(`User created: ${First_name} ${Last_name} (${Email}) as ${Affiliation}${group_id ? `, group: ${group_id}` : ''}${course_id ? `, class: ${course_id}` : ''}${assignedJob ? `, job: ${assignedJob}` : ' with no job'}`);
         
         if (Affiliation === 'student') {
+          console.log(`New student ${Email} added to group ${group_id} in class ${course_id}`);
           io.emit("newStudent", { 
-            id: result.insertId, 
-            First_name, 
-            Last_name,
             classId: course_id
           });
 
@@ -834,10 +961,17 @@ app.post("/users", (req, res) => {
 
 // Get all unique classes from the database
 app.get("/classes", (req, res) => {
-  db.query("SELECT DISTINCT class AS id, class AS name FROM Users WHERE class IS NOT NULL ORDER BY class", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results.length ? results : []);
-  });
+  db.query(
+    "SELECT DISTINCT crn AS id, crn AS name FROM Moderator ORDER BY crn", 
+    (err, results) => {
+      if (err) {
+        console.error("Error fetching classes from Moderator table:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log("Classes retrieved from Moderator table:", results);
+      res.json(results.length ? results : []);
+    }
+  );
 });
 
 // Update the students endpoint to filter by class
@@ -854,8 +988,8 @@ app.get("/students", async (req, res) => {
   
   db.query(query, params, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (results.length === 0) return res.status(404).json({ message: "No students found" });
     res.json(results);
+    console.log(results);
   });
 });
 
@@ -877,41 +1011,64 @@ app.post("/update-currentpage", (req, res) => {
   );
 });
 
-//Updates a group of Users stored job description as long as it's given the id of the group and the job descrption title
+// Updates a group of Users' stored job description and resets their progress.
+// Also deletes all notes for affected students.
 app.post("/update-job", (req, res) => {
   const { job_group_id, class_id, job } = req.body;
 
-  if (!job_group_id || job.length === 0) {
-    return res.status(400).json({ error: "Group ID and job are required." });
+  if (!job_group_id || !class_id || !job || job.length === 0) {
+    return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
-  const queries = job.map(title => {
+  // Update job_des and reset progress for all students in the group/class
+  const updatePromises = job.map(title => {
     return new Promise((resolve, reject) => {
-      db.query("UPDATE Users SET `job_des` = ? WHERE group_id = ? AND class = ?", [title, job_group_id, class_id], (err, result) => {
-        if (err) reject(err);
-        resolve(result);
-      });
+      db.query(
+        "UPDATE Users SET `job_des` = ?, `current_page` = 'jobdes' WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+        [title, job_group_id, class_id],
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
     });
   });
-  
-  db.query("SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'", [job_group_id, class_id], (err, results) => {
-    if (!err && results.length > 0) {
-      results.forEach(({ email }) => {
-        const studentSocketId = onlineStudents[email];
-        if (studentSocketId) {
-          io.to(studentSocketId).emit("jobUpdated", { 
-            job,
-          });
-        }
-      });
+
+  // Find all student emails in the group/class
+  db.query(
+    "SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+    [job_group_id, class_id],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to fetch students for note deletion." });
+      }
+
+      const emails = results.map(({ email }) => email);
+      if (emails.length > 0) {
+        // Delete all notes for these students
+        db.query("DELETE FROM Notes WHERE user_email IN (?)", [emails], (err2) => {
+          if (err2) {
+            console.error("Error deleting notes for group:", err2);
+          } else {
+            console.log(`Deleted notes for users: ${emails.join(", ")}`);
+          }
+        });
+
+        results.forEach(({ email }) => {
+          const studentSocketId = onlineStudents[email];
+          if (studentSocketId) {
+            io.to(studentSocketId).emit("jobUpdated", {
+              job,
+            });
+          }
+        });
+      }
+      Promise.all(updatePromises)
+        .then(() => res.json({ message: "Group job updated and all notes for group/class deleted successfully!" }))
+        .catch(error => res.status(500).json({ error: error.message }));
     }
-  });
-
-  Promise.all(queries)
-  .then(() => res.json({ message: "Group updated successfully!" }))
-  .catch(error => res.status(500).json({ error: error.message }));
+  );
 });
-
 // Update user's class
 app.post("/update-user-class", (req, res) => {
   if (!req.isAuthenticated()) {
@@ -946,9 +1103,13 @@ app.post("/update-user-class", (req, res) => {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Notes API Routes
 
-// get route for retrieving all notes from the database
+// get route for retrieving notes for a specific user from the database
 app.get("/notes", (req, res) => {
-  db.query("SELECT * FROM Notes ORDER BY created_at DESC", (err, results) => {
+  const userEmail = req.query.user_email;
+  if (!userEmail) {
+    return res.status(400).json({ error: "user_email query parameter is required" });
+  }
+  db.query("SELECT * FROM Notes WHERE user_email = ? ORDER BY created_at DESC", [userEmail], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
@@ -967,7 +1128,7 @@ app.post("/notes", (req, res) => {
     [user_email, content],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ message: "Note saved successfully", id: result.insertId });
+      res.status(200).json({ content, id: result.insertId });
     }
   );
 });
@@ -1046,7 +1207,9 @@ app.get("/resume", (req, res) => {
 app.post("/resume/vote", (req, res) => {
   const { student_id, group_id, class: classId, timespent, resume_number, vote } = req.body;
 
-  if (!student_id || !group_id || !classId || !resume_number || !timespent || !vote) {
+  // More precise validation that allows timespent to be 0
+  if (!student_id || !group_id || !classId || !resume_number || timespent === undefined || timespent === null || !vote) {
+    console.log("Validation failed. Received data:", { student_id, group_id, classId, timespent, resume_number, vote });
     return res.status(400).json({ 
       error: "student_id, group_id, class, resume_number, timespent, and vote are required" 
     });
@@ -1317,6 +1480,18 @@ app.delete("/resume_pdf/:file_path", (req, res) => {
 }
 );
 
+app.get('/resume_pdf/resumes/:fileName', (req, res) => {
+  const { fileName } = req.params;
+  const fullPath = path.join(__dirname, 'uploads', 'resumes', fileName);
+  console.log('Serving resume file:', fullPath);
+
+  if (fs.existsSync(fullPath)) {
+    return res.sendFile(fullPath);
+  } else {
+    return res.status(404).json({ error: `Resume not found: ${fileName}` });
+  }
+});
+
 //Deletes a stored resume as long as it's given the resumes file path
 app.get("/resume_pdf/id/:id", (req, res) => {
   const { id } = req.params;
@@ -1326,6 +1501,90 @@ app.get("/resume_pdf/id/:id", (req, res) => {
   });
 }
 );
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Moderator Sign in
+app.post('/moderator-login', (req, res) => {
+  const { username, password } = req.body;
+    console.log(process.env.MODERATOR_USERNAME);
+    console.log(process.env.MODERATOR_PASSWORD);
+  if (
+    username === process.env.MODERATOR_USERNAME &&
+    password === process.env.MODERATOR_PASSWORD
+  ) {
+    // Set session/cookie/token as needed
+    return res.json({ success: true });
+  }
+  res.status(401).json({ success: false, message: 'Invalid credentials' });
+});
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Moderator table
+
+app.post("/moderator-crns", (req, res) => {
+  const { admin_email, crn, nom_groups } = req.body;
+  if (!admin_email || !crn || !nom_groups) {
+    return res.status(400).json({ error: "admin_email, crn, and nom_groups are required" });
+  }
+  db.query(
+    "INSERT INTO Moderator (admin_email, crn, nom_groups) VALUES (?, ?, ?)",
+    [admin_email, crn, nom_groups],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: result.insertId, admin_email, crn, nom_groups });
+    }
+  );
+  console.log(`Added CRN ${crn} for admin ${admin_email} with ${nom_groups} groups`);
+});
+
+app.get("/moderator-crns", (req, res) => {
+  db.query("SELECT * FROM Moderator", (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+app.delete("/moderator-crns/:crn", (req, res) => {
+  const { crn } = req.params;
+  console.log("Deleting CRN:", crn);
+  db.query("DELETE FROM Moderator WHERE crn = ?", [crn], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "CRN not found" });
+    }
+    res.json({ success: true });
+  });
+});
+
+app.get("/moderator-crns/:crn", (req, res) => {
+  const {crn} = req.params;
+  db.query("SELECT * FROM Moderator WHERE crn = ?", [crn], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results[0]);
+  });
+});
+
+app.get("/moderator-classes/:email", (req, res) => {
+  const { email } = req.params;
+  db.query(
+    "SELECT crn FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      console.log(results)
+      res.json(results.map(row => row.crn));
+    }
+  );
+});
+
+app.get("/moderator-classes-full/:email", (req, res) => {
+  const { email } = req.params;
+  db.query(
+    "SELECT * FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    }
+  );
+});
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Canidates API routes

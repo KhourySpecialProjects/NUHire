@@ -9,6 +9,7 @@ import Footer from "../components/footer";
 import io from "socket.io-client";
 import { usePathname } from "next/navigation";
 import Popup from "../components/popup";
+import Slideshow from "../components/slideshow";
 
 const socket = io(API_BASE_URL); 
 
@@ -19,6 +20,70 @@ interface User {
 }
 
 const Dashboard = () => {
+  const steps = [
+    {
+      key: "jobdes",
+      label: "Job Description",
+      path: "/jobdes",
+      emoji: "📝",
+      desc: "Review your assigned job description."
+    },
+    {
+      key: "res-review",
+      label: "Resume Review",
+      path: "/res-review",
+      emoji: "📄",
+      desc: "Individually review candidate resumes."
+    },
+    {
+      key: "res-review-group",
+      label: "Resume Review Group",
+      path: "/res-review-group",
+      emoji: "👥",
+      desc: "Discuss resumes with your group."
+    },
+    {
+      key: "interview-stage",
+      label: "Interview Stage",
+      path: "/interview-stage",
+      emoji: "🎤",
+      desc: "Interview selected candidates."
+    },
+    {
+      key: "makeOffer",
+      label: "Make an Offer",
+      path: "/makeOffer",
+      emoji: "💼",
+      desc: "Decide which candidate to hire."
+    },
+    {
+      key: "employerPannel",
+      label: "Employer Panel",
+      path: "/employerPannel",
+      emoji: "🏢",
+      desc: "Hear from an employer."
+    },
+  ];
+
+  // Function to refresh user, progress bar, and menu bar
+  const refreshDashboardUI = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
+      const userData = await response.json();
+      if (response.ok) {
+        console.log("inside response ok refreshDashboardUI");
+        setUser(userData);
+        const storedProgress = localStorage.getItem("progress") || "jobdes";
+        setProgress(storedProgress);
+        setFlipped(Array(steps.length).fill(false));
+      }
+      else {
+        console.error("Error refreshing dashboard UI:");
+      }
+    } catch (error) {
+      console.error("Error refreshing dashboard UI:", error);
+    }
+  };
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
@@ -73,27 +138,17 @@ const Dashboard = () => {
 
 
   useEffect(() => {
-    socket.on("jobUpdated", ({ job }) => {
-      setPopup({ headline: "You have been assigned a new job!", 
-        message: `You are an employer for ${job}!` });
-      const refreshUser = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-          const userData = await response.json();
-          
-          if (response.ok) {
-            setUser(userData);
-            if (userData.job_des && (!user?.job_des || progress === "jobdes")) {
-              setProgress("jobdes");
-              localStorage.setItem("progress", "jobdes");
-            }
-          }
-        } catch (error) {
-          console.error("Error refreshing user data:", error);
-        }
-      };
-      
-      refreshUser();
+    socket.on("jobUpdated", async ({ job }) => {
+      localStorage.removeItem("pdf-comments");
+      setPopup({ 
+        headline: "You have been assigned a new job!", 
+        message: `You are an employer for ${job}!` 
+      });
+      localStorage.setItem("progress", "jobdes");
+      setProgress("jobdes");
+      console.log("about to call refreshDashboardUI");
+      await refreshDashboardUI();
+      setFlipped(Array(steps.length).fill(false));
     });
 
     socket.on("receivePopup", ({ headline, message }) => {
@@ -101,6 +156,7 @@ const Dashboard = () => {
     });
 
     return () => {
+      socket.off("jobUpdated");
       socket.off("receivePopup");
     };
   }, []);
@@ -118,17 +174,7 @@ const Dashboard = () => {
     setProgress("jobdes"); 
     localStorage.setItem("pdf-comments", "");
     router.push("/dashboard")
-  }
-
- 
-  const steps = [
-    { key: "jobdes", label: "Job Description", path: "/jobdes" },
-    { key: "res-review", label: "Resume Review", path: "/res-review" },
-    { key: "res-review-group", label: "Resume Review Group", path: "/res-review-group" },
-    { key: "interview-stage", label: "Interview Stage", path: "/interview-stage" },
-    { key: "makeOffer", label: "Make an Offer", path: "/makeOffer" },
-    { key: "employerPannel", label: "Employer Panel", path: "/employerPannel" },
-  ];
+  } 
 
   const isStepUnlocked = (stepKey: string) => {
     if (!user?.job_des) {
@@ -139,86 +185,127 @@ const Dashboard = () => {
     return stepIndex <= progressIndex;
   };
 
-  if (loading) return <div>Loading...</div>;
+  const [flipped, setFlipped] = useState(Array(steps.length).fill(false));
+
+  const handleFlip = (idx: number) => {
+    if (!isStepUnlocked(steps[idx].key)) return;
+    setFlipped((prev) => {
+      const newArr = [...prev];
+      newArr[idx] = !newArr[idx];
+      return newArr;
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    );
+  }  
+  
   if (!user || user.affiliation !== "student") return null;
 
   return (
-    <div className="bg-sand font-rubik">
+    <div className="bg-sand font-rubik min-h-screen flex flex-col">
+      <div className="fixed inset-0 z-0">
+        <Slideshow />
+      </div>
+                  
+      <div className="fixed inset-0 bg-sand/80 z-5" />
       <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
-
-      <div className="flex flex-col items-center font-rubik text-navyHeader text-center space-y-7 mb-6">
-        <h1 className="text-4xl font-extrabold mb-4">Welcome to NUHire</h1>
-        <p className="text-lg text-gray-800">Work in small teams to experience what it’s like to be a hiring manager.</p>
-        <p className="text-lg text-gray-800">Review a job description, evaluate resumes, and decide which candidates deserve an interview.</p>
-        <p className="text-lg text-gray-800">Then, watch interview clips and choose the top two finalists for the role.</p>
-        <p className="text-lg text-gray-800">Who will your group select to be your NUHire?
-        </p>
-      </div>
-
-        <div className="flex flex-col items-center text-center p-6">
-          <p className="text-xl font-rubik mb-4"> An Applicant Tracking System (ATS) is a software that streamlines the hiring process by automating tasks like resume screening and applicant tracking. It helps organizations manage the flow of applications and identify qualified candidates</p>
-          <h1 className="text-2xl font-rubik font-bold mb-4">Before you get started on this activity, watch the short video below: </h1>
-          
-          <div className="w-full max-w-5xl aspect-video border-4 border-[#1c2a63] mb-5 rounded-lg shadow-lg">
-            <iframe
-              className="w-full h-full rounded-lg shadow-lg"
-              src="https://www.youtube.com/embed/fHpVPkIGVyY?si=9L9JBYH8sWTEZYe6"
-              title="YouTube video player"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            ></iframe>
+      <div className="flex-1 flex flex-col px-4 py-8 relative z-10">
+        <div className="font-extrabold text-3xl font-rubik text-redHeader mb-6 text-center">
+          <h3>Progress Steps</h3>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+            {steps.map((step, idx) => {
+              const unlocked = isStepUnlocked(step.key);
+              const isEmployerPanel = step.key === "employerPannel";
+              return (
+                <div
+                  key={step.key}
+                  className={`flip-card w-full aspect-[4/3] min-h-[200px] max-h-[280px] max-w-[500px] mx-auto perspective cursor-pointer ${!unlocked ? "opacity-60 cursor-not-allowed" : ""}`}
+                  onClick={() => handleFlip(idx)}
+                  title={
+                    isEmployerPanel
+                      ? "Coming Soon"
+                      : !user?.job_des && step.key !== "jobdes"
+                      ? "You need to be assigned a job description first."
+                      : step.key === "jobdes" && !user?.job_des
+                      ? "You have not been assigned a job description yet."
+                      : !unlocked
+                      ? "Complete previous steps to unlock this stage."
+                      : "Click to flip"
+                  }
+                  style={{ pointerEvents: unlocked ? "auto" : "none" }}
+                >
+                  <div className={`relative w-full h-full transition-transform duration-500 ${flipped[idx] ? "rotate-y-180" : ""}`}
+                    style={{ transformStyle: "preserve-3d" }}>
+                    {/* Front Side */}
+                    <div className={`absolute w-full h-full ${!unlocked ? "bg-gray-300" : "bg-northeasternWhite"} border-2 border-northeasternRed text-white rounded-xl shadow-lg flex flex-col justify-center items-center font-semibold text-lg backface-hidden p-4`}>
+                      <span className="mb-2 text-northeasternRed text-center">{step.desc}</span>
+                      <span className="text-2xl">{step.emoji}</span>
+                      {!unlocked && (
+                        <span className="text-4xl mt-4" title="Locked">
+                          🔒
+                        </span>
+                      )}
+                    </div>
+                    {/* Back Side */}
+                    <div className="absolute w-full h-full bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed bg-opacity-50 rounded-xl shadow-lg flex flex-col justify-center items-center font-extrabold text-xl rotate-y-180 backface-hidden p-4">
+                      <span className="text-center">{step.label}</span>
+                      <span className="text-3xl mt-2">{step.emoji}</span>
+                      <a
+                        href={unlocked ? step.path : undefined}
+                        className={`mt-4 underline ${unlocked ? "text-northeasternBlack" : "text-gray-400 pointer-events-none"}`}
+                        style={{ pointerEvents: unlocked ? "auto" : "none" }}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                        }}
+                      >
+                        Go to Step
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        <div className="flex font-extrabold text-3xl font-rubik text-navyHeader justify-center items-center text-center p-6">
-          <h3> Progress Bar</h3>
-        </div>
-
-
-        <div className="flex font-rubik flex-wrap gap-4 justify-center">
-          {steps.map((step) => (
-            <button
-              key={step.key}
-              onClick={() => window.location.replace(step.path)}
-              disabled={!isStepUnlocked(step.key)}
-              title={
-                !user?.job_des && step.key !== "jobdes"
-                  ? "You need to be assigned a job description first."
-                  : step.key === "jobdes" && !user?.job_des
-                  ? "You have not been assigned a job description yet."
-                  : !isStepUnlocked(step.key)
-                  ? "Complete previous steps to unlock this stage."
-                  : ""
-              }
-              className={`px-4 py-2 text-lg rounded-md transition-all mb-10
-                ${isStepUnlocked(step.key) ? "bg-[#455763] text-white cursor-pointer hover:bg-[#142050]" : "bg-gray-300 text-gray-600 cursor-not-allowed opacity-60"}`}
-            >
-              {step.label}
-            </button>
-          ))}
-        </div>
-
-        {progress === "employerPannel" && (
-          <button 
-          onClick={handleCompleteSimulation}
-          className="px-6 py-3 font-semibold bg-navy text-white rounded-md shadow-lg hover:bg-navyHeader mt-6 items-center transition duration-300 mx-auto"
-          >
-            Complete Simulation
-          </button>
-        )}
-
+      </div>
+      <div className="relative z-10">
+        <Footer />
+      </div>
       {popup && (
         <Popup
-        headline = {popup.headline}
-        message={popup.message}
-        onDismiss={() => setPopup(null)} 
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)} 
         />
       )}
-      <Footer />
+
+      <style jsx>{`
+        .flip-card {
+          perspective: 1000px;
+        }
+        .flip-card > div {
+          transform-style: preserve-3d;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+        .flip-card .rotate-y-180 .backface-hidden {
+          backface-visibility: hidden;
+        }
+      `}</style>
     </div>
   );
 };

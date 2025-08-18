@@ -1,5 +1,6 @@
+
 'use client';
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Navbar from "../components/navbar";
 import NotesPage from "../components/note";
@@ -40,9 +41,11 @@ export default function Interview() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showInstructions, setShowInstructions] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const pathname = usePathname();
   const [noShow, setNoShow] = useState(false);
+  const [donePopup, setDonePopup] = useState(false);
   
   // Rating states
   const [overall, setOverall] = useState(5); 
@@ -55,12 +58,32 @@ export default function Interview() {
   const [timeSpent, setTimeSpent] = useState(0);
   const [fadingEffect, setFadingEffect] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const [interviews, setInterviews] = useState<Array<{
     resume_id: number;
     title: string;
     video_path: string;
     interview: string;
   }>>([]);
+
+  // Use ref to always have access to current interviews state
+  const interviewsRef = useRef(interviews);
+  
+  // Update ref whenever interviews change
+  useEffect(() => {
+    interviewsRef.current = interviews;
+  }, [interviews]);
+
+  // Reset video loaded state when video changes
+  useEffect(() => {
+    setVideoLoaded(false);
+  }, [videoIndex]);
+
+  useEffect(() => {
+    if (finished) {
+      setDonePopup(true);
+    }
+  }, [finished]);
 
   // Fetch user data
   useEffect(() => {
@@ -155,9 +178,76 @@ export default function Interview() {
   useEffect(() => {
     if (user && user.email) {
       console.log("User loaded, updating current page");
+      
+      // Setup socket connection and join group room
+      const roomId = `group_${user.group_id}_class_${user.class}`;
+      console.log("Joining room:", roomId);
+      socket.emit("joinGroup", roomId);
+      
       // Emit socket events
       socket.emit("studentOnline", { studentId: user.email }); 
       socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+      
+      // Listen for group move events
+      socket.on("moveGroup", ({groupId, classId, targetPage}) => {
+        if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
+          console.log(`Group navigation triggered: moving to ${targetPage}`);
+          localStorage.setItem("progress", "makeOffer");
+          window.location.href = targetPage; 
+        }
+      });
+
+      // Listen for rating updates from other group members
+      socket.on("ratingUpdated", ({ ratingType, value, groupId, classId }) => {
+        if (user && groupId === user.group_id && classId === user.class) {
+          console.log(`Received rating update: ${ratingType} = ${value}`);
+          switch (ratingType) {
+            case 'overall':
+              setOverall(value);
+              break;
+            case 'professionalPresence':
+              setProfessionalPresence(value);
+              break;
+            case 'qualityOfAnswer':
+              setQualityOfAnswer(value);
+              break;
+            case 'personality':
+              setPersonality(value);
+              break;
+          }
+        }
+      });
+
+      // Listen for interview submissions from other group members
+      socket.on("interviewSubmitted", ({ currentVideoIndex, nextVideoIndex, isLastInterview, groupId, classId }) => {
+        if (user && groupId === user.group_id && classId === user.class) {
+          console.log(`Group member submitted interview ${currentVideoIndex + 1}, moving to video index ${nextVideoIndex}, isLast: ${isLastInterview}`);
+          console.log(`Total interviews available: ${interviewsRef.current.length}`);
+          console.log(`Current interviews array:`, interviewsRef.current);
+          
+          // Check if this is the last interview
+          if (isLastInterview) {
+            console.log(`All interviews completed, setting finished state`);
+            setFinished(true);
+          } else if (interviewsRef.current.length > 0 && nextVideoIndex < interviewsRef.current.length) {
+            console.log(`Setting video index to ${nextVideoIndex}`);
+            setVideoIndex(nextVideoIndex);
+            setTimeSpent(0);
+            setOverall(5);
+            setProfessionalPresence(5);
+            setQualityOfAnswer(5);
+            setPersonality(5);
+            setFinished(false); 
+            setVideoLoaded(false); // Reset video loaded state for new video 
+          } else if (interviewsRef.current.length === 0) {
+            console.log(`Interviews not loaded yet, waiting for interviews to load before processing`);
+            // Don't set finished state yet, wait for interviews to load
+          } else {
+            console.log(`Invalid video index ${nextVideoIndex} for ${interviewsRef.current.length} interviews, setting finished state`);
+            setFinished(true);
+          }
+        }
+      });
       
       // Update current page in database
       const updateCurrentPage = async () => {
@@ -171,9 +261,16 @@ export default function Interview() {
         }
       };
       
-      updateCurrentPage(); 
+      updateCurrentPage();
+      
+      // Cleanup function
+      return () => {
+        socket.off("moveGroup");
+        socket.off("ratingUpdated");
+        socket.off("interviewSubmitted");
+      };
     }
-  }, [user, pathname]);
+  }, [user, pathname]); // Remove interviews from dependency array
 
   // Fetch candidates data when user is loaded
 // Fetch candidates data when user is loaded
@@ -279,12 +376,16 @@ useEffect(() => {
   // Get current video
   const currentVid = interviews[videoIndex];
 
-  // Debug logging
+  // Debug logging - Add more detailed logging
   useEffect(() => {
-    console.log("Interviews:", interviews);
-    console.log("Video Index:", videoIndex);
-    console.log("Current video:", currentVid);
-  }, [interviews, videoIndex, currentVid]);
+    if (interviews.length > 0 && videoIndex >= 0) {
+      const isValidIndex = videoIndex < interviews.length;
+      console.log("Is valid video index:", isValidIndex);
+      if (!isValidIndex) {
+        console.warn(`Invalid video index ${videoIndex} for ${interviews.length} interviews`);
+      }
+    }
+  }, [interviews, videoIndex, currentVid, finished, loading]);
 
   // Move to next video with transition effect
   const nextVideo = () => { 
@@ -303,19 +404,55 @@ useEffect(() => {
   
   // Rating change handlers
   const handleOverallSliderChange = (value: number) => {
-    setOverall(value); 
+    setOverall(value);
+    // Emit rating update to group members
+    if (user) {
+      socket.emit("updateRating", {
+        ratingType: 'overall',
+        value,
+        groupId: user.group_id,
+        classId: user.class
+      });
+    }
   }
   
   const handleProfessionalPresenceSliderChange = (value: number) => {
-    setProfessionalPresence(value); 
+    setProfessionalPresence(value);
+    // Emit rating update to group members
+    if (user) {
+      socket.emit("updateRating", {
+        ratingType: 'professionalPresence',
+        value,
+        groupId: user.group_id,
+        classId: user.class
+      });
+    }
   }
   
   const handleQualityOfAnswerSliderChange = (value: number) => {
-    setQualityOfAnswer(value); 
+    setQualityOfAnswer(value);
+    // Emit rating update to group members
+    if (user) {
+      socket.emit("updateRating", {
+        ratingType: 'qualityOfAnswer',
+        value,
+        groupId: user.group_id,
+        classId: user.class
+      });
+    }
   }
   
   const handlePersonalitySliderChange = (value: number) => {
-    setPersonality(value); 
+    setPersonality(value);
+    // Emit rating update to group members
+    if (user) {
+      socket.emit("updateRating", {
+        ratingType: 'personality',
+        value,
+        groupId: user.group_id,
+        classId: user.class
+      });
+    }
   }
   
   // Reset all ratings
@@ -333,6 +470,15 @@ useEffect(() => {
       return;
     }
 
+    if (!videoLoaded) {
+      console.warn("Video not fully loaded yet, cannot submit");
+      return;
+    }
+
+    // Calculate these values at submission time, not render time
+    const nextVideoIndex = videoIndex + 1;
+    const isLastInterview = nextVideoIndex >= interviews.length;
+
     if (noShow) {
       await sendResponseToBackend(1, 1, 1, 1, timeSpent, currentVid.resume_id);
     } else {
@@ -344,10 +490,25 @@ useEffect(() => {
         timeSpent,
         currentVid.resume_id
       );
+    }    
+    console.log(`Submitting interview. Current index: ${videoIndex}, Next index: ${nextVideoIndex}, Is last: ${isLastInterview}, Total interviews: ${interviews.length}`);
+    // Emit submission event to synchronize group members
+    if (user) {
+      socket.emit("submitInterview", {
+        currentVideoIndex: videoIndex,
+        nextVideoIndex: nextVideoIndex,
+        isLastInterview: isLastInterview,
+        groupId: user.group_id,
+        classId: user.class
+      });
     }
 
-    if (videoIndex < interviews.length - 1) {
-      nextVideo();
+    // Update local state
+    if (!isLastInterview) {
+      console.log(`Moving to next video (index ${nextVideoIndex})`);
+      setVideoIndex(nextVideoIndex);
+      setTimeSpent(0);
+      setVideoLoaded(false); // Reset video loaded state for new video
       resetRatings();
     } else {
       console.log("All interviews have been rated!");
@@ -359,6 +520,7 @@ useEffect(() => {
   const completeInterview = () => {
     localStorage.setItem("progress", "makeOffer");
     window.location.href = '/makeOffer';
+    socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/makeOffer"});
   }
 
   // Loading state
@@ -371,7 +533,8 @@ useEffect(() => {
         </div>
       </div>
     );
-  }
+  }  
+  
   
   // Error state
   if (error) {
@@ -383,7 +546,7 @@ useEffect(() => {
           <p className="mt-2">Please try refreshing the page or return to the dashboard.</p>
           <button 
             onClick={() => window.location.href = '/dashboard'}
-            className="mt-4 bg-navyHeader text-white px-4 py-2 rounded hover:bg-navy transition"
+            className="mt-4 bg-redHeader text-white px-4 py-2 rounded hover:bg-navy transition"
           >
             Return to Dashboard
           </button>
@@ -401,7 +564,7 @@ useEffect(() => {
           <p>Please log in to access this page.</p>
           <button 
             onClick={() => window.location.href = '/'}
-            className="mt-4 bg-navyHeader text-white px-4 py-2 rounded hover:bg-navy transition"
+            className="mt-4 bg-redHeader text-white px-4 py-2 rounded hover:bg-navy transition"
           >
             Go to Login
           </button>
@@ -425,13 +588,13 @@ useEffect(() => {
             <div className="flex justify-between">
               <button
                 onClick={() => window.location.href = "/res-review-group"}
-                className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+                className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
               >
                 ← Go to Resume Review Group
               </button>
               <button
                 onClick={() => window.location.href = "/dashboard"}
-                className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+                className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
               >
                 Return to Dashboard
               </button>
@@ -446,18 +609,34 @@ useEffect(() => {
   // Main content - interview page
   return (
     <div className="bg-sand font-rubik min-h-screen">
+      {showInstructions && (
+          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
+            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
+              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
+              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
+                <li>Watch each candidate's interview video carefully.</li>
+                <li>Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.</li>
+                <li>Discuss with your group and submit your ratings for each candidate.</li>
+
+              </ul>
+              <button
+                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
+                onClick={() => setShowInstructions(false)}
+              >
+                Dismiss & Start
+              </button>
+            </div>
+          </div>
+        )}
       <Navbar />
-      <div className="flex items-right justify-end">
-        <NotesPage />
-      </div>
-      <div className="flex justify-center items-center font-rubik text-navyHeader text-4xl font-bold mb-4">
+      <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
         Interview Page
       </div>
 
       <div className="relative flex flex-col md:flex-row min-h-screen mt-4">
         {/* Evaluation panel */}
         <div key={videoIndex} className="md:w-1/3 bg-blue-50 shadow-lg p-4 mx-4 my-2 flex flex-col items-center justify-start rounded-lg">
-          <h1 className="text-2xl text-navyHeader font-bold mb-4">
+          <h1 className="text-2xl text-redHeader font-bold mb-4">
             Evaluation
           </h1>
           <h3 className="font-bol text-navy text-center">
@@ -469,28 +648,28 @@ useEffect(() => {
 
           {/* Rating sliders */}
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Overall
             </h2>
             <RatingSlider onChange={handleOverallSliderChange} value={overall} />
           </div>
 
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Professional Presence
             </h2>
             <RatingSlider onChange={handleProfessionalPresenceSliderChange} value={professionalPresence} />
           </div>
 
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Quality of Answer
             </h2>
             <RatingSlider onChange={handleQualityOfAnswerSliderChange} value={qualityOfAnswer} />
           </div>
 
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
-            <h2 className="text-md text-navyHeader font-semibold mb-2">
+            <h2 className="text-md text-redHeader font-semibold mb-2">
               Personality & Creativeness
             </h2>
             <RatingSlider onChange={handlePersonalitySliderChange} value={personality} />
@@ -499,58 +678,62 @@ useEffect(() => {
           {/* Submit button */}
           <button
             onClick={handleSubmit}
-            disabled={finished}
+            disabled={finished || !videoLoaded}
             className={`px-4 py-2 rounded-lg shadow-md transition duration-300 font-rubik mt-6 ${
-              finished
-                ? "bg-blue-500 text-white opacity-50 cursor-not-allowed"
+              finished || !videoLoaded
+                ? "bg-gray-400 text-white opacity-50 cursor-not-allowed"
                 : "bg-blue-500 text-white hover:bg-blue-900"
             }`}
           >
-            Submit Response
+            {!videoLoaded ? "Loading Video..." : "Submit Response"}
           </button>
           
           {/* Video progress indicator */}
           <div className="mt-6 text-sm text-gray-700">
-            Video {videoIndex + 1} of {interviews.length}
+            {interviews.length > 0 ? 
+              `Video ${Math.min(videoIndex + 1, interviews.length)} of ${interviews.length}` : 
+              "Loading videos..."}
           </div>
         </div>
-
-        {/* Completion notification */}
-        {finished && (
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-springWater p-8 w-200 rounded-md shadow-lg z-50 font-bold font-rubik text-navyHeader">
-            <p className="mb-4">All Interviews have been rated! You can move onto the next stage!</p>
-            <button
-              onClick={completeInterview}
-              className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
-            >
-              Continue to Next Stage
-            </button>
-          </div>
-        )}
 
         {/* Video display */}
         <div className={`md:w-2/3 flex flex-col items-center justify-center p-4 md:p-8 ${fadingEffect ? 'opacity-50 transition-opacity duration-500' : 'opacity-100 transition-opacity duration-500'}`}>
           <h1 className="text-xl font-rubik font-bold mb-4 text-center">
-            {noShow ? "Candidate No-Show" : `Candidate Interview ${videoIndex + 1}`}
+            {noShow ? "Candidate No-Show" : 
+             interviews.length > 0 && videoIndex >= 0 && videoIndex < interviews.length ? 
+             `Candidate Interview ${videoIndex + 1}` : 
+             "Loading Interview..."}
           </h1>
-          <div className="w-full max-w-4xl aspect-video border-4 border-navyHeader mb-5 rounded-lg shadow-lg mx-auto">
+          <div className="w-full max-w-4xl aspect-video border-4 border-redHeader mb-5 rounded-lg shadow-lg mx-auto">
             {noShow ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-xl font-bold">
                   This candidate did not show up.
                 </p>
               </div>
-            ) : currentVid ? (
+            ) : currentVid && currentVid.interview ? (
               <iframe
+                key={`video-${videoIndex}`}
                 className="w-full h-full rounded-lg shadow-lg"
                 src={currentVid.interview}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
+                onLoad={() => {
+                  console.log("Video iframe loaded");
+                  setTimeout(() => {
+                    setVideoLoaded(true);
+                  }, 500);
+                }}
               ></iframe>
             ) : (
               <div className="flex items-center justify-center h-full bg-gray-100">
-                <p className="text-gray-500">Loading Interview Video...</p>
+                <p className="text-gray-500">
+                  {interviews.length === 0 ? "No interviews available" : 
+                   videoIndex >= interviews.length ? "All interviews completed" :
+                   !videoLoaded ? "Loading Interview Video..." :
+                   "Loading Interview Video..."}
+                </p>
               </div>
             )}
           </div>
@@ -569,6 +752,13 @@ useEffect(() => {
             onDismiss={() => setPopup(null)}
           />
         )}
+        {donePopup && (
+          <Popup
+            headline="Interview Complete"
+            message="You have completed all interviews and ratings."
+            onDismiss={() => setDonePopup(false)}
+          />
+        )}
       </div>
 
       {/* Navigation footer */}
@@ -576,13 +766,14 @@ useEffect(() => {
         <div className="flex justify-between ml-4 mt-4 mb-4 mr-4">
           <button
             onClick={() => (window.location.href = "/res-review-group")}
-            className="px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
+            disabled={true}
           >
             ← Back: Resume Review Group
           </button>
           <button
             onClick={completeInterview}
-            className={`px-4 py-2 bg-navyHeader text-white rounded-lg shadow-md transition duration-300 font-rubik
+            className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md transition duration-300 font-rubik
             ${
               !finished
                 ? "cursor-not-allowed opacity-50"

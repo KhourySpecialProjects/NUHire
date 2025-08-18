@@ -1,7 +1,9 @@
 "use client"; // Declares that this page is a client component
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL; // API base URL from environment variables
 import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
+import { io } from "socket.io-client";
 
+const socket = io(API_BASE_URL);
 const NotesPage = () => {
   // State variables to manage notes and their visibility
   const [isOpen, setIsOpen] = useState(false);
@@ -15,44 +17,49 @@ const NotesPage = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [userEmail, setUserEmail] = useState("");
   
-    useEffect(() => {
-      const fetchUserEmail = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-          const userData = await response.json();
-          if (response.ok) {
-            setUserEmail(userData.email);
-          } else {
-            console.error("Error fetching user");
-          }
-          console.log(userData.email);
-        } catch (error) {
-          console.error("Error fetching user:", error);
-        }
-      };
-  
-      fetchUserEmail();
-    }, []);
-
-  
   useEffect(() => {
-    if (!userEmail) return;
-
-    const fetchNotes = async () => {
+    const fetchUserEmail = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/notes`, {
-          credentials: "include",
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch notes");
-
-        const data = await response.json();
-        setNotes(data);
+        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
+        const userData = await response.json();
+        if (response.ok) {
+          setUserEmail(userData.email);
+        } else {
+          console.error("Error fetching user");
+        }
+        console.log(userData.email);
       } catch (error) {
-        console.error("Error fetching notes:", error);
+        console.error("Error fetching user:", error);
       }
     };
+    fetchUserEmail();
+  }, []);
 
+  const fetchNotes = async () => {
+    if (!userEmail) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/notes?user_email=${encodeURIComponent(userEmail)}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch notes");
+      const data = await response.json();
+      setNotes(data);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    }
+  };
+
+  useEffect(() => {
+    socket.on("jobUpdated", () => {
+      setNotes([]); 
+      setNote('');
+    });
+    return () => {
+      socket.off("jobUpdated");
+    };
+  }, []);
+  
+  useEffect(() => {
     fetchNotes();
   }, [userEmail]);
 
@@ -68,63 +75,70 @@ const NotesPage = () => {
       });
 
       if (!response.ok) throw new Error(`Failed to save note: ${userEmail}`);
-
+      console.log("Note saved successfully");
       const newNote = await response.json();
       setNotes([...notes, newNote]);
-      setNote(""); // Clear input
-      window.location.reload();
+      fetchNotes();
+      setNote("");
     } catch (error) {
       console.error("Error saving note:", error);
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotes();
+    }
+  }, [isOpen]);
+
   return (
     <div className="relative p-4">
-  {/* Toggle Notes Button */}
-  <button
-    className="bg-wood text-navy px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition"
-    onClick={() => setIsOpen(!isOpen)}
-  >
-    ☰ Notes
-  </button>
+      {/* Toggle Notes Button */}
+      <button
+        className="bg-northeasternRed text-northeasterWhite px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        ☰ Notes
+      </button>
 
-  {isOpen && (
-    <div className="absolute top-14 right-4 w-80 bg-sand shadow-lg rounded-lg p-4 border border-gray-300">
-      {/* Note Input Section */}
-      <div className="mb-4">
-        <textarea
-          placeholder="Enter your notes..."
-          className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        <button
-          onClick={saveNote}
-          className="mt-2 w-full bg-wood border-4 border-navy text-navy py-2 rounded-md hover:bg-sand transition"
-        >
-          Save Note
-        </button>
-      </div>
+      {isOpen && (
+        <div className="absolute top-14 right-4 w-80 bg-northeasternWhite opacity-100 shadow-lg rounded-lg p-4 border border-gray-300 z-50">
+          {/* Note Input Section */}
+          <div className="mb-4">
+            <textarea
+              placeholder="Enter your notes..."
+              className="w-full p-2 border border-gray-300 bg-northeasternWhite text-northeasternBlack rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+            <button
+              onClick={saveNote}
+              className="mt-2 w-full bg-northeasternWhite border border-gray-300 text-northeasternBlack py-2 rounded-md hover:bg-sand transition"
+            >
+              Save Note
+            </button>
+          </div>
 
-      {/* Display Saved Notes */}
-      <div className="mt-4">
-        <h2 className="font-bold text-navy">Saved Notes:</h2>
-        <div className="max-h-[50vh] overflow-y-auto">
-          {notes.length > 0 ? (
-            notes.map((n) => (
-              <p key={n.id} className="p-2 mt-2 border border-gray-200 rounded-md bg-springWater">
-          {n.content}
-              </p>
-            ))
-          ) : (
-            <p className="text-navy mt-2">No notes found.</p>
-          )}
+          {/* Display Saved Notes */}
+          <div className="mt-4">
+            <h2 className="font-bold text-navy">Saved Notes:</h2>
+            <div className="max-h-60 overflow-y-auto pr-1">
+              {notes.length > 0 ? (
+                notes.map((n) => (
+                  <div key={n.id} className="mt-2 border border-gray-200 rounded-md bg-springWater">
+                    <p className="text-northeasternBlack p-2 max-h-24 overflow-y-auto break-words">
+                      {n.content}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-navy mt-2">No notes found.</p>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
-  )}
-</div>
-
   );
 };
 
