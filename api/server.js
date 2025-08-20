@@ -308,8 +308,13 @@ function configurePassport() {
     console.log("=== Passport Callback SUCCESS ===");
     console.log("Profile:", JSON.stringify(profile, null, 2));
 
-    
     let email = profile.email.toLowerCase().trim();
+    let firstName = profile.firstName;
+    let lastName = profile.lastName;
+
+    console.log("Email:", email);
+    console.log("First Name:", firstName);
+    console.log("Last Name:", lastName);
 
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
       if (err) {
@@ -320,7 +325,7 @@ function configurePassport() {
       if (results.length > 0) {
         return done(null, results[0]);
       } else {
-        return done(null, { email }); // let app handle first-time user
+        return done(null, { email, f_name: firstName, l_name: lastName }); // let app handle first-time user
       }
     });
   }));
@@ -344,7 +349,7 @@ function configurePassport() {
 
 const initializeDatabase = () => {
   const queries = [
-    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@husky.neu.edu', 1, 1)",
+    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('goblinshark2017@gmail.com', 1, 1)",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
@@ -734,8 +739,10 @@ app.get("/auth/keycloak/callback",
           return res.redirect(`${FRONT_URL}/about`);
         }
       } else {
-        return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}`);
-      }
+        const firstName = encodeURIComponent(user.f_name || '');
+        const lastName = encodeURIComponent(user.l_name || '');
+        console.log(`Redirecting new user to signup: ${email} (${firstName} ${lastName})`);
+        return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);      }
     });
   }
 );
@@ -957,21 +964,6 @@ app.post("/users", (req, res) => {
       createUser(job_des || null);
     }
   });
-});
-
-// Get all unique classes from the database
-app.get("/classes", (req, res) => {
-  db.query(
-    "SELECT DISTINCT crn AS id, crn AS name FROM Moderator ORDER BY crn", 
-    (err, results) => {
-      if (err) {
-        console.error("Error fetching classes from Moderator table:", err);
-        return res.status(500).json({ error: err.message });
-      }
-      console.log("Classes retrieved from Moderator table:", results);
-      res.json(results.length ? results : []);
-    }
-  );
 });
 
 // Update the students endpoint to filter by class
