@@ -3,7 +3,6 @@ const mysql = require("mysql2"); //MySQL database driver
 const passport = require("passport"); //Authentication middleware
 const KeycloakStrategy = require("@exlinc/keycloak-passport");
 const session = require("express-session"); //Session management middleware, which is used for creating and managing user sessions
-const OpenIDConnectStrategy = require("passport-openidconnect").Strategy; //OpenID Connect authentication strategy for Passport
 const dotenv = require("dotenv");// dotenv package to load environment variables from a .env file into process.env
 const cors = require("cors"); //CORS middleware for enabling Cross-Origin Resource Sharing
 const bodyParser = require("body-parser"); //Middleware for parsing incoming request bodies in a middleware before your handlers, available under the req.body property.
@@ -1362,7 +1361,6 @@ app.get("/interview/group/:group_id", (req, res) => {
   });
 });
 
-// just to test something with postman 
 app.delete("/interview/:student_id", (req, res) => {
   const { student_id } = req.params;
   db.query("DELETE FROM Interview WHERE student_id = ?", [student_id], (err) => {

@@ -126,7 +126,6 @@ CREATE TABLE `job_descriptions` (
 
 LOCK TABLES `job_descriptions` WRITE;
 /*!40000 ALTER TABLE `job_descriptions` DISABLE KEYS */;
-INSERT INTO `job_descriptions` VALUES (1,'Carbonite','uploads/jobdescription/carbonite-jobdes.pdf','2025-07-07 18:33:01'),(2,'Cygilant','uploads/jobdescription/Cygilant Security Research Job Description.pdf','2025-07-07 18:33:01'),(3,'Motionlogic','uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf','2025-07-07 18:33:01'),(4,'Sample','uploads/jobdescription/sample-job-description.pdf','2025-07-07 18:33:01'),(5,'Source One','uploads/jobdescription/SourceOneJobDescription.pdf','2025-07-07 18:33:01'),(6,'Two Six Labs','uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf','2025-07-07 18:33:01');
 /*!40000 ALTER TABLE `job_descriptions` ENABLE KEYS */;
 UNLOCK TABLES;
 
