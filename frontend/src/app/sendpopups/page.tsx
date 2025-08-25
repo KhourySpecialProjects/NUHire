@@ -12,6 +12,7 @@ const socket = io(API_BASE_URL);
 const SendPopups = () => {
   interface User {
     affiliation: string;
+    email: string;
   }
 
   interface Group {
@@ -19,31 +20,33 @@ const SendPopups = () => {
     students: any[];
   }
 
+  interface ModeratorClass {
+  crn: number;
+  nom_groups: number;
+}
+
   interface Student {
     f_name: string;
     l_name: string;
     email: string;
-    [key: string]: any; // optionally allow other props
   }
     
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
     const [loading, setLoading] = useState(true);
     const [groups, setGroups] = useState<Record<string, any>>({});
     const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
     const [headline, setHeadline] = useState("");
     const [message, setMessage] = useState(""); 
     const [sending, setSending] = useState(false);
-    const [students, setStudents] = useState<Student[]>([]);
     const [selectedPreset, setSelectedPreset] = useState<string>("");
     const [classes, setClasses] = useState<{id: number, name: string}[]>([]);
     const [selectedClass, setSelectedClass] = useState<string>("");
     const router = useRouter(); 
-    const [isConnected, setIsConntected] = useState(false);
     const [pendingOffers, setPendingOffers] = useState<
-
     { classId: number; groupId: number; candidateId: number }[]
   >([]);
-    
+    const [assignedClassIds, setAssignedClassIds] = useState<string[]>([]);
+
   const presetPopups = [
     {
       title: "Internal Referral",
@@ -61,45 +64,57 @@ const SendPopups = () => {
 
     // Fetch the logged-in user
     useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-                const userData = await response.json();
+      const fetchUser = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
+          const userData = await response.json();
 
-                if (response.ok) {
-                    setUser(userData);
-                } else {
-                    setUser(null);
-                    router.push("/");
-                }
-            } catch (error) {
-                console.error("Error fetching user:", error);
-                router.push("/");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-    fetchUser();
-  }, [router]);
+          if (response.ok) {
+            setUser(userData);
+          } else {
+            setUser(null);
+            router.push("/");
+          }
+        } catch (error) {
+          console.error("Error fetching user:", error);
+          router.push("/");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchUser();
+    }, []);
 
     // Fetch available classes
     useEffect(() => {
-        const fetchClasses = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/classes`);
-                const data = await response.json();
-                setClasses(data);
-                if (data.length > 0) {
-                    setSelectedClass(data[0].id.toString());
-                }
-            } catch (error) {
-                console.error("Error fetching classes:", error);
+      const fetchAssignedClasses = async () => {
+        console.log("Fetching assigned classes for user:", user?.email);
+        if (user?.email && user.affiliation === "admin") {
+          try {
+            // First get the assigned class IDs
+            const response = await fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`);
+            if (!response.ok) {
+              throw new Error(`Error: ${response.status}`);
             }
-        };
-
-        fetchClasses();
-    }, []);
+            const data = await response.json() as ModeratorClass[];
+            console.log("Admin's assigned classes (full data):", data);
+            
+            const classIds = data.map((item: ModeratorClass) => String(item.crn));
+            console.log("Extracted class IDs:", classIds);
+            
+            setAssignedClassIds(classIds);
+            setClasses(data.map((item: ModeratorClass) => ({
+              id: item.crn,
+              name: `CRN ${item.crn} - (${item.nom_groups} groups)`
+            })));
+            console.log("Classes set:", classes);
+          } catch (error) {
+            console.error("Error fetching moderator classes:", error);
+          }
+        }
+      };
+      fetchAssignedClasses();
+    }, [user]);
 
     // Fetch groups filtered by class
     useEffect(() => {
@@ -120,107 +135,6 @@ const SendPopups = () => {
         }
   }, [selectedClass]);
 
-  useEffect(() => {
-    // Listen for student page changes (correct event name from server)
-    socket.on("studentPageChange", ({ studentId, currentPage }) => {
-      console.log(`Received update: Student ${studentId} changed to ${currentPage}`);
-      
-      // Update students state to reflect the current page
-      setStudents(prevStudents => 
-        prevStudents.map(student =>
-          student.email === studentId 
-            ? { ...student, current_page: currentPage }
-            : student
-        )
-      );
-
-      // Update groups state as well if needed
-      setGroups(prevGroups => {
-        const updatedGroups = { ...prevGroups };
-        Object.keys(updatedGroups).forEach(groupId => {
-          if (Array.isArray(updatedGroups[groupId])) {
-            updatedGroups[groupId] = updatedGroups[groupId].map((student: any) =>
-              student.email === studentId
-                ? { ...student, current_page: currentPage }
-                : student
-            );
-          }
-        });
-        return updatedGroups;
-      });
-    });
-
-    // Listen for online student updates
-    socket.on("updateOnlineStudents", ({ studentId, group_id, current_page }) => {
-      console.log(`Student ${studentId} is online in group ${group_id} on page ${current_page}`);
-      
-      // Update both students and groups state
-      setStudents(prevStudents => 
-        prevStudents.map(student =>
-          student.email === studentId 
-            ? { ...student, current_page, online: true }
-            : student
-        )
-      );
-
-      setGroups(prevGroups => {
-        const updatedGroups = { ...prevGroups };
-        Object.keys(updatedGroups).forEach(groupId => {
-          if (Array.isArray(updatedGroups[groupId])) {
-            updatedGroups[groupId] = updatedGroups[groupId].map((student: any) =>
-              student.email === studentId
-                ? { ...student, current_page, online: true }
-                : student
-            );
-          }
-        });
-        return updatedGroups;
-      });
-    });
-
-    // Listen for new student events and refresh groups
-    socket.on("newStudent", ({ classId }) => {
-      console.log(`New student added to class ${classId}`);
-      
-      // Refresh groups for the specific class
-      const fetchGroups = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/groups?class=${classId}`);
-          const data = await response.json();
-          // Only update if this is the currently selected class
-          setGroups(prevGroups => {
-            // You could add a check here to only update if classId matches current selection
-            return data;
-          });
-        } catch (error) {
-          console.error("Error refreshing groups:", error);
-        }
-      };
-      fetchGroups();
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Admin disconnected from socket");
-    });
-
-    // Cleanup function
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
-      const { classId, groupId, candidateId } = data;
-      setPendingOffers((prev) => [...prev, {classId, groupId, candidateId }]);
-    };
-  
-    socket.on("makeOfferRequest", onRequest);
-    return () => {
-      socket.off("makeOfferRequest", onRequest);
-    };
-  }, []);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
@@ -231,16 +145,15 @@ const SendPopups = () => {
       </div>
     );
   }  
-  
 
-    if (!user || user.affiliation !== "admin") {
-        return <div>This account is not authorized to access this page. Please log in with an admin account.</div>;
-    }
+  if (!user || user.affiliation !== "admin") {
+    return <div>This account is not authorized to access this page. Please log in with an admin account.</div>;
+  }
 
-    const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedClass(e.target.value);
-        setSelectedGroups([]); // Reset selected groups when class changes
-    };
+  const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedClass(e.target.value);
+    setSelectedGroups([]); // Reset selected groups when class changes
+  };
 
   const handleCheckboxChange = (groupId: string) => {
     setSelectedGroups((prevSelected) =>

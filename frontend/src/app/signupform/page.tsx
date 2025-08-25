@@ -20,13 +20,29 @@ export default function SignupDetails() {
   const [modPass, setModPass] = useState('');
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const userEmail = urlParams.get('email');
-    if (userEmail) {
-      setEmail(userEmail);
-    } else {
-      setError('Authentication failed. Please try again.');
-    }
+    const fetchUserDetails = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const userEmail = urlParams.get('email');
+      const userFirstName = urlParams.get('firstName');
+      const userLastName = urlParams.get('lastName');
+      
+      if (userEmail) {
+        setEmail(userEmail);
+        
+        // Set first and last name from URL parameters if available
+        if (userFirstName) {
+          setFirstName(userFirstName);
+        }
+        
+        if (userLastName) {
+          setLastName(userLastName);
+        }
+      } else {
+        setError('Authentication failed. Please try again.');
+      }
+    };
+
+    fetchUserDetails();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,19 +173,17 @@ export default function SignupDetails() {
           <input 
             type="text" 
             placeholder="First Name *" 
-            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md bg-gray-200 cursor-not-allowed"
             value={firstName} 
-            onChange={(e) => setFirstName(e.target.value)} 
-            required 
+            disabled
           />
 
           <input 
             type="text" 
             placeholder="Last Name *" 
-            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-wood bg-springWater rounded-md bg-gray-200 cursor-not-allowed"
             value={lastName} 
-            onChange={(e) => setLastName(e.target.value)} 
-            required 
+            disabled
           />
 
           <input 
@@ -217,7 +231,7 @@ export default function SignupDetails() {
 
           <button 
             type="submit" 
-            className="w-full bg-northeasternWhite text-northeasternRed font-semibold px-4 py-3 rounded-md hover:bg-sand transition"
+            className="w-full bg-northeasternWhite text-northeasternRed font-semibold px-4 py-3 rounded-md hover:bg-northeasternRed hover:bg-northeasternWhite transition"
           >
             Submit
           </button>

@@ -14,7 +14,6 @@ const Grouping = () => {
     f_name: string;
     l_name: string;
     email: string;
-    [key: string]: any; // optionally allow other props
   }
   
   //Defining the constants and state variables
@@ -34,7 +33,10 @@ const Grouping = () => {
   const [selectedJobClass, setSelectedJobClass] = useState("");
   const [groups, setGroups] = useState<{[key: string]: any}>({});
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
+  const [jobGroups, setJobGroups] = useState<{[key: string]: any}>({});
   const [selectedClass, setSelectedClass] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedJobGroup, setSelectedJobGroup] = useState("");
   const router = useRouter();
   const [pendingOffers, setPendingOffers] = useState<
     { classId: number; groupId: number; candidateId: number }[]
@@ -224,117 +226,24 @@ const Grouping = () => {
     }
   }, [selectedClass]);
 
-  // ✅ Socket.IO setup for real-time updates
+  const fetchJobGroups = async () => {
+    if (!selectedJobClass) return;
+      
+    try {
+      const response = await fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`);
+      const data = await response.json();
+      setJobGroups(data);
+    } catch (error) {
+      console.error("Error fetching job groups:", error);
+    }
+  };
+
+  // Add effect to fetch job groups when job class changes
   useEffect(() => {
-    if (!user) return; // Wait for user to be loaded
-    
-    const socket = io(API_BASE_URL, {
-      reconnectionAttempts: 5,
-      timeout: 5000,
-    });
-
-    socket.on("connect", () => {
-      console.log("Admin connected to socket:", socket.id);
-    });
-
-    // Listen for student page changes (correct event name from server)
-    socket.on("studentPageChange", ({ studentId, currentPage }) => {
-      console.log(`Received update: Student ${studentId} changed to ${currentPage}`);
-      
-      // Update students state to reflect the current page
-      setStudents(prevStudents => 
-        prevStudents.map(student =>
-          student.email === studentId 
-            ? { ...student, current_page: currentPage }
-            : student
-        )
-      );
-
-      // Update groups state as well if needed
-      setGroups(prevGroups => {
-        const updatedGroups = { ...prevGroups };
-        Object.keys(updatedGroups).forEach(groupId => {
-          if (Array.isArray(updatedGroups[groupId])) {
-            updatedGroups[groupId] = updatedGroups[groupId].map((student: any) =>
-              student.email === studentId
-                ? { ...student, current_page: currentPage }
-                : student
-            );
-          }
-        });
-        return updatedGroups;
-      });
-    });
-
-    // Listen for online student updates
-    socket.on("updateOnlineStudents", ({ studentId, group_id, current_page }) => {
-      console.log(`Student ${studentId} is online in group ${group_id} on page ${current_page}`);
-      
-      // Update both students and groups state
-      setStudents(prevStudents => 
-        prevStudents.map(student =>
-          student.email === studentId 
-            ? { ...student, current_page, online: true }
-            : student
-        )
-      );
-
-      setGroups(prevGroups => {
-        const updatedGroups = { ...prevGroups };
-        Object.keys(updatedGroups).forEach(groupId => {
-          if (Array.isArray(updatedGroups[groupId])) {
-            updatedGroups[groupId] = updatedGroups[groupId].map((student: any) =>
-              student.email === studentId
-                ? { ...student, current_page, online: true }
-                : student
-            );
-          }
-        });
-        return updatedGroups;
-      });
-    });
-
-    // Listen for new student events and refresh groups
-    socket.on("newStudent", ({ classId }) => {
-      console.log(`New student added to class ${classId}, selectedClass: ${selectedClass}`);
-      if (assignedClassIds.includes(String(classId))) {
-        console.log(`Class ${classId} is assigned to you`);
-        if (selectedClass === String(classId)) {
-          console.log(`Refreshing data for currently selected class ${selectedClass}`);
-          Promise.all([
-            fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
-              .then(response => response.json())
-              .then(data => {
-                console.log("Updated groups data:", data);
-                setGroups(data);
-              })
-              .catch(error => console.error("Error refreshing groups:", error)),
-              
-            fetch(`${API_BASE_URL}/students?class=${selectedClass}`)
-              .then(response => response.json())
-              .then(data => {
-                console.log("Updated students data:", data);
-                setStudents(data);
-              })
-              .catch(error => console.error("Error refreshing students:", error))
-          ]);
-        } else {
-          console.log(`Not refreshing because selected class is ${selectedClass}, not ${classId}`);
-        }
-      } else {
-        console.log(`Class ${classId} is not assigned to you. Assigned classes:`, assignedClassIds);
-      }
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Admin disconnected from socket");
-    });
-
-    // Cleanup function
-    return () => {
-      socket.disconnect();
-    };
-  }, [user, selectedClass, assignedClassIds]); 
+    if (selectedJobClass) {
+      fetchJobGroups();
+    }
+  }, [selectedJobClass]);
 
   // ✅ Handle class selection change
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -352,6 +261,29 @@ const Grouping = () => {
     setSelectedJobs([]);
     setGroupId("");
     setGroupIdJob("");
+  };
+
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newGroup = e.target.value;
+    console.log("Selected group:", newGroup);
+    setSelectedGroup(newGroup);
+    if (newGroup && Object.keys(groups).includes(newGroup)) {
+      setGroupId(newGroup);
+    } else if (newGroup) {
+      alert("Invalid group selection.");
+    }
+  };
+
+  const handleJobGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newGroup = e.target.value;
+    console.log("Selected job group:", newGroup);
+    setSelectedJobGroup(newGroup);
+    
+    if (newGroup && Object.keys(jobGroups).includes(newGroup)) {
+      setGroupIdJob(newGroup);
+    } else if (newGroup) {
+      alert("Invalid group selection.");
+    }
   };
 
   // ✅ Handle student selection
@@ -530,13 +462,25 @@ const Grouping = () => {
             )}
           </div>
           {/* Group ID Input */}
-          <input
-            type="text"
-            placeholder="Enter Group ID"
-            value={group_id}
-            onChange={(e) => setGroupId(e.target.value)}
-            className="w-full p-2 border border-wood bg-springWater rounded-md mb-2"
-          />
+          <div className="mb-4">
+            <select
+              value={selectedGroup}
+              onChange={handleGroupChange}
+              className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a group</option>
+              {groups && Object.keys(groups).map((groupId, index) => (
+                <option key={groupId} value={groupId}>
+                  Group {index + 1}
+                </option>
+              ))}
+            </select>
+            {groups && Object.keys(groups).length === 0 && (
+              <p className="text-red-500 text-sm mt-1">
+                No groups available in this class.
+              </p>
+            )}
+          </div>
           {/* Student Selection */}
           <select
             onChange={handleStudentSelection}
@@ -573,14 +517,16 @@ const Grouping = () => {
         
         <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
           <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
-          <div className="mb-2">
-            <label className="block text-navy font-semibold mb-1">
-              Class for Job Assignment
+          
+          {/* Class Selection - Fixed spacing and styling */}
+          <div className="mb-4">
+            <label className="block text-navy font-semibold mb-2">
+              Assign Groups to Jobs
             </label>
             <select
               value={selectedJobClass}
               onChange={handleJobClassChange}
-              className="w-full p-2 border border-wood bg-springWater rounded-md"
+              className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select a class</option>
               {classes.map(c => (
@@ -589,27 +535,48 @@ const Grouping = () => {
                 </option>
               ))}
             </select>
+            {classes.length === 0 && (
+              <p className="text-red-500 text-sm mt-1">
+                You have no assigned classes. Please contact the administrator.
+              </p>
+            )}
           </div>
-          <input
-            type="text"
-            placeholder="Enter Group ID for Job Assignment"
-            value={job_group_id}
-            onChange={(e) => setGroupIdJob(e.target.value)}
-            className="w-full p-2 border border-wood bg-springWater rounded-md mb-2"
-          />
-          <select
-            onChange={handleJobSelection}
-            className="w-full mb-2 p-2 border border-wood bg-springWater rounded-md"
-          >
-            <option value="">Select a job</option>
-            {jobs.map(job => (
-              <option key={job.title} value={job.title}>
-                {job.title}
-              </option>
-            ))}
-          </select>
-          {/* Selected Jobs List */}
-          <div className="mb-2 space-y-2">
+          
+          <div className="mb-4">
+            <select
+              value={selectedJobGroup}
+              onChange={handleJobGroupChange}
+              className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a group</option>
+              {jobGroups && Object.keys(jobGroups).map((groupId, index) => (
+                <option key={groupId} value={groupId}>
+                  Group {index + 1}
+                </option>
+              ))}
+            </select>
+            {jobGroups && Object.keys(jobGroups).length === 0 && (
+              <p className="text-red-500 text-sm mt-1">
+                No groups available in this class.
+              </p>
+            )}
+          </div>
+          
+          <div className="mb-4">
+            <select
+              onChange={handleJobSelection}
+              className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a job</option>
+              {jobs.map(job => (
+                <option key={job.title} value={job.title}>
+                  {job.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="mb-4 space-y-2">
             {selectedJobs.map(job => (
               <div key={job.title} className="flex items-center justify-between p-2 bg-springWater rounded-md">
                 <span className="text-navy">{job.title}</span>
@@ -622,9 +589,11 @@ const Grouping = () => {
               </div>
             ))}
           </div>
+          
+          {/* Assign Button */}
           <button
             onClick={handleAssignJob}
-            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed transition"
+            className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed hover:text-white transition"
           >
             Assign Job
           </button>
