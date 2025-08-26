@@ -1300,7 +1300,7 @@ app.get("/resume/checked/:group_id", async (req, res) => {
 
 //post route for submitting an interview vote, which checks if the required fields are provided in the request body
 app.post("/interview/vote", async (req, res) => {
-
+  console.log(req.body);
   const { student_id, group_id, studentClass, question1, question2, question3, question4, timespent, candidate_id } = req.body;
 
   if (!student_id || !group_id || !studentClass || !question1 || !question2 || !question3 || !question4 || !timespent || !candidate_id) {

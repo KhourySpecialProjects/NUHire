@@ -1,9 +1,8 @@
 
 'use client';
 import React, { useEffect, useState, useRef } from "react";
-import Image from "next/image";
 import Navbar from "../components/navbar";
-import NotesPage from "../components/note";
+import Instructions from "../components/instructions";
 import { useProgress } from "../components/useProgress";
 import Footer from "../components/footer";
 import { usePathname } from "next/navigation";
@@ -65,6 +64,11 @@ export default function Interview() {
     video_path: string;
     interview: string;
   }>>([]);
+  const interviewInstructions = [
+    "Watch each candidate's interview video carefully.",
+    "Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.",
+    "Discuss with your group and submit your ratings for each candidate."
+  ]; 
 
   // Use ref to always have access to current interviews state
   const interviewsRef = useRef(interviews);
@@ -158,7 +162,7 @@ export default function Interview() {
         timespent: timeSpent, // Make sure it's timespent (lowercase), not timeSpent
         candidate_id
       });
-      
+      console.log("Backend response:", response.status, response.data);
       if (response.status !== 200) {
         console.error("Failed to submit response:", response.statusText);
       } else {
@@ -362,15 +366,6 @@ useEffect(() => {
     return () => {
       socket.off("receivePopup");
     };
-  }, []);
-
-  // Timer for tracking time spent
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeSpent((prev) => prev + 1);
-    }, 1000); 
-    
-    return () => clearInterval(timer);
   }, []);
 
   // Get current video
@@ -610,23 +605,12 @@ useEffect(() => {
   return (
     <div className="bg-sand font-rubik min-h-screen">
       {showInstructions && (
-          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
-            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
-              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
-              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
-                <li>Watch each candidate's interview video carefully.</li>
-                <li>Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.</li>
-                <li>Discuss with your group and submit your ratings for each candidate.</li>
-
-              </ul>
-              <button
-                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
-                onClick={() => setShowInstructions(false)}
-              >
-                Dismiss & Start
-              </button>
-            </div>
-          </div>
+          <Instructions 
+            instructions={interviewInstructions}
+            onDismiss={() => setShowInstructions(false)}
+            title="Interview Instructions"
+            progress={3}
+          />
         )}
       <Navbar />
       <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
@@ -736,11 +720,6 @@ useEffect(() => {
                 </p>
               </div>
             )}
-          </div>
-          
-          {/* Timer display */}
-          <div className="text-sm text-gray-500">
-            Time spent: {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}
           </div>
         </div>
 

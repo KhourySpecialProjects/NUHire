@@ -258,17 +258,17 @@ const Dashboard = () => {
                     </div>
                     {/* Back Side */}
                     <div className="absolute w-full h-full bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed bg-opacity-50 rounded-xl shadow-lg flex flex-col justify-center items-center font-extrabold text-xl rotate-y-180 backface-hidden p-4">
-                      <span className="text-center">{step.label}</span>
-                      <span className="text-3xl mt-2">{step.emoji}</span>
                       <a
                         href={unlocked ? step.path : undefined}
-                        className={`mt-4 underline ${unlocked ? "text-northeasternBlack" : "text-gray-400 pointer-events-none"}`}
+                        className={`mt-2 underline ${unlocked ? "text-northeasternBlack" : "text-gray-400 pointer-events-none"}`}
                         style={{ pointerEvents: unlocked ? "auto" : "none" }}
                         onClick={(e) => {
                           e.stopPropagation(); 
                         }}
                       >
-                        Go to Step
+                        <div className="mb-2 text-northeasternRed text-center">Go To</div>
+                        <div className="mb-2 text-northeasternRed text-center">{step.emoji}</div>
+                        <div className="mb-2 text-northeasternRed text-center">{step.label}</div>
                       </a>
                     </div>
                   </div>
