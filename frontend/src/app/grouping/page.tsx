@@ -64,10 +64,16 @@ const Grouping = () => {
 
   // Admin socket setup
   useEffect(() => {
-    const socketUpdate = io(API_BASE_URL);
     if (!user || user.affiliation !== "admin") return;
 
+    const socketUpdate = io(API_BASE_URL);
+
+    console.log(user);
+
+    socketUpdate.emit("adminOnline", { adminEmail: user.email });
+
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
+      console.log("Received offer request:", data);
       setPendingOffers((prev) => [...prev, data]);
     };
     const onResponse = (data: { classId: number; groupId: number; candidateId: number; accepted: boolean }) => {
@@ -85,6 +91,7 @@ const Grouping = () => {
     return () => {
       socketUpdate.off("makeOfferRequest", onRequest);
       socketUpdate.off("makeOfferResponse", onResponse);
+      socketUpdate.disconnect();
     };
   }, [user]);
 

@@ -319,19 +319,11 @@ useEffect(() => {
           return null;
         })
       );
-      
+      console.log("Candidate promises created:", candidatePromises.length);
       // Use allSettled instead of all to prevent one failure from failing everything
       const results = await Promise.allSettled(candidatePromises);
-      
-      // Filter out rejected promises and null values
-      const candidatesData = results
-      .filter((result): result is PromiseFulfilledResult<{ resume_id: any; title: any; interview: any; video_path: any }> => 
-        result.status === 'fulfilled' && result.value !== null
-      )
-      .map(result => result.value);
-      
-      console.log("Final candidate data:", candidatesData);
-      setInterviews(candidatesData);
+
+      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null));
       
     } catch (err) {
       console.error("Error fetching interviews:", err);

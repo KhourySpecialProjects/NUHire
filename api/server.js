@@ -420,6 +420,10 @@ let onlineStudents = {};
 // When a client connects, the server logs the connection and sets up event listeners for various events
 io.on("connection", (socket) => {
 
+  socket.on("adminOnline", ({ adminEmail }) => {
+    socket.join(adminEmail);
+  });
+
   // Listen for the "studentOnline" event, which is emitted by the client when a student comes online
   socket.on("studentOnline", ({ studentId }) => {
     onlineStudents[studentId] = socket.id;
@@ -538,26 +542,19 @@ io.on("connection", (socket) => {
     console.log(`Student in class ${classId}, group ${groupId} wants to offer candidate ${candidateId}`);
     
     // Find and notify all admin users about the new offer request
-    db.query("SELECT email FROM Users WHERE affiliation = 'admin'", (err, admins) => {
-      if (!err && admins.length > 0) {
-        console.log(`Notifying ${admins.length} admin(s) about offer request`);
-        admins.forEach(({ email }) => {
-          const adminSocketId = onlineStudents[email];
-          if (adminSocketId) {
-            console.log(`Sending offer request notification to admin: ${email}`);
-            io.to(adminSocketId).emit("makeOfferRequest", {
-              classId, 
-              groupId, 
-              candidateId,
-              message: `Group ${groupId} in Class ${classId} wants to make an offer to Candidate ${candidateId}`,
-              timestamp: new Date().toISOString()
-            });
-          } else {
-            console.log(`Admin ${email} is not currently online`);
-          }
+    db.query("SELECT admin_email FROM Moderator WHERE crn = ?", [classId], (err, moderators) => {
+      console.log("Moderator query result:", moderators);
+      if (!err && moderators.length > 0) {
+        moderators.forEach(({ admin_email }) => {
+          io.to(admin_email).emit("makeOfferRequest", {
+            classId, 
+            groupId, 
+            candidateId
+          });
+          console.log(`Notified ${admin_email} about offer request from group ${groupId}`);
         });
       } else {
-        console.log("No admin users found or database error:", err);
+        console.log("No assigned admin found for class", classId, "or database error:", err);
       }
     });
 
@@ -1033,6 +1030,11 @@ app.post("/update-job", (req, res) => {
     (err, results) => {
       if (err) {
         return res.status(500).json({ error: "Failed to fetch students for note deletion." });
+      }
+
+      if (global.completedResReview && global.completedResReview[job_group_id]) {
+        global.completedResReview[job_group_id] = new Set();
+        console.log(`Reset completedResReview for group ${job_group_id}`);
       }
 
       const emails = results.map(({ email }) => email);
