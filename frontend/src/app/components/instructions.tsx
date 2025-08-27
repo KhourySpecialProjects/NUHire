@@ -23,8 +23,8 @@ const ProgressBar: FC<{ progress: number }> = ({ progress }) => {
   return (
     <div className="w-full flex flex-col items-center mb-8 z-[1000]">
       <div className="w-full max-w-5xl">
-        <div className="flex justify-center mb-1 px-1">
-          <span className="text-sm font-medium text-northeasternBlack">{percent}%</span>
+        <div className="flex justify-center mb-2 px-1">
+          <span className="text-xl font-medium text-northeasternBlack">Progress</span>
         </div>
         <div className="border-4 border-northeasternRed rounded-full w-full relative">
           <div className="w-full bg-gray-200 rounded-full h-10 relative overflow-visible flex">
@@ -58,6 +58,9 @@ const ProgressBar: FC<{ progress: number }> = ({ progress }) => {
               ))}
             </div>
           </div>
+        </div>
+        <div className="flex justify-center mb-2 px-1">
+          <span className="text-xl font-medium text-northeasternBlack">{percent}%</span>
         </div>
       </div>
     </div>

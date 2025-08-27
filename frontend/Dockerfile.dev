@@ -1,7 +1,8 @@
 FROM node:22-alpine
 
-# Install dependencies for Next.js and some common native builds
-RUN apk add --no-cache \
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.22/main" > /etc/apk/repositories && \
+    echo "https://dl-cdn.alpinelinux.org/alpine/v3.22/community" >> /etc/apk/repositories && \
+    apk update && apk add --no-cache \
     python3 make g++ libc-dev pkgconfig \
     pixman-dev cairo-dev pango-dev jpeg-dev \
     giflib-dev libpng-dev
@@ -16,5 +17,4 @@ COPY . .
 EXPOSE 3000
 ENV NODE_ENV development
 
-# Start dev server
 CMD ["npm", "run", "dev"]

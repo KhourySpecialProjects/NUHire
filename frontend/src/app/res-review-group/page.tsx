@@ -326,7 +326,7 @@ export default function ResReviewGroup() {
               onChange={handleSelectPreview}
             >
               <option value="">— choose resume —</option>
-              {resumes.map(r => (
+              {resumes.slice(0,10).map(r => (
                 <option key={r.resume_number} value={r.resume_number}>
                   Resume {r.resume_number}
                 </option>
@@ -346,7 +346,7 @@ export default function ResReviewGroup() {
 
         {/* RIGHT: 2 columns × 5 rows of cards */}
         <div className="w-1/2 grid grid-cols-2 grid-rows-5 gap-4 overflow-y-auto">
-          {resumes.map((resume) => {
+          {resumes.slice(0,10).map((resume) => {
             const n = resume.resume_number;
             const votes = voteCounts[n] || { yes: 0, no: 0, undecided: 0 };
             return (
@@ -395,10 +395,11 @@ export default function ResReviewGroup() {
 
       <div className="flex justify-between px-12 py-6">
         <button
-          onClick={() => (window.location.href = "/jobdes")}
+          onClick={() => router.push("/res-review")}
+          disabled={true}
           className="px-4 py-2 bg-redHeader text-white rounded-lg shadow hover:bg-blue-400 transition"
         >
-          ← Back: Job Description
+          ← Back: Resume Review Pt.1
         </button>
         <button
           onClick={completeResumes}

@@ -54,7 +54,6 @@ export default function Interview() {
   
   // Video states
   const [videoIndex, setVideoIndex] = useState(0); 
-  const [timeSpent, setTimeSpent] = useState(0);
   const [fadingEffect, setFadingEffect] = useState(false);
   const [finished, setFinished] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -129,7 +128,6 @@ export default function Interview() {
     professionalPresence: number,
     qualityOfAnswer: number,
     personality: number,
-    timeSpent: number,
     candidate_id: number
   ) => {
     if (!user || !user.id || !user.group_id) {
@@ -146,7 +144,6 @@ export default function Interview() {
       question2: professionalPresence,
       question3: qualityOfAnswer,
       question4: personality,
-      timespent: timeSpent,
       candidate_id
     });
     
@@ -159,7 +156,6 @@ export default function Interview() {
         question2: professionalPresence,
         question3: qualityOfAnswer,
         question4: personality,
-        timespent: timeSpent, // Make sure it's timespent (lowercase), not timeSpent
         candidate_id
       });
       console.log("Backend response:", response.status, response.data);
@@ -170,10 +166,6 @@ export default function Interview() {
       }
     } catch (error) {
       console.error("Error submitting response:", error);
-      if (axios.isAxiosError(error) && error.response) {
-        console.error("Error details:", error.response.data);
-        console.error("Status code:", error.response.status);
-      }
       alert("Failed to submit interview rating. Please try again.");
     }
   };
@@ -236,7 +228,6 @@ export default function Interview() {
           } else if (interviewsRef.current.length > 0 && nextVideoIndex < interviewsRef.current.length) {
             console.log(`Setting video index to ${nextVideoIndex}`);
             setVideoIndex(nextVideoIndex);
-            setTimeSpent(0);
             setOverall(5);
             setProfessionalPresence(5);
             setQualityOfAnswer(5);
@@ -388,7 +379,6 @@ useEffect(() => {
       setFadingEffect(true); 
       setTimeout(() => {
         setVideoIndex(videoIndex + 1); 
-        setTimeSpent(0); 
         setFadingEffect(false); 
         setNoShow(false);
       }, 500);
@@ -470,22 +460,27 @@ useEffect(() => {
       return;
     }
 
-    // Calculate these values at submission time, not render time
+    try {
+        if (noShow) {
+          await sendResponseToBackend(1, 1, 1, 1, currentVid.resume_id);
+        } else {
+          await sendResponseToBackend(
+            overall,
+            professionalPresence,
+            qualityOfAnswer,
+            personality,
+            currentVid.resume_id
+          );
+        }
+      }
+    catch (error) {
+      console.error("Error during submission:", error);
+      return;
+    }
+
     const nextVideoIndex = videoIndex + 1;
     const isLastInterview = nextVideoIndex >= interviews.length;
 
-    if (noShow) {
-      await sendResponseToBackend(1, 1, 1, 1, timeSpent, currentVid.resume_id);
-    } else {
-      await sendResponseToBackend(
-        overall,
-        professionalPresence,
-        qualityOfAnswer,
-        personality,
-        timeSpent,
-        currentVid.resume_id
-      );
-    }    
     console.log(`Submitting interview. Current index: ${videoIndex}, Next index: ${nextVideoIndex}, Is last: ${isLastInterview}, Total interviews: ${interviews.length}`);
     // Emit submission event to synchronize group members
     if (user) {
@@ -502,7 +497,6 @@ useEffect(() => {
     if (!isLastInterview) {
       console.log(`Moving to next video (index ${nextVideoIndex})`);
       setVideoIndex(nextVideoIndex);
-      setTimeSpent(0);
       setVideoLoaded(false); // Reset video loaded state for new video
       resetRatings();
     } else {
@@ -748,7 +742,7 @@ useEffect(() => {
             className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
             disabled={true}
           >
-            ← Back: Resume Review Group
+            ← Back: Resume Review Pt.2
           </button>
           <button
             onClick={completeInterview}

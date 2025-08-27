@@ -378,7 +378,7 @@ export default function ResumesPage() {
               <div className="grid grid-cols-2 gap-2">
                 <span className="text-left">Resume</span>
                 <span className="text-right">
-                  {currentResumeIndex + 1} / {resumesList.length}
+                  {currentResumeIndex + 1} / 10
                 </span>
                 <span className="text-left">Accepted</span>
                 <span className="text-right">{accepted} / 10</span>
@@ -518,7 +518,7 @@ export default function ResumesPage() {
                 Waiting for teammates...
               </span>
             ) : (
-              "Next: Resume Review pt. 2 →"
+              "Next: Resume Review Pt. 2 →"
             )}
           </button>
         </div>

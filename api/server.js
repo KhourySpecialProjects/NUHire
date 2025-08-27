@@ -1301,25 +1301,24 @@ app.get("/resume/checked/:group_id", async (req, res) => {
 //post route for submitting an interview vote, which checks if the required fields are provided in the request body
 app.post("/interview/vote", async (req, res) => {
   console.log(req.body);
-  const { student_id, group_id, studentClass, question1, question2, question3, question4, timespent, candidate_id } = req.body;
+  const { student_id, group_id, studentClass, question1, question2, question3, question4, candidate_id } = req.body;
 
-  if (!student_id || !group_id || !studentClass || !question1 || !question2 || !question3 || !question4 || !timespent || !candidate_id) {
+  if (!student_id || !group_id || !studentClass || !question1 || !question2 || !question3 || !question4 || !candidate_id) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   const query = `
-  INSERT INTO InterviewPage
-    (student_id, group_id, class, question1, question2, question3, question4, timespent, candidate_id)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON DUPLICATE KEY UPDATE
-    question1 = VALUES(question1),
-    question2 = VALUES(question2),
-    question3 = VALUES(question3),
-    question4 = VALUES(question4),
-    timespent  = VALUES(timespent)
-`;
+    INSERT INTO InterviewPage
+      (student_id, group_id, class, question1, question2, question3, question4, candidate_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        question1 = VALUES(question1),
+        question2 = VALUES(question2),
+        question3 = VALUES(question3),
+        question4 = VALUES(question4)
+    `;
 
-  db.query(query, [student_id, group_id, studentClass, question1, question2, question3, question4, timespent, candidate_id], (err, result) => {
+  db.query(query, [student_id, group_id, studentClass, question1, question2, question3, question4, candidate_id], (err, result) => {
     if (err) {
       console.error(err)
       return res.status(500).json({ error: "Database error" });
