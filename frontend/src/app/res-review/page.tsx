@@ -378,7 +378,7 @@ export default function ResumesPage() {
               <div className="grid grid-cols-2 gap-2">
                 <span className="text-left">Resume</span>
                 <span className="text-right">
-                  {currentResumeIndex + 1} / 10
+                  {Math.min(currentResumeIndex + 1, 10)} / 10
                 </span>
                 <span className="text-left">Accepted</span>
                 <span className="text-right">{accepted} / 10</span>

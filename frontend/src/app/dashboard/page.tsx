@@ -4,7 +4,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
-import NotesPage from "../components/note";
 import Footer from "../components/footer";
 import io from "socket.io-client";
 import { usePathname } from "next/navigation";
