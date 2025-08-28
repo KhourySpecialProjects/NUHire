@@ -418,8 +418,8 @@ const Grouping = () => {
                   className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a job</option>
-                  {jobs.map(job => (
-                    <option key={job.title} value={job.title}>
+                  {jobs.map((job, index) => (
+                    <option key={`${job.title}-${index}`} value={job.title}>
                       {job.title}
                     </option>
                   ))}

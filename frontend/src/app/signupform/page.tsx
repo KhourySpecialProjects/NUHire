@@ -142,8 +142,10 @@ export default function SignupDetails() {
         setTimeout(() => {
           if (affiliation === 'student') {
             localStorage.setItem("progress", "");
+            console.log("going to dashboard");
             router.push('/dashboard'); 
           } else if (affiliation === 'admin') {
+            console.log("going to dashboard");
             router.push('/advisor-dashboard');
           }
         }, 1500);
