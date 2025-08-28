@@ -13,8 +13,13 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 3000
-ENV NODE_ENV=development
+# Build the Next.js app for production
+RUN npm run build
 
-# Start dev server
-CMD ["npm", "run", "dev"]
+# Use Render's PORT environment variable
+EXPOSE $PORT
+
+ENV NODE_ENV=production
+
+# Start Next.js production server bound to 0.0.0.0
+CMD ["sh", "-c", "npm start -- --port ${PORT:-3000} --hostname 0.0.0.0"]
