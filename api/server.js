@@ -339,6 +339,15 @@ function configurePassport() {
   });
 }
 
+//health check endpoint
+app.get('/', (req, res) => {
+    res.send('Hello from Render!');
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', port: process.env.PORT });
+});
+
 const initializeDatabase = () => {
   const queries = [
     "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 1)",
