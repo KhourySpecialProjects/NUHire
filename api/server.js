@@ -238,7 +238,7 @@ async function initializeApp() {
   // Configure passport after database is connected
   configurePassport();
   
-  const PORT = process.env.PORT || 5001;
+  const PORT = process.env.PORT || 10000;
   // Start the server only after database is connected
   server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
