@@ -339,11 +339,6 @@ function configurePassport() {
   });
 }
 
-//health check endpoint
-app.get('/', (req, res) => {
-    res.send('Hello from Render!');
-});
-
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', port: process.env.PORT });
 });
