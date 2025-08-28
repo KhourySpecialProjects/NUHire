@@ -7,12 +7,12 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import Navbar from "../components/navbar";
-import NotesPage from "../components/note";
 import Popup from "../components/popup";
 import Footer from "../components/footer";
 import { usePathname } from "next/navigation";
 import { io } from "socket.io-client";
 import router from "next/router";
+import Instructions from "../components/instructions";
 
 const socket = io(API_BASE_URL); 
 
@@ -47,10 +47,15 @@ export default function JobDescriptionPage() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const pathname = usePathname();
-
-
   const [user, setUser] = useState<User | null>(null);
-
+  const jobDesInstructions = [
+    "Read the job description that you are hiring for.",
+    "Take notes by pressing the top right notes button, you can always access them.",
+    "Leaving comments on the description are only accessible on this page.",
+    "Pay attention to the required skills and qualifications.",
+    "Look for specific technologies or tools mentioned.",
+    "Note any soft skills that are emphasized in the job description."
+  ];
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -214,23 +219,13 @@ export default function JobDescriptionPage() {
   return (
     <div className="bg-sand font-rubik">
       {showInstructions && (
-          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
-            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
-              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
-              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
-                <li>Read the job description that you are hiring for.</li>
-                <li>Take notes by pressing the top right notes button, you can always access them.</li>
-                <li>Leaving comments on the description are only accessible on this page.</li>
-              </ul>
-              <button
-                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
-                onClick={() => setShowInstructions(false)}
-              >
-                Dismiss & Start
-              </button>
-            </div>
-          </div>
-        )}
+        <Instructions 
+          instructions={jobDesInstructions}
+          onDismiss={() => setShowInstructions(false)}
+          title="Job Description Instructions"
+          progress={0}
+        />
+      )}
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8">
 

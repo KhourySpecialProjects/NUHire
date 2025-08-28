@@ -6,14 +6,13 @@ import { useProgress } from "../components/useProgress";
 import Navbar from "../components/navbar";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import Notes from "../components/note";
 import { Document, Page, pdfjs } from "react-pdf";
-import NotesPage from "../components/note";
 import Footer from "../components/footer";
 import router from "next/router";
 import Popup from "../components/popup";
 import { io } from "socket.io-client";
 import { usePathname } from "next/navigation";
+import Instructions from "../components/instructions";
 
 const socket = io(API_BASE_URL);
 
@@ -50,12 +49,16 @@ export default function ResumesPage() {
     email: string;
     class: number;
   }
-
   const [user, setUser] = useState<User | null>(null);
   const [donePopup, setDonePopup] = useState(false);
   const totalDecisions = accepted + rejected + noResponse;
   const maxDecisions = totalDecisions >= 10;
   const resumeRef = useRef<HTMLDivElement | null>(null);
+  const resumeInstructions = [
+    "Review the resume and decide whether to accept, reject, or mark as no-response.",
+    "You may accept as many as you like out of the 10.",
+    "You have to wait for the rest of your group to finish before moving on."
+  ];  
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -356,23 +359,12 @@ export default function ResumesPage() {
         </div>
 
         {showInstructions && (
-          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
-            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
-              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
-              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
-                <li>Review the resume and decide whether to accept, reject, or mark as no-response.</li>
-                <li>You may accept as many as you like out of the 10.</li>
-                <li>But you are prompted to go back and select only 4 to move onto the second stage of the review process.</li>
-                <li>Don't worry if you rejected or accepted a resume you agree/disagree with. This is why it's done in groups.</li>
-              </ul>
-              <button
-                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
-                onClick={() => setShowInstructions(false)}
-              >
-                Dismiss & Start
-              </button>
-            </div>
-          </div>
+          <Instructions 
+            instructions={resumeInstructions}
+            onDismiss={() => setShowInstructions(false)}
+            title="Resume Review Instructions"
+            progress={1}
+          />
         )}
 
         <div className="flex justify-between w-full p-6">
@@ -386,7 +378,7 @@ export default function ResumesPage() {
               <div className="grid grid-cols-2 gap-2">
                 <span className="text-left">Resume</span>
                 <span className="text-right">
-                  {currentResumeIndex + 1} / {resumesList.length}
+                  {Math.min(currentResumeIndex + 1, 10)} / 10
                 </span>
                 <span className="text-left">Accepted</span>
                 <span className="text-right">{accepted} / 10</span>
@@ -520,11 +512,17 @@ export default function ResumesPage() {
               }`}
             disabled={disabled}
           >
-            Next: Resume Review pt. 2 →
+            {disabled && totalDecisions === 10 ? (
+              <span className="flex items-center">
+                <span className="w-5 h-5 mr-2 border-t-2 border-white border-solid rounded-full animate-spin"></span>
+                Waiting for teammates...
+              </span>
+            ) : (
+              "Next: Resume Review Pt. 2 →"
+            )}
           </button>
         </div>
       </footer>
-
       <Footer />
     </div>
   );

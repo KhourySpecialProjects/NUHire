@@ -65,6 +65,8 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
     platform: linux/amd64
@@ -72,6 +74,7 @@ services:
       #./frontend uncomment this line if you want to use the Dockerfile
       context: ./frontend # remove this line if you want to use the Dockerfile.dev
       dockerfile: Dockerfile.dev # remove this line if you want to use the Dockerfile
+      network: host
     container_name: frontend_container
     volumes:
       - "./frontend:/app"

@@ -4,7 +4,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
-import NotesPage from "../components/note";
 import Footer from "../components/footer";
 import io from "socket.io-client";
 import { usePathname } from "next/navigation";
@@ -60,8 +59,8 @@ const Dashboard = () => {
       key: "employerPannel",
       label: "Employer Panel",
       path: "/employerPannel",
-      emoji: "🏢",
-      desc: "Hear from an employer."
+      emoji: "🚧",
+      desc: "Coming Soon..."
     },
   ];
 
@@ -169,13 +168,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  const handleCompleteSimulation = () => {
-    localStorage.setItem("progress", "jobdes");
-    setProgress("jobdes"); 
-    localStorage.setItem("pdf-comments", "");
-    router.push("/dashboard")
-  } 
-
   const isStepUnlocked = (stepKey: string) => {
     if (!user?.job_des) {
       return false;
@@ -189,6 +181,7 @@ const Dashboard = () => {
 
   const handleFlip = (idx: number) => {
     if (!isStepUnlocked(steps[idx].key)) return;
+    if (steps[idx].key === "employerPannel") return;
     setFlipped((prev) => {
       const newArr = [...prev];
       newArr[idx] = !newArr[idx];
@@ -218,7 +211,7 @@ const Dashboard = () => {
       <div className="fixed inset-0 bg-sand/80 z-5" />
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8 relative z-10">
-        <div className="font-extrabold text-3xl font-rubik text-redHeader mb-6 text-center">
+        <div className="font-extrabold text-3xl font-rubik text-northeasternBlack mb-6 text-center">
           <h3>Progress Steps</h3>
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -229,7 +222,7 @@ const Dashboard = () => {
               return (
                 <div
                   key={step.key}
-                  className={`flip-card w-full aspect-[4/3] min-h-[200px] max-h-[280px] max-w-[500px] mx-auto perspective cursor-pointer ${!unlocked ? "opacity-60 cursor-not-allowed" : ""}`}
+                  className={`flip-card w-full aspect-[4/3] min-h-[200px] max-h-[280px] max-w-[500px] mx-auto perspective cursor-pointer ${(!unlocked || isEmployerPanel) ? "opacity-60 cursor-not-allowed" : ""}`}
                   onClick={() => handleFlip(idx)}
                   title={
                     isEmployerPanel
@@ -242,7 +235,7 @@ const Dashboard = () => {
                       ? "Complete previous steps to unlock this stage."
                       : "Click to flip"
                   }
-                  style={{ pointerEvents: unlocked ? "auto" : "none" }}
+                  style={{ pointerEvents: (unlocked) ? "auto" : "none" }}
                 >
                   <div className={`relative w-full h-full transition-transform duration-500 ${flipped[idx] ? "rotate-y-180" : ""}`}
                     style={{ transformStyle: "preserve-3d" }}>
@@ -250,7 +243,7 @@ const Dashboard = () => {
                     <div className={`absolute w-full h-full ${!unlocked ? "bg-gray-300" : "bg-northeasternWhite"} border-2 border-northeasternRed text-white rounded-xl shadow-lg flex flex-col justify-center items-center font-semibold text-lg backface-hidden p-4`}>
                       <span className="mb-2 text-northeasternRed text-center">{step.desc}</span>
                       <span className="text-2xl">{step.emoji}</span>
-                      {!unlocked && (
+                      {(!unlocked || isEmployerPanel) && (
                         <span className="text-4xl mt-4" title="Locked">
                           🔒
                         </span>
@@ -258,17 +251,17 @@ const Dashboard = () => {
                     </div>
                     {/* Back Side */}
                     <div className="absolute w-full h-full bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed bg-opacity-50 rounded-xl shadow-lg flex flex-col justify-center items-center font-extrabold text-xl rotate-y-180 backface-hidden p-4">
-                      <span className="text-center">{step.label}</span>
-                      <span className="text-3xl mt-2">{step.emoji}</span>
                       <a
                         href={unlocked ? step.path : undefined}
-                        className={`mt-4 underline ${unlocked ? "text-northeasternBlack" : "text-gray-400 pointer-events-none"}`}
+                        className={`mt-2 underline ${unlocked ? "text-northeasternBlack" : "text-gray-400 pointer-events-none"}`}
                         style={{ pointerEvents: unlocked ? "auto" : "none" }}
                         onClick={(e) => {
                           e.stopPropagation(); 
                         }}
                       >
-                        Go to Step
+                        <div className="mb-2 text-northeasternRed text-center">Go To</div>
+                        <div className="mb-2 text-northeasternRed text-center">{step.emoji}</div>
+                        <div className="mb-2 text-northeasternRed text-center">{step.label}</div>
                       </a>
                     </div>
                   </div>

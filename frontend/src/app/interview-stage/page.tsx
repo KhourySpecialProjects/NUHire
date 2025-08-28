@@ -1,9 +1,8 @@
 
 'use client';
 import React, { useEffect, useState, useRef } from "react";
-import Image from "next/image";
 import Navbar from "../components/navbar";
-import NotesPage from "../components/note";
+import Instructions from "../components/instructions";
 import { useProgress } from "../components/useProgress";
 import Footer from "../components/footer";
 import { usePathname } from "next/navigation";
@@ -55,7 +54,6 @@ export default function Interview() {
   
   // Video states
   const [videoIndex, setVideoIndex] = useState(0); 
-  const [timeSpent, setTimeSpent] = useState(0);
   const [fadingEffect, setFadingEffect] = useState(false);
   const [finished, setFinished] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -65,6 +63,11 @@ export default function Interview() {
     video_path: string;
     interview: string;
   }>>([]);
+  const interviewInstructions = [
+    "Watch each candidate's interview video carefully.",
+    "Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.",
+    "Discuss with your group and submit your ratings for each candidate."
+  ]; 
 
   // Use ref to always have access to current interviews state
   const interviewsRef = useRef(interviews);
@@ -125,7 +128,6 @@ export default function Interview() {
     professionalPresence: number,
     qualityOfAnswer: number,
     personality: number,
-    timeSpent: number,
     candidate_id: number
   ) => {
     if (!user || !user.id || !user.group_id) {
@@ -142,7 +144,6 @@ export default function Interview() {
       question2: professionalPresence,
       question3: qualityOfAnswer,
       question4: personality,
-      timespent: timeSpent,
       candidate_id
     });
     
@@ -155,10 +156,9 @@ export default function Interview() {
         question2: professionalPresence,
         question3: qualityOfAnswer,
         question4: personality,
-        timespent: timeSpent, // Make sure it's timespent (lowercase), not timeSpent
         candidate_id
       });
-      
+      console.log("Backend response:", response.status, response.data);
       if (response.status !== 200) {
         console.error("Failed to submit response:", response.statusText);
       } else {
@@ -166,10 +166,6 @@ export default function Interview() {
       }
     } catch (error) {
       console.error("Error submitting response:", error);
-      if (axios.isAxiosError(error) && error.response) {
-        console.error("Error details:", error.response.data);
-        console.error("Status code:", error.response.status);
-      }
       alert("Failed to submit interview rating. Please try again.");
     }
   };
@@ -232,7 +228,6 @@ export default function Interview() {
           } else if (interviewsRef.current.length > 0 && nextVideoIndex < interviewsRef.current.length) {
             console.log(`Setting video index to ${nextVideoIndex}`);
             setVideoIndex(nextVideoIndex);
-            setTimeSpent(0);
             setOverall(5);
             setProfessionalPresence(5);
             setQualityOfAnswer(5);
@@ -324,19 +319,11 @@ useEffect(() => {
           return null;
         })
       );
-      
+      console.log("Candidate promises created:", candidatePromises.length);
       // Use allSettled instead of all to prevent one failure from failing everything
       const results = await Promise.allSettled(candidatePromises);
-      
-      // Filter out rejected promises and null values
-      const candidatesData = results
-      .filter((result): result is PromiseFulfilledResult<{ resume_id: any; title: any; interview: any; video_path: any }> => 
-        result.status === 'fulfilled' && result.value !== null
-      )
-      .map(result => result.value);
-      
-      console.log("Final candidate data:", candidatesData);
-      setInterviews(candidatesData);
+
+      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null));
       
     } catch (err) {
       console.error("Error fetching interviews:", err);
@@ -364,15 +351,6 @@ useEffect(() => {
     };
   }, []);
 
-  // Timer for tracking time spent
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeSpent((prev) => prev + 1);
-    }, 1000); 
-    
-    return () => clearInterval(timer);
-  }, []);
-
   // Get current video
   const currentVid = interviews[videoIndex];
 
@@ -393,7 +371,6 @@ useEffect(() => {
       setFadingEffect(true); 
       setTimeout(() => {
         setVideoIndex(videoIndex + 1); 
-        setTimeSpent(0); 
         setFadingEffect(false); 
         setNoShow(false);
       }, 500);
@@ -475,22 +452,27 @@ useEffect(() => {
       return;
     }
 
-    // Calculate these values at submission time, not render time
+    try {
+        if (noShow) {
+          await sendResponseToBackend(1, 1, 1, 1, currentVid.resume_id);
+        } else {
+          await sendResponseToBackend(
+            overall,
+            professionalPresence,
+            qualityOfAnswer,
+            personality,
+            currentVid.resume_id
+          );
+        }
+      }
+    catch (error) {
+      console.error("Error during submission:", error);
+      return;
+    }
+
     const nextVideoIndex = videoIndex + 1;
     const isLastInterview = nextVideoIndex >= interviews.length;
 
-    if (noShow) {
-      await sendResponseToBackend(1, 1, 1, 1, timeSpent, currentVid.resume_id);
-    } else {
-      await sendResponseToBackend(
-        overall,
-        professionalPresence,
-        qualityOfAnswer,
-        personality,
-        timeSpent,
-        currentVid.resume_id
-      );
-    }    
     console.log(`Submitting interview. Current index: ${videoIndex}, Next index: ${nextVideoIndex}, Is last: ${isLastInterview}, Total interviews: ${interviews.length}`);
     // Emit submission event to synchronize group members
     if (user) {
@@ -507,7 +489,6 @@ useEffect(() => {
     if (!isLastInterview) {
       console.log(`Moving to next video (index ${nextVideoIndex})`);
       setVideoIndex(nextVideoIndex);
-      setTimeSpent(0);
       setVideoLoaded(false); // Reset video loaded state for new video
       resetRatings();
     } else {
@@ -610,23 +591,12 @@ useEffect(() => {
   return (
     <div className="bg-sand font-rubik min-h-screen">
       {showInstructions && (
-          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
-            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
-              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
-              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
-                <li>Watch each candidate's interview video carefully.</li>
-                <li>Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.</li>
-                <li>Discuss with your group and submit your ratings for each candidate.</li>
-
-              </ul>
-              <button
-                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
-                onClick={() => setShowInstructions(false)}
-              >
-                Dismiss & Start
-              </button>
-            </div>
-          </div>
+          <Instructions 
+            instructions={interviewInstructions}
+            onDismiss={() => setShowInstructions(false)}
+            title="Interview Instructions"
+            progress={3}
+          />
         )}
       <Navbar />
       <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
@@ -737,11 +707,6 @@ useEffect(() => {
               </div>
             )}
           </div>
-          
-          {/* Timer display */}
-          <div className="text-sm text-gray-500">
-            Time spent: {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}
-          </div>
         </div>
 
         {/* Popup component */}
@@ -769,7 +734,7 @@ useEffect(() => {
             className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
             disabled={true}
           >
-            ← Back: Resume Review Group
+            ← Back: Resume Review Pt.2
           </button>
           <button
             onClick={completeInterview}

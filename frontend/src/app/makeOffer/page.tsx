@@ -8,6 +8,7 @@ import NotesPage from "../components/note"; // Importing the notes page componen
 import Footer from "../components/footer"; // Importing the footer component
 import Popup from "../components/popup"; // Importing the popup component
 import axios from "axios"; // Importing axios for HTTP requests
+import Instructions from "../components/instructions"; // Importing the instructions component
 
 // Define the API base URL from environment variables
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -54,7 +55,13 @@ export default function MakeOffer() {
   const [interviewsWithVideos, setInterviewsWithVideos] = useState<any[]>([]);
   const [acceptedOffer, setAcceptedOffer] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
-
+  const [sentIn, setSentIn] = useState<(true | false | 'none')[]>(['none', 'none', 'none', 'none']);
+  const offerInstructions = [
+    "Review everything about the candidates you know.",
+    "Discuss as a team which person is getting the job offer.",
+    "Make the offer and wait for your advisor's decision."
+  ];  
+    
   // Load user
   useEffect(() => {
     const fetchUser = async () => {
@@ -310,6 +317,12 @@ export default function MakeOffer() {
             headline: "Offer accepted!",
             message: "Congratulations—you’ve extended the offer successfully.",
           });
+          setSentIn((prev) => {
+            const newSentIn = [...prev];
+            newSentIn[candidateId] = true; 
+            return newSentIn;
+          })
+
           setAcceptedOffer(true);
         } else {
           setPopup({
@@ -318,16 +331,12 @@ export default function MakeOffer() {
               "That candidate wasn’t available or has chosen another offer. Please choose again.",
           });
 
-          // filter the candidates based on the id to remove the rejected candidate.
-          setInterviewsWithVideos((prev) =>
-            prev.filter((iv) => iv.candidate_id !== candidateId)
-          );
-
-          setCheckedState((prev) => {
-            const next = { ...prev };
-            delete next[candidateId];
-            return next;
-          });
+          setCheckedState({});
+          setSentIn((prev) => {
+            const newSentIn = [...prev];
+            newSentIn[candidateId] = false; 
+            return newSentIn;
+          })
 
           setOfferPending(false);
         }
@@ -381,7 +390,7 @@ export default function MakeOffer() {
       classId: user!.class,
       groupId: user!.group_id,
       candidateId,
-    });
+    });; 
 
     setPopup({
       headline: "Offer submitted",
@@ -419,23 +428,14 @@ export default function MakeOffer() {
   return (
     <div className="min-h-screen bg-sand font-rubik">
       {showInstructions && (
-          <div className="fixed top-0 left-0 w-full h-full bg-white bg-opacity-95 z-50 flex flex-col items-center justify-center">
-            <div className="max-w-xl mx-auto p-8 rounded-lg shadow-lg border-4 border-northeasternRed">
-              <h2 className="text-2xl font-bold text-redHeader mb-4 text-center">Instructions</h2>
-              <ul className="text-lg text-northeasternBlack space-y-4 mb-6 list-disc list-inside">
-                <li>Review everything about the candidates you know.</li>
-                <li>Discuss as a team which person is getting the job offer.</li>
-                <li>Make the offer and wait for your advisor's decision.</li>
-              </ul>
-              <button
-                className="w-full px-4 py-2 bg-northeasternRed text-white rounded font-bold hover:bg-redHeader transition"
-                onClick={() => setShowInstructions(false)}
-              >
-                Dismiss & Start
-              </button>
-            </div>
-          </div>
+          <Instructions 
+            instructions={offerInstructions}
+            onDismiss={() => setShowInstructions(false)}
+            title="Offer Instructions"
+            progress={4}
+          />
         )}
+
       <Navbar />
       <div className="flex-1 flex flex-col px-4 py-8">
         <div className="w-full p-6">
@@ -448,10 +448,19 @@ export default function MakeOffer() {
               const interviewNumber = interview.candidate_id;
               const votes = voteCounts[interviewNumber];
 
+              const isAccepted = sentIn[interviewNumber] === true;
+              const isRejected = sentIn[interviewNumber] === false;
+
               return (
                 <div
                   key={interviewNumber}
-                  className="bg-wood p-6 rounded-lg shadow-md flex flex-col gap-4"
+                  className={`p-6 rounded-lg shadow-md flex flex-col gap-4 ${
+                    isAccepted
+                      ? "bg-green-100 border border-green-500"
+                      : isRejected
+                      ? "bg-red-100 border border-red-300 pointer-events-none"
+                      : "bg-wood"
+                  }`}
                 >
                   <h3 className="text-xl font-semibold text-navy text-center">
                     Candidate {interviewNumber}
@@ -470,8 +479,7 @@ export default function MakeOffer() {
 
                   <div className="mt-2 space-y-1 text-navy text-sm">
                     <p>
-                      <span className="font-medium">Overall:</span>{" "}
-                      {votes.Overall}
+                      <span className="font-medium">Overall:</span> {votes.Overall}
                     </p>
                     <p>
                       <span className="font-medium">Professional Presence:</span>{" "}
@@ -491,26 +499,25 @@ export default function MakeOffer() {
                     href={`${API_BASE_URL}/${interview.resume_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-navy hover:underline"
+                    className={`text-navy hover:underline ${isRejected ? "pointer-events-none opacity-50" : ""}`}
                   >
                     View / Download Resume
                   </a>
 
-                  <label className="flex items-center mt-2">
-                    <input
-                      type="checkbox"
-                      checked={checkedState[interviewNumber] || false}
-                      onChange={() => handleCheckboxChange(interviewNumber)}
-                      className="h-4 w-4 text-redHeader"
-                    />
-                    <span className="ml-2 text-navy text-sm">
-                      Selected for Offer
-                    </span>
-                  </label>
+                  {!isRejected && (
+                    <label className="flex items-center mt-2">
+                      <input
+                        type="checkbox"
+                        checked={checkedState[interviewNumber] || false}
+                        onChange={() => handleCheckboxChange(interviewNumber)}
+                        className="h-4 w-4 text-redHeader"
+                      />
+                      <span className="ml-2 text-navy text-sm">Selected for Offer</span>
+                    </label>
+                  )}
                 </div>
               );
             })}
-
             {popup && (
               <Popup
                 headline={popup.headline}

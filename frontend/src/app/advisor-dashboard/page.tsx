@@ -54,6 +54,8 @@ const Dashboard = () => {
     fetchUser();
   }, [router]);
 
+  socket.emit("adminOnline", { adminEmail: user?.email });
+
   // Set up Socket.IO event listeners after component mounts
   useEffect(() => {
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {

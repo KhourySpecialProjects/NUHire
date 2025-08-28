@@ -57,6 +57,7 @@ export default function InstructionsPage() {
       
       <div className="z-10 flex flex-col items-center relative flex-grow p-8 overflow-y-auto">
         <h1 className="text-4xl font-extrabold text-northeasternRed mb-8 text-center">NUHire Progress Steps</h1>
+        <h2 className="text-3xl font-extrabold text-northeasternBlack mb-8 text-center">In the shoes of an employer, you will go through the following steps:</h2>
         <div className="max-w-2xl w-full space-y-8 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-md p-6 border-l-8 border-northeasternRed">
             <h2 className="text-2xl font-bold mb-2"><span className="text-northeasternRed">1.</span> <span className="text-navy">Job Description</span></h2>
@@ -88,7 +89,6 @@ export default function InstructionsPage() {
         </button>
       </div>
       
-      {/* Footer - outside of padding container */}
       <footer className="w-full flex justify-center p-2 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl z-20">
         <a
           className="flex items-center text-wood hover:text-blue-300 transition-colors duration-200"

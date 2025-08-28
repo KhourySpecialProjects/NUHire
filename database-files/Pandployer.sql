@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `pandployer` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `pandployer`;
--- MySQL dump 10.13  Distrib 8.0.41, for macos15 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.42, for macos15 (x86_64)
 --
--- Host: 127.0.0.1    Database: pandployer
+-- Host: localhost    Database: pandployer
 -- ------------------------------------------------------
--- Server version	9.2.0
+-- Server version	9.3.0
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -86,7 +84,6 @@ CREATE TABLE `InterviewPage` (
   `question2` int NOT NULL,
   `question3` int NOT NULL,
   `question4` int NOT NULL,
-  `timespent` int NOT NULL,
   `candidate_id` int NOT NULL,
   `checked` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
@@ -126,6 +123,7 @@ CREATE TABLE `job_descriptions` (
 
 LOCK TABLES `job_descriptions` WRITE;
 /*!40000 ALTER TABLE `job_descriptions` DISABLE KEYS */;
+INSERT INTO `job_descriptions` VALUES (1,'Carbonite','uploads/jobdescription/carbonite-jobdes.pdf','2025-07-07 18:33:01'),(2,'Cygilant','uploads/jobdescription/Cygilant Security Research Job Description.pdf','2025-07-07 18:33:01'),(3,'Motionlogic','uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf','2025-07-07 18:33:01'),(4,'Sample','uploads/jobdescription/sample-job-description.pdf','2025-07-07 18:33:01'),(5,'Source One','uploads/jobdescription/SourceOneJobDescription.pdf','2025-07-07 18:33:01'),(6,'Two Six Labs','uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf','2025-07-07 18:33:01');
 /*!40000 ALTER TABLE `job_descriptions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -167,12 +165,11 @@ DROP TABLE IF EXISTS `Moderator`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Moderator` (
-  `id` int NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL,
   `nom_groups` int NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `crn` (`crn`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -370,48 +367,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-07 13:34:01
-
--- INSERT INTO `Users` (`f_name`, `l_name`, `email`, `affiliation`, `class`) VALUES ('Sai A.', 'Dhanasiri', 'saianirudhsjps@gmail.com', 'student', 1);
--- INSERT INTO `Users` (`f_name`, `l_name`, `email`, `affiliation`, `class`) VALUES ('Sage', 'Batchelor', 'sagebatchelor@gmail.com', 'student', 1);
--- INSERT INTO `Users` (`f_name`, `l_name`, `email`, `affiliation`, `class`) VALUES ('Sag', 'Bat', 'batchelor.sa@husky.neu.edu', 'student', 2);
--- INSERT INTO `Users` (`f_name`, `l_name`, `email`, `affiliation`) VALUES ('Sage', 'Batchelor', 'sagashrimproll@gmail.com', 'admin');
--- INSERT INTO `Users` (`f_name`, `l_name`, `email`, `affiliation`) VALUES ('Sai Anirudh', 'Dhanasiri', 'dhanasiri.s@husky.neu.edu', 'admin');
--- INSERT INTO `Users` (`f_name`, `l_name`, `email`, `affiliation`, `class`) VALUES ('Penguin', 'The Last', 'ilovepenguinsandhowtheylook@gmail.com', 'student', 1);
-INSERT INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 1);
-INSERT INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf');
-INSERT INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf');
-INSERT INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf');
-INSERT INTO `job_descriptions` (`title`, `file_path`) VALUES ('Sample', 'uploads/jobdescription/sample-job-description.pdf');
-INSERT INTO `job_descriptions` (`title`, `file_path`) VALUES ('Source One', 'uploads/jobdescription/SourceOneJobDescription.pdf');
-INSERT INTO `job_descriptions` (`title`, `file_path`) VALUES ('Two Six Labs', 'uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample1', 'uploads/resumes/sample1.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample2', 'uploads/resumes/sample2.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample3', 'uploads/resumes/sample3.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample4', 'uploads/resumes/sample4.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample5', 'uploads/resumes/sample5.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample6', 'uploads/resumes/sample6.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample7', 'uploads/resumes/sample7.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample8', 'uploads/resumes/sample8.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample9', 'uploads/resumes/sample9.pdf');
-INSERT INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample10', 'uploads/resumes/sample10.pdf');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (1, 'https://www.youtube.com/embed/OVAMb6Kui6A');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (2, 'https://www.youtube.com/embed/KCm6JVtoRdo');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (3, 'https://www.youtube.com/embed/srw4r3htm4U');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (4, 'https://www.youtube.com/embed/sjTxmq68RXU');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (5, 'https://www.youtube.com/embed/sjTxmq68RXU');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (6, 'https://www.youtube.com/embed/6bJTEZnTT5A');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (7, 'https://www.youtube.com/embed/es7XtrloDIQ');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (8, 'https://www.youtube.com/embed/0siE31sqz0Q');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (9, 'https://www.youtube.com/embed/5v-wyR5emRw');
-INSERT INTO `Candidates` (`resume_id`, `interview`) VALUES (10, 'https://www.youtube.com/embed/TQHW7gGjrCQ');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (1, 'Interview1', 'https://www.youtube.com/embed/OVAMb6Kui6A');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (2, 'Interview2', 'https://www.youtube.com/embed/KCm6JVtoRdo');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (3, 'Interview3', 'https://www.youtube.com/embed/srw4r3htm4U');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (4, 'Interview5', 'https://www.youtube.com/embed/sjTxmq68RXU');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (5, 'Interview5', 'https://www.youtube.com/embed/sjTxmq68RXU');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (6, 'Interview6', 'https://www.youtube.com/embed/6bJTEZnTT5A');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (7, 'Interview7', 'https://www.youtube.com/embed/es7XtrloDIQ');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (8, 'Interview8', 'https://www.youtube.com/embed/0siE31sqz0Q');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (9, 'Interview9', 'https://www.youtube.com/embed/5v-wyR5emRw');
-INSERT INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (10, 'Interview10', 'https://www.youtube.com/embed/TQHW7gGjrCQ');
+-- Dump completed on 2025-08-27 11:43:31
