@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   db:
-    image: mysql:latest # Uses official MySQL image
+    image: mysql:latest
     container_name: panployer-mysql
     platform: linux/amd64
     restart: always
@@ -23,6 +23,7 @@ services:
       start_period: 30s
     volumes:
       - ./database-files:/docker-entrypoint-initdb.d/:ro
+
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
     container_name: keycloak
@@ -47,14 +48,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
   api:
     platform: linux/amd64
     build: ./api
     container_name: api_container
     restart: on-failure:5
-    volumes:
-      - "./api:/apicode"
-      - "/apicode/node_modules"
     ports:
       - "5001:5001"
     depends_on:
@@ -65,20 +64,13 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
+      
   frontend:
     platform: linux/amd64
     build:
-      #./frontend uncomment this line if you want to use the Dockerfile
-      context: ./frontend # remove this line if you want to use the Dockerfile.dev
-      dockerfile: Dockerfile.dev # remove this line if you want to use the Dockerfile
-      network: host
+      context: ./frontend
+      dockerfile: Dockerfile.prod
     container_name: frontend_container
-    volumes:
-      - "./frontend:/app"
-      - "/app/node_modules"
     ports:
       - "3000:3000"
     depends_on:
