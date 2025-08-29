@@ -1,19 +1,19 @@
 FROM quay.io/keycloak/keycloak:latest
 
-ENV KC_HOSTNAME=https://nuhire-keycloak.onrender.com
-ENV KC_HOSTNAME_STRICT=false
-
-ENV KC_PROXY=passthrough
-ENV KC_PROXY_HEADERS=xforwarded
-
+# Admin credentials
 ENV KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
 ENV KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-ENV KC_HTTP_HOST=0.0.0.0
 
-EXPOSE 8080
+# Memory optimization + disable all clustering
+ENV JAVA_OPTS="-Djboss.jgroups.stack=none"
 
+# Copy realm import
 COPY realm-export.json /opt/keycloak/data/import/
 
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+WORKDIR /opt/keycloak
 
-CMD ["start", "--http-enabled=true", "--http-host=0.0.0.0", "--http-port=8080", "--hostname-strict=false", "--import-realm"]
+# Use production mode with minimal configuration
+RUN ./bin/kc.sh build --db=dev-file --cache=local
+
+# Start with production command (no clustering by default)
+CMD sh -c './bin/kc.sh start --http-host=0.0.0.0 --http-port=${PORT:-8080} --import-realm --optimized'
