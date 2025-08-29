@@ -3,7 +3,7 @@ FROM quay.io/keycloak/keycloak:latest
 # Set environment variables
 ENV KC_HOSTNAME=https://nuhire-keycloak.onrender.com
 ENV KC_HOSTNAME_STRICT=false
-ENV KC_PROXY=edge
+ENV KC_PROXY=passthrough
 ENV KC_PROXY_HEADERS=xforwarded
 ENV KC_HTTP_ENABLED=true
 ENV KC_HTTP_HOST=0.0.0.0
@@ -11,9 +11,12 @@ ENV KC_HTTP_PORT=8080
 
 # Database configuration (MySQL)
 ENV KC_DB=mysql
-ENV KC_DB_URL=${MYSQL_URL}
+ENV KC_DB_URL_HOST=${MYSQL_HOST}
+ENV KC_DB_URL_PORT=${MYSQL_PORT}
+ENV KC_DB_URL_DATABASE=${MYSQL_DATABASE}
 ENV KC_DB_USERNAME=${MYSQL_USERNAME}
 ENV KC_DB_PASSWORD=${MYSQL_PASSWORD}
+ENV KC_DB_SCHEMA=${MYSQL_SCHEMA}
 
 # Admin credentials (these should be set as environment variables in Render)
 ENV KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
