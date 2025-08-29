@@ -42,7 +42,7 @@ services:
     volumes:
       - ./certs:/etc/x509/https
       - keycloak_data:/opt/keycloak/data
-      - ./keycloak-import:/opt/keycloak/data/import
+      - ./keycloak:/opt/keycloak/data/import
     ports:
       - "8443:8443"
     depends_on:
