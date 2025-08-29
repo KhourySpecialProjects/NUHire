@@ -10,7 +10,7 @@ ENV KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
 ENV KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
 
 # Copy your realm import file
-COPY your-realm-export.json /opt/keycloak/data/import/
+COPY realm-export.json /opt/keycloak/data/import/
 
 # Expose the port
 EXPOSE 8080
