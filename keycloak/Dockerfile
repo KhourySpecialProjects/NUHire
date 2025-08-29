@@ -6,8 +6,8 @@ ENV KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
 # Copy your realm import file
 COPY realm-export.json /opt/keycloak/data/import/
 
-# Build Keycloak with cache disabled
-RUN /opt/keycloak/bin/kc.sh build --cache=local
+# Build Keycloak (without cache option)
+RUN /opt/keycloak/bin/kc.sh build
 
 EXPOSE 8080
 
