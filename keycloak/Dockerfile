@@ -8,6 +8,7 @@ ENV KC_PROXY_HEADERS=xforwarded
 # Admin credentials
 ENV KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
 ENV KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+ENV KC_HTTP_PORT=8080
 
 # Copy your realm import file
 COPY realm-export.json /opt/keycloak/data/import/
