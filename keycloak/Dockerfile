@@ -1,24 +1,20 @@
 FROM quay.io/keycloak/keycloak:latest
 
-ENV KC_HOSTNAME=https://nuhire-keycloak.onrender.com
-ENV KC_HOSTNAME_STRICT=false
-ENV KC_PROXY=passthrough
-ENV KC_PROXY_HEADERS=xforwarded
-
 # Admin credentials
 ENV KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
 ENV KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-ENV KC_HTTP_PORT=8080
+
+# Memory optimization for low-memory environments
+ENV JAVA_OPTS="-Xms128m -Xmx400m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m"
+ENV KC_HTTP_HOST=0.0.0.0
 
 # Copy your realm import file
 COPY realm-export.json /opt/keycloak/data/import/
 
-# Expose the port
-EXPOSE 8080
-
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
-
-
-# Start in dev mode with import
-CMD ["start", "--http-enabled=true", "--http-host=0.0.0.0", "--http-port=8080", "--hostname-strict=false", "--import-realm"]
-
+# Start with minimal memory settings
+CMD /opt/keycloak/bin/kc.sh start-dev \
+    --http-host=0.0.0.0 \
+    --http-port=${PORT:-8080} \
+    --import-realm \
+    --db=dev-file \
+    --cache=local
