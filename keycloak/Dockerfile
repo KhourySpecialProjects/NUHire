@@ -5,8 +5,6 @@ FROM quay.io/keycloak/keycloak:latest
 ENV KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
 ENV KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
 
-# Memory optimization
-ENV JAVA_OPTS="-Xms128m -Xmx400m"
 
 # Keycloak configuration - use environment variables instead of command line
 ENV KC_HTTP_HOST=0.0.0.0
