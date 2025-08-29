@@ -17,4 +17,4 @@ EXPOSE 8080
 
 # Start Keycloak in production mode (or start-dev for development)
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
-CMD ["start"]
+CMD ["start", "--optimized", "--http-enabled=true", "--http-host=0.0.0.0", "--http-port=8080", "--hostname-strict=false", "--import-realm"]
