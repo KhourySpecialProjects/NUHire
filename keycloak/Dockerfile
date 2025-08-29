@@ -12,9 +12,4 @@ ENV KC_HTTP_HOST=0.0.0.0
 COPY realm-export.json /opt/keycloak/data/import/
 
 # Start with minimal memory settings
-CMD /opt/keycloak/bin/kc.sh start-dev \
-    --http-host=0.0.0.0 \
-    --http-port=${PORT:-8080} \
-    --import-realm \
-    --db=dev-file \
-    --cache=local
+CMD ["/opt/keycloak/bin/kc.sh", "start-dev", "--http-host=0.0.0.0", "--http-port=8080", "--import-realm", "--db=dev-file", "--cache=local"]
