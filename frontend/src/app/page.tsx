@@ -10,7 +10,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function Home() {
   const handleKeycloakLogin = () => {
-    window.location.href = `${API_BASE_URL}/auth/keycloak`;
+    window.location.href = `${process.env.KEYCLOAK_URL}/auth/keycloak`;
   };
 
   const handleModeratorLogin = () => {

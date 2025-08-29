@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export default function AboutPage() {
   const [loading, setLoading] = useState(true);
-  const FRONT_URL = process.env.NEXT_PUBLIC_FRONT_URL || "http://localhost:3000";
+  const FRONT_URL = process.env.NEXT_PUBLIC_FRONT_URL;
 
   const handleContinue = () => {
     console.log("Continuing to instructions page");
