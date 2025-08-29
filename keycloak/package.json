@@ -1,7 +1,0 @@
-{
-  "name": "keycloak",
-  "scripts": {
-    "build": "echo 'Using Docker build'",
-    "start": "echo 'Using Docker start'"
-  }
-}
