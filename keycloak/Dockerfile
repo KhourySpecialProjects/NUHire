@@ -1,33 +1,11 @@
 FROM quay.io/keycloak/keycloak:latest
 
-# Set environment variables
-ENV KC_HOSTNAME=https://nuhire-keycloak.onrender.com
-ENV KC_HOSTNAME_STRICT=false
-ENV KC_PROXY=passthrough
-ENV KC_PROXY_HEADERS=xforwarded
-ENV KC_HTTP_ENABLED=true
-ENV KC_HTTP_HOST=0.0.0.0
-ENV KC_HTTP_PORT=8080
-
-# Database configuration (MySQL)
-ENV KC_DB=mysql
-ENV KC_DB_URL=${MYSQL_DATABASE}
-ENV KC_DB_USERNAME=${MYSQL_USERNAME}
-ENV KC_DB_PASSWORD=${MYSQL_PASSWORD}
-
-# Admin credentials (these should be set as environment variables in Render)
+# Admin credentials
 ENV KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
 ENV KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-
-# Copy any realm files if you have them
-# COPY realm-export.json /opt/keycloak/data/import/
-
-# Build Keycloak for production
-RUN /opt/keycloak/bin/kc.sh build
 
 # Expose the port
 EXPOSE 8080
 
-# Start Keycloak
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
-CMD ["start", "--optimized"]
+# Start in dev mode (uses built-in H2 database)
+CMD ["/opt/keycloak/bin/kc.sh", "start-dev", "--http-host=0.0.0.0", "--http-port=8080"]
