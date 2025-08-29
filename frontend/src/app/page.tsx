@@ -6,13 +6,9 @@ import './globals.css';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const keycloakUrl = process.env.REACT_APP_KEYCLOAK_URL;
-const redirectUrl = `/auth/keycloak`;
-
-
 export default function Home() {
   const handleKeycloakLogin = () => {
-    window.location.href = redirectUrl;
+  window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/keycloak`;
   };
 
   const handleModeratorLogin = () => {
