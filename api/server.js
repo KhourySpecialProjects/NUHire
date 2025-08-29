@@ -341,7 +341,7 @@ function configurePassport() {
 
 //health check endpoint
 app.get('/', (req, res) => {
-    res.redirect(FRONT_URL)
+    res.send('NUHire API is running');
 });
 
 app.get('/health', (req, res) => {
