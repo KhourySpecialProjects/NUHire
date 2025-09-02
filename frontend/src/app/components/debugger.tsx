@@ -7,18 +7,11 @@ const EnvDebugger = () => {
         console.log("Object.keys(process.env):", Object.keys(process.env));
         
         // Check specific variables
-        console.log("REACT_APP_KEYCLOAK_URL:", process.env.REACT_APP_KEYCLOAK_URL);
-        console.log("REACT_APP_API_BASE_URL:", process.env.REACT_APP_API_BASE_URL);
-        console.log("REACT_APP_NEXT_PUBLIC_API_BASE_URL:", process.env.REACT_APP_NEXT_PUBLIC_API_BASE_URL);
+        console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
         
         // Check if any REACT_APP variables exist
-        const reactAppVars = Object.keys(process.env).filter(key => key.startsWith('REACT_APP_'));
-        console.log("Found REACT_APP_ variables:", reactAppVars);
-        
-        // Check if running in development vs production
-        console.log("Build mode:", process.env.NODE_ENV);
-        console.log("Is production build:", process.env.NODE_ENV === 'production');
-        
+        const envs = Object.keys(process.env)
+        console.log("Found env variables:", envs);
     }, []);
     
     return (
