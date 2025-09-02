@@ -293,7 +293,7 @@ function configurePassport() {
     realm: process.env.KEYCLOAK_REALM,
     clientID: process.env.KEYCLOAK_CLIENT_ID,
     clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-    callbackURL: "https://nuhire-cz6c.onrender.com/auth/keycloak/callback",
+    callbackURL: "https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback",
     scope: ['openid', 'profile', 'email'],
   }, async (accessToken, refreshToken, params, profile, done) => {
     console.log("=== Passport Callback SUCCESS ===");
