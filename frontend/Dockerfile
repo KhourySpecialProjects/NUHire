@@ -19,7 +19,5 @@ RUN npm run build
 # Use Render's PORT environment variable
 EXPOSE $PORT
 
-ENV NODE_ENV=production
-
 # Start Next.js production server bound to 0.0.0.0
 CMD ["sh", "-c", "npm start -- --port ${PORT:-3000} --hostname 0.0.0.0"]
