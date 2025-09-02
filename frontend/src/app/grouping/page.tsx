@@ -302,7 +302,7 @@ const Grouping = () => {
         <Tabs>
           {/* Tab 1: Class & Student Assignment */}
           <div title="Class & Student Assignment">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
@@ -379,7 +379,7 @@ const Grouping = () => {
           </div>
           {/* Tab 2: Job Assignment */}
           <div title="Job Assignment">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
@@ -458,7 +458,7 @@ const Grouping = () => {
           </div>
           {/* Tab 3: Groups in Class (independent state) */}
           <div title="Groups in Class">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">
                 {groupsTabClass ? `Groups in Class ${groupsTabClass}` : 'Groups'}
               </h2>
@@ -530,7 +530,7 @@ const Grouping = () => {
           </div>
           {/* Tab 4: Pending & Accepted Offers */}
           <div title="Pending & Accepted Offers">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh]">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">Pending & Accepted Offers</h2>
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-navy mb-2">Pending Offers</h3>
