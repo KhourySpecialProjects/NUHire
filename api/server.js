@@ -173,28 +173,41 @@ app.use((req, res, next) => {
   next();
 });
 
-// Replace your current database connection setup
 function connectToDatabase() {
   return new Promise((resolve, reject) => {
-    console.log(`Attempting to connect to MySQL at ${process.env.DB_HOST}...`);
-    console.log(`Connection details: host=${process.env.DB_HOST}, user=${process.env.DB_USER}, database=${process.env.DB_NAME}`);
+    console.log('Attempting to connect to MySQL using DATABASE_URL...');
     
-    const connection = mysql.createConnection(process.env.DATABASE_URL);
+    // Parse the DATABASE_URL connection string
+    const url = new URL(process.env.DATABASE_URL);
+    const connectionConfig = {
+      host: url.hostname,
+      port: parseInt(url.port) || 3306,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.slice(1), // Remove leading '/'
+      ssl: {
+        rejectUnauthorized: false
+      }
+    };
+    
+    console.log(`Connecting to: host=${connectionConfig.host}, port=${connectionConfig.port}, user=${connectionConfig.user}, database=${connectionConfig.database}`);
+    
+    const connection = mysql.createConnection(connectionConfig);
     
     connection.connect((err) => {
       if (err) {
-        console.error('Database connection failed:', err);
+        console.error('❌ Database connection failed:', err.message);
         reject(err);
       } else {
-        console.log('Connected to MySQL database successfully!');
+        console.log('✅ Connected to MySQL database successfully!');
         resolve(connection);
       }
     });
     
     connection.on('error', (err) => {
-      console.error('Database error:', err);
+      console.error('❌ Database error:', err);
       if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-        console.log('Database connection lost. Reconnecting...');
+        console.log('🔄 Database connection lost. Reconnecting...');
         global.db = connectToDatabase().catch(console.error);
       } else {
         throw err;
