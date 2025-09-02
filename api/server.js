@@ -143,6 +143,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Middleware for parsing cookies in incoming requests
+const url = new URL(process.env.DATABASE_URL);
 const MySQLStore = require("express-mysql-session")(session);
 const sessionStore = new MySQLStore({
   host: url.hostname,
