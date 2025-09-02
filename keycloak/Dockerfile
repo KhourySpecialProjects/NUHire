@@ -8,7 +8,7 @@ ENV KC_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
 
 # Keycloak configuration - use environment variables instead of command line
 ENV KC_HTTP_HOST=0.0.0.0
-ENV KC_HTTP_PORT=${PORT:-8080}
+ENV KC_HTTP_PORT=${PORT}
 ENV KC_DB=dev-file
 ENV KC_CACHE=local
 
@@ -16,5 +16,6 @@ EXPOSE 10000
 
 COPY realm-export.json /opt/keycloak/data/import/
 
-# Minimal command - let environment variables do the work
-CMD ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm"]
+ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
+
+CMD ["start", "--import-realm"]
