@@ -278,7 +278,6 @@ https.request = function(options, callback) {
 };
 
 function configurePassport() {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
   
   const browserIssuer = "https://nuhire-keycloak.onrender.com/realms/NUHire-Realm";
   
