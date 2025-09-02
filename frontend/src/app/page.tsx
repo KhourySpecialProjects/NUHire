@@ -8,8 +8,8 @@ import "slick-carousel/slick/slick-theme.css";
 
 export default function Home() {
   const handleKeycloakLogin = () => {
-    console.log("REACT_APP_NEXT_PUBLIC_API_BASE_URL:", process.env.REACT_APP_NEXT_PUBLIC_API_BASE_URL);
-    window.location.href = `${process.env.REACT_APP_NEXT_PUBLIC_API_BASE_URL}/auth/keycloak`;
+    console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
+    window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/keycloak`;
   };
 
   const handleModeratorLogin = () => {
