@@ -279,13 +279,13 @@ https.request = function(options, callback) {
 
 function configurePassport() {
   
-  const browserIssuer = "https://https://nuhire-keycloak-rhow.onrender.com/realms/NUHire-Realm";
+  const browserIssuer = "https://https:/nuhire-keycloak-rhow.onrender.com/realms/NUHire-Realm";
   
   // Container-facing URLs (for server-to-server communication)
-  const containerIssuer = "https://host.docker.internal:8443/realms/NUHire-Realm";
+  const containerIssuer = `${KEYCLOAK_URL}/realms/NUHire-Realm`;
   
   passport.use('keycloak', new KeycloakStrategy({
-    host: "https://host.docker.internal:8443", // Server-to-server
+    host: `${KEYCLOAK_URL}`, // Server-to-server
     issuer: containerIssuer, // Server-to-server
     userInfoURL: `${containerIssuer}/protocol/openid-connect/userinfo`, // Server-to-server
     authorizationURL: `${browserIssuer}/protocol/openid-connect/auth`, // Browser-facing
