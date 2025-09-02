@@ -282,8 +282,8 @@ function configurePassport() {
   const browserIssuer = "https://https:/nuhire-keycloak-rhow.onrender.com/realms/NUHire-Realm";
   
   // Container-facing URLs (for server-to-server communication)
+  const KEYCLOAK_URL = process.env.KEYCLOAK_URL;
   const containerIssuer = `${KEYCLOAK_URL}/realms/NUHire-Realm`;
-  
   passport.use('keycloak', new KeycloakStrategy({
     host: `${KEYCLOAK_URL}`, // Server-to-server
     issuer: containerIssuer, // Server-to-server
