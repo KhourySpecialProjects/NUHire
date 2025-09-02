@@ -143,15 +143,19 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Middleware for parsing cookies in incoming requests
-const MySQLStore = require("express-mysql-session")(session);
+const url = new URL(process.env.DATABASE_URL);
 const sessionStore = new MySQLStore({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  host: url.hostname,
+  port: parseInt(url.port) || 3306,
+  user: url.username,
+  password: url.password,
+  database: url.pathname.slice(1), // Remove leading '/'
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-// Middleware for session management, which creates a session for each user and stores it in the MySQL database
+// Middleware for session management
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
