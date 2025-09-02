@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Slideshow from "../components/slideshow";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_NEXT_PUBLIC_API_BASE_URL;
 
 export default function ModeratorSignIn() {
   const [username, setUsername] = useState("");

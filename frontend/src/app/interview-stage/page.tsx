@@ -12,7 +12,7 @@ import Popup from "../components/popup";
 import axios from "axios";
 
 // Define API_BASE_URL with a fallback
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_NEXT_PUBLIC_API_BASE_URL;
 
 // Initialize socket only after API_BASE_URL is defined
 const socket = io(API_BASE_URL);

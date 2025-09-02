@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import { usePathname } from "next/navigation";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_NEXT_PUBLIC_API_BASE_URL;
 const socket = io(API_BASE_URL); 
 
 const StudentPage = () => {

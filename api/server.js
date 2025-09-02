@@ -279,7 +279,7 @@ https.request = function(options, callback) {
 
 function configurePassport() {
   
-  const browserIssuer = "https://nuhire-keycloak.onrender.com/realms/NUHire-Realm";
+  const browserIssuer = "https://https://nuhire-keycloak-rhow.onrender.com/realms/NUHire-Realm";
   
   // Container-facing URLs (for server-to-server communication)
   const containerIssuer = "https://host.docker.internal:8443/realms/NUHire-Realm";
@@ -293,7 +293,7 @@ function configurePassport() {
     realm: process.env.KEYCLOAK_REALM,
     clientID: process.env.KEYCLOAK_CLIENT_ID,
     clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-    callbackURL: "http://nuhire-keycloak.onrender.com/auth/keycloak/callback",
+    callbackURL: "https://nuhire-wgez.onrender.com/auth/keycloak/callback",
     scope: ['openid', 'profile', 'email'],
   }, async (accessToken, refreshToken, params, profile, done) => {
     console.log("=== Passport Callback SUCCESS ===");

@@ -9,7 +9,7 @@ export default function InstructionsPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const FRONT_URL = process.env.NEXT_PUBLIC_FRONT_URL;
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_BASE_URL = process.env.REACT_APP_NEXT_PUBLIC_API_BASE_URL;
 
   useEffect(() => {
     const fetchUser = async () => {
