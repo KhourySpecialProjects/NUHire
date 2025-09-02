@@ -2,8 +2,8 @@
 FROM quay.io/keycloak/keycloak:latest
 
 # Use new environment variable names (no deprecation warnings)
-ENV KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
-ENV KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+ENV KC_ADMIN=${KEYCLOAK_ADMIN}
+ENV KC_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
 
 
 # Keycloak configuration - use environment variables instead of command line
