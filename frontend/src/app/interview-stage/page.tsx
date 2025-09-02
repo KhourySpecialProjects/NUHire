@@ -166,7 +166,7 @@ export default function Interview() {
       }
     } catch (error) {
       console.error("Error submitting response:", error);
-      alert("Failed to submit interview rating. Please try again.");
+      setPopup({ headline: "Submission Error", message: "Failed to submit your ratings. Please try again." });
     }
   };
  

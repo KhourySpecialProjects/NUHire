@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
 import { io } from "socket.io-client";
 import Tabs from "../components/tabs";
+import Popup from "../components/popup";
 
 const Grouping = () => {
   interface Student {
@@ -19,6 +20,9 @@ const Grouping = () => {
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const router = useRouter();
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
+  const [donePopup, setDonePopup] = useState(false);
+  
 
   // Tab 1: Class & Student Assignment
   const [students, setStudents] = useState<Student[]>([]);
@@ -36,7 +40,7 @@ const Grouping = () => {
   const [selectedJobClass, setSelectedJobClass] = useState("");
   const [selectedJobGroup, setSelectedJobGroup] = useState("");
   const [job_group_id, setGroupIdJob] = useState("");
-
+   
   // Tab 3: Groups in Class (independent state)
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
@@ -161,7 +165,8 @@ const Grouping = () => {
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newClass = e.target.value;
     if (user?.affiliation === "admin" && newClass && !assignedClassIds.includes(newClass)) {
-      alert("You are not assigned to this class."); return;
+      setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
+      return;
     }
     setSelectedClass(newClass);
     setSelectedStudents([]);
@@ -173,7 +178,7 @@ const Grouping = () => {
     const newGroup = e.target.value;
     setSelectedGroup(newGroup);
     if (newGroup && Object.keys(groups).includes(newGroup)) setGroupId(newGroup);
-    else if (newGroup) alert("Invalid group selection.");
+    else if (newGroup) setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
   };
   const handleStudentSelection = (event: { target: { value: any; }; }) => {
     const selectedEmail = event.target.value;
@@ -194,7 +199,7 @@ const Grouping = () => {
     const newGroup = e.target.value;
     setSelectedJobGroup(newGroup);
     if (newGroup && Object.keys(jobGroups).includes(newGroup)) setGroupIdJob(newGroup);
-    else if (newGroup) alert("Invalid group selection.");
+    else if (newGroup) setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
   };
   const handleJobSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedTitle = event.target.value;
@@ -215,10 +220,12 @@ const Grouping = () => {
   // Assign group (Tab 1)
   const handleAssignGroup = async () => {
     if (!group_id || selectedStudents.length === 0 || !selectedClass) {
-      alert("Please enter a valid group ID, select a class, and select at least one student."); return;
+      setPopup({ headline: "Incomplete Information", message: "Please enter a valid group ID, select a class, and select students." });
+      return;
     }
     if (user?.affiliation === "admin" && !assignedClassIds.includes(selectedClass)) {
-      alert("You are not assigned to this class."); return;
+      setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
+      return;
     }
     const response = await fetch(`${API_BASE_URL}/update-group`, {
       method: "POST",
@@ -230,25 +237,28 @@ const Grouping = () => {
       }),
     });
     if (response.ok) {
-      alert("Students assigned to group successfully!");
+      setPopup({ headline: "Success", message: "Students assigned to group successfully!" });
       setSelectedStudents([]);
       setGroupId("");
       fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
         .then(res => res.json())
         .then(setGroups);
     } else {
-      alert("Failed to assign students to group.");
+      setPopup({ headline: "Error", message: "Failed to assign students to group." });
     }
   };
 
   // Assign job (Tab 2)
   const handleAssignJob = async () => {
     if (!job_group_id || selectedJobs.length === 0 || !selectedJobClass) {
-      alert("Please enter a valid group ID, select a class, and select a Job."); return;
+      setPopup({ headline: "Incomplete Information", message: "Please enter a valid group ID, select a class, and select a job." });
+      return;
     }
     if (user?.affiliation === "admin" && !assignedClassIds.includes(selectedJobClass)) {
-      alert("You are not assigned to this class."); return;
+      setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
+      return;
     }
+    console.log(job_group_id);
     const response = await fetch(`${API_BASE_URL}/update-job`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -259,14 +269,14 @@ const Grouping = () => {
       }),
     });
     if (response.ok) {
-      alert("Job assigned to group successfully!");
+      setPopup({ headline: "Success", message: "Job assigned to group successfully!" });
       setSelectedJobs([]);
       setGroupIdJob("");
       fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
         .then(res => res.json())
         .then(setGroups);
     } else {
-      alert("Failed to assign job to group.");
+      setPopup({ headline: "Error", message: "Failed to assign job to group." });
     }
   };
 
@@ -595,6 +605,20 @@ const Grouping = () => {
           </div>
         </Tabs>
       </div>
+      {popup && (
+          <Popup
+            headline={popup.headline}
+            message={popup.message}
+            onDismiss={() => setPopup(null)}
+          />
+        )}
+        {donePopup && (
+          <Popup
+            headline="Interview Complete"
+            message="You have completed all interviews and ratings."
+            onDismiss={() => setDonePopup(false)}
+          />
+        )}
     </div>
   );
 };
