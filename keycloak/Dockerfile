@@ -18,4 +18,5 @@ COPY realm-export.json /opt/keycloak/data/import/
 
 ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
 
-CMD ["start-dev", "--import-realm"]
+CMD ["start", "--http-enabled=true", "--http-host=0.0.0.0", "--http-port=8080", "--hostname-strict=false", "--import-realm"]
+
