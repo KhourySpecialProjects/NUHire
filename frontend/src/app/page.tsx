@@ -10,7 +10,8 @@ import "slick-carousel/slick/slick-theme.css";
 export default function Home() {
   const handleKeycloakLogin = () => {
     console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
-    window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/keycloak`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://nuhire-cz6v.onrender.com';
+    window.location.href = `${apiUrl}/auth/keycloak`;
   };
 
   const handleModeratorLogin = () => {
