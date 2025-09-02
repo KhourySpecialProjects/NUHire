@@ -279,7 +279,7 @@ https.request = function(options, callback) {
 
 function configurePassport() {
   
-  const browserIssuer = "https://https:/nuhire-keycloak-rhow.onrender.com/realms/NUHire-Realm";
+  const browserIssuer = "https://nuhire-keycloak-rhow.onrender.com/realms/NUHire-Realm";
   
   // Container-facing URLs (for server-to-server communication)
   const KEYCLOAK_URL = process.env.KEYCLOAK_URL;
