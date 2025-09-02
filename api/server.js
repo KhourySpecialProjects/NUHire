@@ -280,7 +280,7 @@ https.request = function(options, callback) {
 function configurePassport() {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
   
-  const browserIssuer = "https://localhost:8443/realms/NUHire-Realm";
+  const browserIssuer = "https://nuhire-keycloak.onrender.com/realms/NUHire-Realm";
   
   // Container-facing URLs (for server-to-server communication)
   const containerIssuer = "https://host.docker.internal:8443/realms/NUHire-Realm";
@@ -294,7 +294,7 @@ function configurePassport() {
     realm: process.env.KEYCLOAK_REALM,
     clientID: process.env.KEYCLOAK_CLIENT_ID,
     clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-    callbackURL: "http://localhost:5001/auth/keycloak/callback",
+    callbackURL: "http://nuhire-keycloak.onrender.com/auth/keycloak/callback",
     scope: ['openid', 'profile', 'email'],
   }, async (accessToken, refreshToken, params, profile, done) => {
     console.log("=== Passport Callback SUCCESS ===");
