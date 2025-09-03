@@ -33,7 +33,7 @@ export default function InstructionsPage() {
   }, [router]);
 
   const handleContinue = () => {
-    window.location.href = `${FRONT_URL}/dashboard?name=${encodeURIComponent(name)}`;
+    window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(name)}`;
   };
 
   if (loading) {

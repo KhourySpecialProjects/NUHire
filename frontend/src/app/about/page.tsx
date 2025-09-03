@@ -5,11 +5,10 @@ import Image from "next/image";
 
 export default function AboutPage() {
   const [loading, setLoading] = useState(true);
-  const FRONT_URL = process.env.NEXT_PUBLIC_FRONT_URL;
 
   const handleContinue = () => {
     console.log("Continuing to instructions page");
-    window.location.href = `${FRONT_URL}/instructions`;
+    window.location.href = `https://nuhire-wgez.onrender.com/instructions`;
   };
 
   return (
