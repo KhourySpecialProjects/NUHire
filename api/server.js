@@ -747,20 +747,6 @@ io.on("connection", (socket) => {
 
 // The "/auth/keycloak" route initiates the authentication process by redirecting the user to the Keycloak login page
 app.get("/auth/keycloak", (req, res, next) => {
-  console.log("=== Starting OAuth flow ===");
-  console.log("Existing session:", req.session.passport);
-  
-  // If user is already authenticated, don't start new OAuth
-  if (req.isAuthenticated()) {
-    console.log("User already authenticated, redirecting to dashboard");
-    return res.redirect(`${FRONT_URL}/dashboard`);
-  }
-  
-  // Clear any partial session data before starting OAuth
-  if (req.session.passport) {
-    req.session.passport = undefined;
-  }
-  
   passport.authenticate("keycloak")(req, res, next);
 });
 
