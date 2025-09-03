@@ -165,7 +165,7 @@ DROP TABLE IF EXISTS `Moderator`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Moderator` (
-  `id` int NOT NULL AUTO_INCREMENT DEFAULT NULL,
+  `id` int NOT NULL,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL,
   `nom_groups` int NOT NULL,
@@ -355,6 +355,7 @@ CREATE TABLE `Users` (
 
 LOCK TABLES `Users` WRITE;
 /*!40000 ALTER TABLE `Users` DISABLE KEYS */;
+INSERT INTO `Users` VALUES (1,'Sai A.','Dhanasiri','saianirudhsjps@gmail.com','student','2025-07-07 18:33:01',NULL,NULL,1,NULL),(2,'Sage','Batchelor','sagebatchelor@gmail.com','student','2025-07-07 18:33:01',NULL,NULL,1,NULL),(3,'Sag','Bat','batchelor.sa@husky.neu.edu','student','2025-07-07 18:33:01',NULL,NULL,2,NULL),(4,'Sage','Batchelor','sagashrimproll@gmail.com','admin','2025-07-07 18:33:01',NULL,NULL,NULL,NULL),(5,'Sai Anirudh','Dhanasiri','dhanasiri.s@husky.neu.edu','admin','2025-07-07 18:33:01',NULL,NULL,NULL,NULL),(6,'Penguin','The Last','ilovepenguinsandhowtheylook@gmail.com','student','2025-07-07 18:33:01',NULL,NULL,1,NULL);
 /*!40000 ALTER TABLE `Users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -367,4 +368,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-27 11:43:31
+-- Dump completed on 2025-09-03 13:04:24
