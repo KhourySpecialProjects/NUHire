@@ -729,7 +729,9 @@ app.get("/auth/keycloak/callback",
   }),
   (req, res) => {
     console.log("=== Authentication successful ===");
-
+    console.log("req.user after auth:", req.user);
+    console.log("req.session after auth:", req.session);
+    console.log("Session ID:", req.sessionID);
     const user = req.user;
     if (!user || !user.email) {
       console.error("No user or email found after authentication");
@@ -766,10 +768,20 @@ app.get("/auth/keycloak/callback",
 
 //check if the user is authenticated and return the user information
 app.get("/auth/user", (req, res) => {
+  console.log("=== /auth/user endpoint hit ===");
+  console.log("Session ID:", req.sessionID);
+  console.log("Session data:", req.session);
+  console.log("Session passport:", req.session.passport);
+  console.log("req.user:", req.user);
+  console.log("req.isAuthenticated():", req.isAuthenticated());
+  console.log("Session cookie:", req.headers.cookie);
 
   if (!req.session.passport || !req.isAuthenticated()) {
+    console.log("❌ Authentication check failed");
     return res.status(401).json({ message: "Unauthorized" });
   }
+  
+  console.log("✅ User authenticated successfully");
   res.json(req.user);
 });
 
