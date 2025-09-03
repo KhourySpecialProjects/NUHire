@@ -323,7 +323,7 @@ useEffect(() => {
       // Use allSettled instead of all to prevent one failure from failing everything
       const results = await Promise.allSettled(candidatePromises);
 
-      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null));
+      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null).slice(0,4));
       
     } catch (err) {
       console.error("Error fetching interviews:", err);

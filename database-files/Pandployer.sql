@@ -167,7 +167,7 @@ DROP TABLE IF EXISTS `Moderator`;
 CREATE TABLE `Moderator` (
   `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
-  `crn` int NOT NULL,
+  `crn` int NOT NULL UNIQUE,
   `nom_groups` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
