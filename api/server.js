@@ -14,6 +14,7 @@ const https = require('https');
 
 // Load environment variables from .env file, creates an express server, and sets up Socket.io
 dotenv.config();
+const FRONT_URL = process.env.REACT_APP_FRONT_URL;
 const app = express();
 const http = require("http");
 const { Server } = require("socket.io");
@@ -41,6 +42,8 @@ app.set('view engine', 'ejs');
 
 // Set the views directory for EJS templates, which is where the EJS files are located
 app.set('views', path.join(__dirname, 'views'));
+
+app.set("trust proxy", 1);
 
 //Sets up the file storage for Multer, which is used for handling file uploads. It specifies the destination directory and filename format for uploaded files.
 const storage = multer.diskStorage({
