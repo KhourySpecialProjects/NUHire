@@ -11,7 +11,7 @@ import axios from "axios"; // Importing axios for HTTP requests
 import Instructions from "../components/instructions"; // Importing the instructions component
 
 // Define the API base URL from environment variables
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
 const SOCKET_URL = `${API_BASE_URL}`;
 let socket: Socket | null = null;
 

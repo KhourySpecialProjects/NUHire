@@ -1,5 +1,5 @@
 "use client";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";

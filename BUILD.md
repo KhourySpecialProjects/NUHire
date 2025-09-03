@@ -55,7 +55,7 @@ DB_NAME=db_name
 In your env file of the frontend directory include:
 
 ```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:5001
+https://nuhire-api-cz6c.onrender.com=http://localhost:5001
 ```
 
 In your api .env file include:

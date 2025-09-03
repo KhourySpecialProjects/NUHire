@@ -55,7 +55,7 @@ services:
         value: a
 
       # --- Frontend .env ---
-      - key: NEXT_PUBLIC_API_BASE_URL
+      - key: https://nuhire-api-cz6c.onrender.com
         value: https://nuhire.onrender.com
       - key: KEYCLOAK_ADMIN
         value: NUHire
