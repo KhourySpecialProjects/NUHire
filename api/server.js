@@ -165,7 +165,8 @@ app.use(session({
   cookie: {
     secure: false, // Set `true` if using HTTPS
     httpOnly: true,
-    sameSite: "lax"
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
@@ -770,18 +771,22 @@ app.get("/auth/keycloak/callback",
 app.get("/auth/user", (req, res) => {
   console.log("=== /auth/user endpoint hit ===");
   console.log("Session ID:", req.sessionID);
-  console.log("Session data:", req.session);
   console.log("Session passport:", req.session.passport);
-  console.log("req.user:", req.user);
-  console.log("req.isAuthenticated():", req.isAuthenticated());
-  console.log("Session cookie:", req.headers.cookie);
+  console.log("Cookies received:", req.headers.cookie);
 
-  if (!req.session.passport || !req.isAuthenticated()) {
-    console.log("❌ Authentication check failed");
+  // Check if session exists but passport data is missing
+  if (req.sessionID && !req.session.passport) {
+    console.log("❌ Session exists but no passport data - authentication expired");
+    return res.status(401).json({ 
+      message: "Authentication expired", 
+      needsReauth: true 
+    });
+  }
+
+  if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   
-  console.log("✅ User authenticated successfully");
   res.json(req.user);
 });
 
