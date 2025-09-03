@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import { usePathname } from "next/navigation";
 
-const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 const socket = io(API_BASE_URL); 
 
 const StudentPage = () => {

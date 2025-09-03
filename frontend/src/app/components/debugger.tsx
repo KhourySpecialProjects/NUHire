@@ -6,7 +6,7 @@ const EnvDebugger = () => {
         console.log("All process.env:", process.env);
         console.log("Object.keys(process.env):", Object.keys(process.env));
         
-        console.log("https://nuhire-api-cz6c.onrender.com:", process.env.https://nuhire-api-cz6c.onrender.com);
+        console.log("NEXT_PUBLIC_API_BASE_URL:", "https://nuhire-api-cz6c.onrender.com");
         
         const envs = Object.keys(process.env)
         console.log("Found env variables:", envs);

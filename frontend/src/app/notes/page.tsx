@@ -5,7 +5,7 @@ import Navbar from '../components/navbar';
 import { useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
 
-const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 const socket = io(API_BASE_URL);
 
 const NotesPage: React.FC = () => {

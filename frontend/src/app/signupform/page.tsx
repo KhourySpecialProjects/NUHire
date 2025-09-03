@@ -5,7 +5,7 @@ import Slideshow from "../components/slideshow";
 import Image from "next/image";
 
 // Define API base URL with fallback
-const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 export default function SignupDetails() {
   const [firstName, setFirstName] = useState('');

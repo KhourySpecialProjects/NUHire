@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 export default function SignupPage() {
   const handleKeycloakLogin = () => {

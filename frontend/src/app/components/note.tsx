@@ -1,5 +1,5 @@
 "use client"; // Declares that this page is a client component
-const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com; // API base URL from environment variables
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com"; // API base URL from environment variables
 import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
 import { io } from "socket.io-client";
 

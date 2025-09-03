@@ -12,7 +12,7 @@ import Popup from "../components/popup";
 import axios from "axios";
 
 // Define API_BASE_URL with a fallback
-const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 // Initialize socket only after API_BASE_URL is defined
 const socket = io(API_BASE_URL);

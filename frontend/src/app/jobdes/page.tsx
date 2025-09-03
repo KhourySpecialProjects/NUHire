@@ -1,5 +1,5 @@
 'use client'
-const API_BASE_URL = process.env.https://nuhire-api-cz6c.onrender.com;
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, JSX, useRef } from "react";
