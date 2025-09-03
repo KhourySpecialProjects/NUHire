@@ -14,7 +14,6 @@ const https = require('https');
 
 // Load environment variables from .env file, creates an express server, and sets up Socket.io
 dotenv.config();
-const FRONT_URL = process.env.REACT_APP_FRONT_URL;
 console.log(FRONT_URL);
 const app = express();
 const http = require("http");
@@ -183,7 +182,6 @@ app.use((req, res, next) => {
 function connectToDatabase() {
   return new Promise((resolve, reject) => {
     console.log('Attempting to connect to MySQL using DATABASE_URL...');
-    
     // Parse the DATABASE_URL connection string
     const url = new URL(process.env.DATABASE_URL);
     const connectionConfig = {
@@ -361,6 +359,17 @@ function configurePassport() {
 //health check endpoint
 app.get('/', (req, res) => {
     res.send('NUHire API is running');
+});
+
+app.get("/test-cookies", (req, res) => {
+  console.log("Session ID:", req.sessionID);
+  console.log("Cookies:", req.headers.cookie);
+  req.session.test = "cookie-test";
+  res.json({ 
+    sessionID: req.sessionID, 
+    cookiesReceived: req.headers.cookie,
+    sessionTest: req.session.test 
+  });
 });
 
 app.get("/time", async (req, res) => {
@@ -735,15 +744,33 @@ io.on("connection", (socket) => {
 // Keycloak OAuth 2.0 authentication routes
 
 // The "/auth/keycloak" route initiates the authentication process by redirecting the user to the Keycloak login page
-app.get("/auth/keycloak", passport.authenticate("keycloak"));
+app.get("/auth/keycloak", (req, res, next) => {
+  console.log("=== Starting OAuth flow ===");
+  console.log("Existing session:", req.session.passport);
+  
+  // If user is already authenticated, don't start new OAuth
+  if (req.isAuthenticated()) {
+    console.log("User already authenticated, redirecting to dashboard");
+    return res.redirect(`${FRONT_URL}/dashboard`);
+  }
+  
+  // Clear any partial session data before starting OAuth
+  if (req.session.passport) {
+    req.session.passport = undefined;
+  }
+  
+  passport.authenticate("keycloak")(req, res, next);
+});
 
 // The "/auth/keycloak/callback" route is the callback URL that Keycloak redirects to after the user has authenticated
 // The server handles the authentication response and checks if the user exists in the database
 app.get("/auth/keycloak/callback",
   (req, res, next) => {
-    console.log("=== Callback route hit ===");
-    console.log("Query params:", req.query);
-    console.log("Session before auth:", req.session);
+    if (req.query.error === 'temporarily_unavailable' && 
+        req.query.error_description === 'authentication_expired') {
+      console.log("OAuth expired, starting fresh flow");
+      return res.redirect('/auth/keycloak'); // Start completely fresh
+    }
     next();
   },
   passport.authenticate("keycloak", { 
