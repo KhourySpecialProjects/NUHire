@@ -1543,6 +1543,7 @@ app.post("/moderator-crns", (req, res) => {
     [admin_email, crn, nom_groups],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      console.log(err);
       res.status(201).json({ id: result.insertId, admin_email, crn, nom_groups });
     }
   );

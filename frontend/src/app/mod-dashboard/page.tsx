@@ -27,7 +27,7 @@ const ModDashboard = () => {
   useEffect(() => {
     const fetchCRNs = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/moderator-crns`, { credentials: "include" });
+        const response = await fetch(`${API_BASE_URL}/moderator-crns`);
         if (response.ok) {
           const data = await response.json();
           setInfo(data);
