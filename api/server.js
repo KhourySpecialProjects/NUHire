@@ -1597,8 +1597,10 @@ app.post("/moderator-crns", (req, res) => {
     "INSERT INTO Moderator (admin_email, crn, nom_groups) VALUES (?, ?, ?)",
     [admin_email, crn, nom_groups],
     (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      console.log(err);
+      if (err) {
+        console.log("Database error:", err); // Log the actual error
+        return res.status(500).json({ error: err.message });
+      }
       res.status(201).json({ id: result.insertId, admin_email, crn, nom_groups });
     }
   );
