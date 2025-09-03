@@ -362,11 +362,25 @@ app.get('/', (req, res) => {
     res.send('NUHire API is running');
 });
 
-app.get("/debug-time", (req, res) => {
-  res.json({
-    serverTime: new Date().toISOString(),
-    timestamp: Date.now()
-  });
+app.get("/time", async (req, res) => {
+  try {
+    // Check Keycloak server time via a lightweight request
+    const keycloakResponse = await fetch(`${process.env.KEYCLOAK_URL}/realms/NUHire-Realm`);
+    const keycloakTime = keycloakResponse.headers.get('date');
+    
+    res.json({
+      serverTime: new Date().toISOString(),
+      timestamp: Date.now(),
+      keycloakServerTime: keycloakTime,
+      timeDifference: keycloakTime ? (new Date(keycloakTime) - new Date()) / 1000 : 'unknown'
+    });
+  } catch (error) {
+    res.json({
+      serverTime: new Date().toISOString(),
+      timestamp: Date.now(),
+      keycloakError: error.message
+    });
+  }
 });
 
 app.get('/health', (req, res) => {
