@@ -165,7 +165,7 @@ DROP TABLE IF EXISTS `Moderator`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Moderator` (
-  `id` int NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL,
   `nom_groups` int NOT NULL,
