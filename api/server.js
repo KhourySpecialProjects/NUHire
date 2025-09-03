@@ -768,11 +768,12 @@ app.get("/auth/keycloak", (req, res, next) => {
 // The server handles the authentication response and checks if the user exists in the database
 app.get("/auth/keycloak/callback",
   (req, res, next) => {
-    if (req.query.error === 'temporarily_unavailable' && 
-        req.query.error_description === 'authentication_expired') {
-      console.log("OAuth expired, starting fresh flow");
-      return res.redirect('/auth/keycloak'); // Start completely fresh
-    }
+    console.log("=== OAuth Callback Debug ===");
+    console.log("State parameter:", req.query.state);
+    console.log("Code parameter:", req.query.code);
+    console.log("Error:", req.query.error);
+    console.log("Error description:", req.query.error_description);
+    console.log("All query params:", req.query);
     next();
   },
   passport.authenticate("keycloak", { 
