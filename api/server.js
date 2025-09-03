@@ -1601,7 +1601,7 @@ app.post("/moderator-crns", (req, res) => {
         console.log("Database error:", err); // Log the actual error
         return res.status(500).json({ error: err.message });
       }
-      res.status(201).json({ id: result.insertId, admin_email, crn, nom_groups });
+      res.status(201).json({ admin_email, crn, nom_groups });
     }
   );
   console.log(`Added CRN ${crn} for admin ${admin_email} with ${nom_groups} groups`);
