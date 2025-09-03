@@ -1598,7 +1598,10 @@ app.post("/moderator-crns", (req, res) => {
     [admin_email, crn, nom_groups],
     (err, result) => {
       if (err) {
-        console.log("Database error:", err); // Log the actual error
+        console.log("Database error:", err);
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(409).json({ error: "CRN already exists" });
+        }
         return res.status(500).json({ error: err.message });
       }
       res.status(201).json({ admin_email, crn, nom_groups });
