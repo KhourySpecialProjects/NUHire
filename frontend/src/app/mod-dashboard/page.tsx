@@ -6,6 +6,7 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Slideshow from "../components/slideshow";
 import { io } from "socket.io-client";
+import Popup from "../components/popup";
 
 interface ModeratorInfo {
   id: number;
@@ -203,6 +204,13 @@ const ModDashboard = () => {
       </div>
       </div>
       <Footer />
+      {popup && (
+                <Popup
+                  headline={popup.headline}
+                  message={popup.message}
+                  onDismiss={() => setPopup(null)}
+                />
+              )}
     </div>
   );
 };
