@@ -345,7 +345,7 @@ function configurePassport() {
     });
   });
 }
-
+//test
 const initializeDatabase = () => {
   const queries = [
     "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 1)",
