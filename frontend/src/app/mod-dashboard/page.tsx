@@ -6,6 +6,7 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Slideshow from "../components/slideshow";
 import { io } from "socket.io-client";
+import Popup from "../components/popup";
 
 interface ModeratorInfo {
   id: number;
@@ -64,6 +65,7 @@ const ModDashboard = () => {
         setPopup({ headline: "Duplicate", message: "This CRN already exists." });
       } else if (res.ok) {
         setForm({ admin_email: "", crn: "", nom_groups: "" });
+        console.log("setting sucess popup");
         setPopup({ headline: "Success", message: "Class added!" });
         socket.emit("moderatorClassAdded", {
             admin_email: form.admin_email,
@@ -202,6 +204,13 @@ const ModDashboard = () => {
         </div>
       </div>
       </div>
+      {popup && (
+              <Popup
+                headline={popup.headline}
+                message={popup.message}
+                onDismiss={() => setPopup(null)} 
+              />
+            )}
       <Footer />
     </div>
   );
