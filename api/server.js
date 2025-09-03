@@ -362,6 +362,13 @@ app.get('/', (req, res) => {
     res.send('NUHire API is running');
 });
 
+app.get("/debug-time", (req, res) => {
+  res.json({
+    serverTime: new Date().toISOString(),
+    timestamp: Date.now()
+  });
+});
+
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', port: process.env.PORT });
 });
