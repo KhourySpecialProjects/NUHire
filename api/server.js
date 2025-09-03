@@ -15,6 +15,7 @@ const https = require('https');
 // Load environment variables from .env file, creates an express server, and sets up Socket.io
 dotenv.config();
 const FRONT_URL = process.env.REACT_APP_FRONT_URL;
+console.log(FRONT_URL);
 const app = express();
 const http = require("http");
 const { Server } = require("socket.io");
