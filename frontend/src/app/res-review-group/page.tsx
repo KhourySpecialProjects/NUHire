@@ -7,6 +7,7 @@ import Navbar from "../components/navbar";
 import { usePathname, useRouter } from "next/navigation";
 import { useProgress } from "../components/useProgress";
 import Footer from "../components/footer";
+import Popup from "../components/popup";
 
 const SOCKET_URL = `${API_BASE_URL}`; 
 let socket: Socket; // Define socket with correct type
@@ -42,6 +43,7 @@ export default function ResReviewGroup() {
     vote: "yes" | "no" | "unanswered";
   }
 
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>({});
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
   const [loading, setLoading] = useState(true);
@@ -274,7 +276,7 @@ export default function ResReviewGroup() {
   const completeResumes = () => {
     const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
     if (selectedCount !== 4) {
-      alert("You must select exactly 4 resumes before proceeding.");
+      setPopup({ headline: "Selection Error", message: "Please select exactly 4 resumes to proceed." });
       return;
     }
     localStorage.setItem("progress", "interview-stage")
@@ -415,6 +417,13 @@ export default function ResReviewGroup() {
       </div>
 
       <Footer />
+      {popup && (
+                <Popup
+                  headline={popup.headline}
+                  message={popup.message}
+                  onDismiss={() => setPopup(null)}
+                />
+              )}
     </div>
   );
 }

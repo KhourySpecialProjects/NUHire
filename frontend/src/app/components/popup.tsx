@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 
 interface PopupProps {
   headline: string;
@@ -9,6 +9,12 @@ interface PopupProps {
 }
 
 const Popup = ({ headline, message, onDismiss }: PopupProps) => {
+
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 1000); 
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
+
   return (
     <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-4 border-northeasternRed p-8 w-96 rounded-md shadow-lg z-50">
       <h2 className="font-bold text-black text-2xl mb-4">{headline}</h2>

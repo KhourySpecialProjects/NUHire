@@ -31,6 +31,7 @@ const SendPopups = () => {
     email: string;
   }
     
+    const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
     const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
     const [loading, setLoading] = useState(true);
     const [groups, setGroups] = useState<Record<string, any>>({});
@@ -191,8 +192,8 @@ const SendPopups = () => {
 
     const sendPopups = async () => {
         if (!headline || !message || selectedGroups.length === 0) {
-            alert("Please enter a headline, message, and select at least one group.");
-            return;
+          setPopup({ headline: "Error", message: "Please fill in all fields and select at least one group." });
+          return;
         }
     
         setSending(true);
@@ -205,7 +206,7 @@ const SendPopups = () => {
                 class: selectedClass // Add class information
             });
     
-            alert("Popups sent successfully!");
+            setPopup({ headline: "Success", message: "Popups sent successfully!" });
             
             setHeadline("");
             setMessage("");
@@ -213,7 +214,7 @@ const SendPopups = () => {
             setSelectedPreset("");
         } catch (error) {
             console.error("Error sending popups:", error);
-            alert("Failed to send popups. Please try again.");
+            setPopup({ headline: "Error", message: "Failed to send popups. Please try again." });
         } finally {
             setSending(false); 
         }
@@ -378,7 +379,13 @@ const SendPopups = () => {
         ))}
       </>
     )}
-
+    {popup && (
+              <Popup
+                headline={popup.headline}
+                message={popup.message}
+                onDismiss={() => setPopup(null)}
+              />
+            )}
       </div>
     </div>
   );

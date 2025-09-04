@@ -402,7 +402,10 @@ export default function MakeOffer() {
   const completeMakeOffer = () => {
     const selectedCount = Object.values(checkedState).filter(Boolean).length;
     if (selectedCount !== 1) {
-      alert("You must select exactly 1 candidates before proceeding.");
+      setPopup({
+        headline: "Action Required",
+        message: "Please select exactly one candidate to make an offer.",
+      });
       return;
     }
     localStorage.setItem("progress", "employerPannel");

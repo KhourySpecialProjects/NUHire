@@ -212,6 +212,13 @@ const ModDashboard = () => {
               />
             )}
       <Footer />
+      {popup && (
+                <Popup
+                  headline={popup.headline}
+                  message={popup.message}
+                  onDismiss={() => setPopup(null)}
+                />
+              )}
     </div>
   );
 };
