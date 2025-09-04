@@ -2,11 +2,13 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Slideshow from "../components/slideshow";
+import Popup from "../components/popup";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ModeratorSignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +20,7 @@ export default function ModeratorSignIn() {
     if (res.ok) {
         router.push("/mod-dashboard"); 
     } else {
-        alert("Invalid credentials");
+        setPopup({ headline: "Login Failed", message: "Invalid username or password." });
     }
   };
 
@@ -58,6 +60,13 @@ export default function ModeratorSignIn() {
           Sign In
         </button>
         </form>
+        {popup && (
+          <Popup
+            headline={popup.headline}
+            message={popup.message}
+            onDismiss={() => setPopup(null)}
+          />
+        )}
     </div>
   );
 }

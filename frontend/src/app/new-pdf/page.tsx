@@ -6,6 +6,7 @@ import axios from "axios";
 import NavbarAdmin from "../components/navbar-admin";
 import AdminReactionPopup from "../components/adminReactionPopup"; // Importing popup component for offers
 import { io, Socket } from "socket.io-client";
+import Popup from "../components/popup";
 
 interface User {
   id: number;
@@ -30,6 +31,7 @@ interface Resume {
 const Upload = () => {
   const [user, setUser] = useState<User| null>(null);
   const [loading, setLoading] = useState(true);
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [file, setFile] = useState<File | null>(null);
@@ -143,13 +145,13 @@ const Upload = () => {
         throw new Error(`Error: ${await response.text()}`);
       }
       
-      alert("Resume deleted successfully.");
+      setPopup({ headline: "Success", message: "Resume deleted successfully." });
   
       // Refresh the resumes list after deletion
       fetchResumes();
     } catch (error) {
       console.error("Failed to delete file:", error);
-      alert("Failed to delete the file.");
+      setPopup({ headline: "Error", message: "Failed to delete the resume." });
     }
   };
 
@@ -165,13 +167,13 @@ const Upload = () => {
         throw new Error(`Error: ${await response.text()}`);
       }
       
-      alert("job deleted successfully.");
+      setPopup({ headline: "Success", message: "Job description deleted successfully." });
       fetchJobs();
       // Refresh the resumes list after deletion
       fetchJobs();
     } catch (error) {
       console.error("Failed to delete file:", error);
-      alert("Failed to delete the file.");
+      setPopup({ headline: "Error", message: "Failed to delete the job description." });
     }
   };
 
@@ -188,9 +190,9 @@ const handleResumeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
 
 const uploadFile = async (type: "job" | "resume") => {
   const fileToUpload = type === "job" ? jobFile : resumeFile;
-  if (!fileToUpload) return alert("Please select a file before uploading.");
-  if (type === "job" && !title.trim()) return alert("Please enter a job title before uploading.");
-  if (type === "resume" && !resTitle.trim()) return alert("Please enter a resume title before uploading.");
+  if (!fileToUpload) return setPopup({ headline: "Error", message: "No file selected for upload." });
+  if (type === "job" && !title.trim()) return setPopup({ headline: "Error", message: "Please enter a job title before uploading." });
+  if (type === "resume" && !resTitle.trim()) return setPopup({ headline: "Error", message: "Please enter a resume title before uploading." });
 
   const formData = new FormData();
   formData.append(type === "job" ? "jobDescription" : "resume", fileToUpload);
@@ -329,6 +331,13 @@ const handleResumeSelection = (id: number) => {
         ))}
         </div>
       </div>
+      {popup && (
+          <Popup
+            headline={popup.headline}
+            message={popup.message}
+            onDismiss={() => setPopup(null)}
+          />
+        )}
     </div>
   );
 };

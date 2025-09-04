@@ -1523,8 +1523,14 @@ app.post("/moderator-crns", (req, res) => {
     "INSERT INTO Moderator (admin_email, crn, nom_groups) VALUES (?, ?, ?)",
     [admin_email, crn, nom_groups],
     (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ id: result.insertId, admin_email, crn, nom_groups });
+      if (err) {
+        console.log("Database error:", err);
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(409).json({ error: "CRN already exists" });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ admin_email, crn, nom_groups });
     }
   );
   console.log(`Added CRN ${crn} for admin ${admin_email} with ${nom_groups} groups`);
