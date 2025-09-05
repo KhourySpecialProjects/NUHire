@@ -14,7 +14,7 @@ export default function Home() {
   };
 
   const handleModeratorLogin = () => {
-    window.location.href = "/mod-signin";
+    window.location.href = `${API_BASE_URL}/auth/keycloak/moderator`;
   };
 
   return (
