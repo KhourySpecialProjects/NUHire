@@ -59,17 +59,15 @@
       "clientRole" : false,
       "containerId" : "5917b280-5f36-454b-beb7-205ab148409a",
       "attributes" : { }
-    },
-    {
-        "id": "c82a6491-98dc-44fb-9a08-64c8bcea9cfa",
-        "name": "admin",
-        "description": "User can create and edit classes",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "5917b280-5f36-454b-beb7-205ab148409a",
-        "attributes": {}
-      },
-      {
+    }, {
+      "id": "c82a6491-98dc-44fb-9a08-64c8bcea9cfa",
+      "name": "admin",
+      "description": "User can create and edit classes",
+      "composite": false,
+      "clientRole": false,
+      "containerId": "5917b280-5f36-454b-beb7-205ab148409a",
+      "attributes": {}
+    }, {
       "id" : "451d6d64-63c8-4f64-9c91-4a45a797fa9d",
       "name" : "uma_authorization",
       "description" : "${role_uma_authorization}",
@@ -400,8 +398,7 @@
     "realmRoles" : [ "default-roles-nuhire-realm" ],
     "notBefore" : 0,
     "groups" : [ ]
-  },
-  {
+  }, {
     "id" : "e2674c54-cefc-4184-8940-6e40e0178b0f",
     "username" : "labit.z@northeastern.edu",
     "firstName" : "z",
@@ -572,7 +569,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "thJZ4vpuH8ch3cEEvfplB0X9CjOuhXgD",
-    "redirectUris" : [ "http://localhost:5001/auth/keycloak/callback", "http://localhost:5001/auth/keycloak/moderator/callback" ],
+    "redirectUris" : [ "http://localhost:5001/auth/keycloak/callback" ],
     "webOrigins" : [ "http://localhost:3000" ],
     "notBefore" : 0,
     "bearerOnly" : false,
@@ -1317,6 +1314,18 @@
         "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "oidc-address-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper" ]
       }
     } ],
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "id": "68e70a7c-1016-4967-8ad2-4fbea0f25941",
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255},\"pattern\":{\"pattern\":\"^[a-zA-Z0-9._%+-]+@northeastern\\\\.edu$\",\"error-message\":\"Email must be from northeastern.edu domain\"}},\"annotations\":{},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ],
     "org.keycloak.keys.KeyProvider" : [ {
       "id" : "31fa195d-2e12-41aa-8934-6cb939e62778",
       "name" : "aes-generated",
