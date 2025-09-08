@@ -292,6 +292,38 @@ function configurePassport() {
   // Container-facing URLs (for server-to-server communication)
   const containerIssuer = "https://host.docker.internal:8443/realms/NUHire-Realm";
   
+  passport.use('keycloak-moderator', new KeycloakStrategy({
+    host: "https://host.docker.internal:8443", // Server-to-server
+    issuer: containerIssuer, // Server-to-server
+    userInfoURL: `${containerIssuer}/protocol/openid-connect/userinfo`, // Server-to-server
+    authorizationURL: `${browserIssuer}/protocol/openid-connect/auth`, // Browser-facing
+    tokenURL: `${containerIssuer}/protocol/openid-connect/token`, // Server-to-server
+    realm: process.env.KEYCLOAK_REALM,
+    clientID: process.env.KEYCLOAK_CLIENT_ID,
+    clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
+    callbackURL: "http://localhost:5001/auth/keycloak/moderator/callback",
+    scope: ['openid', 'profile', 'email'],
+  }, async (accessToken, refreshToken, params, profile, done) => {
+    console.log("=== Passport Callback SUCCESS ===");
+    console.log("Profile:", JSON.stringify(profile, null, 2));
+    let roles = [];
+    try {
+      const decoded = jwt.decode(accessToken);
+      roles = decoded?.realm_access?.roles || [];
+    } catch (e) {
+      console.error("Failed to decode access token:", e);
+    } 
+    let email = profile.email.toLowerCase().trim();
+    let firstName = profile.firstName;
+    let lastName = profile.lastName;
+    console.log("Email:", email);
+    console.log("First Name:", firstName);
+    console.log("Last Name:", lastName);
+    done(null, { email, f_name: firstName, l_name: lastName, roles });
+  })
+);
+
+
   passport.use('keycloak', new KeycloakStrategy({
     host: "https://host.docker.internal:8443", // Server-to-server
     issuer: containerIssuer, // Server-to-server
@@ -691,6 +723,26 @@ io.on("connection", (socket) => {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Keycloak OAuth 2.0 authentication routes
+
+app.get('/auth/keycloak/moderator', (req, res, next) => {
+  console.log("Moderator login, callbackURL:", "http://localhost:5001/auth/keycloak/moderator/callback");
+  next();
+}, passport.authenticate('keycloak-moderator', {
+  callbackURL: "http://localhost:5001/auth/keycloak/moderator/callback"
+}));
+
+app.get('/auth/keycloak/moderator/callback', passport.authenticate('keycloak-moderator', {
+  failureRedirect: '/unauthorized'
+  }), (req, res) => {
+    const roles = req.user?.roles || [];
+    console.log(roles);
+    if (roles.includes('admin')) {
+      res.redirect(`${FRONT_URL}/moderator-dashboard`);
+    } else {
+      res.redirect(`${FRONT_URL}/unauthorized`);
+    }
+  }
+);
 
 // The "/auth/keycloak" route initiates the authentication process by redirecting the user to the Keycloak login page
 app.get("/auth/keycloak", passport.authenticate("keycloak"));

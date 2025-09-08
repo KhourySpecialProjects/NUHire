@@ -45,17 +45,15 @@
   "maxDeltaTimeSeconds" : 43200,
   "failureFactor" : 30,
   "roles" : {
-    "realm" : [
-      {
-        "id": "c747b1af-b85b-49f5-8ce3-1b9623a60c1b",
-        "name": "admin",
-        "description": "Admins can create and manage classses and groups",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "5917b280-5f36-454b-beb7-205ab148409a",
-        "attributes": {}
-      },
-      {
+    "realm" : [ {
+      "id" : "c747b1af-b85b-49f5-8ce3-1b9623a60c1b",
+      "name" : "admin",
+      "description" : "Admins can create and manage classses and groups",
+      "composite" : false,
+      "clientRole" : false,
+      "containerId" : "5917b280-5f36-454b-beb7-205ab148409a",
+      "attributes" : { }
+    }, {
       "id" : "9ac028d4-b570-4e73-81af-382336700475",
       "name" : "default-roles-nuhire-realm",
       "description" : "${role_default-roles}",
@@ -408,8 +406,7 @@
     "realmRoles" : [ "admin", "default-roles-nuhire-realm" ],
     "notBefore" : 0,
     "groups" : [ ]
-  },
-  {
+  }, {
     "id" : "7c9c0a19-5376-44dc-a4c2-9744322e1024",
     "username" : "service-account-nuhire-client",
     "emailVerified" : false,
@@ -572,10 +569,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "thJZ4vpuH8ch3cEEvfplB0X9CjOuhXgD",
-    "redirectUris" : [
-      "http://localhost:5001/auth/keycloak/callback",
-      "http://localhost:5001/auth/keycloak/moderator/callback"
-    ],
+    "redirectUris" : [ "http://localhost:5001/auth/keycloak/callback" ],
     "webOrigins" : [ "http://localhost:3000" ],
     "notBefore" : 0,
     "bearerOnly" : false,
@@ -1276,7 +1270,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "oidc-address-mapper", "saml-user-property-mapper", "oidc-usermodel-attribute-mapper", "saml-role-list-mapper", "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "saml-role-list-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper", "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-property-mapper" ]
       }
     }, {
       "id" : "82a5f72b-ca7c-4071-80ed-feb5349ce206",
@@ -1317,21 +1311,17 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "oidc-address-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-property-mapper", "oidc-address-mapper", "saml-user-attribute-mapper" ]
       }
     } ],
-    "org.keycloak.userprofile.UserProfileProvider": [
-      {
-        "id": "68e70a7c-1016-4967-8ad2-4fbea0f25941",
-        "providerId": "declarative-user-profile",
-        "subComponents": {},
-        "config": {
-          "kc.user.profile.config": [
-            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255},\"pattern\":{\"pattern\":\"^[a-zA-Z0-9._%+-]+@northeastern\\\\.edu$\",\"error-message\":\"Email must be from northeastern.edu domain\"}},\"annotations\":{},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
-          ]
-        }
+    "org.keycloak.userprofile.UserProfileProvider" : [ {
+      "id" : "68e70a7c-1016-4967-8ad2-4fbea0f25941",
+      "providerId" : "declarative-user-profile",
+      "subComponents" : { },
+      "config" : {
+        "kc.user.profile.config" : [ "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255},\"pattern\":{\"pattern\":\"^[a-zA-Z0-9._%+-]+@northeastern\\\\.edu$\",\"error-message\":\"Email must be from northeastern.edu domain\"}},\"annotations\":{},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}" ]
       }
-    ],
+    } ],
     "org.keycloak.keys.KeyProvider" : [ {
       "id" : "31fa195d-2e12-41aa-8934-6cb939e62778",
       "name" : "aes-generated",
