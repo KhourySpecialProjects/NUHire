@@ -9,6 +9,7 @@ const bodyParser = require("body-parser"); //Middleware for parsing incoming req
 const multer = require("multer"); //Middleware for handling multipart/form-data, which is primarily used for uploading files
 const fs = require("fs"); //File system module for interacting with the file system
 const path = require("path");  // Path module for working with file and directory paths
+const jwt = require('jsonwebtoken');
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const https = require('https');
 
@@ -737,7 +738,7 @@ app.get('/auth/keycloak/moderator/callback', passport.authenticate('keycloak-mod
     const roles = req.user?.roles || [];
     console.log(roles);
     if (roles.includes('admin')) {
-      res.redirect(`${FRONT_URL}/moderator-dashboard`);
+      res.redirect(`${FRONT_URL}/mod-dashboard`);
     } else {
       res.redirect(`${FRONT_URL}/unauthorized`);
     }
