@@ -10,6 +10,7 @@ import { io } from "socket.io-client";
 import RatingSlider from "../components/ratingSlider";
 import Popup from "../components/popup";
 import axios from "axios";
+import { group } from "console";
 
 // Define API_BASE_URL with a fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -71,54 +72,42 @@ export default function Interview() {
 
   // Use ref to always have access to current interviews state
   const interviewsRef = useRef(interviews);
-  const [groupSubmissions, setGroupSubmissions] = useState(1); // Start at 1 for self
-  const [groupSize, setGroupSize] = useState(5); // Default, update from backend if needed
+  const [groupSubmissions, setGroupSubmissions] = useState(0); // Start at 1 for self
+  const [groupSize, setGroupSize] = useState(0); // Default, update from backend if needed
   const [groupFinished, setGroupFinished] = useState(false);
+
+  const fetchFinished = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/interview-status/finished-count`, {
+        params: { group_id: user?.group_id, class_id: user?.class }
+      });      
+      setGroupSubmissions(response.data.finishedCount);
+      console.log("Group submissions fetched:", groupSubmissions);
+      setGroupFinished(groupSubmissions === groupSize);
+    } catch (err) {
+      console.error("Failed to fetch group size:", err);
+    }
+  };
+
+  const fetchGroupSize = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/group-size/${user?.group_id}`);
+      setGroupSize(response.data.count);
+      console.log("Group size fetched:", response.data.count);
+    } catch (err) {
+      console.error("Failed to fetch group size:", err);
+    }
+  };
 
   // Listen for group submission updates
   useEffect(() => {
     if (!user) return;
 
-    const fetchGroupSize = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/group-size/${user.group_id}`);
-        setGroupSize(response.data.count);
-      } catch (err) {
-        console.error("Failed to fetch group size:", err);
-      }
-    };
-
     fetchGroupSize();
-
-    // Listen for group submission count updates
-    socket.on("groupSubmissionCount", ({ count, total }) => {
-      setGroupSubmissions(count);
-    });
-
-    // Request current count when finished
-    if (finished) {
-      socket.emit("requestGroupSubmissionCount", {
-        groupId: user.group_id,
-        classId: user.class,
-      });
-    }
-
-    const fetchFinished = async () => {
-      try {
-        const response = await axios.get(`/interview-status/finished-count`);
-        console.log("/interview-status/finished-count response" , response.data);
-        setGroupFinished(response.data.count === groupSize);
-      } catch (err) {
-        console.error("Failed to fetch group size:", err);
-      }
-    };
 
     fetchFinished();
     console.log(groupFinished);
 
-    return () => {
-      socket.off("groupSubmissionCount");
-    };
   }, [user, finished]);
 
   // Update ref whenever interviews change
@@ -139,19 +128,15 @@ export default function Interview() {
 
   // Fetch user data
   useEffect(() => {
-    console.log("Starting user fetch");
     const fetchUser = async () => {
       try {
-        console.log("Making auth request");
         const response = await axios.get(`${API_BASE_URL}/auth/user`, { 
           withCredentials: true,
           timeout: 10000 // 10 second timeout
         });
         
-        console.log("Auth response received:", response.status);
         
         if (response.status === 200) {
-          console.log("User data:", response.data);
           setUser(response.data);
         } else {
           setError('Authentication failed. Please log in again.');
@@ -163,7 +148,6 @@ export default function Interview() {
         console.error("Error fetching user:", error);
         setError('Failed to authenticate. Make sure the API server is running.');
       } finally {
-        console.log("Setting loading to false");
         setLoading(false);
       }
     };
@@ -184,18 +168,6 @@ export default function Interview() {
       return;
     }
     
-    // Debug the data we're about to send
-    console.log("Sending data to backend:", {
-      student_id: user.id,
-      group_id: user.group_id,
-      studentClass: user.class,
-      question1: overall,
-      question2: professionalPresence,
-      question3: qualityOfAnswer,
-      question4: personality,
-      candidate_id
-    });
-    
     try {
       const response = await axios.post(`${API_BASE_URL}/interview/vote`, {
         student_id: user.id,
@@ -207,11 +179,9 @@ export default function Interview() {
         question4: personality,
         candidate_id
       });
-      console.log("Backend response:", response.status, response.data);
       if (response.status !== 200) {
         console.error("Failed to submit response:", response.statusText);
       } else {
-        console.log("Interview vote submitted successfully");
       }
     } catch (error) {
       console.error("Error submitting response:", error);
@@ -222,11 +192,9 @@ export default function Interview() {
   // Update current page when user is loaded
   useEffect(() => {
     if (user && user.email) {
-      console.log("User loaded, updating current page");
       
       // Setup socket connection and join group room
       const roomId = `group_${user.group_id}_class_${user.class}`;
-      console.log("Joining room:", roomId);
       socket.emit("joinGroup", roomId);
       
       // Emit socket events
@@ -236,7 +204,6 @@ export default function Interview() {
       // Listen for group move events
       socket.on("moveGroup", ({groupId, classId, targetPage}) => {
         if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
-          console.log(`Group navigation triggered: moving to ${targetPage}`);
           localStorage.setItem("progress", "makeOffer");
           window.location.href = targetPage; 
         }
@@ -270,7 +237,6 @@ export default function Interview() {
 useEffect(() => {
   if (!user?.group_id) return;
   
-  console.log("Fetching candidates for group:", user.group_id);
   
   const fetchCandidates = async () => {
     try {
@@ -280,7 +246,6 @@ useEffect(() => {
         { timeout: 8000 }
       );
       
-      console.log("Resume response:", resumeResponse.data);
       const allResumes: Resume[] = resumeResponse.data;
       
       // Filter to get only checked resumes and ensure no duplicates
@@ -293,10 +258,8 @@ useEffect(() => {
         return unique;
       }, []);
       
-      console.log("Checked resumes after deduplication:", checkedResumes);
       
       if (checkedResumes.length === 0) {
-        console.log("No checked resumes found");
         setInterviews([]);
         return;
       }
@@ -317,7 +280,6 @@ useEffect(() => {
           return null;
         })
       );
-      console.log("Candidate promises created:", candidatePromises.length);
       const results = await Promise.allSettled(candidatePromises);
 
       setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null));
@@ -342,9 +304,16 @@ useEffect(() => {
         setNoShow(false); 
       }
     });
+
+    socket.on("interviewStatusUpdated", () => {
+      fetchFinished();
+      fetchGroupSize();
+      setGroupFinished(groupSubmissions === groupSize);
+    });
     
     return () => {
       socket.off("receivePopup");
+      socket.off("interviewStatusUpdated")
     };
   }, []);
 
@@ -410,7 +379,6 @@ useEffect(() => {
     const isLastInterview = nextVideoIndex >= interviews.length;
 
     if (!isLastInterview) {
-      console.log(`Moving to next video (index ${nextVideoIndex})`);
       setVideoIndex(nextVideoIndex);
       setVideoLoaded(false); // Reset video loaded state for new video
       resetRatings();
@@ -419,11 +387,13 @@ useEffect(() => {
         await axios.post(`${API_BASE_URL}/interview-status/finished`, {
           student_id: user?.id,
           finished: 1,
+          group_id: user?.group_id,
+          class: user?.class
         });
+        setFinished(true);
       } catch (err) {
         console.error("Failed to mark as finished:", err);
       }
-      setFinished(true);
     }
   };
   
@@ -620,7 +590,6 @@ useEffect(() => {
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
                 onLoad={() => {
-                  console.log("Video iframe loaded");
                   setTimeout(() => {
                     setVideoLoaded(true);
                   }, 500);

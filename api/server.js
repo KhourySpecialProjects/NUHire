@@ -1296,7 +1296,6 @@ app.get("/resume/checked/:group_id", async (req, res) => {
 
 //post route for submitting an interview vote, which checks if the required fields are provided in the request body
 app.post("/interview/vote", async (req, res) => {
-  console.log(req.body);
   const { student_id, group_id, studentClass, question1, question2, question3, question4, candidate_id } = req.body;
 
   if (!student_id || !group_id || !studentClass || !question1 || !question2 || !question3 || !question4 || !candidate_id) {
@@ -1332,25 +1331,49 @@ app.get("/interview", (req, res) => {
 });
 
 app.get("/interview-status/finished-count", (req, res) => {
-  db.query(
-    "SELECT COUNT(*) AS finishedCount FROM Interview_Status WHERE finished = TRUE",
-    (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ finishedCount: results[0].finishedCount });
-    }
-  );
+  const { group_id, class_id } = req.query;
+
+  if (!group_id || !class_id) {
+    return res.status(400).json({ error: "group_id and class_id are required" });
+  }
+
+  // Join Interview_Status and Users to filter by group and class
+  const query = `
+    SELECT COUNT(*) AS finishedCount
+    FROM Interview_Status 
+    WHERE group_id = ? AND class = ? AND finished = 1
+    ;`
+  db.query(query, [group_id, class_id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    console.log(results);
+    res.json({ finishedCount: results[0].finishedCount });
+  });
 });
 
 app.post("/interview-status/finished", (req, res) => {
-  const { student_id, finished } = req.body;
+  const { student_id, finished, group_id, class: class_id } = req.body;
+
+  if (
+    typeof student_id === "undefined" ||
+    typeof finished === "undefined" ||
+    typeof group_id === "undefined" ||
+    typeof class_id === "undefined"
+  ) {
+    return res.status(400).json({ error: "student_id, finished, group_id, and class are required" });
+  }
+
   db.query(
-    "INSERT INTO Interview_Status (student_id, finished) VALUES (?, ?) ON DUPLICATE KEY UPDATE finished = ?",
-    [student_id, !!finished, !!finished],
+    `INSERT INTO Interview_Status (student_id, finished, group_id, class)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE finished = VALUES(finished), group_id = VALUES(group_id), class = VALUES(class)`,
+    [student_id, !!finished, group_id, class_id],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      console.log(result)
       res.json({ success: true });
     }
   );
+  io.to(group_id).emit("interviewStatusUpdated");
 });
 
 // get route for number of people in group

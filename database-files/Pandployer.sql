@@ -49,9 +49,11 @@ DROP TABLE IF EXISTS `Interview_Status`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Interview_Status` (
-  `stident_id` int NOT NULL,
+  `student_id` int NOT NULL,
   `finished` tinyint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`stident_id`)
+  `group_id` varchar(45) NOT NULL,
+  `class` int NOT NULL,
+  PRIMARY KEY (`student_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -378,7 +380,6 @@ CREATE TABLE `Users` (
 
 LOCK TABLES `Users` WRITE;
 /*!40000 ALTER TABLE `Users` DISABLE KEYS */;
-INSERT INTO `Users` VALUES (1,'Sai A.','Dhanasiri','saianirudhsjps@gmail.com','student','2025-07-07 18:33:01',NULL,NULL,1,NULL),(2,'Sage','Batchelor','sagebatchelor@gmail.com','student','2025-07-07 18:33:01',NULL,NULL,1,NULL),(3,'Sag','Bat','batchelor.sa@husky.neu.edu','student','2025-07-07 18:33:01',NULL,NULL,2,NULL),(4,'Sage','Batchelor','sagashrimproll@gmail.com','admin','2025-07-07 18:33:01',NULL,NULL,NULL,NULL),(5,'Sai Anirudh','Dhanasiri','dhanasiri.s@husky.neu.edu','admin','2025-07-07 18:33:01',NULL,NULL,NULL,NULL),(6,'Penguin','The Last','ilovepenguinsandhowtheylook@gmail.com','student','2025-07-07 18:33:01',NULL,NULL,1,NULL);
 /*!40000 ALTER TABLE `Users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -391,4 +392,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-08 15:37:20
+-- Dump completed on 2025-09-09 13:11:30
