@@ -576,14 +576,6 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("moveGroup", {classId, groupId, targetPage});
   });
 
-  // Listen for rating updates during interviews
-  socket.on("updateRating", ({ratingType, value, groupId, classId}) => {
-    console.log(`Rating update from group ${groupId}, class ${classId}: ${ratingType} = ${value}`);
-    const roomId = `group_${groupId}_class_${classId}`;
-    // Broadcast to all members in the room including sender
-    io.to(roomId).emit("ratingUpdated", {ratingType, value, groupId, classId});
-  });
-
   // Listen for interview submissions
   socket.on("submitInterview", ({currentVideoIndex, nextVideoIndex, isLastInterview, groupId, classId}) => {
     console.log(`Interview ${currentVideoIndex + 1} submitted by group ${groupId}, class ${classId}, moving to video ${nextVideoIndex + 1}, isLast: ${isLastInterview}`);
@@ -1009,6 +1001,8 @@ app.post("/update-job", (req, res) => {
     return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
+  console.log(req.body);
+
   // Update job_des and reset progress for all students in the group/class
   const updatePromises = job.map(title => {
     return new Promise((resolve, reject) => {
@@ -1335,6 +1329,41 @@ app.get("/interview", (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
+});
+
+app.get("/interview-status/finished-count", (req, res) => {
+  db.query(
+    "SELECT COUNT(*) AS finishedCount FROM Interview_Status WHERE finished = TRUE",
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ finishedCount: results[0].finishedCount });
+    }
+  );
+});
+
+app.post("/interview-status/finished", (req, res) => {
+  const { student_id, finished } = req.body;
+  db.query(
+    "INSERT INTO Interview_Status (student_id, finished) VALUES (?, ?) ON DUPLICATE KEY UPDATE finished = ?",
+    [student_id, !!finished, !!finished],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+// get route for number of people in group
+app.get("/group-size/:group_id", (req, res) => {
+  const { group_id } = req.params;
+  db.query(
+    "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND affiliation = 'student'",
+    [group_id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ group_id, count: results[0].count });
+    }
+  );
 });
 
 // get route for retrieving all interviews submitted by a specific group, given their id.

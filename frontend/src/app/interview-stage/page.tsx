@@ -71,7 +71,56 @@ export default function Interview() {
 
   // Use ref to always have access to current interviews state
   const interviewsRef = useRef(interviews);
-  
+  const [groupSubmissions, setGroupSubmissions] = useState(1); // Start at 1 for self
+  const [groupSize, setGroupSize] = useState(5); // Default, update from backend if needed
+  const [groupFinished, setGroupFinished] = useState(false);
+
+  // Listen for group submission updates
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchGroupSize = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/group-size/${user.group_id}`);
+        setGroupSize(response.data.count);
+      } catch (err) {
+        console.error("Failed to fetch group size:", err);
+      }
+    };
+
+    fetchGroupSize();
+
+    // Listen for group submission count updates
+    socket.on("groupSubmissionCount", ({ count, total }) => {
+      setGroupSubmissions(count);
+    });
+
+    // Request current count when finished
+    if (finished) {
+      socket.emit("requestGroupSubmissionCount", {
+        groupId: user.group_id,
+        classId: user.class,
+      });
+    }
+
+    const fetchFinished = async () => {
+      try {
+        const response = await axios.get(`/interview-status/finished-count`);
+        console.log("/interview-status/finished-count response" , response.data);
+        setGroupFinished(response.data.count === groupSize);
+      } catch (err) {
+        console.error("Failed to fetch group size:", err);
+      }
+    };
+
+    fetchFinished();
+    console.log(groupFinished);
+
+    return () => {
+      socket.off("groupSubmissionCount");
+    };
+  }, [user, finished]);
+
   // Update ref whenever interviews change
   useEffect(() => {
     interviewsRef.current = interviews;
@@ -193,57 +242,6 @@ export default function Interview() {
         }
       });
 
-      // Listen for rating updates from other group members
-      socket.on("ratingUpdated", ({ ratingType, value, groupId, classId }) => {
-        if (user && groupId === user.group_id && classId === user.class) {
-          console.log(`Received rating update: ${ratingType} = ${value}`);
-          switch (ratingType) {
-            case 'overall':
-              setOverall(value);
-              break;
-            case 'professionalPresence':
-              setProfessionalPresence(value);
-              break;
-            case 'qualityOfAnswer':
-              setQualityOfAnswer(value);
-              break;
-            case 'personality':
-              setPersonality(value);
-              break;
-          }
-        }
-      });
-
-      // Listen for interview submissions from other group members
-      socket.on("interviewSubmitted", ({ currentVideoIndex, nextVideoIndex, isLastInterview, groupId, classId }) => {
-        if (user && groupId === user.group_id && classId === user.class) {
-          console.log(`Group member submitted interview ${currentVideoIndex + 1}, moving to video index ${nextVideoIndex}, isLast: ${isLastInterview}`);
-          console.log(`Total interviews available: ${interviewsRef.current.length}`);
-          console.log(`Current interviews array:`, interviewsRef.current);
-          
-          // Check if this is the last interview
-          if (isLastInterview) {
-            console.log(`All interviews completed, setting finished state`);
-            setFinished(true);
-          } else if (interviewsRef.current.length > 0 && nextVideoIndex < interviewsRef.current.length) {
-            console.log(`Setting video index to ${nextVideoIndex}`);
-            setVideoIndex(nextVideoIndex);
-            setOverall(5);
-            setProfessionalPresence(5);
-            setQualityOfAnswer(5);
-            setPersonality(5);
-            setFinished(false); 
-            setVideoLoaded(false); // Reset video loaded state for new video 
-          } else if (interviewsRef.current.length === 0) {
-            console.log(`Interviews not loaded yet, waiting for interviews to load before processing`);
-            // Don't set finished state yet, wait for interviews to load
-          } else {
-            console.log(`Invalid video index ${nextVideoIndex} for ${interviewsRef.current.length} interviews, setting finished state`);
-            setFinished(true);
-          }
-        }
-      });
-      
       // Update current page in database
       const updateCurrentPage = async () => {
         try {
@@ -320,7 +318,6 @@ useEffect(() => {
         })
       );
       console.log("Candidate promises created:", candidatePromises.length);
-      // Use allSettled instead of all to prevent one failure from failing everything
       const results = await Promise.allSettled(candidatePromises);
 
       setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null));
@@ -353,83 +350,22 @@ useEffect(() => {
 
   // Get current video
   const currentVid = interviews[videoIndex];
-
-  // Debug logging - Add more detailed logging
-  useEffect(() => {
-    if (interviews.length > 0 && videoIndex >= 0) {
-      const isValidIndex = videoIndex < interviews.length;
-      console.log("Is valid video index:", isValidIndex);
-      if (!isValidIndex) {
-        console.warn(`Invalid video index ${videoIndex} for ${interviews.length} interviews`);
-      }
-    }
-  }, [interviews, videoIndex, currentVid, finished, loading]);
-
-  // Move to next video with transition effect
-  const nextVideo = () => { 
-    if (videoIndex < interviews.length - 1) { 
-      setFadingEffect(true); 
-      setTimeout(() => {
-        setVideoIndex(videoIndex + 1); 
-        setFadingEffect(false); 
-        setNoShow(false);
-      }, 500);
-    } else {
-      setFinished(true);
-    }
-  }
   
   // Rating change handlers
   const handleOverallSliderChange = (value: number) => {
     setOverall(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'overall',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   const handleProfessionalPresenceSliderChange = (value: number) => {
     setProfessionalPresence(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'professionalPresence',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   const handleQualityOfAnswerSliderChange = (value: number) => {
     setQualityOfAnswer(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'qualityOfAnswer',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   const handlePersonalitySliderChange = (value: number) => {
     setPersonality(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'personality',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   // Reset all ratings
@@ -473,26 +409,20 @@ useEffect(() => {
     const nextVideoIndex = videoIndex + 1;
     const isLastInterview = nextVideoIndex >= interviews.length;
 
-    console.log(`Submitting interview. Current index: ${videoIndex}, Next index: ${nextVideoIndex}, Is last: ${isLastInterview}, Total interviews: ${interviews.length}`);
-    // Emit submission event to synchronize group members
-    if (user) {
-      socket.emit("submitInterview", {
-        currentVideoIndex: videoIndex,
-        nextVideoIndex: nextVideoIndex,
-        isLastInterview: isLastInterview,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
-
-    // Update local state
     if (!isLastInterview) {
       console.log(`Moving to next video (index ${nextVideoIndex})`);
       setVideoIndex(nextVideoIndex);
       setVideoLoaded(false); // Reset video loaded state for new video
       resetRatings();
     } else {
-      console.log("All interviews have been rated!");
+      try {
+        await axios.post(`${API_BASE_URL}/interview-status/finished`, {
+          student_id: user?.id,
+          finished: 1,
+        });
+      } catch (err) {
+        console.error("Failed to mark as finished:", err);
+      }
       setFinished(true);
     }
   };
@@ -739,14 +669,17 @@ useEffect(() => {
           <button
             onClick={completeInterview}
             className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md transition duration-300 font-rubik
-            ${
-              !finished
+              ${!finished || !groupFinished
                 ? "cursor-not-allowed opacity-50"
                 : "cursor-pointer hover:bg-navy"
-            }`}
-            disabled={!finished}
+              }`}
+            disabled={!finished || !groupFinished}
           >
-            Next: Make Offer page →
+            {!finished
+              ? "Next: Make Offer page →"
+              : !groupFinished
+                ? `Next: Make Offer page (${groupSubmissions}/${groupSize} submitted)`
+                : "Next: Make Offer page"}
           </button>
         </div>
       </footer>
