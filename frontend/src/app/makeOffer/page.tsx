@@ -494,19 +494,19 @@ export default function MakeOffer() {
 
                   <div className="mt-2 space-y-1 text-navy text-sm">
                     <p>
-                      <span className="font-medium">Overall:</span> {votes.Overall / groupSize}
+                      <span className="font-medium">Overall:</span> {votes.Overall / groupSize!}
                     </p>
                     <p>
                       <span className="font-medium">Professional Presence:</span>{" "}
-                      {votes.Profesionality / groupSize}
+                      {votes.Profesionality / groupSize!}
                     </p>
                     <p>
                       <span className="font-medium">Quality of Answer:</span>{" "}
-                      {votes.Quality / groupSize}
+                      {votes.Quality / groupSize!}
                     </p>
                     <p>
                       <span className="font-medium">Personality:</span>{" "}
-                      {votes.Personality / groupSize}
+                      {votes.Personality / groupSize!}
                     </p>
                   </div>
 
