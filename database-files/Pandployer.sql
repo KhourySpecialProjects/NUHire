@@ -190,11 +190,12 @@ DROP TABLE IF EXISTS `Moderator`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Moderator` (
-  `id` int NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL,
   `nom_groups` int NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `crn_UNIQUE` (`crn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -392,4 +393,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-09 13:11:30
+-- Dump completed on 2025-09-10 13:51:05

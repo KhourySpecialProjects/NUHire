@@ -1369,11 +1369,34 @@ app.post("/interview-status/finished", (req, res) => {
     [student_id, !!finished, group_id, class_id],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
-      console.log(result)
-      res.json({ success: true });
+
+      // Query for finished count
+      db.query(
+        "SELECT COUNT(*) AS finishedCount FROM Interview_Status WHERE group_id = ? AND class = ? AND finished = 1",
+        [group_id, class_id],
+        (err2, finishedResults) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+
+          // Query for group size
+          db.query(
+            "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND affiliation = 'student' AND class = ?",
+            [group_id, class_id],
+            (err3, groupResults) => {
+              if (err3) return res.status(500).json({ error: err3.message });
+
+              const count = finishedResults[0].finishedCount;
+              const total = groupResults[0].count;
+
+              // Emit to the group room (make sure your frontend joins this room)
+              io.to(`group_${group_id}_class_${class_id}`).emit("interviewStatusUpdated", { count, total });
+
+              res.json({ success: true });
+            }
+          );
+        }
+      );
     }
   );
-  io.to(group_id).emit("interviewStatusUpdated");
 });
 
 // get route for number of people in group
@@ -1591,6 +1614,7 @@ app.post("/moderator-crns", (req, res) => {
 app.get("/moderator-crns", (req, res) => {
   db.query("SELECT * FROM Moderator", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
+    console.log("/moderator-crns", results);
     res.json(results);
   });
 });
@@ -1608,9 +1632,14 @@ app.delete("/moderator-crns/:crn", (req, res) => {
 });
 
 app.get("/moderator-crns/:crn", (req, res) => {
-  const {crn} = req.params;
+  const { crn } = req.params;
+  console.log("Fetching CRN:", crn);
   db.query("SELECT * FROM Moderator WHERE crn = ?", [crn], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("Database error in /moderator-crns/:crn:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log("Results for /moderator-crns/:crn:", results);
     res.json(results[0]);
   });
 });
@@ -1619,8 +1648,11 @@ app.get("/moderator-classes/:email", (req, res) => {
   const { email } = req.params;
   db.query(
     "SELECT crn FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      console.log(results)
+      if (err) {
+        console.error("Database error in /moderator-classes/:email:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log("Results for /moderator-classes/:email:", results);
       res.json(results.map(row => row.crn));
     }
   );

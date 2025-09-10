@@ -108,6 +108,12 @@ export default function Interview() {
     fetchFinished();
     console.log(groupFinished);
 
+    socket.emit("interviewStageFinished", {
+      group_id: user.group_id,
+      class_id: user.class,
+      student_id: user.id,
+    });
+
   }, [user, finished]);
 
   // Update ref whenever interviews change
@@ -305,15 +311,21 @@ useEffect(() => {
       }
     });
 
-    socket.on("interviewStatusUpdated", () => {
+    socket.on("interviewStatusUpdated", ({ count, total }) => {
+      setGroupSubmissions(count);
+      setGroupSize(total);
+      setGroupFinished(count === total);
+    });
+
+    socket.on("interviewStageFinished", () => {
       fetchFinished();
       fetchGroupSize();
-      setGroupFinished(groupSubmissions === groupSize);
     });
     
     return () => {
       socket.off("receivePopup");
       socket.off("interviewStatusUpdated")
+      socket.off("interviewStageFinishedBroadcast")
     };
   }, []);
 
