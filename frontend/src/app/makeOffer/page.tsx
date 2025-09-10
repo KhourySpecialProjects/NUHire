@@ -61,7 +61,8 @@ export default function MakeOffer() {
     "Discuss as a team which person is getting the job offer.",
     "Make the offer and wait for your advisor's decision."
   ];  
-    
+  const [groupSize, setGroupSize] = useState<number | null>(null);
+
   // Load user
   useEffect(() => {
     const fetchUser = async () => {
@@ -124,6 +125,17 @@ export default function MakeOffer() {
       }
     };
 
+    const fetchGroupSize = async () => {
+      if (!user?.group_id) return;
+      try {
+        const response = await axios.get(`${API_BASE_URL}/group-size/${user.group_id}`);
+        setGroupSize(response.data.count);
+      } catch (err) {
+        console.error("Failed to fetch group size:", err);
+      }
+    };
+
+    fetchGroupSize();
     fetchInterviews();
   }, [user]);
 
@@ -482,19 +494,19 @@ export default function MakeOffer() {
 
                   <div className="mt-2 space-y-1 text-navy text-sm">
                     <p>
-                      <span className="font-medium">Overall:</span> {votes.Overall}
+                      <span className="font-medium">Overall:</span> {votes.Overall / groupSize}
                     </p>
                     <p>
                       <span className="font-medium">Professional Presence:</span>{" "}
-                      {votes.Profesionality}
+                      {votes.Profesionality / groupSize}
                     </p>
                     <p>
                       <span className="font-medium">Quality of Answer:</span>{" "}
-                      {votes.Quality}
+                      {votes.Quality / groupSize}
                     </p>
                     <p>
                       <span className="font-medium">Personality:</span>{" "}
-                      {votes.Personality}
+                      {votes.Personality / groupSize}
                     </p>
                   </div>
 
