@@ -67,6 +67,31 @@ LOCK TABLES `Interview_Status` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `Interview_Status`
+--
+
+DROP TABLE IF EXISTS `Interview_Status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Interview_Status` (
+  `student_id` int NOT NULL,
+  `finished` tinyint NOT NULL DEFAULT '0',
+  `group_id` varchar(45) NOT NULL,
+  `class` int NOT NULL,
+  PRIMARY KEY (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Interview_Status`
+--
+
+LOCK TABLES `Interview_Status` WRITE;
+/*!40000 ALTER TABLE `Interview_Status` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Interview_Status` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Interview_vids`
 --
 
@@ -191,10 +216,12 @@ DROP TABLE IF EXISTS `Moderator`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Moderator` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL,
   `nom_groups` int NOT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `crn_UNIQUE` (`crn`),
   UNIQUE KEY `crn_UNIQUE` (`crn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

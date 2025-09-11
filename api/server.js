@@ -576,14 +576,6 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("moveGroup", {classId, groupId, targetPage});
   });
 
-  // Listen for rating updates during interviews
-  socket.on("updateRating", ({ratingType, value, groupId, classId}) => {
-    console.log(`Rating update from group ${groupId}, class ${classId}: ${ratingType} = ${value}`);
-    const roomId = `group_${groupId}_class_${classId}`;
-    // Broadcast to all members in the room including sender
-    io.to(roomId).emit("ratingUpdated", {ratingType, value, groupId, classId});
-  });
-
   // Listen for interview submissions
   socket.on("submitInterview", ({currentVideoIndex, nextVideoIndex, isLastInterview, groupId, classId}) => {
     console.log(`Interview ${currentVideoIndex + 1} submitted by group ${groupId}, class ${classId}, moving to video ${nextVideoIndex + 1}, isLast: ${isLastInterview}`);
@@ -1009,6 +1001,8 @@ app.post("/update-job", (req, res) => {
     return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
+  console.log(req.body);
+
   // Update job_des and reset progress for all students in the group/class
   const updatePromises = job.map(title => {
     return new Promise((resolve, reject) => {
@@ -1302,7 +1296,6 @@ app.get("/resume/checked/:group_id", async (req, res) => {
 
 //post route for submitting an interview vote, which checks if the required fields are provided in the request body
 app.post("/interview/vote", async (req, res) => {
-  console.log(req.body);
   const { student_id, group_id, studentClass, question1, question2, question3, question4, candidate_id } = req.body;
 
   if (!student_id || !group_id || !studentClass || !question1 || !question2 || !question3 || !question4 || !candidate_id) {
@@ -1335,6 +1328,88 @@ app.get("/interview", (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
+});
+
+app.get("/interview-status/finished-count", (req, res) => {
+  const { group_id, class_id } = req.query;
+
+  if (!group_id || !class_id) {
+    return res.status(400).json({ error: "group_id and class_id are required" });
+  }
+
+  // Join Interview_Status and Users to filter by group and class
+  const query = `
+    SELECT COUNT(*) AS finishedCount
+    FROM Interview_Status 
+    WHERE group_id = ? AND class = ? AND finished = 1
+    ;`
+  db.query(query, [group_id, class_id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    console.log(results);
+    res.json({ finishedCount: results[0].finishedCount });
+  });
+});
+
+app.post("/interview-status/finished", (req, res) => {
+  const { student_id, finished, group_id, class: class_id } = req.body;
+
+  if (
+    typeof student_id === "undefined" ||
+    typeof finished === "undefined" ||
+    typeof group_id === "undefined" ||
+    typeof class_id === "undefined"
+  ) {
+    return res.status(400).json({ error: "student_id, finished, group_id, and class are required" });
+  }
+
+  db.query(
+    `INSERT INTO Interview_Status (student_id, finished, group_id, class)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE finished = VALUES(finished), group_id = VALUES(group_id), class = VALUES(class)`,
+    [student_id, !!finished, group_id, class_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Query for finished count
+      db.query(
+        "SELECT COUNT(*) AS finishedCount FROM Interview_Status WHERE group_id = ? AND class = ? AND finished = 1",
+        [group_id, class_id],
+        (err2, finishedResults) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+
+          // Query for group size
+          db.query(
+            "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND affiliation = 'student' AND class = ?",
+            [group_id, class_id],
+            (err3, groupResults) => {
+              if (err3) return res.status(500).json({ error: err3.message });
+
+              const count = finishedResults[0].finishedCount;
+              const total = groupResults[0].count;
+
+              // Emit to the group room (make sure your frontend joins this room)
+              io.to(`group_${group_id}_class_${class_id}`).emit("interviewStatusUpdated", { count, total });
+
+              res.json({ success: true });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// get route for number of people in group
+app.get("/group-size/:group_id", (req, res) => {
+  const { group_id } = req.params;
+  db.query(
+    "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND affiliation = 'student'",
+    [group_id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ group_id, count: results[0].count });
+    }
+  );
 });
 
 // get route for retrieving all interviews submitted by a specific group, given their id.
@@ -1539,6 +1614,7 @@ app.post("/moderator-crns", (req, res) => {
 app.get("/moderator-crns", (req, res) => {
   db.query("SELECT * FROM Moderator", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
+    console.log("/moderator-crns", results);
     res.json(results);
   });
 });
@@ -1556,9 +1632,14 @@ app.delete("/moderator-crns/:crn", (req, res) => {
 });
 
 app.get("/moderator-crns/:crn", (req, res) => {
-  const {crn} = req.params;
+  const { crn } = req.params;
+  console.log("Fetching CRN:", crn);
   db.query("SELECT * FROM Moderator WHERE crn = ?", [crn], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("Database error in /moderator-crns/:crn:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log("Results for /moderator-crns/:crn:", results);
     res.json(results[0]);
   });
 });
@@ -1567,8 +1648,11 @@ app.get("/moderator-classes/:email", (req, res) => {
   const { email } = req.params;
   db.query(
     "SELECT crn FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      console.log(results)
+      if (err) {
+        console.error("Database error in /moderator-classes/:email:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log("Results for /moderator-classes/:email:", results);
       res.json(results.map(row => row.crn));
     }
   );
