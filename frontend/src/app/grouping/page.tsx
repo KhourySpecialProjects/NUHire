@@ -196,10 +196,17 @@ const Grouping = () => {
     setSelectedJobClass(e.target.value);
   };
   const handleJobGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log("++++++++ Job group change event:", e);
     const newGroup = e.target.value;
+    console.log("Selected group value:", newGroup, typeof newGroup);
     setSelectedJobGroup(newGroup);
-    if (newGroup && Object.keys(jobGroups).includes(newGroup)) setGroupIdJob(newGroup);
-    else if (newGroup) setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
+    if (newGroup && Object.keys(jobGroups).includes(newGroup)) {
+      console.log("Setting group ID to:", newGroup);
+      setGroupIdJob(newGroup);
+    } else if (newGroup) {
+      console.log("Invalid group selection");
+      setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
+    }
   };
   const handleJobSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedTitle = event.target.value;
@@ -610,13 +617,6 @@ const Grouping = () => {
             headline={popup.headline}
             message={popup.message}
             onDismiss={() => setPopup(null)}
-          />
-        )}
-        {donePopup && (
-          <Popup
-            headline="Interview Complete"
-            message="You have completed all interviews and ratings."
-            onDismiss={() => setDonePopup(false)}
           />
         )}
     </div>

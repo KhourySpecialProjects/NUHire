@@ -63,6 +63,8 @@ export default function SignupDetails() {
 
     if (affiliation === 'student') {
       try {
+        console.log("Group", groupNumber);
+        console.log("Course", courseNumber);
         const res = await fetch(
           `${API_BASE_URL}/moderator-crns/${courseNumber}`,
           { method: 'GET', credentials: 'include' }
@@ -76,7 +78,10 @@ export default function SignupDetails() {
           return;
         }
         const {id, admin_email, crn, nom_groups} = await res.json();
+        const data = await res.json()
+        console.log(data);
         const emailData = await emailRes.json();
+        console.log(emailData);
         if (emailData.length !== 0) {
           setError('This email is set as an instructor.');
           return;

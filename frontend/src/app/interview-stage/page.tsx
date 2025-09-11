@@ -10,6 +10,7 @@ import { io } from "socket.io-client";
 import RatingSlider from "../components/ratingSlider";
 import Popup from "../components/popup";
 import axios from "axios";
+import { group } from "console";
 
 // Define API_BASE_URL with a fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -71,7 +72,50 @@ export default function Interview() {
 
   // Use ref to always have access to current interviews state
   const interviewsRef = useRef(interviews);
-  
+  const [groupSubmissions, setGroupSubmissions] = useState(0); // Start at 1 for self
+  const [groupSize, setGroupSize] = useState(0); // Default, update from backend if needed
+  const [groupFinished, setGroupFinished] = useState(false);
+
+  const fetchFinished = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/interview-status/finished-count`, {
+        params: { group_id: user?.group_id, class_id: user?.class }
+      });      
+      setGroupSubmissions(response.data.finishedCount);
+      console.log("Group submissions fetched:", groupSubmissions);
+      setGroupFinished(groupSubmissions === groupSize);
+    } catch (err) {
+      console.error("Failed to fetch group size:", err);
+    }
+  };
+
+  const fetchGroupSize = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/group-size/${user?.group_id}`);
+      setGroupSize(response.data.count);
+      console.log("Group size fetched:", response.data.count);
+    } catch (err) {
+      console.error("Failed to fetch group size:", err);
+    }
+  };
+
+  // Listen for group submission updates
+  useEffect(() => {
+    if (!user) return;
+
+    fetchGroupSize();
+
+    fetchFinished();
+    console.log(groupFinished);
+
+    socket.emit("interviewStageFinished", {
+      group_id: user.group_id,
+      class_id: user.class,
+      student_id: user.id,
+    });
+
+  }, [user, finished]);
+
   // Update ref whenever interviews change
   useEffect(() => {
     interviewsRef.current = interviews;
@@ -90,19 +134,15 @@ export default function Interview() {
 
   // Fetch user data
   useEffect(() => {
-    console.log("Starting user fetch");
     const fetchUser = async () => {
       try {
-        console.log("Making auth request");
         const response = await axios.get(`${API_BASE_URL}/auth/user`, { 
           withCredentials: true,
           timeout: 10000 // 10 second timeout
         });
         
-        console.log("Auth response received:", response.status);
         
         if (response.status === 200) {
-          console.log("User data:", response.data);
           setUser(response.data);
         } else {
           setError('Authentication failed. Please log in again.');
@@ -114,7 +154,6 @@ export default function Interview() {
         console.error("Error fetching user:", error);
         setError('Failed to authenticate. Make sure the API server is running.');
       } finally {
-        console.log("Setting loading to false");
         setLoading(false);
       }
     };
@@ -135,18 +174,6 @@ export default function Interview() {
       return;
     }
     
-    // Debug the data we're about to send
-    console.log("Sending data to backend:", {
-      student_id: user.id,
-      group_id: user.group_id,
-      studentClass: user.class,
-      question1: overall,
-      question2: professionalPresence,
-      question3: qualityOfAnswer,
-      question4: personality,
-      candidate_id
-    });
-    
     try {
       const response = await axios.post(`${API_BASE_URL}/interview/vote`, {
         student_id: user.id,
@@ -158,11 +185,9 @@ export default function Interview() {
         question4: personality,
         candidate_id
       });
-      console.log("Backend response:", response.status, response.data);
       if (response.status !== 200) {
         console.error("Failed to submit response:", response.statusText);
       } else {
-        console.log("Interview vote submitted successfully");
       }
     } catch (error) {
       console.error("Error submitting response:", error);
@@ -173,11 +198,9 @@ export default function Interview() {
   // Update current page when user is loaded
   useEffect(() => {
     if (user && user.email) {
-      console.log("User loaded, updating current page");
       
       // Setup socket connection and join group room
       const roomId = `group_${user.group_id}_class_${user.class}`;
-      console.log("Joining room:", roomId);
       socket.emit("joinGroup", roomId);
       
       // Emit socket events
@@ -187,63 +210,11 @@ export default function Interview() {
       // Listen for group move events
       socket.on("moveGroup", ({groupId, classId, targetPage}) => {
         if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
-          console.log(`Group navigation triggered: moving to ${targetPage}`);
           localStorage.setItem("progress", "makeOffer");
           window.location.href = targetPage; 
         }
       });
 
-      // Listen for rating updates from other group members
-      socket.on("ratingUpdated", ({ ratingType, value, groupId, classId }) => {
-        if (user && groupId === user.group_id && classId === user.class) {
-          console.log(`Received rating update: ${ratingType} = ${value}`);
-          switch (ratingType) {
-            case 'overall':
-              setOverall(value);
-              break;
-            case 'professionalPresence':
-              setProfessionalPresence(value);
-              break;
-            case 'qualityOfAnswer':
-              setQualityOfAnswer(value);
-              break;
-            case 'personality':
-              setPersonality(value);
-              break;
-          }
-        }
-      });
-
-      // Listen for interview submissions from other group members
-      socket.on("interviewSubmitted", ({ currentVideoIndex, nextVideoIndex, isLastInterview, groupId, classId }) => {
-        if (user && groupId === user.group_id && classId === user.class) {
-          console.log(`Group member submitted interview ${currentVideoIndex + 1}, moving to video index ${nextVideoIndex}, isLast: ${isLastInterview}`);
-          console.log(`Total interviews available: ${interviewsRef.current.length}`);
-          console.log(`Current interviews array:`, interviewsRef.current);
-          
-          // Check if this is the last interview
-          if (isLastInterview) {
-            console.log(`All interviews completed, setting finished state`);
-            setFinished(true);
-          } else if (interviewsRef.current.length > 0 && nextVideoIndex < interviewsRef.current.length) {
-            console.log(`Setting video index to ${nextVideoIndex}`);
-            setVideoIndex(nextVideoIndex);
-            setOverall(5);
-            setProfessionalPresence(5);
-            setQualityOfAnswer(5);
-            setPersonality(5);
-            setFinished(false); 
-            setVideoLoaded(false); // Reset video loaded state for new video 
-          } else if (interviewsRef.current.length === 0) {
-            console.log(`Interviews not loaded yet, waiting for interviews to load before processing`);
-            // Don't set finished state yet, wait for interviews to load
-          } else {
-            console.log(`Invalid video index ${nextVideoIndex} for ${interviewsRef.current.length} interviews, setting finished state`);
-            setFinished(true);
-          }
-        }
-      });
-      
       // Update current page in database
       const updateCurrentPage = async () => {
         try {
@@ -272,7 +243,6 @@ export default function Interview() {
 useEffect(() => {
   if (!user?.group_id) return;
   
-  console.log("Fetching candidates for group:", user.group_id);
   
   const fetchCandidates = async () => {
     try {
@@ -282,7 +252,6 @@ useEffect(() => {
         { timeout: 8000 }
       );
       
-      console.log("Resume response:", resumeResponse.data);
       const allResumes: Resume[] = resumeResponse.data;
       
       // Filter to get only checked resumes and ensure no duplicates
@@ -295,10 +264,8 @@ useEffect(() => {
         return unique;
       }, []);
       
-      console.log("Checked resumes after deduplication:", checkedResumes);
       
       if (checkedResumes.length === 0) {
-        console.log("No checked resumes found");
         setInterviews([]);
         return;
       }
@@ -319,8 +286,6 @@ useEffect(() => {
           return null;
         })
       );
-      console.log("Candidate promises created:", candidatePromises.length);
-      // Use allSettled instead of all to prevent one failure from failing everything
       const results = await Promise.allSettled(candidatePromises);
 
       setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null));
@@ -345,91 +310,43 @@ useEffect(() => {
         setNoShow(false); 
       }
     });
+
+    socket.on("interviewStatusUpdated", ({ count, total }) => {
+      setGroupSubmissions(count);
+      setGroupSize(total);
+      setGroupFinished(count === total);
+    });
+
+    socket.on("interviewStageFinished", () => {
+      fetchFinished();
+      fetchGroupSize();
+    });
     
     return () => {
       socket.off("receivePopup");
+      socket.off("interviewStatusUpdated")
+      socket.off("interviewStageFinishedBroadcast")
     };
   }, []);
 
   // Get current video
   const currentVid = interviews[videoIndex];
-
-  // Debug logging - Add more detailed logging
-  useEffect(() => {
-    if (interviews.length > 0 && videoIndex >= 0) {
-      const isValidIndex = videoIndex < interviews.length;
-      console.log("Is valid video index:", isValidIndex);
-      if (!isValidIndex) {
-        console.warn(`Invalid video index ${videoIndex} for ${interviews.length} interviews`);
-      }
-    }
-  }, [interviews, videoIndex, currentVid, finished, loading]);
-
-  // Move to next video with transition effect
-  const nextVideo = () => { 
-    if (videoIndex < interviews.length - 1) { 
-      setFadingEffect(true); 
-      setTimeout(() => {
-        setVideoIndex(videoIndex + 1); 
-        setFadingEffect(false); 
-        setNoShow(false);
-      }, 500);
-    } else {
-      setFinished(true);
-    }
-  }
   
   // Rating change handlers
   const handleOverallSliderChange = (value: number) => {
     setOverall(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'overall',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   const handleProfessionalPresenceSliderChange = (value: number) => {
     setProfessionalPresence(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'professionalPresence',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   const handleQualityOfAnswerSliderChange = (value: number) => {
     setQualityOfAnswer(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'qualityOfAnswer',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   const handlePersonalitySliderChange = (value: number) => {
     setPersonality(value);
-    // Emit rating update to group members
-    if (user) {
-      socket.emit("updateRating", {
-        ratingType: 'personality',
-        value,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
   }
   
   // Reset all ratings
@@ -473,27 +390,22 @@ useEffect(() => {
     const nextVideoIndex = videoIndex + 1;
     const isLastInterview = nextVideoIndex >= interviews.length;
 
-    console.log(`Submitting interview. Current index: ${videoIndex}, Next index: ${nextVideoIndex}, Is last: ${isLastInterview}, Total interviews: ${interviews.length}`);
-    // Emit submission event to synchronize group members
-    if (user) {
-      socket.emit("submitInterview", {
-        currentVideoIndex: videoIndex,
-        nextVideoIndex: nextVideoIndex,
-        isLastInterview: isLastInterview,
-        groupId: user.group_id,
-        classId: user.class
-      });
-    }
-
-    // Update local state
     if (!isLastInterview) {
-      console.log(`Moving to next video (index ${nextVideoIndex})`);
       setVideoIndex(nextVideoIndex);
       setVideoLoaded(false); // Reset video loaded state for new video
       resetRatings();
     } else {
-      console.log("All interviews have been rated!");
-      setFinished(true);
+      try {
+        await axios.post(`${API_BASE_URL}/interview-status/finished`, {
+          student_id: user?.id,
+          finished: 1,
+          group_id: user?.group_id,
+          class: user?.class
+        });
+        setFinished(true);
+      } catch (err) {
+        console.error("Failed to mark as finished:", err);
+      }
     }
   };
   
@@ -690,7 +602,6 @@ useEffect(() => {
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
                 onLoad={() => {
-                  console.log("Video iframe loaded");
                   setTimeout(() => {
                     setVideoLoaded(true);
                   }, 500);
@@ -739,14 +650,17 @@ useEffect(() => {
           <button
             onClick={completeInterview}
             className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md transition duration-300 font-rubik
-            ${
-              !finished
+              ${!finished || !groupFinished
                 ? "cursor-not-allowed opacity-50"
                 : "cursor-pointer hover:bg-navy"
-            }`}
-            disabled={!finished}
+              }`}
+            disabled={!finished || !groupFinished}
           >
-            Next: Make Offer page →
+            {!finished
+              ? "Next: Make Offer page →"
+              : !groupFinished
+                ? `Next: Make Offer page (${groupSubmissions}/${groupSize} submitted)`
+                : "Next: Make Offer page"}
           </button>
         </div>
       </footer>
