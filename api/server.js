@@ -669,6 +669,15 @@ io.on("connection", (socket) => {
       });
   });
 
+  socket.on("confirmOffer", ({ groupId, classId, candidateId, studentId, roomId }) => {
+    io.to(roomId).emit("confirmOffer", {
+      candidateId,
+      studentId,
+      groupId,
+      classId,
+    });
+  });
+
   // Listens for the "disconnect" event, which is emitted when a client disconnects from the server
   // The server removes the student from the onlineStudents object and emits the "updateOnlineStudents" event to all connected clients
   socket.on("disconnect", () => {

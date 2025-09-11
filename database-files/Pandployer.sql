@@ -236,6 +236,31 @@ LOCK TABLES `Notes` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `Offer_Status`
+--
+
+DROP TABLE IF EXISTS `Offer_Status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Offer_Status` (
+  `student_id` int NOT NULL,
+  `clicked` tinyint NOT NULL DEFAULT '0',
+  `group_id` varchar(45) NOT NULL,
+  `class` int NOT NULL,
+  PRIMARY KEY (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Offer_Status`
+--
+
+LOCK TABLES `Offer_Status` WRITE;
+/*!40000 ALTER TABLE `Offer_Status` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Offer_Status` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Resume`
 --
 
@@ -393,4 +418,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-10 13:51:05
+-- Dump completed on 2025-09-11  9:07:29

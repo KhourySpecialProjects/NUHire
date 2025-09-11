@@ -78,8 +78,6 @@ export default function SignupDetails() {
           return;
         }
         const {id, admin_email, crn, nom_groups} = await res.json();
-        const data = await res.json()
-        console.log(data);
         const emailData = await emailRes.json();
         console.log(emailData);
         if (emailData.length !== 0) {

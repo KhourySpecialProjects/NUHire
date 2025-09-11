@@ -57,7 +57,10 @@ export default function ResumesPage() {
   const resumeInstructions = [
     "Review the resume and decide whether to accept, reject, or mark as no-response.",
     "You may accept as many as you like out of the 10.",
-    "You have to wait for the rest of your group to finish before moving on."
+    "You have to wait for the rest of your group to finish before moving on.",
+    "The decisions you make here will not affect the candidate's overall application.",
+    "They will just be another factor your group considers when making a final decision.",
+
   ];  
 
   useEffect(() => {
