@@ -303,6 +303,22 @@ export default function MakeOffer() {
       setOfferPending(true);
     });
 
+    socket.on("confirmOffer", ({ candidateId, studentId, groupId, classId }) => {
+    // Only process if it's for our group and class
+    if (groupId === user.group_id && classId === user.class) {
+      setOfferConfirmations(prev => {
+        const currentConfirmations = prev[candidateId] || [];
+        if (!currentConfirmations.includes(studentId)) {
+          return {
+            ...prev,
+            [candidateId]: [...currentConfirmations, studentId]
+          };
+        }
+        return prev;
+      });
+    }
+  });
+
     // Listens to Advisor's response
     socket.on(
       "makeOfferResponse",
@@ -398,52 +414,31 @@ export default function MakeOffer() {
       checked: newCheckedState,
     });
   };
-
-  useEffect(() => {
-    if (!socket) return;
     
-    socket.on("offerConfirmationsUpdated", ({ candidateId, confirmations }) => {
-      console.log("Received confirmation update:", { candidateId, confirmations });
-      setOfferConfirmations(prev => ({
-        ...prev,
-        [candidateId]: confirmations,
-      }));
+  const handleConfirmOffer = (candidateId: number) => {
+    if (!socket || !user || !candidateId) return;
+    
+    // First update local state immediately
+    setOfferConfirmations(prev => {
+      const currentConfirmations = prev[candidateId] || [];
+      if (!currentConfirmations.includes(user.id)) {
+        return {
+          ...prev,
+          [candidateId]: [...currentConfirmations, user.id]
+        };
+      }
+      return prev;
     });
 
-    // Also listen for initial confirmations when joining
-    socket.emit("getOfferConfirmations", {
-      groupId: user?.group_id,
-      classId: user?.class,
+    // Then emit to other users in the room
+    socket.emit("confirmOffer", {
+      groupId: user.group_id,
+      classId: user.class,
+      candidateId,
+      studentId: user.id,
+      roomId: `group_${user.group_id}_class_${user.class}`
     });
-
-    return () => {
-      socket!.off("offerConfirmationsUpdated");
-    };
-  }, [socket, user]);
-
-    
-const handleConfirmOffer = (candidateId: number) => {
-  if (!socket || !user) return;
-  
-  socket.emit("confirmOffer", {
-    groupId: user.group_id,
-    classId: user.class,
-    candidateId,
-    studentId: user.id,
-  });
-  
-  // Optimistically update local state
-  setOfferConfirmations(prev => {
-    const currentConfirmations = prev[candidateId] || [];
-    if (!currentConfirmations.includes(user.id)) {
-      return {
-        ...prev,
-        [candidateId]: [...currentConfirmations, user.id],
-      };
-    }
-    return prev;
-  });
-};
+  };
 
   const handleMakeOffer = () => {
     const selectedIds = Object.entries(checkedState)
@@ -614,11 +609,6 @@ const handleConfirmOffer = (candidateId: number) => {
               <p className="text-navy font-medium">
                 Team Confirmation: {confirmationCount}/{groupSize} members ready
               </p>
-              {confirmationCount > 0 && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Confirmed by: {confirmations.join(', ')}
-                </p>
-              )}
             </div>
 
             {/* Confirmation/Offer buttons */}
