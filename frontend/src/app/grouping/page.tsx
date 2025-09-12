@@ -31,6 +31,7 @@ const Grouping = () => {
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("");
   const [group_id, setGroupId] = useState("");
+  const [updateNumGroups, setUpdateNumGroups] = useState<number | "">("");
 
   // Tab 2: Job Assignment
   interface Job { title: string; [key: string]: any; }
@@ -376,12 +377,70 @@ const Grouping = () => {
                   </div>
                 ))}
               </div>
-              <button
-                onClick={handleAssignGroup}
-                className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed transition"
+              <div className="flex justify-center">
+                <button
+                  onClick={handleAssignGroup}
+                  className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
+                >
+                  Assign Group
+                </button>
+              </div>
+            </div>
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 mt-2 w-[900px] mx-auto">
+              <h3 className="text-2xl font-bold text-northeasternRed mb-4">Update Number of Groups in Class</h3>
+              <label className="block mb-2 text-navy font-semibold">
+                Select Class
+              </label>
+              <select
+                value={selectedClass}
+                onChange={handleClassChange}
+                className="w-full p-2 border border-wood bg-springWater rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Assign Group
-              </button>
+                <option value="">Select a class</option>
+                {classes.map(classItem => (
+                  <option key={classItem.id} value={classItem.id}>
+                    {classItem.name}
+                  </option>
+                ))}
+              </select>
+              <label className="block mb-2 text-navy font-semibold">
+                Number of Groups
+              </label>
+              <input
+                type="number"
+                min={1}
+                className="w-full p-2 border border-wood bg-springWater rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={updateNumGroups || ""}
+                onChange={e => setUpdateNumGroups(Number(e.target.value))}
+                placeholder="Enter new number of groups"
+              />
+              <div className="flex justify-center">
+                <button
+                  className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
+                  onClick={async () => {
+                    if (!selectedClass || !updateNumGroups) {
+                      setPopup({ headline: "Error", message: "Please select a class and enter a valid number of groups." });
+                      return;
+                    }
+                    try {
+                      const res = await fetch(`${API_BASE_URL}/teacher/update-groups`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ crn: selectedClass, nom_groups: updateNumGroups }),
+                      });
+                      if (res.ok) {
+                        setPopup({ headline: "Success", message: "Number of groups updated successfully!" });
+                      } else {
+                        setPopup({ headline: "Error", message: "Failed to update number of groups." });
+                      }
+                    } catch {
+                      setPopup({ headline: "Error", message: "Failed to update number of groups." });
+                    }
+                  }}
+                >
+                  Update Groups
+                </button>
+              </div>
             </div>
           </div>
           {/* Tab 2: Job Assignment */}
