@@ -308,6 +308,36 @@ const Grouping = () => {
     return <div>This account is not authorized for this page</div>;
   }
 
+  const addStudentToClassGroup = async () => {
+    if (!addStudentClass || !addStudentGroup || !addStudentEmail) {
+      setPopup({ headline: "Error", message: "Please fill out all fields." });
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/teacher/add-student`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          class_id: addStudentClass,
+          group_id: addStudentGroup,
+          email: addStudentEmail,
+          f_name: "",
+          l_name: "",
+        }),
+      });
+      if (res.ok) {
+        setPopup({ headline: "Success", message: "Student added to class and group!" });
+        setAddStudentClass("");
+        setAddStudentGroup("");
+        setAddStudentEmail("");
+      } else {
+        setPopup({ headline: "Error", message: "Failed to add student." });
+      }
+    } catch {
+      setPopup({ headline: "Error", message: "Failed to add student." });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
@@ -723,33 +753,7 @@ const Grouping = () => {
               <div className="flex justify-center">
                 <button
                   className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
-                  onClick={async () => {
-                    if (!addStudentClass || !addStudentGroup || !addStudentEmail) {
-                      setPopup({ headline: "Error", message: "Please fill out all fields." });
-                      return;
-                    }
-                    try {
-                      const res = await fetch(`${API_BASE_URL}/teacher/add-student`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          class_id: addStudentClass,
-                          group_id: addStudentGroup,
-                          email: addStudentEmail,
-                        }),
-                      });
-                      if (res.ok) {
-                        setPopup({ headline: "Success", message: "Student added to class and group!" });
-                        setAddStudentClass("");
-                        setAddStudentGroup("");
-                        setAddStudentEmail("");
-                      } else {
-                        setPopup({ headline: "Error", message: "Failed to add student." });
-                      }
-                    } catch {
-                      setPopup({ headline: "Error", message: "Failed to add student." });
-                    }
-                  }}
+                  onClick={addStudentToClassGroup}
                 >
                   Add Student
                 </button>
@@ -759,12 +763,12 @@ const Grouping = () => {
         </Tabs>
       </div>
       {popup && (
-          <Popup
-            headline={popup.headline}
-            message={popup.message}
-            onDismiss={() => setPopup(null)}
-          />
-        )}
+        <Popup
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)}
+        />
+      )}
     </div>
   );
 };
