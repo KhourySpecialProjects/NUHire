@@ -1709,6 +1709,21 @@ app.get("/canidates/resume/:resume_number", (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Teacher
 
+app.post("/teacher/add-student", (req, res) => {
+  const { class_id, group_id, email } = req.body;
+  if (!class_id || !group_id || !email) {
+    return res.status(400).json({ error: "Missing required fields." });
+  }
+  db.query(
+    "INSERT INTO Users (email, class, group_id, affiliation) VALUES (?, ?, ?, 'student') ON DUPLICATE KEY UPDATE group_id = ?, class = ?",
+    [email, class_id, group_id, group_id, class_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 // Update the number of groups for a class (CRN)
 app.post("/teacher/update-groups", (req, res) => {
   const { crn, nom_groups } = req.body;
