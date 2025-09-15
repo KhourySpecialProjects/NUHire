@@ -348,7 +348,7 @@ function configurePassport() {
 
 const initializeDatabase = () => {
   const queries = [
-    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 1)",
+    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 2)",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
@@ -1704,6 +1704,33 @@ app.get("/canidates/resume/:resume_number", (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results[0]);
   });
+});
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Teacher
+
+// Update the number of groups for a class (CRN)
+app.post("/teacher/update-groups", (req, res) => {
+  const { crn, nom_groups } = req.body;
+
+  if (!crn || !nom_groups) {
+    return res.status(400).json({ error: "crn and nom_groups are required" });
+  }
+  console.log(crn, nom_groups);
+  db.query(
+    "UPDATE Moderator SET nom_groups = ? WHERE crn = ?",
+    [nom_groups, crn],
+    (err, result) => {
+      if (err) {
+        console.error("Database error in /moderator-crns/update-groups:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "CRN not found" });
+      }
+      res.json({ success: true, crn, nom_groups });
+    }
+  );
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
