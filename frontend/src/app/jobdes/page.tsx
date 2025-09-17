@@ -364,7 +364,7 @@ export default function JobDescriptionPage() {
         <div className="flex justify-end mt-4 mb-4 mr-4">
           <button
             onClick={() => {
-              updateProgress(user, "res-review");
+              updateProgress(user, "res_1");
               localStorage.setItem("progress", "res-review");
               window.location.href = '/res-review';
             }}
