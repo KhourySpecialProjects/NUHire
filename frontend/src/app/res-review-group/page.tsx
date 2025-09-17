@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useProgress } from "../components/useProgress";
 import Footer from "../components/footer";
 import Popup from "../components/popup";
+import { useProgressManager } from "../components/progress";
 
 const SOCKET_URL = `${API_BASE_URL}`; 
 let socket: Socket; // Define socket with correct type
@@ -43,6 +44,7 @@ export default function ResReviewGroup() {
     vote: "yes" | "no" | "unanswered";
   }
 
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>({});
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
@@ -122,6 +124,7 @@ export default function ResReviewGroup() {
     socket.on("moveGroup", ({groupId, classId, targetPage}) => {
       if (user && groupId === user.group_id && classId === user.class) {
         console.log(`Group navigation triggered: moving to ${targetPage}`);
+        updateProgress(user, "interview-stage");
         localStorage.setItem("progress", "interview-stage");
         window.location.href = targetPage; 
       }
@@ -280,6 +283,7 @@ export default function ResReviewGroup() {
       return;
     }
     localStorage.setItem("progress", "interview-stage")
+    updateProgress(user!, "interview-stage");
     window.location.href = "/interview-stage"; 
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/interview-stage"});
   };

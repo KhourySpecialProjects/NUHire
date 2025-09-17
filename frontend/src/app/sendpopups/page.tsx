@@ -53,13 +53,28 @@ const SendPopups = () => {
       title: "Internal Referral",
       headline: "Internal Referral",
       message:
-        "This person has an internal referral for this position! You have to accept this candidate!",
+        "This person has an internal referral for this position! The averages of scores will be skewed in favor of the candidate!",
     },
+
     {
       title: "No Show",
       headline: "Abandoned Interview",
       message:
         "This candidate did not show up for the interview. You can change the scores, but everything will be saved as the lowest score.",
+    },
+
+    {
+      title: "Resume Discrepancy",
+      headline: "Inconsistent Information",
+      message:
+        "The candidate’s resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
+    }, 
+
+    {
+      title: "Late Arrival",
+      headline: "Late Interview Start",
+      message:
+        "The candidate arrived late to the interview. This may have impacted the flow and available time for questions.",
     },
   ];
 

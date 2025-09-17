@@ -13,6 +13,7 @@ import Popup from "../components/popup";
 import { io } from "socket.io-client";
 import { usePathname } from "next/navigation";
 import Instructions from "../components/instructions";
+import { useProgressManager } from "../components/progress";
 
 const socket = io(API_BASE_URL);
 
@@ -23,7 +24,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function ResumesPage() {
   useProgress();
-
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [resumes, setResumes] = useState(0);
   const [resumesList, setResumesList] = useState<{ file_path: string }[]>([]);
   const [accepted, setAccepted] = useState(0);
@@ -45,7 +46,7 @@ export default function ResumesPage() {
   const [showInstructions, setShowInstructions] = useState(true);
   interface User {
     id: string;
-    group_id: string;
+    group_id: number;
     email: string;
     class: number;
   }
@@ -313,6 +314,7 @@ export default function ResumesPage() {
   };
 
   const completeResumes = () => {
+    updateProgress(user!, "res-review-group");
     localStorage.setItem("progress", "res-review-group");
     window.location.href = "/res-review-group";
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/res-review-group"});

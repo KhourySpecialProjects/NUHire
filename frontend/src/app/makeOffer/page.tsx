@@ -9,6 +9,7 @@ import Footer from "../components/footer"; // Importing the footer component
 import Popup from "../components/popup"; // Importing the popup component
 import axios from "axios"; // Importing axios for HTTP requests
 import Instructions from "../components/instructions"; // Importing the instructions component
+import { useProgressManager } from "../components/progress";
 
 // Define the API base URL from environment variables
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -23,11 +24,19 @@ type VoteData = {
   Personality: number;
 };
 
+  interface User {
+    id: string;
+    group_id: number;
+    email: string;
+    class: number;
+    affiliation: string;
+  }
+
 // Main component for the MakeOffer page
 export default function MakeOffer() {
   useProgress();
   const router = useRouter();
-
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(
     {}
   );
@@ -40,14 +49,6 @@ export default function MakeOffer() {
   } | null>(null);
   const pathname = usePathname();
   const [offerPending, setOfferPending] = useState(false);
-  interface User {
-    id: string;
-    group_id: string;
-    email: string;
-    class: number;
-    affiliation: string;
-  }
-
   const [user, setUser] = useState<User | null>(null);
   const [resumes, setResumes] = useState<any[]>([]);
   const [interviews, setInterviews] = useState<any[]>([]);
@@ -329,7 +330,7 @@ export default function MakeOffer() {
         accepted,
       }: {
         classId: number;
-        groupId: string;
+        groupId: number;
         candidateId: number;
         accepted: boolean;
       }) => {
@@ -479,6 +480,7 @@ export default function MakeOffer() {
       });
       return;
     }
+    updateProgress(user!, "employerPanel");
     localStorage.setItem("progress", "employerPannel");
     window.location.href = "/dashboard";
   };

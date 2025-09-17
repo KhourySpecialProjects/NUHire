@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { io } from "socket.io-client";
 import router from "next/router";
 import Instructions from "../components/instructions";
+import { useProgressManager } from "../components/progress";
 
 const socket = io(API_BASE_URL); 
 
@@ -34,9 +35,12 @@ interface CommentType {
 interface User { 
   email: string;
   job_des: string;
+  class: number;
+  group_id: number;
 }
 
 export default function JobDescriptionPage() { 
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [fileUrl, setJob] = useState("");
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -360,6 +364,7 @@ export default function JobDescriptionPage() {
         <div className="flex justify-end mt-4 mb-4 mr-4">
           <button
             onClick={() => {
+              updateProgress(user, "res-review");
               localStorage.setItem("progress", "res-review");
               window.location.href = '/res-review';
             }}

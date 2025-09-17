@@ -10,7 +10,7 @@ import { io } from "socket.io-client";
 import RatingSlider from "../components/ratingSlider";
 import Popup from "../components/popup";
 import axios from "axios";
-import { group } from "console";
+import { useProgressManager } from "../components/progress";
 
 // Define API_BASE_URL with a fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -20,7 +20,7 @@ const socket = io(API_BASE_URL);
 
 interface User {
   id: string;
-  group_id: string;
+  group_id: number;
   email: string;
   class: number;
 }
@@ -38,6 +38,7 @@ interface Resume {
 
 export default function Interview() {
   useProgress();
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -210,6 +211,7 @@ export default function Interview() {
       // Listen for group move events
       socket.on("moveGroup", ({groupId, classId, targetPage}) => {
         if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
+          updateProgress(user, "makeOffer");
           localStorage.setItem("progress", "makeOffer");
           window.location.href = targetPage; 
         }
@@ -411,6 +413,7 @@ useEffect(() => {
   
   // Complete interview process and move to next stage
   const completeInterview = () => {
+    updateProgress(user!, "makeOffer");
     localStorage.setItem("progress", "makeOffer");
     window.location.href = '/makeOffer';
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/makeOffer"});
