@@ -80,7 +80,10 @@ export default function MakeOffer() {
           credentials: "include",
         });
         const userData = await response.json();
-        if (response.ok) setUser(userData);
+        if (response.ok) { 
+          setUser(userData);
+          updateProgress(userData, "offer");
+        }
         else router.push("/login");
       } catch (err) {
         router.push("/login");
@@ -480,7 +483,7 @@ export default function MakeOffer() {
       });
       return;
     }
-    updateProgress(user!, "employerPanel");
+    updateProgress(user!, "employer");
     localStorage.setItem("progress", "employerPannel");
     window.location.href = "/dashboard";
   };

@@ -145,6 +145,7 @@ export default function Interview() {
         
         if (response.status === 200) {
           setUser(response.data);
+          updateProgress(response.data, "interview");
         } else {
           setError('Authentication failed. Please log in again.');
           setTimeout(() => {
@@ -211,7 +212,7 @@ export default function Interview() {
       // Listen for group move events
       socket.on("moveGroup", ({groupId, classId, targetPage}) => {
         if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
-          updateProgress(user, "makeOffer");
+          updateProgress(user, "offer");
           localStorage.setItem("progress", "makeOffer");
           window.location.href = targetPage; 
         }
@@ -413,7 +414,7 @@ useEffect(() => {
   
   // Complete interview process and move to next stage
   const completeInterview = () => {
-    updateProgress(user!, "makeOffer");
+    updateProgress(user!, "offer");
     localStorage.setItem("progress", "makeOffer");
     window.location.href = '/makeOffer';
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/makeOffer"});

@@ -74,6 +74,7 @@ export default function ResumesPage() {
 
         if (response.ok) {
           setUser(userData);
+          updateProgress(userData, "res_1");
         } else {
           setUser(null);
           router.push("/login");
@@ -314,7 +315,7 @@ export default function ResumesPage() {
   };
 
   const completeResumes = () => {
-    updateProgress(user!, "res-review-group");
+    updateProgress(user!, "res_2");
     localStorage.setItem("progress", "res-review-group");
     window.location.href = "/res-review-group";
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/res-review-group"});

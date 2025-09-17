@@ -69,6 +69,7 @@ export default function ResReviewGroup() {
         
         if (response.ok) {
           setUser(userData);
+          updateProgress(userData, "res_2");
         } else {
           setUser(null);
           router.push("/login"); // Redirect to login if unauthorized
@@ -124,7 +125,7 @@ export default function ResReviewGroup() {
     socket.on("moveGroup", ({groupId, classId, targetPage}) => {
       if (user && groupId === user.group_id && classId === user.class) {
         console.log(`Group navigation triggered: moving to ${targetPage}`);
-        updateProgress(user, "interview-stage");
+        updateProgress(user, "interview");
         localStorage.setItem("progress", "interview-stage");
         window.location.href = targetPage; 
       }
@@ -283,7 +284,7 @@ export default function ResReviewGroup() {
       return;
     }
     localStorage.setItem("progress", "interview-stage")
-    updateProgress(user!, "interview-stage");
+    updateProgress(user!, "interview");
     window.location.href = "/interview-stage"; 
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/interview-stage"});
   };
