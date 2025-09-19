@@ -537,6 +537,17 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("updateRatingsWithPresetBackend", ({ classId, groupId, vote, isNoShow }) => {
+    const roomId = `group_${groupId}_class_${classId}`;
+  
+    io.to(roomId).emit("updateRatingsWithPresetFrontend", {
+      classId,
+      groupId,
+      vote,
+      isNoShow
+    });
+  });
+
   // Listen for the "makeOfferRequest" event, which is emitted by the client when a student group wants to make an offer to a candidate
   socket.on("makeOfferRequest", ({classId, groupId, candidateId }) => {
     console.log(`Student in class ${classId}, group ${groupId} wants to offer candidate ${candidateId}`);
@@ -676,6 +687,36 @@ io.on("connection", (socket) => {
       groupId,
       classId,
     });
+  });
+
+  socket.on("sentPresetVotes", async ({ student_id, group_id, class: classId, question1, question2, question3, question4, candidate_id }) => {
+    console.log("inside sentPresetVotes, with data:", { student_id, group_id, classId, question1, question2, question3, question4, candidate_id });
+    try {
+      const query = `
+        INSERT INTO InterviewPopup 
+          (candidate_id, group_id, class, question1, question2, question3, question4)
+        VALUES 
+          (?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+          question1 = question1 + VALUES(question1),
+          question2 = question2 + VALUES(question2),
+          question3 = question3 + VALUES(question3),
+          question4 = question4 + VALUES(question4)`;
+
+      await db.promise().query(query, [
+        candidate_id,
+        group_id,
+        classId,
+        question1,
+        question2,
+        question3,
+        question4
+      ]);
+
+      console.log(`Updated interview popup votes for candidate ${candidate_id} in group ${group_id} class ${classId}`);
+    } catch (error) {
+      console.error('Error updating interview popup votes:', error);
+    }
   });
 
   // Listens for the "disconnect" event, which is emitted when a client disconnects from the server
@@ -1455,6 +1496,22 @@ app.delete("/interview/:student_id", (req, res) => {
   });
 }
 );
+
+app.get('/interview-popup/:candidateId/:groupId/:classId', async (req, res) => {
+  try {
+    const { candidateId, groupId, classId } = req.params;
+    
+    const [rows] = await db.promise().query(
+      'SELECT * FROM InterviewPopup WHERE candidate_id = ? AND group_id = ? AND class = ?',
+      [candidateId, groupId, classId]
+    );
+
+    res.json(rows[0] || { question1: 0, question2: 0, question3: 0, question4: 0 });
+  } catch (error) {
+    console.error('Error fetching interview popup votes:', error);
+    res.status(500).json({ error: 'Failed to fetch interview popup votes' });
+  }
+});
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interview Videos API Routes

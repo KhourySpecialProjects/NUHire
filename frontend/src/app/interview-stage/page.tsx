@@ -302,16 +302,12 @@ useEffect(() => {
   fetchCandidates();
 }, [user]); // This will run whenever user changes 
   
+  const currentVid = interviews[videoIndex];
+
   // Listen for popup messages
   useEffect(() => {
     socket.on("receivePopup", ({ headline, message }) => {
       setPopup({ headline, message });
-
-      if (headline ===  "Abandoned Interview") {
-        setNoShow(true);
-      } else {
-        setNoShow(false); 
-      }
     });
 
     socket.on("interviewStatusUpdated", ({ count, total }) => {
@@ -327,14 +323,44 @@ useEffect(() => {
     
     return () => {
       socket.off("receivePopup");
-      socket.off("interviewStatusUpdated")
       socket.off("interviewStageFinishedBroadcast")
+      socket.off("updateRatingsWithPreset")
+
     };
   }, []);
 
-  // Get current video
-  const currentVid = interviews[videoIndex];
-  
+  useEffect(() => {
+    if (!user || !currentVid) {
+      console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);
+      return;
+    }
+
+    console.log("Setting up socket listeners with user:", user.id, "and currentVid:", currentVid.resume_id);
+
+    socket.on("updateRatingsWithPresetFrontend", ({ classId, groupId, vote, isNoShow }) => {
+      console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow });
+      
+      const voteData = {
+        student_id: user.id,
+        group_id: groupId,
+        class: classId,
+        question1: isNoShow ? -10000 : (vote.professionalPresence || 0),
+        question2: isNoShow ? -10000 : (vote.qualityOfAnswer || 0),
+        question3: isNoShow ? -10000 : (vote.personality || 0),
+        question4: isNoShow ? -10000 : (vote.overall || 0),
+        candidate_id: currentVid.resume_id
+      };
+      
+      console.log("Emitting sentPresetVotes with data:", voteData);
+      socket.emit("sentPresetVotes", voteData);
+    });
+
+    return () => {
+      console.log("Cleaning up socket listeners");
+      socket.off("updateRatingsWithPresetFrontend");
+    };
+  }, [user, currentVid]);
+
   // Rating change handlers
   const handleOverallSliderChange = (value: number) => {
     setOverall(value);

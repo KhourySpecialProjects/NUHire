@@ -68,34 +68,52 @@ const SendPopups = () => {
       headline: "Internal Referral",
       message:
         "This person has an internal referral for this position! The averages of scores will be skewed in favor of the candidate!",
-      location: "interview"
+      location: "interview",
+      vote: {
+        overall: 10,
+        professionalPresence: 0,
+        qualityOfAnswer: 0,
+        personality: 0,
+      }
     },
-
     {
       title: "No Show",
       headline: "Abandoned Interview",
       message:
         "This candidate did not show up for the interview. You can change the scores, but everything will be saved as the lowest score.",
-      location: "interview"
-
+      location: "interview",
+      vote: {
+        overall: -1000,
+        professionalPresence: -1000,
+        qualityOfAnswer: -1000,
+        personality: -1000,
+      }
     },
-
     {
       title: "Resume Discrepancy",
       headline: "Inconsistent Information",
       message:
         "The candidate’s resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
-      location: "interview"
-
+      location: "interview",
+      vote: {
+        overall: -5,
+        professionalPresence: 0,
+        qualityOfAnswer: -10,
+        personality: 0,
+      }
     }, 
-
     {
       title: "Late Arrival",
       headline: "Late Interview Start",
       message:
         "The candidate arrived late to the interview. This may have impacted the flow and available time for questions.",
-      location: "interview"
-
+      location: "interview",
+      vote: {
+        overall: -5,
+        professionalPresence: -10,
+        qualityOfAnswer: 0,
+        personality: 0,
+      }
     },
   ];
 
@@ -242,9 +260,22 @@ const SendPopups = () => {
         const invalidGroups = [];
 
         for (const groupId of selectedGroups) {
-           const hasValidProgress = await checkGroupProgress(groupId, selectedClass, selectedPresetData.location);
+          console.log(selectedGroups)
+          const hasValidProgress = await checkGroupProgress(groupId, selectedClass, selectedPresetData.location);
           if (hasValidProgress) {
             validGroups.push(groupId);
+
+            console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData)
+            
+            if (selectedPresetData.vote) {
+              console.log("emitting updateRatingsWithPreset")
+              socket.emit("updateRatingsWithPresetBackend", {
+                classId: selectedClass,
+                groupId,
+                vote: selectedPresetData.vote,
+                isNoShow: selectedPresetData.title === "No Show"
+              });
+            }
           } else {
             invalidGroups.push(groupId);
           }
