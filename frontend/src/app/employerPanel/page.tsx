@@ -3,11 +3,15 @@
 import React from 'react'
 import Navbar from '../components/navbar'
 import { useProgress } from '../components/useProgress';
+import { useProgressManager } from '../components/progress';
 
 export default function EmployerPannel() {
     useProgress();
 
+    const {updateProgress, fetchProgress} = useProgressManager();
+
     const completeAssignment = () => {
+      
       localStorage.setItem("progress", "employerPannel");
       window.location.href = '/dashboard';
     }
