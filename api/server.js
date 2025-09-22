@@ -348,7 +348,6 @@ function configurePassport() {
 
 const initializeDatabase = () => {
   const queries = [
-    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 2)",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
@@ -1178,34 +1177,32 @@ app.post("/notes", (req, res) => {
 app.get("/groups", async (req, res) => {
   const { class: classId } = req.query;
   
-  let query = "SELECT f_name, l_name, email, job_des, current_page, `group_id` FROM Users WHERE `group_id` IS NOT NULL";
-  let params = [];
-  
-  if (classId) {
-    query += " AND class = ?";
-    params.push(classId);
+  try {
+    // First, get the number of groups from the Moderator table
+    const [moderatorResult] = await db.promise().query(
+      "SELECT nom_groups FROM Moderator WHERE crn = ?", 
+      [classId]
+    );
+    
+    if (moderatorResult.length === 0) {
+      return res.status(404).json({ error: "Class not found" });
+    }
+    
+    const nomGroups = moderatorResult[0].nom_groups;
+    console.log(`Class ${classId} should have ${nomGroups} groups`);
+    
+    // Create the groups object based on nom_groups
+    const groupsData = {};
+    for (let i = 1; i <= nomGroups; i++) {
+      groupsData[i] = []; // Initialize empty array for each group
+    }
+    
+    console.log("Generated groups data:", groupsData);
+    res.json(groupsData);
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    res.status(500).json({ error: "Failed to fetch groups" });
   }
-  
-  db.query(query, params, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (results.length === 0) return res.status(404).json({ message: "No users found in any group" });
-
-    // Group users by `group`
-    const groups = {};
-    results.forEach(user => {
-      if (!groups[user.group_id]) {
-        groups[user.group_id] = [];
-      }
-      groups[user.group_id].push({
-        name: `${user.f_name} ${user.l_name}`,
-        email: user.email,
-        current_page: user.current_page,
-        job_des: user.job_des
-      });
-    });
-
-    res.json(groups);
-  });
 });
 
 // post route for updating the group of students, which checks if the group ID and students are provided in the request body
