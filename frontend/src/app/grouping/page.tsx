@@ -128,7 +128,10 @@ const Grouping = () => {
     if (selectedClass) {
       fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
         .then(res => res.json())
-        .then(setGroups);
+        .then(data => {
+          console.log("Raw groups data received:", data); // Add this debug line
+          setGroups(data);
+        });
       fetch(`${API_BASE_URL}/students?class=${selectedClass}`)
         .then(res => res.json())
         .then(setStudents);
@@ -149,7 +152,10 @@ const Grouping = () => {
     if (groupsTabClass) {
       fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
         .then(res => res.json())
-        .then(setGroupsTabGroups);
+        .then( data => {
+          console.log("Raw groups data received:", data); // Add this debug line
+          setGroupsTabGroups
+        });
     } else {
       setGroupsTabGroups({});
     }
