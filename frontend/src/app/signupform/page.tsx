@@ -213,22 +213,21 @@ export default function SignupDetails() {
           {/* Group number input - only shown for students */}
           {affiliation === 'student' && (
             <div  className="w-full rounded-lg flex flex-col gap-4">
+              <input 
+              type="number" 
+              placeholder="CRN *" 
+              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={courseNumber} 
+              onChange={(e) => setCourseNumber(e.target.value)} 
+              required 
+              min="1"
+            />
             <input 
               type="number" 
               placeholder="Group Number *" 
               className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={groupNumber} 
               onChange={(e) => setGroupNumber(e.target.value)} 
-              required 
-              min="1"
-            />
-
-            <input 
-              type="number" 
-              placeholder="CRN *" 
-              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={courseNumber} 
-              onChange={(e) => setCourseNumber(e.target.value)} 
               required 
               min="1"
             />
