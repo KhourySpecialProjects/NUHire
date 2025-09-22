@@ -9,6 +9,7 @@ import Footer from "../components/footer"; // Importing the footer component
 import Popup from "../components/popup"; // Importing the popup component
 import axios from "axios"; // Importing axios for HTTP requests
 import Instructions from "../components/instructions"; // Importing the instructions component
+import { useProgressManager } from "../components/progress";
 
 // Define the API base URL from environment variables
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -23,11 +24,26 @@ type VoteData = {
   Personality: number;
 };
 
+interface User {
+  id: string;
+  group_id: number;
+  email: string;
+  class: number;
+  affiliation: string;
+}
+
+interface InterviewPopup {
+  question1: number;
+  question2: number;
+  question3: number;
+  question4: number;
+}
+
 // Main component for the MakeOffer page
 export default function MakeOffer() {
   useProgress();
   const router = useRouter();
-
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(
     {}
   );
@@ -40,14 +56,6 @@ export default function MakeOffer() {
   } | null>(null);
   const pathname = usePathname();
   const [offerPending, setOfferPending] = useState(false);
-  interface User {
-    id: string;
-    group_id: string;
-    email: string;
-    class: number;
-    affiliation: string;
-  }
-
   const [user, setUser] = useState<User | null>(null);
   const [resumes, setResumes] = useState<any[]>([]);
   const [interviews, setInterviews] = useState<any[]>([]);
@@ -70,6 +78,32 @@ export default function MakeOffer() {
   const hasConfirmed = confirmations.includes(user?.id || '');
   const confirmationCount = confirmations.length;
   const allConfirmed = confirmationCount >= groupSize;
+  const [popupVotes, setPopupVotes] = useState<{ [key: number]: InterviewPopup }>({});
+
+  useEffect(() => {
+    if (!user?.group_id || !candidates.length) return;
+
+    const fetchPopupVotes = async () => {
+      try {
+        const promises = candidates.map(candidate => 
+          fetch(`${API_BASE_URL}/interview-popup/${candidate.id}/${user.group_id}/${user.class}`)
+            .then(res => res.json())
+        );
+        
+        const results = await Promise.all(promises);
+        const votesMap = results.reduce((acc, vote, index) => {
+          acc[candidates[index].id] = vote;
+          return acc;
+        }, {});
+        
+        setPopupVotes(votesMap);
+      } catch (error) {
+        console.error('Error fetching popup votes:', error);
+      }
+    };
+
+    fetchPopupVotes();
+  }, [user, candidates]);
 
   // Load user
   useEffect(() => {
@@ -79,7 +113,10 @@ export default function MakeOffer() {
           credentials: "include",
         });
         const userData = await response.json();
-        if (response.ok) setUser(userData);
+        if (response.ok) { 
+          setUser(userData);
+          updateProgress(userData, "offer");
+        }
         else router.push("/login");
       } catch (err) {
         router.push("/login");
@@ -329,7 +366,7 @@ export default function MakeOffer() {
         accepted,
       }: {
         classId: number;
-        groupId: string;
+        groupId: number;
         candidateId: number;
         accepted: boolean;
       }) => {
@@ -479,6 +516,7 @@ export default function MakeOffer() {
       });
       return;
     }
+    updateProgress(user!, "employer");
     localStorage.setItem("progress", "employerPannel");
     window.location.href = "/dashboard";
   };
@@ -553,19 +591,19 @@ export default function MakeOffer() {
 
                 <div className="mt-2 space-y-1 text-navy text-sm">
                   <p>
-                    <span className="font-medium">Overall:</span> {votes.Overall / groupSize!}
+                    <span className="font-medium">Overall:</span> {Math.max(votes.Overall + popupVotes[interviewNumber]?.question1 || 0, 0)}
                   </p>
                   <p>
                     <span className="font-medium">Professional Presence:</span>{" "}
-                    {votes.Profesionality / groupSize!}
+                    {Math.max(0, votes.Profesionality + popupVotes[interviewNumber]?.question2 || 0 / groupSize)}
                   </p>
                   <p>
                     <span className="font-medium">Quality of Answer:</span>{" "}
-                    {votes.Quality / groupSize!}
+                    {Math.max(0, (votes.Quality + popupVotes[interviewNumber]?.question3 || 0)/ groupSize)}
                   </p>
                   <p>
                     <span className="font-medium">Personality:</span>{" "}
-                    {votes.Personality / groupSize!}
+                    {Math.max(0, (votes.Personality + popupVotes[interviewNumber]?.question4 || 0) / groupSize)}
                   </p>
                 </div>
 

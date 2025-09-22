@@ -48,18 +48,72 @@ const SendPopups = () => {
   >([]);
     const [assignedClassIds, setAssignedClassIds] = useState<string[]>([]);
 
+
+    const checkGroupProgress = async (groupId: string, classId: string, requiredLocation: string): Promise<boolean> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/progress/group/${classId}/${groupId}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        return data.some((student: { step: string }) => student.step === requiredLocation);
+      } catch (error) {
+        console.error('Error checking group progress:', error);
+        return false;
+      }
+    };
+
   const presetPopups = [
     {
       title: "Internal Referral",
       headline: "Internal Referral",
       message:
-        "This person has an internal referral for this position! You have to accept this candidate!",
+        "This person has an internal referral for this position! The averages of scores will be skewed in favor of the candidate!",
+      location: "interview",
+      vote: {
+        overall: 10,
+        professionalPresence: 0,
+        qualityOfAnswer: 0,
+        personality: 0,
+      }
     },
     {
       title: "No Show",
       headline: "Abandoned Interview",
       message:
         "This candidate did not show up for the interview. You can change the scores, but everything will be saved as the lowest score.",
+      location: "interview",
+      vote: {
+        overall: -1000,
+        professionalPresence: -1000,
+        qualityOfAnswer: -1000,
+        personality: -1000,
+      }
+    },
+    {
+      title: "Resume Discrepancy",
+      headline: "Inconsistent Information",
+      message:
+        "The candidate’s resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
+      location: "interview",
+      vote: {
+        overall: -5,
+        professionalPresence: 0,
+        qualityOfAnswer: -10,
+        personality: 0,
+      }
+    }, 
+    {
+      title: "Late Arrival",
+      headline: "Late Interview Start",
+      message:
+        "The candidate arrived late to the interview. This may have impacted the flow and available time for questions.",
+      location: "interview",
+      vote: {
+        overall: -5,
+        professionalPresence: -10,
+        qualityOfAnswer: 0,
+        personality: 0,
+      }
     },
   ];
 
@@ -190,35 +244,87 @@ const SendPopups = () => {
     );
   };
 
-    const sendPopups = async () => {
-        if (!headline || !message || selectedGroups.length === 0) {
-          setPopup({ headline: "Error", message: "Please fill in all fields and select at least one group." });
-          return;
-        }
-    
-        setSending(true);
-    
-        try {
-            socket.emit("sendPopupToGroups", {
-                groups: selectedGroups,
-                headline,
-                message,
-                class: selectedClass // Add class information
-            });
-    
-            setPopup({ headline: "Success", message: "Popups sent successfully!" });
+  const sendPopups = async () => {
+    if (!headline || !message || selectedGroups.length === 0) {
+      setPopup({ headline: "Error", message: "Please fill in all fields and select at least one group." });
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
+        
+      if (selectedPresetData) {
+        const validGroups = [];
+        const invalidGroups = [];
+
+        for (const groupId of selectedGroups) {
+          console.log(selectedGroups)
+          const hasValidProgress = await checkGroupProgress(groupId, selectedClass, selectedPresetData.location);
+          if (hasValidProgress) {
+            validGroups.push(groupId);
+
+            console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData)
             
-            setHeadline("");
-            setMessage("");
-            setSelectedGroups([]);
-            setSelectedPreset("");
-        } catch (error) {
-            console.error("Error sending popups:", error);
-            setPopup({ headline: "Error", message: "Failed to send popups. Please try again." });
-        } finally {
-            setSending(false); 
+            if (selectedPresetData.vote) {
+              console.log("emitting updateRatingsWithPreset")
+              socket.emit("updateRatingsWithPresetBackend", {
+                classId: selectedClass,
+                groupId,
+                vote: selectedPresetData.vote,
+                isNoShow: selectedPresetData.title === "No Show"
+              });
+            }
+          } else {
+            invalidGroups.push(groupId);
+          }
         }
-    };
+
+        if (invalidGroups.length > 0) {
+          setPopup({ 
+            headline: "Warning", 
+            message: `Groups ${invalidGroups.join(', ')} are not at the ${selectedPresetData.location} stage and will not receive the popup.` 
+          });
+            
+          if (validGroups.length === 0) {
+            setSending(false);
+            return;
+          }
+        }
+        socket.emit("sendPopupToGroups", {
+          groups: validGroups,
+          headline,
+          message,
+          class: selectedClass
+        });
+
+        setPopup({ 
+          headline: "Success", 
+          message: `Popups sent successfully to ${validGroups.length} group(s)!` 
+        });
+      } else {
+        socket.emit("sendPopupToGroups", {
+          groups: selectedGroups,
+          headline,
+          message,
+          class: selectedClass
+        });
+
+        setPopup({ headline: "Success", message: "Popups sent successfully!" });
+      }
+
+      setHeadline("");
+      setMessage("");
+      setSelectedGroups([]);
+      setSelectedPreset("");
+    } catch (error) {
+      console.error("Error sending popups:", error);
+      setPopup({ headline: "Error", message: "Failed to send popups. Please try again." });
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">

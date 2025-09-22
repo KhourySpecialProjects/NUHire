@@ -10,7 +10,7 @@ import { io } from "socket.io-client";
 import RatingSlider from "../components/ratingSlider";
 import Popup from "../components/popup";
 import axios from "axios";
-import { group } from "console";
+import { useProgressManager } from "../components/progress";
 
 // Define API_BASE_URL with a fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -20,7 +20,7 @@ const socket = io(API_BASE_URL);
 
 interface User {
   id: string;
-  group_id: string;
+  group_id: number;
   email: string;
   class: number;
 }
@@ -38,6 +38,7 @@ interface Resume {
 
 export default function Interview() {
   useProgress();
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +145,7 @@ export default function Interview() {
         
         if (response.status === 200) {
           setUser(response.data);
+          updateProgress(response.data, "interview");
         } else {
           setError('Authentication failed. Please log in again.');
           setTimeout(() => {
@@ -210,6 +212,7 @@ export default function Interview() {
       // Listen for group move events
       socket.on("moveGroup", ({groupId, classId, targetPage}) => {
         if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
+          updateProgress(user, "offer");
           localStorage.setItem("progress", "makeOffer");
           window.location.href = targetPage; 
         }
@@ -299,16 +302,12 @@ useEffect(() => {
   fetchCandidates();
 }, [user]); // This will run whenever user changes 
   
+  const currentVid = interviews[videoIndex];
+
   // Listen for popup messages
   useEffect(() => {
     socket.on("receivePopup", ({ headline, message }) => {
       setPopup({ headline, message });
-
-      if (headline ===  "Abandoned Interview") {
-        setNoShow(true);
-      } else {
-        setNoShow(false); 
-      }
     });
 
     socket.on("interviewStatusUpdated", ({ count, total }) => {
@@ -324,14 +323,44 @@ useEffect(() => {
     
     return () => {
       socket.off("receivePopup");
-      socket.off("interviewStatusUpdated")
       socket.off("interviewStageFinishedBroadcast")
+      socket.off("updateRatingsWithPreset")
+
     };
   }, []);
 
-  // Get current video
-  const currentVid = interviews[videoIndex];
-  
+  useEffect(() => {
+    if (!user || !currentVid) {
+      console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);
+      return;
+    }
+
+    console.log("Setting up socket listeners with user:", user.id, "and currentVid:", currentVid.resume_id);
+
+    socket.on("updateRatingsWithPresetFrontend", ({ classId, groupId, vote, isNoShow }) => {
+      console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow });
+      
+      const voteData = {
+        student_id: user.id,
+        group_id: groupId,
+        class: classId,
+        question1: isNoShow ? -10000 : (vote.professionalPresence || 0),
+        question2: isNoShow ? -10000 : (vote.qualityOfAnswer || 0),
+        question3: isNoShow ? -10000 : (vote.personality || 0),
+        question4: isNoShow ? -10000 : (vote.overall || 0),
+        candidate_id: currentVid.resume_id
+      };
+      
+      console.log("Emitting sentPresetVotes with data:", voteData);
+      socket.emit("sentPresetVotes", voteData);
+    });
+
+    return () => {
+      console.log("Cleaning up socket listeners");
+      socket.off("updateRatingsWithPresetFrontend");
+    };
+  }, [user, currentVid]);
+
   // Rating change handlers
   const handleOverallSliderChange = (value: number) => {
     setOverall(value);
@@ -411,6 +440,7 @@ useEffect(() => {
   
   // Complete interview process and move to next stage
   const completeInterview = () => {
+    updateProgress(user!, "offer");
     localStorage.setItem("progress", "makeOffer");
     window.location.href = '/makeOffer';
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/makeOffer"});
