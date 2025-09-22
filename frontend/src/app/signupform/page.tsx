@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Slideshow from "../components/slideshow";
 import Image from "next/image";
+import { useProgressManager } from "../components/progress";
 
 // Define API base URL with fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -17,7 +18,7 @@ export default function SignupDetails() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const [modPass, setModPass] = useState('');
+  
 
   useEffect(() => {
     const fetchUserDetails = async () => {
