@@ -174,6 +174,19 @@ export default function ResReviewGroup() {
     }
   }, [user, pathname]);
 
+  useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
+
   const fetchResumes = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/resume_pdf`);

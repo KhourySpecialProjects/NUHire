@@ -60,6 +60,20 @@ export default function JobDescriptionPage() {
     "Look for specific technologies or tools mentioned.",
     "Note any soft skills that are emphasized in the job description."
   ];
+
+   useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {

@@ -117,6 +117,19 @@ export default function Interview() {
 
   }, [user, finished]);
 
+  useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
+
   // Update ref whenever interviews change
   useEffect(() => {
     interviewsRef.current = interviews;
