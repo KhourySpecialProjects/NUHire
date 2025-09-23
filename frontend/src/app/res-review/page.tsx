@@ -65,6 +65,19 @@ export default function ResumesPage() {
   ];  
 
   useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchUser = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/auth/user`, {

@@ -2,12 +2,23 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import NotesPage from "../components/note";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
 
+  const progressStepPages = [
+    '/jobdes',
+    '/res-review', 
+    '/res-review-group',
+    '/interview-stage',
+    '/makeOffer'
+  ];
+  
+  const showHelpButton = progressStepPages.includes(pathname);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -27,7 +38,10 @@ const Navbar = () => {
     };
   }, [isOpen]);
 
-  const router = useRouter();
+  const handleShowInstructions = () => {
+    console.log("pressed and inside function")
+    window.dispatchEvent(new CustomEvent('showInstructions'));
+  };
 
   return (
     <nav className="navbar w-full relative">
@@ -46,6 +60,18 @@ const Navbar = () => {
           </Link>
         </div>
         <div className="flex items-center gap-2 ml-auto">
+          {/* Help button - styled like notes button */}
+          {showHelpButton && (
+            <div className="bg-northeasternRed text-northeasterWhite px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition">
+
+              <button
+                onClick={handleShowInstructions}
+                className="w-full"
+              >
+                Instructions
+              </button>
+            </div>
+          )}
           <div className="w-48 flex items-center">
             <NotesPage />
           </div>

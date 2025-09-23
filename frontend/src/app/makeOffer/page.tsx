@@ -215,6 +215,19 @@ export default function MakeOffer() {
     fetchCandidates();
   }, [interviews]);
 
+   useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
+  
   useEffect(() => {
     if (!candidates.length) return;
 
