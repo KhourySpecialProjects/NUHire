@@ -192,7 +192,7 @@ export default function MakeOffer() {
         const fetchedCandidates = await Promise.all(
           interviews.map(async (interview) => {
             const id = interview.candidate_id;
-            const res = await fetch(`${API_BASE_URL}/canidates/${id}`);
+            const res = await fetch(`${API_BASE_URL}/canidates/resume/${id}`);
 
             if (!res.ok) {
               throw new Error(
@@ -313,7 +313,7 @@ export default function MakeOffer() {
     ];
 
     const merged = uniqueCandidateIds.map((id) => {
-      const candidate = candidates.find((c) => c.id === id);
+      const candidate = candidates.find((c) => c.resume_id === id);
       const resume = resumes.find((r) => r.id === candidate?.resume_id);
       return {
         candidate_id: id,
@@ -604,22 +604,26 @@ export default function MakeOffer() {
 
                 <div className="mt-2 space-y-1 text-navy text-sm">
                   <p>
-                    <span className="font-medium">Overall:</span> {Math.max(votes.Overall + popupVotes[interviewNumber]?.question1 || 0, 0)}
+                    <span className="font-medium">Overall:</span> {
+                      Math.max(0, (votes?.Overall || 0) + (popupVotes[interviewNumber]?.question1 || 0))
+                    }
                   </p>
                   <p>
-                    <span className="font-medium">Professional Presence:</span>{" "}
-                    {Math.max(0, votes.Profesionality + popupVotes[interviewNumber]?.question2 || 0 / groupSize)}
+                    <span className="font-medium">Professional Presence:</span> {
+                      Math.max(0, (votes?.Profesionality || 0) + (popupVotes[interviewNumber]?.question2 || 0))
+                    }
                   </p>
                   <p>
-                    <span className="font-medium">Quality of Answer:</span>{" "}
-                    {Math.max(0, (votes.Quality + popupVotes[interviewNumber]?.question3 || 0)/ groupSize)}
+                    <span className="font-medium">Quality of Answer:</span> {
+                      Math.max(0, (votes?.Quality || 0) + (popupVotes[interviewNumber]?.question3 || 0))
+                    }
                   </p>
                   <p>
-                    <span className="font-medium">Personality:</span>{" "}
-                    {Math.max(0, (votes.Personality + popupVotes[interviewNumber]?.question4 || 0) / groupSize)}
+                    <span className="font-medium">Personality:</span> {
+                      Math.max(0, (votes?.Personality || 0) + (popupVotes[interviewNumber]?.question4 || 0))
+                    }
                   </p>
                 </div>
-
                 <a
                   href={`${API_BASE_URL}/${interview.resume_path}`}
                   target="_blank"

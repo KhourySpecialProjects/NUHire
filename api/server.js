@@ -1042,70 +1042,164 @@ app.post("/update-currentpage", (req, res) => {
 });
 
 // Updates a group of Users' stored job description and resets their progress.
-// Also deletes all notes for affected students.
-app.post("/update-job", (req, res) => {
+app.post("/update-job", async (req, res) => {
   const { job_group_id, class_id, job } = req.body;
 
   if (!job_group_id || !class_id || !job || job.length === 0) {
     return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
-  console.log(req.body);
+  console.log("Updating job for group:", req.body);
 
-  // Update job_des and reset progress for all students in the group/class
-  const updatePromises = job.map(title => {
-    return new Promise((resolve, reject) => {
-      db.query(
+  try {
+    // Start a transaction for atomic operations
+    await db.promise().query('START TRANSACTION');
+
+    // 1. Update job_des and reset current_page for all students in the group/class
+    const updatePromises = job.map(title => {
+      return db.promise().query(
         "UPDATE Users SET `job_des` = ?, `current_page` = 'jobdes' WHERE group_id = ? AND class = ? AND affiliation = 'student'",
-        [title, job_group_id, class_id],
-        (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        }
+        [title, job_group_id, class_id]
       );
     });
-  });
 
-  // Find all student emails in the group/class
-  db.query(
-    "SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
-    [job_group_id, class_id],
-    (err, results) => {
-      if (err) {
-        return res.status(500).json({ error: "Failed to fetch students for note deletion." });
-      }
+    await Promise.all(updatePromises);
 
-      if (global.completedResReview && global.completedResReview[job_group_id]) {
-        global.completedResReview[job_group_id] = new Set();
-        console.log(`Reset completedResReview for group ${job_group_id}`);
-      }
+    // 2. Update Progress table - set all group members to 'job_description' step
+    await db.promise().query(
+      "UPDATE Progress SET step = 'job_description' WHERE crn = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
 
-      const emails = results.map(({ email }) => email);
-      if (emails.length > 0) {
-        // Delete all notes for these students
-        db.query("DELETE FROM Notes WHERE user_email IN (?)", [emails], (err2) => {
-          if (err2) {
-            console.error("Error deleting notes for group:", err2);
-          } else {
-            console.log(`Deleted notes for users: ${emails.join(", ")}`);
-          }
-        });
+    // 3. Clear InterviewPage table for this class and group
+    await db.promise().query(
+      "DELETE FROM InterviewPage WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
 
-        results.forEach(({ email }) => {
-          const studentSocketId = onlineStudents[email];
-          if (studentSocketId) {
-            io.to(studentSocketId).emit("jobUpdated", {
-              job,
-            });
-          }
-        });
-      }
-      Promise.all(updatePromises)
-        .then(() => res.json({ message: "Group job updated and all notes for group/class deleted successfully!" }))
-        .catch(error => res.status(500).json({ error: error.message }));
+    // 4. Clear MakeOfferPage table for this class and group
+    await db.promise().query(
+      "DELETE FROM MakeOfferPage WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 5. Clear Resume table for this class and group
+    await db.promise().query(
+      "DELETE FROM Resume WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 6. Clear Resumepage2 table for this class and group
+    await db.promise().query(
+      "DELETE FROM Resumepage2 WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 7. Clear Offer_Status table for this class and group
+    await db.promise().query(
+      "DELETE FROM Offer_Status WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 8. Clear Interview_Status table for this class and group
+    await db.promise().query(
+      "DELETE FROM Interview_Status WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 9. Clear InterviewPopup table for this class and group
+    await db.promise().query(
+      "DELETE FROM InterviewPopup WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 10. Get student emails for note deletion and socket notifications
+    const [students] = await db.promise().query(
+      "SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+      [job_group_id, class_id]
+    );
+
+    const emails = students.map(({ email }) => email);
+
+    // 11. Clear Resumepage table for students in this group and class
+    if (emails.length > 0) {
+      const placeholders = emails.map(() => '?').join(',');
+      await db.promise().query(
+        `DELETE rp FROM Resumepage rp
+         JOIN Users u ON rp.student_id = u.id
+         WHERE u.email IN (${placeholders}) AND u.class = ? AND u.group_id = ?`,
+        [...emails, class_id, job_group_id]
+      );
+
+      // 12. Delete all notes for these students
+      await db.promise().query(
+        `DELETE FROM Notes WHERE user_email IN (${placeholders})`,
+        emails
+      );
     }
-  );
+
+    // 13. Reset completion tracking
+    if (global.completedResReview && global.completedResReview[job_group_id]) {
+      global.completedResReview[job_group_id] = new Set();
+      console.log(`Reset completedResReview for group ${job_group_id}`);
+    }
+
+    // Commit the transaction
+    await db.promise().query('COMMIT');
+
+    // 14. Send socket notifications to affected students
+    if (emails.length > 0) {
+      emails.forEach(email => {
+        const studentSocketId = onlineStudents[email];
+        if (studentSocketId) {
+          io.to(studentSocketId).emit("jobUpdated", {
+            job,
+            group_id: job_group_id,
+            class_id,
+            message: `Your group has been assigned new job(s). All progress has been reset.`
+          });
+        }
+      });
+    }
+
+    // 15. Emit general update to class
+    io.emit("groupJobUpdated", {
+      job_group_id,
+      class_id,
+      job,
+      message: `Group ${job_group_id} job updated - all progress reset`
+    });
+
+    console.log(`Job "${job.join(', ')}" assigned to Group ${job_group_id} in Class ${class_id}. All related data cleared.`);
+    
+    res.json({ 
+      message: "Group job updated and all related data cleared successfully!",
+      job_group_id,
+      class_id,
+      job,
+      cleared_tables: [
+        "InterviewPage", "MakeOfferPage", "Resume", "Resumepage", 
+        "Resumepage2", "Offer_Status", "Interview_Status", "InterviewPopup", "Notes"
+      ],
+      students_affected: emails.length
+    });
+
+  } catch (error) {
+    // Rollback on error
+    try {
+      await db.promise().query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error("Rollback failed:", rollbackError);
+    }
+    
+    console.error("Error updating job and clearing data:", error);
+    res.status(500).json({ 
+      error: "Database error occurred while updating job and clearing data",
+      details: error.message 
+    });
+  }
 });
+
 // Update user's class
 app.post("/update-user-class", (req, res) => {
   if (!req.isAuthenticated()) {
