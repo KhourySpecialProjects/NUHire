@@ -50,6 +50,11 @@ const Grouping = () => {
   const [pendingOffers, setPendingOffers] = useState<{ classId: number; groupId: number; candidateId: number }[]>([]);
   const [acceptedOffers, setAcceptedOffers] = useState<{ classId: number; groupId: number; candidateId: number }[]>([]);
 
+  // Tab 5: Adding students
+  const [addStudentClass, setAddStudentClass] = useState("");
+  const [addStudentGroup, setAddStudentGroup] = useState("");
+  const [addStudentEmail, setAddStudentEmail] = useState("");
+ 
   // Fetch user
   useEffect(() => {
     const fetchUser = async () => {
@@ -306,6 +311,36 @@ const Grouping = () => {
   if (!user || user.affiliation !== "admin") {
     return <div>This account is not authorized for this page</div>;
   }
+
+  const addStudentToClassGroup = async () => {
+    if (!addStudentClass || !addStudentGroup || !addStudentEmail) {
+      setPopup({ headline: "Error", message: "Please fill out all fields." });
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/teacher/add-student`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          class_id: addStudentClass,
+          group_id: addStudentGroup,
+          email: addStudentEmail,
+          f_name: "",
+          l_name: "",
+        }),
+      });
+      if (res.ok) {
+        setPopup({ headline: "Success", message: "Student added to class and group!" });
+        setAddStudentClass("");
+        setAddStudentGroup("");
+        setAddStudentEmail("");
+      } else {
+        setPopup({ headline: "Error", message: "Failed to add student." });
+      }
+    } catch {
+      setPopup({ headline: "Error", message: "Failed to add student." });
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
@@ -673,15 +708,71 @@ const Grouping = () => {
               </div>
             </div>
           </div>
+          {/* Tab: Add Student to Class & Group */}
+          <div title="Add Student to Class & Group">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
+              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Add Student to Class & Group</h2>
+              <div className="mb-4">
+                <label className="block text-navy font-semibold mb-2">
+                  Select Class (CRN)
+                </label>
+                <select
+                  value={addStudentClass}
+                  onChange={e => setAddStudentClass(e.target.value)}
+                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a class</option>
+                  {classes.map(classItem => (
+                    <option key={classItem.id} value={classItem.id}>
+                      {classItem.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-navy font-semibold mb-2">
+                  Group Number
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={addStudentGroup}
+                  onChange={e => setAddStudentGroup(e.target.value)}
+                  className="w-full p-2 border border-wood bg-springWater rounded-md"
+                  placeholder="Enter group number"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-navy font-semibold mb-2">
+                  Student Email
+                </label>
+                <input
+                  type="email"
+                  value={addStudentEmail}
+                  onChange={e => setAddStudentEmail(e.target.value)}
+                  className="w-full p-2 border border-wood bg-springWater rounded-md"
+                  placeholder="Enter student email"
+                />
+              </div>
+              <div className="flex justify-center">
+                <button
+                  className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
+                  onClick={addStudentToClassGroup}
+                >
+                  Add Student
+                </button>
+              </div>
+            </div>
+          </div>
         </Tabs>
       </div>
       {popup && (
-          <Popup
-            headline={popup.headline}
-            message={popup.message}
-            onDismiss={() => setPopup(null)}
-          />
-        )}
+        <Popup
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)}
+        />
+      )}
     </div>
   );
 };
