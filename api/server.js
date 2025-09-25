@@ -769,7 +769,8 @@ app.get("/auth/keycloak/callback",
     }
 
     const email = user.email;
-
+    console.log("email before query");
+    
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
       if (err) {
         console.error("Database error:", err);
@@ -895,7 +896,7 @@ app.get("/users/:id", (req, res) => {
 
 // post route for creating a new user, which checks if the user already exists in the database and inserts a new user record if not
 app.post("/users", (req, res) => {
-  const { First_name, Last_name, Email, Affiliation, group_id, course_id, job_des } = req.body;
+  const { First_name, Last_name, Email, Affiliation, job_des } = req.body;
 
   // Validate required fields
   if (!First_name || !Last_name || !Email || !Affiliation) {
@@ -904,30 +905,17 @@ app.post("/users", (req, res) => {
 
   // Check if user already exists
   db.query("SELECT * FROM Users WHERE email = ?", [Email], (err, results) => {
-    if (err) {
-      console.error("Database error:", err);
-      return res.status(500).json({ error: err.message });
-    }
-    
-    if (results.length > 0) {
-      return res.status(200).json({ message: "User already exists" });
-    }
-
-    // Helper function to create user with determined job assignment
     const createUser = (assignedJob) => {
       let sql, params;
       // If student is joining a group with a job, set current_page to 'jobdes'
-      if (Affiliation === 'student' && group_id && course_id) {
+      if (Affiliation === 'student') {
         if (assignedJob) {
-          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des, current_page) VALUES (?, ?, ?, ?, ?, ?, ?, 'jobdes')";
-          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+          sql = "UPDATE INTO Users (f_name, l_name, email, affiliation, job_des, current_page) VALUES (?, ?, ?, ?, ?, 'jobdes')";
+          params = [First_name, Last_name, Email, Affiliation, assignedJob];
         } else {
-          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des) VALUES (?, ?, ?, ?, ?, ?, ?)";
-          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
+          sql = "UPDATE INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des) VALUES (?, ?, ?, ?, ?)";
+          params = [First_name, Last_name, Email, Affiliation, assignedJob];
         }
-      } else if (Affiliation === 'student' && course_id) {
-        sql = "INSERT INTO Users (f_name, l_name, email, affiliation, class, job_des) VALUES (?, ?, ?, ?, ?, ?)";
-        params = [First_name, Last_name, Email, Affiliation, course_id, assignedJob];
       } else {
         // Basic user creation for faculty/admin
         sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
@@ -941,10 +929,8 @@ app.post("/users", (req, res) => {
         }
         
         // Log successful user creation
-        console.log(`User created: ${First_name} ${Last_name} (${Email}) as ${Affiliation}${group_id ? `, group: ${group_id}` : ''}${course_id ? `, class: ${course_id}` : ''}${assignedJob ? `, job: ${assignedJob}` : ' with no job'}`);
         
         if (Affiliation === 'student') {
-          console.log(`New student ${Email} added to group ${group_id} in class ${course_id}`);
           io.emit("newStudent", { 
             classId: course_id
           });
@@ -959,7 +945,6 @@ app.post("/users", (req, res) => {
                 class_id: course_id
               });
             }
-            console.log(`Notified new student ${Email} about job assignment: ${assignedJob}`);
           }
         }
         // Return success response
@@ -975,6 +960,27 @@ app.post("/users", (req, res) => {
         });
       });
     };
+
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (results.length > 0 && Affiliation == 'student') {
+      return res.status(200).json({ message: "User registered successfully" });
+    }
+
+    if (results.length > 0 && Affiliation == 'admin') {
+      return res.status(400).json({ message: "Teacher already registered" });
+    }
+
+    if (results.length === 0 && Affiliation === 'admin') {
+      return createUser(null);
+    }
+
+    if (results.length === 0 && Affiliation === 'student') {
+      return res.status(400).json({ message: "Student not registered by Teacher" });
+    }  
 
     // If student is being assigned to a group, check for existing group job
     if (Affiliation === 'student' && group_id) {
@@ -1866,6 +1872,24 @@ app.get("/canidates/resume/:resume_number", (req, res) => {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Teacher
+
+app.post("/teacher/add-student", (req, res) => {
+  const { class_id, group_id, email, f_name, l_name } = req.body;
+  // if (!class_id || !group_id || !email || !f_name || !l_name) {
+  //   return res.status(400).json({ error: "Missing required fields." });
+  // }
+  db.query(
+    "INSERT INTO Users (email, f_name, l_name, class, group_id, affiliation) VALUES (?, ?, ?, ?, ?, 'student') ON DUPLICATE KEY UPDATE group_id = ?, class = ?, f_name = ?, l_name = ?",
+    [email, f_name, l_name, class_id, group_id, group_id, class_id, f_name, l_name],
+    (err, result) => {
+      if (err) { 
+        console.log("Database error:", err);
+        return res.status(500).json({ error: err.message });
+    }
+      res.json({ success: true });
+    }
+  );
+});
 
 // Update the number of groups for a class (CRN)
 app.post("/teacher/update-groups", (req, res) => {
