@@ -247,6 +247,7 @@ CREATE TABLE `Res2_Status` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+
 -- Table structure for table `Resume`
 --
 
@@ -362,3 +363,4 @@ CREATE TABLE `Users` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-09-24 11:01:32
+
