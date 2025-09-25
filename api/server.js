@@ -972,51 +972,81 @@ app.get("/users/:id", (req, res) => {
 app.post("/users", (req, res) => {
   const { First_name, Last_name, Email, Affiliation } = req.body;
 
+  console.log("=== POST /users endpoint hit ===");
+  console.log("Request body:", { First_name, Last_name, Email, Affiliation });
+
   if (!First_name || !Last_name || !Email || !Affiliation) {
+    console.log("❌ Validation failed: Missing required fields");
     return res.status(400).json({ message: "First name, last name, email, and affiliation are required" });
   }
+
+  console.log("✅ Validation passed, checking if user exists in database");
 
   // Check if user already exists
   db.query("SELECT * FROM Users WHERE email = ?", [Email], (err, results) => {
     if (err) {
-      console.error("Database error:", err);
+      console.error("❌ Database error during user lookup:", err);
       return res.status(500).json({ error: err.message });
     }
     
+    console.log(`Database query result: Found ${results.length} users with email ${Email}`);
+    
     if (results.length > 0) {
+      console.log("User already exists:", results[0]);
+      
       if (Affiliation === 'student') {
+        console.log("✅ Existing student login successful");
         return res.status(200).json({ message: "User registered successfully" });
       }
       if (Affiliation === 'admin') {
+        console.log("❌ Admin already registered");
         return res.status(400).json({ message: "Teacher already registered" });
       }
     }
 
+    console.log("User does not exist, creating new user");
+
     // Create user without job_des field
     let sql, params;
     if (Affiliation === 'admin') {
+      console.log("Creating new admin user");
       sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
       params = [First_name, Last_name, Email, Affiliation];
+      
+      console.log("Admin SQL query:", sql);
+      console.log("Admin SQL params:", params);
+      
     } else {
       // For students, they need to be assigned to a group first
+      console.log("❌ Student registration blocked - needs group assignment first");
       return res.status(400).json({ 
         message: "Students must be assigned to a group by their instructor before registering." 
       });
     }
     
+    console.log("Executing user creation query...");
     db.query(sql, params, (err, result) => {
       if (err) {
-        console.error("Failed to create user:", err);
+        console.error("❌ Failed to create user - Database error:", err);
+        console.error("Error code:", err.code);
+        console.error("Error message:", err.message);
         return res.status(500).json({ error: err.message });
       }
       
-      res.status(201).json({ 
+      console.log("✅ User created successfully");
+      console.log("Insert result:", result);
+      console.log("New user ID:", result.insertId);
+      
+      const responseData = {
         id: result.insertId, 
         First_name, 
         Last_name, 
         Email, 
         Affiliation
-      });
+      };
+      
+      console.log("Sending successful response:", responseData);
+      res.status(201).json(responseData);
     });
   });
 });
