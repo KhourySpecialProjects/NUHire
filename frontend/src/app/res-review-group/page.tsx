@@ -56,10 +56,36 @@ export default function ResReviewGroup() {
   const router = useRouter();
   const pathname = usePathname();
   const [selectedResumeNumber, setSelectedResumeNumber] = useState<number | "">("");
+  
+  // Team confirmation state
+  const [teamConfirmations, setTeamConfirmations] = useState<string[]>([]);
+  const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [groupSize, setGroupSize] = useState(4);
+  
   const resumeInstructions = [
     "Review the resumes and decide as a group which 4 candidates continue.",
     "You will then watch the interviews of the candidates selected."
   ];  
+
+  // Fetch group size
+  useEffect(() => {
+    const fetchGroupSize = async () => {
+      if (!user?.group_id) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/group-size/${user.group_id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setGroupSize(data.count);
+        }
+      } catch (err) {
+        console.error("Failed to fetch group size:", err);
+      }
+    };
+
+    if (user?.group_id) {
+      fetchGroupSize();
+    }
+  }, [user]);
              
   useEffect(() => {
     const fetchUser = async () => {
@@ -122,6 +148,18 @@ export default function ResReviewGroup() {
       }));
     });
 
+    // Handle team confirmation updates
+    socket.on("teamConfirmSelection", ({ studentId, groupId, classId }) => {
+      if (groupId === user.group_id && classId === user.class) {
+        setTeamConfirmations(prev => {
+          if (!prev.includes(studentId)) {
+            return [...prev, studentId];
+          }
+          return prev;
+        });
+      }
+    });
+
     socket.on("moveGroup", ({groupId, classId, targetPage}) => {
       if (user && groupId === user.group_id && classId === user.class) {
         console.log(`Group navigation triggered: moving to ${targetPage}`);
@@ -145,6 +183,7 @@ export default function ResReviewGroup() {
         socket.off("connect");
         socket.off("disconnect");
         socket.off("checkboxUpdated");
+        socket.off("teamConfirmSelection");
         socket.off("connect_error");
         socket.off("reconnect_failed");
         socket.off("moveGroup");
@@ -152,6 +191,7 @@ export default function ResReviewGroup() {
       }
     };
   }, [user]);
+
   useEffect(() => {
     if (user && user.email) {
       socket.emit("studentOnline", { studentId: user.email }); 
@@ -288,6 +328,26 @@ export default function ResReviewGroup() {
     if (resume) console.log('Selected file path:', resume.file_path);
   };
 
+  // Team confirmation handler
+  const handleTeamConfirm = () => {
+    if (!socket || !user || hasConfirmed) return;
+    
+    setHasConfirmed(true);
+    setTeamConfirmations(prev => {
+      if (!prev.includes(user.id.toString())) {
+        return [...prev, user.id.toString()];
+      }
+      return prev;
+    });
+
+    socket.emit("teamConfirmSelection", {
+      groupId: user.group_id,
+      classId: user.class,
+      studentId: user.id.toString(),
+      roomId: `group_${user.group_id}_class_${user.class}`
+    });
+  };
+
   const selectedResume = resumes.find(r => r.resume_number === selectedResumeNumber);
 
   const completeResumes = () => {
@@ -296,6 +356,16 @@ export default function ResReviewGroup() {
       setPopup({ headline: "Selection Error", message: "Please select exactly 4 resumes to proceed." });
       return;
     }
+
+    // Check if all team members have confirmed
+    if (teamConfirmations.length < groupSize) {
+      setPopup({ 
+        headline: "Team Confirmation Required", 
+        message: `All ${groupSize} team members must confirm the selection before proceeding to interviews.` 
+      });
+      return;
+    }
+
     localStorage.setItem("progress", "interview-stage")
     updateProgress(user!, "interview");
     window.location.href = "/interview-stage"; 
@@ -432,7 +502,8 @@ export default function ResReviewGroup() {
         </div>
       </div>
 
-      <div className="flex justify-between px-12 py-6">
+      {/* Enhanced bottom navigation with team confirmation */}
+      <div className="flex justify-between items-center px-12 py-6">
         <button
           onClick={() => router.push("/res-review")}
           disabled={true}
@@ -440,27 +511,74 @@ export default function ResReviewGroup() {
         >
           ← Back: Resume Review Pt.1
         </button>
-        <button
-          onClick={completeResumes}
-          disabled={selectedCount !== 4}
-          className={`px-4 py-2 rounded-lg shadow font-bold transition ${
-            selectedCount === 4
-              ? "bg-redHeader text-white hover:bg-blue-400"
-              : "bg-gray-300 text-gray-600 cursor-not-allowed"
-          }`}
-        >
-          Next: Interview Stage →
-        </button>
+
+        {/* Team Confirmation Section */}
+        <div className="flex flex-col items-center gap-4">
+          {/* Selection Status */}
+          <div className="text-center">
+            <p className={`font-bold ${selectedCount === 4 ? 'text-green-600' : 'text-orange-600'}`}>
+              {selectedCount}/4 candidates selected
+            </p>
+            {selectedCount === 4 && (
+              <p className="text-sm text-navy">
+                Team Confirmation: {teamConfirmations.length}/{groupSize} members ready
+              </p>
+            )}
+          </div>
+
+          {/* Confirmation and Proceed Buttons */}
+          <div className="flex gap-4">
+            {/* Team Confirm Button */}
+            {selectedCount === 4 && teamConfirmations.length < groupSize && (
+              <button
+                onClick={handleTeamConfirm}
+                disabled={hasConfirmed}
+                className={`px-6 py-2 rounded-lg shadow font-bold transition ${
+                  hasConfirmed
+                    ? "bg-green-500 text-white cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                {hasConfirmed 
+                  ? `✓ Confirmed (${teamConfirmations.length}/${groupSize})` 
+                  : 'Confirm Selection'}
+              </button>
+            )}
+
+            {/* Proceed Button */}
+            <button
+              onClick={completeResumes}
+              disabled={selectedCount !== 4 || teamConfirmations.length < groupSize}
+              className={`px-6 py-2 rounded-lg shadow font-bold transition ${
+                selectedCount === 4 && teamConfirmations.length >= groupSize
+                  ? "bg-redHeader text-white hover:bg-blue-400"
+                  : "bg-gray-300 text-gray-600 cursor-not-allowed"
+              }`}
+            >
+              {teamConfirmations.length >= groupSize 
+                ? "Next: Interview Stage →" 
+                : `Waiting for team confirmation (${teamConfirmations.length}/${groupSize})`
+              }
+            </button>
+          </div>
+
+          {/* Waiting message */}
+          {selectedCount === 4 && teamConfirmations.length > 0 && teamConfirmations.length < groupSize && (
+            <p className="text-xs text-orange-600 text-center">
+              Waiting for {groupSize - teamConfirmations.length} more team member{groupSize - teamConfirmations.length !== 1 ? 's' : ''} to confirm
+            </p>
+          )}
+        </div>
       </div>
 
       <Footer />
       {popup && (
-                <Popup
-                  headline={popup.headline}
-                  message={popup.message}
-                  onDismiss={() => setPopup(null)}
-                />
-              )}
+        <Popup
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)}
+        />
+      )}
     </div>
   );
 }
