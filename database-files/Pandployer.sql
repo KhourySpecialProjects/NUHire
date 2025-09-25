@@ -119,7 +119,9 @@ CREATE TABLE `Job_Assignment` (
   `group` int NOT NULL,
   `class` int NOT NULL,
   `job` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`group`,`class`)
+  PRIMARY KEY (`group`,`class`),
+  KEY `job_idx` (`job`),
+  CONSTRAINT `job` FOREIGN KEY (`job`) REFERENCES `job_descriptions` (`title`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -342,13 +344,10 @@ CREATE TABLE `Users` (
   `affiliation` enum('student','admin') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `group_id` int DEFAULT NULL,
-  `job_des` varchar(45) DEFAULT NULL,
   `class` int DEFAULT NULL,
   `current_page` enum('dashboard','resumepage','resumepage2','jobdes','interviewpage','makeofferpage') DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
-  KEY `job_idx` (`job_des`),
-  KEY `title_idx` (`job_des`)
+  UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -370,4 +369,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-24 11:01:32
+-- Dump completed on 2025-09-25 13:24:53
