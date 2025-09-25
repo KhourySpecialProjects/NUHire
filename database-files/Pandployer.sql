@@ -42,6 +42,31 @@ INSERT INTO `Candidates` VALUES (1,1,'https://www.youtube.com/embed/OVAMb6Kui6A'
 UNLOCK TABLES;
 
 --
+-- Table structure for table `Interview_Status`
+--
+
+DROP TABLE IF EXISTS `Interview_Status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Interview_Status` (
+  `student_id` int NOT NULL,
+  `finished` tinyint NOT NULL DEFAULT '0',
+  `group_id` varchar(45) NOT NULL,
+  `class` int NOT NULL,
+  PRIMARY KEY (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Interview_Status`
+--
+
+LOCK TABLES `Interview_Status` WRITE;
+/*!40000 ALTER TABLE `Interview_Status` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Interview_Status` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Interview_vids`
 --
 
@@ -87,6 +112,7 @@ CREATE TABLE `InterviewPage` (
   `candidate_id` int NOT NULL,
   `checked` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_student_candidate` (`student_id`,`candidate_id`),
   KEY `student_id` (`student_id`),
   KEY `candidate_id` (`candidate_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -99,6 +125,34 @@ CREATE TABLE `InterviewPage` (
 LOCK TABLES `InterviewPage` WRITE;
 /*!40000 ALTER TABLE `InterviewPage` DISABLE KEYS */;
 /*!40000 ALTER TABLE `InterviewPage` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `InterviewPopup`
+--
+
+DROP TABLE IF EXISTS `InterviewPopup`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `InterviewPopup` (
+  `candidate_id` int NOT NULL,
+  `group_id` int NOT NULL,
+  `class` int NOT NULL,
+  `question1` int NOT NULL,
+  `question2` int NOT NULL,
+  `question3` int NOT NULL,
+  `question4` int NOT NULL,
+  PRIMARY KEY (`candidate_id`,`group_id`,`class`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `InterviewPopup`
+--
+
+LOCK TABLES `InterviewPopup` WRITE;
+/*!40000 ALTER TABLE `InterviewPopup` DISABLE KEYS */;
+/*!40000 ALTER TABLE `InterviewPopup` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -165,11 +219,12 @@ DROP TABLE IF EXISTS `Moderator`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Moderator` (
-  `id` int NOT NULL AUTO_INCREMENT UNIQUE,
+  `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL UNIQUE,
   `nom_groups` int NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `crn_UNIQUE` (`crn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -207,6 +262,57 @@ CREATE TABLE `Notes` (
 LOCK TABLES `Notes` WRITE;
 /*!40000 ALTER TABLE `Notes` DISABLE KEYS */;
 /*!40000 ALTER TABLE `Notes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Offer_Status`
+--
+
+DROP TABLE IF EXISTS `Offer_Status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Offer_Status` (
+  `student_id` int NOT NULL,
+  `clicked` tinyint NOT NULL DEFAULT '0',
+  `group_id` varchar(45) NOT NULL,
+  `class` int NOT NULL,
+  PRIMARY KEY (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Offer_Status`
+--
+
+LOCK TABLES `Offer_Status` WRITE;
+/*!40000 ALTER TABLE `Offer_Status` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Offer_Status` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Progress`
+--
+
+DROP TABLE IF EXISTS `Progress`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Progress` (
+  `crn` int NOT NULL,
+  `group_id` int NOT NULL,
+  `step` enum('none','job_description','res_1','res_2','interview','offer','employer') DEFAULT NULL,
+  `email` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`crn`,`group_id`),
+  UNIQUE KEY `email_UNIQUE` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Progress`
+--
+
+LOCK TABLES `Progress` WRITE;
+/*!40000 ALTER TABLE `Progress` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Progress` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -368,4 +474,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-03 13:04:24
+-- Dump completed on 2025-09-19  9:59:36

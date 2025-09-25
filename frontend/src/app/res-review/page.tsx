@@ -13,6 +13,7 @@ import Popup from "../components/popup";
 import { io } from "socket.io-client";
 import { usePathname } from "next/navigation";
 import Instructions from "../components/instructions";
+import { useProgressManager } from "../components/progress";
 
 const socket = io(API_BASE_URL);
 
@@ -23,7 +24,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function ResumesPage() {
   useProgress();
-
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [resumes, setResumes] = useState(0);
   const [resumesList, setResumesList] = useState<{ file_path: string }[]>([]);
   const [accepted, setAccepted] = useState(0);
@@ -45,7 +46,7 @@ export default function ResumesPage() {
   const [showInstructions, setShowInstructions] = useState(true);
   interface User {
     id: string;
-    group_id: string;
+    group_id: number;
     email: string;
     class: number;
   }
@@ -57,8 +58,24 @@ export default function ResumesPage() {
   const resumeInstructions = [
     "Review the resume and decide whether to accept, reject, or mark as no-response.",
     "You may accept as many as you like out of the 10.",
-    "You have to wait for the rest of your group to finish before moving on."
+    "You have to wait for the rest of your group to finish before moving on.",
+    "The decisions you make here will not affect the candidate's overall application.",
+    "They will just be another factor your group considers when making a final decision.",
+
   ];  
+
+  useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -70,6 +87,7 @@ export default function ResumesPage() {
 
         if (response.ok) {
           setUser(userData);
+          updateProgress(userData, "res_1");
         } else {
           setUser(null);
           router.push("/login");
@@ -310,6 +328,7 @@ export default function ResumesPage() {
   };
 
   const completeResumes = () => {
+    updateProgress(user!, "res_2");
     localStorage.setItem("progress", "res-review-group");
     window.location.href = "/res-review-group";
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/res-review-group"});

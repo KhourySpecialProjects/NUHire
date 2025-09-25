@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useProgress } from "../components/useProgress";
 import Footer from "../components/footer";
 import Popup from "../components/popup";
+import { useProgressManager } from "../components/progress";
 
 const SOCKET_URL = `${API_BASE_URL}`; 
 let socket: Socket; // Define socket with correct type
@@ -43,6 +44,7 @@ export default function ResReviewGroup() {
     vote: "yes" | "no" | "unanswered";
   }
 
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>({});
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
@@ -67,6 +69,7 @@ export default function ResReviewGroup() {
         
         if (response.ok) {
           setUser(userData);
+          updateProgress(userData, "res_2");
         } else {
           setUser(null);
           router.push("/login"); // Redirect to login if unauthorized
@@ -122,6 +125,7 @@ export default function ResReviewGroup() {
     socket.on("moveGroup", ({groupId, classId, targetPage}) => {
       if (user && groupId === user.group_id && classId === user.class) {
         console.log(`Group navigation triggered: moving to ${targetPage}`);
+        updateProgress(user, "interview");
         localStorage.setItem("progress", "interview-stage");
         window.location.href = targetPage; 
       }
@@ -169,6 +173,19 @@ export default function ResReviewGroup() {
       updateCurrentPage(); 
     }
   }, [user, pathname]);
+
+  useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
 
   const fetchResumes = async () => {
     try {
@@ -280,6 +297,7 @@ export default function ResReviewGroup() {
       return;
     }
     localStorage.setItem("progress", "interview-stage")
+    updateProgress(user!, "interview");
     window.location.href = "/interview-stage"; 
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/interview-stage"});
   };
@@ -316,8 +334,16 @@ export default function ResReviewGroup() {
       <Navbar />
 
       <div className="flex flex-1 px-12 py-8 gap-8">
-        {/* LEFT: select & preview box */}
+        {/* LEFT: Resume viewer section */}
         <div className="w-1/2 flex flex-col">
+          {/* Instructions for resume viewer */}
+          <div className="mb-4 p-4 bg-gray-100 border-4 border-northeasternRed rounded-lg">
+            <h3 className="font-bold text-navy mb-2">📖 Resume Viewer (Individual)</h3>
+            <p className="text-sm text-navy">
+              Use the dropdown below to preview individual resumes. This viewer is for your personal use - other group members won't see what you're viewing here.
+            </p>
+          </div>
+
           <div className="mb-4 p-4 bg-white border-4 border-northeasternRed rounded-lg">
             <label className="block mb-2 font-semibold text-navy">
               Select a resume to preview
@@ -346,52 +372,63 @@ export default function ResReviewGroup() {
           )}
         </div>
 
-        {/* RIGHT: 2 columns × 5 rows of cards */}
-        <div className="w-1/2 grid grid-cols-2 grid-rows-5 gap-4 overflow-y-auto">
-          {resumes.slice(0,10).map((resume) => {
-            const n = resume.resume_number;
-            const votes = voteCounts[n] || { yes: 0, no: 0, undecided: 0 };
-            return (
-              <div
-                key={n}
-                className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl p-6 flex flex-col justify-between transition"
-              >
-                <h3 className="text-xl font-semibold text-navy mb-2">
-                  Resume {n}
-                </h3>
-                <a
-                  href={`${API_BASE_URL}/${resume.file_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-northeasternRed font-bold underline mb-4"
+        {/* RIGHT: Resume selection section */}
+        <div className="w-1/2 flex flex-col">
+          {/* Instructions for resume selection */}
+          <div className="mb-4 p-4 bg-gray-100 border-4 border-northeasternRed rounded-lg">
+            <h3 className="font-bold text-navy mb-2">✅ Group Selection (Shared)</h3>
+            <p className="text-sm text-navy">
+              Select exactly 4 resumes as a group to advance to interviews. When anyone in your group checks or unchecks a resume, everyone will see the change in real-time.
+            </p>
+          </div>
+
+          {/* 2 columns × 5 rows of cards */}
+          <div className="flex-1 grid grid-cols-2 grid-rows-5 gap-4 overflow-y-auto">
+            {resumes.slice(0,10).map((resume) => {
+              const n = resume.resume_number;
+              const votes = voteCounts[n] || { yes: 0, no: 0, undecided: 0 };
+              return (
+                <div
+                  key={n}
+                  className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl p-6 flex flex-col justify-between transition"
                 >
-                  View Full
-                </a>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded">✔ Yes</span>
-                    <span className="font-semibold">{votes.yes}</span>
+                  <h3 className="text-xl font-semibold text-navy mb-2">
+                    Resume {n}
+                  </h3>
+                  <a
+                    href={`${API_BASE_URL}/${resume.file_path}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-northeasternRed font-bold underline mb-4"
+                  >
+                    View Full
+                  </a>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded">✔ Yes</span>
+                      <span className="font-semibold">{votes.yes}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded">✖ No</span>
+                      <span className="font-semibold">{votes.no}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">? Skip</span>
+                      <span className="font-semibold">{votes.undecided}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded">✖ No</span>
-                    <span className="font-semibold">{votes.no}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">? Skip</span>
-                    <span className="font-semibold">{votes.undecided}</span>
-                  </div>
+                  <label className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      checked={checkedState[n] || false}
+                      onChange={() => handleCheckboxChange(n)}
+                    />
+                    <span className="ml-2 text-navy">Select</span>
+                  </label>
                 </div>
-                <label className="flex items-center mt-4">
-                  <input
-                    type="checkbox"
-                    checked={checkedState[n] || false}
-                    onChange={() => handleCheckboxChange(n)}
-                  />
-                  <span className="ml-2 text-navy">Select</span>
-                </label>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 

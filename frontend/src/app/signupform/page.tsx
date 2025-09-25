@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Slideshow from "../components/slideshow";
 import Image from "next/image";
+import { useProgressManager } from "../components/progress";
 
 // Define API base URL with fallback
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
@@ -17,7 +18,7 @@ export default function SignupDetails() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const [modPass, setModPass] = useState('');
+  
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -63,6 +64,8 @@ export default function SignupDetails() {
 
     if (affiliation === 'student') {
       try {
+        console.log("Group", groupNumber);
+        console.log("Course", courseNumber);
         const res = await fetch(
           `${API_BASE_URL}/moderator-crns/${courseNumber}`,
           { method: 'GET', credentials: 'include' }
@@ -77,6 +80,7 @@ export default function SignupDetails() {
         }
         const {id, admin_email, crn, nom_groups} = await res.json();
         const emailData = await emailRes.json();
+        console.log(emailData);
         if (emailData.length !== 0) {
           setError('This email is set as an instructor.');
           return;
@@ -209,22 +213,21 @@ export default function SignupDetails() {
           {/* Group number input - only shown for students */}
           {affiliation === 'student' && (
             <div  className="w-full rounded-lg flex flex-col gap-4">
+              <input 
+              type="number" 
+              placeholder="CRN *" 
+              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={courseNumber} 
+              onChange={(e) => setCourseNumber(e.target.value)} 
+              required 
+              min="1"
+            />
             <input 
               type="number" 
               placeholder="Group Number *" 
               className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={groupNumber} 
               onChange={(e) => setGroupNumber(e.target.value)} 
-              required 
-              min="1"
-            />
-
-            <input 
-              type="number" 
-              placeholder="CRN *" 
-              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={courseNumber} 
-              onChange={(e) => setCourseNumber(e.target.value)} 
               required 
               min="1"
             />

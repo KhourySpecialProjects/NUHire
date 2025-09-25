@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { io } from "socket.io-client";
 import router from "next/router";
 import Instructions from "../components/instructions";
+import { useProgressManager } from "../components/progress";
 
 const socket = io(API_BASE_URL); 
 
@@ -34,9 +35,12 @@ interface CommentType {
 interface User { 
   email: string;
   job_des: string;
+  class: number;
+  group_id: number;
 }
 
 export default function JobDescriptionPage() { 
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [fileUrl, setJob] = useState("");
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -56,6 +60,20 @@ export default function JobDescriptionPage() {
     "Look for specific technologies or tools mentioned.",
     "Note any soft skills that are emphasized in the job description."
   ];
+
+   useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -360,6 +378,7 @@ export default function JobDescriptionPage() {
         <div className="flex justify-end mt-4 mb-4 mr-4">
           <button
             onClick={() => {
+              updateProgress(user, "res_1");
               localStorage.setItem("progress", "res-review");
               window.location.href = '/res-review';
             }}

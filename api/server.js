@@ -401,7 +401,6 @@ app.get('/health', (req, res) => {
 
 const initializeDatabase = () => {
   const queries = [
-    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 1)",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
@@ -590,6 +589,17 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("updateRatingsWithPresetBackend", ({ classId, groupId, vote, isNoShow }) => {
+    const roomId = `group_${groupId}_class_${classId}`;
+  
+    io.to(roomId).emit("updateRatingsWithPresetFrontend", {
+      classId,
+      groupId,
+      vote,
+      isNoShow
+    });
+  });
+
   // Listen for the "makeOfferRequest" event, which is emitted by the client when a student group wants to make an offer to a candidate
   socket.on("makeOfferRequest", ({classId, groupId, candidateId }) => {
     console.log(`Student in class ${classId}, group ${groupId} wants to offer candidate ${candidateId}`);
@@ -627,14 +637,6 @@ io.on("connection", (socket) => {
     const roomId = `group_${groupId}_class_${classId}`;
     console.log(`Emitting moveGroup to room: ${roomId}`);
     io.to(roomId).emit("moveGroup", {classId, groupId, targetPage});
-  });
-
-  // Listen for rating updates during interviews
-  socket.on("updateRating", ({ratingType, value, groupId, classId}) => {
-    console.log(`Rating update from group ${groupId}, class ${classId}: ${ratingType} = ${value}`);
-    const roomId = `group_${groupId}_class_${classId}`;
-    // Broadcast to all members in the room including sender
-    io.to(roomId).emit("ratingUpdated", {ratingType, value, groupId, classId});
   });
 
   // Listen for interview submissions
@@ -728,6 +730,45 @@ io.on("connection", (socket) => {
           console.log(`Group ${groupId} still waiting for ${totalCount - completedCount} more members to complete`);
         }
       });
+  });
+
+  socket.on("confirmOffer", ({ groupId, classId, candidateId, studentId, roomId }) => {
+    io.to(roomId).emit("confirmOffer", {
+      candidateId,
+      studentId,
+      groupId,
+      classId,
+    });
+  });
+
+  socket.on("sentPresetVotes", async ({ student_id, group_id, class: classId, question1, question2, question3, question4, candidate_id }) => {
+    console.log("inside sentPresetVotes, with data:", { student_id, group_id, classId, question1, question2, question3, question4, candidate_id });
+    try {
+      const query = `
+        INSERT INTO InterviewPopup 
+          (candidate_id, group_id, class, question1, question2, question3, question4)
+        VALUES 
+          (?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+          question1 = question1 + VALUES(question1),
+          question2 = question2 + VALUES(question2),
+          question3 = question3 + VALUES(question3),
+          question4 = question4 + VALUES(question4)`;
+
+      await db.promise().query(query, [
+        candidate_id,
+        group_id,
+        classId,
+        question1,
+        question2,
+        question3,
+        question4
+      ]);
+
+      console.log(`Updated interview popup votes for candidate ${candidate_id} in group ${group_id} class ${classId}`);
+    } catch (error) {
+      console.error('Error updating interview popup votes:', error);
+    }
   });
 
   // Listens for the "disconnect" event, which is emitted when a client disconnects from the server
@@ -1083,6 +1124,8 @@ app.post("/update-job", (req, res) => {
     return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
+  console.log(req.body);
+
   // Update job_des and reset progress for all students in the group/class
   const updatePromises = job.map(title => {
     return new Promise((resolve, reject) => {
@@ -1208,34 +1251,32 @@ app.post("/notes", (req, res) => {
 app.get("/groups", async (req, res) => {
   const { class: classId } = req.query;
   
-  let query = "SELECT f_name, l_name, email, job_des, current_page, `group_id` FROM Users WHERE `group_id` IS NOT NULL";
-  let params = [];
-  
-  if (classId) {
-    query += " AND class = ?";
-    params.push(classId);
+  try {
+    // First, get the number of groups from the Moderator table
+    const [moderatorResult] = await db.promise().query(
+      "SELECT nom_groups FROM Moderator WHERE crn = ?", 
+      [classId]
+    );
+    
+    if (moderatorResult.length === 0) {
+      return res.status(404).json({ error: "Class not found" });
+    }
+    
+    const nomGroups = moderatorResult[0].nom_groups;
+    console.log(`Class ${classId} should have ${nomGroups} groups`);
+    
+    // Create the groups object based on nom_groups
+    const groupsData = {};
+    for (let i = 1; i <= nomGroups; i++) {
+      groupsData[i] = []; // Initialize empty array for each group
+    }
+    
+    console.log("Generated groups data:", groupsData);
+    res.json(groupsData);
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    res.status(500).json({ error: "Failed to fetch groups" });
   }
-  
-  db.query(query, params, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (results.length === 0) return res.status(404).json({ message: "No users found in any group" });
-
-    // Group users by `group`
-    const groups = {};
-    results.forEach(user => {
-      if (!groups[user.group_id]) {
-        groups[user.group_id] = [];
-      }
-      groups[user.group_id].push({
-        name: `${user.f_name} ${user.l_name}`,
-        email: user.email,
-        current_page: user.current_page,
-        job_des: user.job_des
-      });
-    });
-
-    res.json(groups);
-  });
 });
 
 // post route for updating the group of students, which checks if the group ID and students are provided in the request body
@@ -1376,7 +1417,6 @@ app.get("/resume/checked/:group_id", async (req, res) => {
 
 //post route for submitting an interview vote, which checks if the required fields are provided in the request body
 app.post("/interview/vote", async (req, res) => {
-  console.log(req.body);
   const { student_id, group_id, studentClass, question1, question2, question3, question4, candidate_id } = req.body;
 
   if (!student_id || !group_id || !studentClass || !question1 || !question2 || !question3 || !question4 || !candidate_id) {
@@ -1409,6 +1449,88 @@ app.get("/interview", (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
+});
+
+app.get("/interview-status/finished-count", (req, res) => {
+  const { group_id, class_id } = req.query;
+
+  if (!group_id || !class_id) {
+    return res.status(400).json({ error: "group_id and class_id are required" });
+  }
+
+  // Join Interview_Status and Users to filter by group and class
+  const query = `
+    SELECT COUNT(*) AS finishedCount
+    FROM Interview_Status 
+    WHERE group_id = ? AND class = ? AND finished = 1
+    ;`
+  db.query(query, [group_id, class_id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    console.log(results);
+    res.json({ finishedCount: results[0].finishedCount });
+  });
+});
+
+app.post("/interview-status/finished", (req, res) => {
+  const { student_id, finished, group_id, class: class_id } = req.body;
+
+  if (
+    typeof student_id === "undefined" ||
+    typeof finished === "undefined" ||
+    typeof group_id === "undefined" ||
+    typeof class_id === "undefined"
+  ) {
+    return res.status(400).json({ error: "student_id, finished, group_id, and class are required" });
+  }
+
+  db.query(
+    `INSERT INTO Interview_Status (student_id, finished, group_id, class)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE finished = VALUES(finished), group_id = VALUES(group_id), class = VALUES(class)`,
+    [student_id, !!finished, group_id, class_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Query for finished count
+      db.query(
+        "SELECT COUNT(*) AS finishedCount FROM Interview_Status WHERE group_id = ? AND class = ? AND finished = 1",
+        [group_id, class_id],
+        (err2, finishedResults) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+
+          // Query for group size
+          db.query(
+            "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND affiliation = 'student' AND class = ?",
+            [group_id, class_id],
+            (err3, groupResults) => {
+              if (err3) return res.status(500).json({ error: err3.message });
+
+              const count = finishedResults[0].finishedCount;
+              const total = groupResults[0].count;
+
+              // Emit to the group room (make sure your frontend joins this room)
+              io.to(`group_${group_id}_class_${class_id}`).emit("interviewStatusUpdated", { count, total });
+
+              res.json({ success: true });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// get route for number of people in group
+app.get("/group-size/:group_id", (req, res) => {
+  const { group_id } = req.params;
+  db.query(
+    "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND affiliation = 'student'",
+    [group_id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ group_id, count: results[0].count });
+    }
+  );
 });
 
 // get route for retrieving all interviews submitted by a specific group, given their id.
@@ -1445,6 +1567,22 @@ app.delete("/interview/:student_id", (req, res) => {
   });
 }
 );
+
+app.get('/interview-popup/:candidateId/:groupId/:classId', async (req, res) => {
+  try {
+    const { candidateId, groupId, classId } = req.params;
+    
+    const [rows] = await db.promise().query(
+      'SELECT * FROM InterviewPopup WHERE candidate_id = ? AND group_id = ? AND class = ?',
+      [candidateId, groupId, classId]
+    );
+
+    res.json(rows[0] || { question1: 0, question2: 0, question3: 0, question4: 0 });
+  } catch (error) {
+    console.error('Error fetching interview popup votes:', error);
+    res.status(500).json({ error: 'Failed to fetch interview popup votes' });
+  }
+});
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interview Videos API Routes
@@ -1613,6 +1751,7 @@ app.post("/moderator-crns", (req, res) => {
 app.get("/moderator-crns", (req, res) => {
   db.query("SELECT * FROM Moderator", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
+    console.log("/moderator-crns", results);
     res.json(results);
   });
 });
@@ -1630,9 +1769,14 @@ app.delete("/moderator-crns/:crn", (req, res) => {
 });
 
 app.get("/moderator-crns/:crn", (req, res) => {
-  const {crn} = req.params;
+  const { crn } = req.params;
+  console.log("Fetching CRN:", crn);
   db.query("SELECT * FROM Moderator WHERE crn = ?", [crn], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("Database error in /moderator-crns/:crn:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log("Results for /moderator-crns/:crn:", results);
     res.json(results[0]);
   });
 });
@@ -1641,8 +1785,11 @@ app.get("/moderator-classes/:email", (req, res) => {
   const { email } = req.params;
   db.query(
     "SELECT crn FROM Moderator WHERE admin_email = ?", [email], (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      console.log(results)
+      if (err) {
+        console.error("Database error in /moderator-classes/:email:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log("Results for /moderator-classes/:email:", results);
       res.json(results.map(row => row.crn));
     }
   );
@@ -1685,6 +1832,108 @@ app.get("/canidates/resume/:resume_number", (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results[0]);
   });
+});
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Teacher
+
+// Update the number of groups for a class (CRN)
+app.post("/teacher/update-groups", (req, res) => {
+  const { crn, nom_groups } = req.body;
+
+  if (!crn || !nom_groups) {
+    return res.status(400).json({ error: "crn and nom_groups are required" });
+  }
+  console.log(crn, nom_groups);
+  db.query(
+    "UPDATE Moderator SET nom_groups = ? WHERE crn = ?",
+    [nom_groups, crn],
+    (err, result) => {
+      if (err) {
+        console.error("Database error in /moderator-crns/update-groups:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "CRN not found" });
+      }
+      res.json({ success: true, crn, nom_groups });
+    }
+  );
+});
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Progress
+
+// Get progress by group
+app.get("/progress/group/:crn/:group_id", (req, res) => {
+  const { crn, group_id } = req.params;
+  
+  db.query(
+    "SELECT * FROM Progress WHERE crn = ? AND group_id = ?",
+    [crn, group_id],
+    (err, results) => {
+      if (err) {
+        console.error("Error fetching group progress:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(results);
+    }
+  );
+});
+
+// Get progress by email
+app.get("/progress/user/:email", (req, res) => {
+  const { email } = req.params;
+  
+  db.query(
+    "SELECT * FROM Progress WHERE email = ?",
+    [email],
+    (err, results) => {
+      if (err) {
+        console.error("Error fetching user progress:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(results[0] || null);
+    }
+  );
+});
+
+// Post/Update progress
+app.post("/progress", (req, res) => {
+  const { crn, group_id, step, email } = req.body;
+
+  if (!crn || !group_id || !step || !email) {
+    return res.status(400).json({ 
+      error: "crn, group_id, step, and email are required" 
+    });
+  }
+
+  // Insert or update progress
+  db.query(
+    `INSERT INTO Progress (crn, group_id, step, email) 
+     VALUES (?, ?, ?, ?) 
+     ON DUPLICATE KEY UPDATE step = VALUES(step)`,
+    [crn, group_id, step, email],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating progress:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Emit socket event to update group members
+      io.to(`group_${group_id}_class_${crn}`).emit("progressUpdated", {
+        crn,
+        group_id,
+        step,
+        email
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Progress updated successfully" 
+      });
+    }
+  );
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

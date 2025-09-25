@@ -9,6 +9,7 @@ import Footer from "../components/footer"; // Importing the footer component
 import Popup from "../components/popup"; // Importing the popup component
 import axios from "axios"; // Importing axios for HTTP requests
 import Instructions from "../components/instructions"; // Importing the instructions component
+import { useProgressManager } from "../components/progress";
 
 // Define the API base URL from environment variables
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
@@ -23,11 +24,26 @@ type VoteData = {
   Personality: number;
 };
 
+interface User {
+  id: string;
+  group_id: number;
+  email: string;
+  class: number;
+  affiliation: string;
+}
+
+interface InterviewPopup {
+  question1: number;
+  question2: number;
+  question3: number;
+  question4: number;
+}
+
 // Main component for the MakeOffer page
 export default function MakeOffer() {
   useProgress();
   const router = useRouter();
-
+  const {updateProgress, fetchProgress} = useProgressManager();
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(
     {}
   );
@@ -40,14 +56,6 @@ export default function MakeOffer() {
   } | null>(null);
   const pathname = usePathname();
   const [offerPending, setOfferPending] = useState(false);
-  interface User {
-    id: string;
-    group_id: string;
-    email: string;
-    class: number;
-    affiliation: string;
-  }
-
   const [user, setUser] = useState<User | null>(null);
   const [resumes, setResumes] = useState<any[]>([]);
   const [interviews, setInterviews] = useState<any[]>([]);
@@ -61,7 +69,42 @@ export default function MakeOffer() {
     "Discuss as a team which person is getting the job offer.",
     "Make the offer and wait for your advisor's decision."
   ];  
-    
+  const [groupSize, setGroupSize] = useState(4);
+  const selectedCandidateId = Object.entries(checkedState)
+    .filter(([_, checked]) => checked)
+    .map(([id]) => Number(id))[0]; // Get the selected candidate ID
+  const [offerConfirmations, setOfferConfirmations] = useState<{[candidateId: number]: string[]}>({});
+  const confirmations = selectedCandidateId ? (offerConfirmations[selectedCandidateId] || []) : [];
+  const hasConfirmed = confirmations.includes(user?.id || '');
+  const confirmationCount = confirmations.length;
+  const allConfirmed = confirmationCount >= groupSize;
+  const [popupVotes, setPopupVotes] = useState<{ [key: number]: InterviewPopup }>({});
+
+  useEffect(() => {
+    if (!user?.group_id || !candidates.length) return;
+
+    const fetchPopupVotes = async () => {
+      try {
+        const promises = candidates.map(candidate => 
+          fetch(`${API_BASE_URL}/interview-popup/${candidate.id}/${user.group_id}/${user.class}`)
+            .then(res => res.json())
+        );
+        
+        const results = await Promise.all(promises);
+        const votesMap = results.reduce((acc, vote, index) => {
+          acc[candidates[index].id] = vote;
+          return acc;
+        }, {});
+        
+        setPopupVotes(votesMap);
+      } catch (error) {
+        console.error('Error fetching popup votes:', error);
+      }
+    };
+
+    fetchPopupVotes();
+  }, [user, candidates]);
+
   // Load user
   useEffect(() => {
     const fetchUser = async () => {
@@ -70,7 +113,10 @@ export default function MakeOffer() {
           credentials: "include",
         });
         const userData = await response.json();
-        if (response.ok) setUser(userData);
+        if (response.ok) { 
+          setUser(userData);
+          updateProgress(userData, "offer");
+        }
         else router.push("/login");
       } catch (err) {
         router.push("/login");
@@ -124,6 +170,17 @@ export default function MakeOffer() {
       }
     };
 
+    const fetchGroupSize = async () => {
+      if (!user?.group_id) return;
+      try {
+        const response = await axios.get(`${API_BASE_URL}/group-size/${user.group_id}`);
+        setGroupSize(response.data.count);
+      } catch (err) {
+        console.error("Failed to fetch group size:", err);
+      }
+    };
+
+    fetchGroupSize();
     fetchInterviews();
   }, [user]);
 
@@ -158,6 +215,19 @@ export default function MakeOffer() {
     fetchCandidates();
   }, [interviews]);
 
+   useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
+
+    return () => {
+      window.removeEventListener('showInstructions', handleShowInstructions);
+    };
+  }, []);
+  
   useEffect(() => {
     if (!candidates.length) return;
 
@@ -283,6 +353,22 @@ export default function MakeOffer() {
       setOfferPending(true);
     });
 
+    socket.on("confirmOffer", ({ candidateId, studentId, groupId, classId }) => {
+    // Only process if it's for our group and class
+    if (groupId === user.group_id && classId === user.class) {
+      setOfferConfirmations(prev => {
+        const currentConfirmations = prev[candidateId] || [];
+        if (!currentConfirmations.includes(studentId)) {
+          return {
+            ...prev,
+            [candidateId]: [...currentConfirmations, studentId]
+          };
+        }
+        return prev;
+      });
+    }
+  });
+
     // Listens to Advisor's response
     socket.on(
       "makeOfferResponse",
@@ -293,7 +379,7 @@ export default function MakeOffer() {
         accepted,
       }: {
         classId: number;
-        groupId: string;
+        groupId: number;
         candidateId: number;
         accepted: boolean;
       }) => {
@@ -378,19 +464,54 @@ export default function MakeOffer() {
       checked: newCheckedState,
     });
   };
+    
+  const handleConfirmOffer = (candidateId: number) => {
+    if (!socket || !user || !candidateId) return;
+    
+    // First update local state immediately
+    setOfferConfirmations(prev => {
+      const currentConfirmations = prev[candidateId] || [];
+      if (!currentConfirmations.includes(user.id)) {
+        return {
+          ...prev,
+          [candidateId]: [...currentConfirmations, user.id]
+        };
+      }
+      return prev;
+    });
+
+    // Then emit to other users in the room
+    socket.emit("confirmOffer", {
+      groupId: user.group_id,
+      classId: user.class,
+      candidateId,
+      studentId: user.id,
+      roomId: `group_${user.group_id}_class_${user.class}`
+    });
+  };
 
   const handleMakeOffer = () => {
     const selectedIds = Object.entries(checkedState)
       .filter(([_, checked]) => checked)
       .map(([id]) => Number(id));
+    
     if (selectedIds.length !== 1) return;
+    
     const candidateId = selectedIds[0];
+    const confirmations = offerConfirmations[candidateId] || [];
+    if (confirmations.length < groupSize) {
+      setPopup({
+        headline: "Team Confirmation Required",
+        message: `All ${groupSize} team members must confirm before making an offer.`,
+      });
+      return;
+    }
 
     socket?.emit("makeOfferRequest", {
       classId: user!.class,
       groupId: user!.group_id,
       candidateId,
-    });; 
+    });
 
     setPopup({
       headline: "Offer submitted",
@@ -408,6 +529,7 @@ export default function MakeOffer() {
       });
       return;
     }
+    updateProgress(user!, "employer");
     localStorage.setItem("progress", "employerPannel");
     window.location.href = "/dashboard";
   };
@@ -429,143 +551,179 @@ export default function MakeOffer() {
   if (!user || user.affiliation !== "student") return null;
 
   return (
-    <div className="min-h-screen bg-sand font-rubik">
-      {showInstructions && (
-          <Instructions 
-            instructions={offerInstructions}
-            onDismiss={() => setShowInstructions(false)}
-            title="Offer Instructions"
-            progress={4}
+  <div className="min-h-screen bg-sand font-rubik">
+    {showInstructions && (
+      <Instructions 
+        instructions={offerInstructions}
+        onDismiss={() => setShowInstructions(false)}
+        title="Offer Instructions"
+        progress={4}
+      />
+    )}
+
+    <Navbar />
+    <div className="flex-1 flex flex-col px-4 py-8">
+      <div className="w-full p-6">
+        <h1 className="text-3xl font-bold text-center text-navy mb-6">
+          Make an Offer as a Group
+        </h1>
+
+        <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
+          {interviewsWithVideos.map((interview, index) => {
+            const interviewNumber = interview.candidate_id;
+            const votes = voteCounts[interviewNumber];
+
+            const isAccepted = sentIn[interviewNumber] === true;
+            const isRejected = sentIn[interviewNumber] === false;
+
+            return (
+              <div
+                key={interviewNumber}
+                className={`p-6 rounded-lg shadow-md flex flex-col gap-4 ${
+                  isAccepted
+                    ? "bg-green-100 border border-green-500"
+                    : isRejected
+                    ? "bg-red-100 border border-red-300 pointer-events-none"
+                    : "bg-wood"
+                }`}
+              >
+                <h3 className="text-xl font-semibold text-navy text-center">
+                  Candidate {interviewNumber}
+                </h3>
+
+                <div className="aspect-video w-full">
+                  <iframe
+                    className="w-full h-full rounded-lg shadow-md"
+                    src={interview.video_path}
+                    title="Interview Video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+
+                <div className="mt-2 space-y-1 text-navy text-sm">
+                  <p>
+                    <span className="font-medium">Overall:</span> {Math.max(votes.Overall + popupVotes[interviewNumber]?.question1 || 0, 0)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Professional Presence:</span>{" "}
+                    {Math.max(0, votes.Profesionality + popupVotes[interviewNumber]?.question2 || 0 / groupSize)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Quality of Answer:</span>{" "}
+                    {Math.max(0, (votes.Quality + popupVotes[interviewNumber]?.question3 || 0)/ groupSize)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Personality:</span>{" "}
+                    {Math.max(0, (votes.Personality + popupVotes[interviewNumber]?.question4 || 0) / groupSize)}
+                  </p>
+                </div>
+
+                <a
+                  href={`${API_BASE_URL}/${interview.resume_path}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-navy hover:underline ${isRejected ? "pointer-events-none opacity-50" : ""}`}
+                >
+                  View / Download Resume
+                </a>
+
+                {!isRejected && (
+                  <label className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      checked={checkedState[interviewNumber] || false}
+                      onChange={() => handleCheckboxChange(interviewNumber)}
+                      className="h-4 w-4 text-redHeader"
+                    />
+                    <span className="ml-2 text-navy text-sm">Selected for Offer</span>
+                  </label>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {popup && (
+          <Popup
+            headline={popup.headline}
+            message={popup.message}
+            onDismiss={() => setPopup(null)}
           />
         )}
 
-      <Navbar />
-      <div className="flex-1 flex flex-col px-4 py-8">
-        <div className="w-full p-6">
-          <h1 className="text-3xl font-bold text-center text-navy mb-6">
-            Make an Offer as a Group
-          </h1>
+        {selectedCount === 1 && (
+          <div className="flex flex-col items-center my-6 gap-4">
+            {/* Team confirmation status */}
+            <div className="text-center">
+              <p className="text-navy font-medium">
+                Team Confirmation: {confirmationCount}/{groupSize} members ready
+              </p>
+            </div>
 
-          <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
-            {interviewsWithVideos.map((interview, index) => {
-              const interviewNumber = interview.candidate_id;
-              const votes = voteCounts[interviewNumber];
-
-              const isAccepted = sentIn[interviewNumber] === true;
-              const isRejected = sentIn[interviewNumber] === false;
-
-              return (
-                <div
-                  key={interviewNumber}
-                  className={`p-6 rounded-lg shadow-md flex flex-col gap-4 ${
-                    isAccepted
-                      ? "bg-green-100 border border-green-500"
-                      : isRejected
-                      ? "bg-red-100 border border-red-300 pointer-events-none"
-                      : "bg-wood"
+            {/* Confirmation/Offer buttons */}
+            <div className="flex gap-4">
+              {!allConfirmed ? (
+                // Individual confirmation button
+                <button
+                  onClick={() => handleConfirmOffer(selectedCandidateId)}
+                  disabled={hasConfirmed || offerPending}
+                  className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
+                    hasConfirmed
+                      ? "bg-green-500 text-white cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                 >
-                  <h3 className="text-xl font-semibold text-navy text-center">
-                    Candidate {interviewNumber}
-                  </h3>
+                  {hasConfirmed ? `✓ Confirmed (${confirmationCount}/${groupSize})` : 'Confirm Selection'}
+                </button>
+              ) : (
+                // Final offer button (only appears when all confirmed)
+                <button
+                  onClick={handleMakeOffer}
+                  disabled={offerPending}
+                  className={`px-6 py-3 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
+                    offerPending
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-blue-700"
+                  }`}
+                >
+                  {offerPending ? "Awaiting Advisor…" : "Make Team Offer"}
+                </button>
+              )}
+            </div>
 
-                  <div className="aspect-video w-full">
-                    <iframe
-                      className="w-full h-full rounded-lg shadow-md"
-                      src={interview.video_path}
-                      title="Interview Video"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-
-                  <div className="mt-2 space-y-1 text-navy text-sm">
-                    <p>
-                      <span className="font-medium">Overall:</span> {votes.Overall}
-                    </p>
-                    <p>
-                      <span className="font-medium">Professional Presence:</span>{" "}
-                      {votes.Profesionality}
-                    </p>
-                    <p>
-                      <span className="font-medium">Quality of Answer:</span>{" "}
-                      {votes.Quality}
-                    </p>
-                    <p>
-                      <span className="font-medium">Personality:</span>{" "}
-                      {votes.Personality}
-                    </p>
-                  </div>
-
-                  <a
-                    href={`${API_BASE_URL}/${interview.resume_path}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`text-navy hover:underline ${isRejected ? "pointer-events-none opacity-50" : ""}`}
-                  >
-                    View / Download Resume
-                  </a>
-
-                  {!isRejected && (
-                    <label className="flex items-center mt-2">
-                      <input
-                        type="checkbox"
-                        checked={checkedState[interviewNumber] || false}
-                        onChange={() => handleCheckboxChange(interviewNumber)}
-                        className="h-4 w-4 text-redHeader"
-                      />
-                      <span className="ml-2 text-navy text-sm">Selected for Offer</span>
-                    </label>
-                  )}
-                </div>
-              );
-            })}
-            {popup && (
-              <Popup
-                headline={popup.headline}
-                message={popup.message}
-                onDismiss={() => setPopup(null)}
-              />
+            {/* Status message */}
+            {!allConfirmed && confirmationCount > 0 && (
+              <p className="text-sm text-orange-600 text-center">
+                Waiting for {groupSize - confirmationCount} more team member{groupSize - confirmationCount !== 1 ? 's' : ''} to confirm
+              </p>
             )}
           </div>
-          {selectedCount === 1 && (
-            <div className="flex justify-center my-6">
-              <button
-                onClick={handleMakeOffer}
-                disabled={offerPending}
-                className={`px-6 py-3 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
-                  offerPending
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-blue-700"
-                }`}
-              >
-                {offerPending ? "Awaiting Advisor…" : "Make an Offer"}
-              </button>
-            </div>
-          )}
-        </div>
-        <footer className="flex justify-between mt-6">
-          <button
-            onClick={() => (window.location.href = "/jobdes")}
-            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
-            disabled={true}
-          >
-            ← Back: Interview Stage
-          </button>
-          <button
-            onClick={completeMakeOffer}
-            className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
-              !acceptedOffer
-                ? "cursor-not-allowed opacity-50"
-                : "hover:bg-blue-400"
-            }`}
-          >
-            Next: Employer Pannel →
-          </button>
-        </footer>
+        )}
       </div>
-      <Footer />
+
+      {/* Footer navigation buttons */}
+      <footer className="flex justify-between mt-6 px-4">
+        <button
+          onClick={() => (window.location.href = "/jobdes")}
+          className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
+          disabled={true}
+        >
+          ← Back: Interview Stage
+        </button>
+        <button
+          onClick={completeMakeOffer}
+          className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
+            !acceptedOffer
+              ? "cursor-not-allowed opacity-50"
+              : "hover:bg-blue-400"
+          }`}
+        >
+          Next: Employer Pannel →
+        </button>
+      </footer>
     </div>
-  );
-}
+    <Footer />
+  </div>
+)};

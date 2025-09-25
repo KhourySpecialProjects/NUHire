@@ -9,6 +9,7 @@ import io from "socket.io-client";
 import { usePathname } from "next/navigation";
 import Popup from "../components/popup";
 import Slideshow from "../components/slideshow";
+import { useProgressManager } from "../components/progress";
 
 const socket = io(API_BASE_URL); 
 
@@ -16,47 +17,50 @@ interface User {
   email: string;
   affiliation: string;
   job_des: string;
+  class: number;
+  group_id: number;
 }
 
 const Dashboard = () => {
+  const {updateProgress, fetchProgress} = useProgressManager();
   const steps = [
     {
-      key: "jobdes",
+      key: "job_description",
       label: "Job Description",
       path: "/jobdes",
       emoji: "📝",
       desc: "Review your assigned job description."
     },
     {
-      key: "res-review",
+      key: "res_1",
       label: "Resume Review",
       path: "/res-review",
       emoji: "📄",
       desc: "Individually review candidate resumes."
     },
     {
-      key: "res-review-group",
+      key: "res_2",
       label: "Resume Review Group",
       path: "/res-review-group",
       emoji: "👥",
       desc: "Discuss resumes with your group."
     },
     {
-      key: "interview-stage",
+      key: "interview",
       label: "Interview Stage",
       path: "/interview-stage",
       emoji: "🎤",
       desc: "Interview selected candidates."
     },
     {
-      key: "makeOffer",
+      key: "offer",
       label: "Make an Offer",
       path: "/makeOffer",
       emoji: "💼",
       desc: "Decide which candidate to hire."
     },
     {
-      key: "employerPannel",
+      key: "employer",
       label: "Employer Panel",
       path: "/employerPannel",
       emoji: "🚧",
@@ -72,7 +76,7 @@ const Dashboard = () => {
       if (response.ok) {
         console.log("inside response ok refreshDashboardUI");
         setUser(userData);
-        const storedProgress = localStorage.getItem("progress") || "jobdes";
+        const storedProgress = localStorage.getItem("progress") || "job_description";
         setProgress(storedProgress);
         setFlipped(Array(steps.length).fill(false));
       }
@@ -86,7 +90,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-  const [progress, setProgress] = useState<string>("jobdes"); 
+  const [progress, setProgress] = useState<string>("none"); 
   const pathname = usePathname(); 
   const router = useRouter();
 
@@ -97,7 +101,12 @@ const Dashboard = () => {
         const userData = await response.json();
 
         if (response.ok) {
+          console.log("This is from fetchUser", userData);
           setUser(userData);
+          if (progress === "none") {
+            console.log("User for progress", userData);
+            updateProgress(userData, "none");
+          }
         } else {
           setUser(null);
           router.push("/"); 
@@ -112,6 +121,10 @@ const Dashboard = () => {
 
     fetchUser();
   }, [router]);
+
+  useEffect(()  => {
+    console.log("User has changed to ", user)
+  }, [user]);
 
   useEffect(() => {
     if (user && user.email) {
@@ -143,8 +156,9 @@ const Dashboard = () => {
         headline: "You have been assigned a new job!", 
         message: `You are an employer for ${job}!` 
       });
-      localStorage.setItem("progress", "jobdes");
-      setProgress("jobdes");
+      console.log("User for progress in jobUpdated", user);
+      updateProgress(user!, "job_description");
+      setProgress("job_description");
       console.log("about to call refreshDashboardUI");
       await refreshDashboardUI();
       setFlipped(Array(steps.length).fill(false));
@@ -158,12 +172,12 @@ const Dashboard = () => {
       socket.off("jobUpdated");
       socket.off("receivePopup");
     };
-  }, []);
+  }, [user, updateProgress, refreshDashboardUI]);
 
  
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedProgress = localStorage.getItem("progress") || "jobdes";
+      const storedProgress = localStorage.getItem("progress") || "job_description";
       setProgress(storedProgress);
     }
   }, []);
@@ -227,9 +241,9 @@ const Dashboard = () => {
                   title={
                     isEmployerPanel
                       ? "Coming Soon"
-                      : !user?.job_des && step.key !== "jobdes"
+                      : !user?.job_des && step.key !== "job_description"
                       ? "You need to be assigned a job description first."
-                      : step.key === "jobdes" && !user?.job_des
+                      : step.key === "job_description" && !user?.job_des
                       ? "You have not been assigned a job description yet."
                       : !unlocked
                       ? "Complete previous steps to unlock this stage."
