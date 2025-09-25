@@ -401,6 +401,7 @@ app.get('/health', (req, res) => {
 
 const initializeDatabase = () => {
   const queries = [
+    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 1)",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
@@ -520,7 +521,7 @@ io.on("connection", (socket) => {
     // Check if the group_id is in the format "group_X_class_Y"
     const roomMatch = /group_(\d+)_class_(\d+)/.exec(group_id);
     if (roomMatch) {
-        actualGroupId = roomMatch[1]; // The actual group ID
+        actualGroupId = roomMatch[1]; //sThe actual group ID
         classId = roomMatch[2];       // The class ID
     }
     
@@ -769,6 +770,15 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error('Error updating interview popup votes:', error);
     }
+  });
+
+  socket.on("teamConfirmSelection", ({ groupId, classId, studentId, roomId }) => {
+    io.to(roomId).emit("teamConfirmSelection", {
+      groupId,
+      classId,
+      studentId,
+      roomId
+    });
   });
 
   // Listens for the "disconnect" event, which is emitted when a client disconnects from the server

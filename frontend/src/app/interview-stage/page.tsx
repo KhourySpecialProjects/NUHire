@@ -73,8 +73,8 @@ export default function Interview() {
 
   // Use ref to always have access to current interviews state
   const interviewsRef = useRef(interviews);
-  const [groupSubmissions, setGroupSubmissions] = useState(0); // Start at 1 for self
-  const [groupSize, setGroupSize] = useState(0); // Default, update from backend if needed
+  const [groupSubmissions, setGroupSubmissions] = useState(0);
+  const [groupSize, setGroupSize] = useState(0);
   const [groupFinished, setGroupFinished] = useState(false);
 
   const fetchFinished = async () => {
