@@ -231,6 +231,23 @@ CREATE TABLE `Progress` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `Res2_Status`
+--
+
+DROP TABLE IF EXISTS `Res2_Status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Res2_Status` (
+  `student_id` int NOT NULL,
+  `finished` tinyint NOT NULL DEFAULT '0',
+  `group_id` int NOT NULL,
+  `class` int NOT NULL,
+  PRIMARY KEY (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+
 -- Table structure for table `Resume`
 --
 
@@ -345,4 +362,5 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-24  9:59:00
+-- Dump completed on 2025-09-24 11:01:32
+
