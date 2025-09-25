@@ -1,6 +1,7 @@
 'use client';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  console.log("API_BASE_URL:", API_BASE_URL); // Add this line to debug
 
 interface User {
     email: string;
@@ -17,6 +18,8 @@ export const useProgressManager = (): ProgressOperations => {
 
   const fetchProgress = async (user:User): Promise<string> => {
     console.log("fetchProgress called with user:", user);
+    console.log("Full URL being called:", `${API_BASE_URL}/progress/user/${user.email}`); // Add this
+
 
     if (!user?.email) {
       console.log('fetchProgress: No user email found after loading');
@@ -45,6 +48,7 @@ export const useProgressManager = (): ProgressOperations => {
 
   const updateProgress = async (user: User, step: string): Promise<void> => {
     console.log("updateProgress called with user:", user, "and step:", step);
+    console.log("Full URL being called:", `${API_BASE_URL}/progress`); // Add this
 
     if (!user?.email) {
         console.log('updateProgress: No user email found, cannot update progress');
