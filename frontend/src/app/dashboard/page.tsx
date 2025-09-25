@@ -76,6 +76,10 @@ const Dashboard = () => {
       if (response.ok) {
         console.log("inside response ok refreshDashboardUI");
         setUser(userData);
+        
+        // Refresh job description
+        await fetchJobDescription(userData);
+        
         const storedProgress = localStorage.getItem("progress") || "job_description";
         setProgress(storedProgress);
         setFlipped(Array(steps.length).fill(false));
@@ -94,6 +98,38 @@ const Dashboard = () => {
   const pathname = usePathname(); 
   const router = useRouter();
 
+  const [jobDescription, setJobDescription] = useState<string | null>(null);
+  const [jobLoading, setJobLoading] = useState(true);
+
+  const fetchJobDescription = async (user: User) => {
+    if (!user?.group_id || !user?.class) {
+      setJobDescription(null);
+      setJobLoading(false);
+      return;
+    }
+
+    try {
+      setJobLoading(true);
+      const response = await fetch(`${API_BASE_URL}/job-assignment/${user.group_id}/${user.class}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setJobDescription(data.job);
+      } else if (response.status === 404) {
+        // No job assignment found
+        setJobDescription(null);
+      } else {
+        console.error("Error fetching job description:", response.statusText);
+        setJobDescription(null);
+      }
+    } catch (error) {
+      console.error("Error fetching job description:", error);
+      setJobDescription(null);
+    } finally {
+      setJobLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -103,6 +139,10 @@ const Dashboard = () => {
         if (response.ok) {
           console.log("This is from fetchUser", userData);
           setUser(userData);
+          
+          // Fetch job description for this user
+          await fetchJobDescription(userData);
+          
           if (progress === "none") {
             console.log("User for progress", userData);
             updateProgress(userData, "none");
@@ -162,6 +202,11 @@ const Dashboard = () => {
       console.log("about to call refreshDashboardUI");
       await refreshDashboardUI();
       setFlipped(Array(steps.length).fill(false));
+      
+      // Refresh job description after job update
+      if (user) {
+        await fetchJobDescription(user);
+      }
     });
 
     socket.on("receivePopup", ({ headline, message }) => {
@@ -173,7 +218,6 @@ const Dashboard = () => {
       socket.off("receivePopup");
     };
   }, [user, updateProgress, refreshDashboardUI]);
-
  
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -183,7 +227,7 @@ const Dashboard = () => {
   }, []);
 
   const isStepUnlocked = (stepKey: string) => {
-    if (!user?.job_des) {
+    if (!jobDescription) {
       return false;
     }
     const stepIndex = steps.findIndex(step => step.key === stepKey);
@@ -241,9 +285,9 @@ const Dashboard = () => {
                   title={
                     isEmployerPanel
                       ? "Coming Soon"
-                      : !user?.job_des && step.key !== "job_description"
+                      : !jobDescription && step.key !== "job_description"
                       ? "You need to be assigned a job description first."
-                      : step.key === "job_description" && !user?.job_des
+                      : step.key === "job_description" && !jobDescription
                       ? "You have not been assigned a job description yet."
                       : !unlocked
                       ? "Complete previous steps to unlock this stage."
