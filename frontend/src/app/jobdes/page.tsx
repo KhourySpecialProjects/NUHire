@@ -34,7 +34,6 @@ interface CommentType {
 
 interface User { 
   email: string;
-  job_des: string;
   class: number;
   group_id: number;
 }
@@ -116,34 +115,59 @@ export default function JobDescriptionPage() {
   }, [user, pathname]);
 
 
+  // Update your fetchJob useEffect in jobdes/page.tsx
   useEffect(() => {
     const fetchJob = async () => {
-      if (!user || !user.job_des) {
+      if (!user?.group_id || !user?.class) {
+        console.log("No user group_id or class found");
         setLoading(false);
         return; 
       }
       
       try {
-        const response = await fetch(`${API_BASE_URL}/jobdes/title?title=${encodeURIComponent(user.job_des)}`, {
+        // First, get the job assignment for this group/class
+        console.log(`Fetching job assignment for group ${user.group_id} in class ${user.class}`);
+        const jobAssignmentResponse = await fetch(
+          `${API_BASE_URL}/job-assignment/${user.group_id}/${user.class}`,
+          { credentials: "include" }
+        );
+
+        if (!jobAssignmentResponse.ok) {
+          console.log("No job assignment found for this group");
+          setLoading(false);
+          return;
+        }
+
+        const jobAssignmentData = await jobAssignmentResponse.json();
+      const jobTitle = jobAssignmentData.job;
+        console.log("Found job assignment:", jobTitle);
+
+        // Then fetch the PDF file using the job title
+        const response = await fetch(`${API_BASE_URL}/jobdes/title?title=${encodeURIComponent(jobTitle)}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
-  
+
         if (!response.ok) {
-          throw new Error("Failed to fetch job description");
+          throw new Error("Failed to fetch job description PDF");
         }
-  
+
         const job = await response.json();
+        console.log("Job PDF data:", job);
         setJob(`${API_BASE_URL}/${job.file_path}`);
       } catch (error) {
         console.error("Error fetching job description:", error);
+        setPopup({
+          headline: "No Job Assignment",
+          message: "You haven't been assigned a job description yet. Please contact your instructor."
+        });
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchJob();
-  }, [user]); 
+  }, [user]);
 
 
       useEffect(() => {
