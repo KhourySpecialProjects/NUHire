@@ -530,7 +530,7 @@ export default function MakeOffer() {
       return;
     }
     updateProgress(user!, "employer");
-    localStorage.setItem("progress", "employerPannel");
+    localStorage.setItem("progress", "employer");
     window.location.href = "/dashboard";
   };
 

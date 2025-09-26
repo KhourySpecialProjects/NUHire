@@ -164,7 +164,7 @@ export default function ResReviewGroup() {
       if (user && groupId === user.group_id && classId === user.class) {
         console.log(`Group navigation triggered: moving to ${targetPage}`);
         updateProgress(user, "interview");
-        localStorage.setItem("progress", "interview-stage");
+        localStorage.setItem("progress", "interview");
         window.location.href = targetPage; 
       }
     });
@@ -366,7 +366,7 @@ export default function ResReviewGroup() {
       return;
     }
 
-    localStorage.setItem("progress", "interview-stage")
+    localStorage.setItem("progress", "interview")
     updateProgress(user!, "interview");
     window.location.href = "/interview-stage"; 
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/interview-stage"});

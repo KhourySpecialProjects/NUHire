@@ -379,7 +379,7 @@ export default function JobDescriptionPage() {
           <button
             onClick={() => {
               updateProgress(user, "res_1");
-              localStorage.setItem("progress", "res-review");
+              localStorage.setItem("progress", "res_1");
               window.location.href = '/res-review';
             }}
             className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"

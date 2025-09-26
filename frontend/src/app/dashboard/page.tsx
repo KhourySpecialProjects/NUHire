@@ -82,6 +82,7 @@ const Dashboard = () => {
         
         // Fetch current progress from server instead of localStorage
         const currentProgress = await fetchProgress(userData);
+        
         setProgress(currentProgress);
         localStorage.setItem("progress", currentProgress);
         
@@ -140,16 +141,23 @@ const Dashboard = () => {
         const userData = await response.json();
 
         if (response.ok) {
-          console.log("This is from fetchUser", userData);
+          console.log("=== INITIAL USER FETCH ===");
+          console.log("User data:", userData);
           setUser(userData);
           
           // Fetch job description for this user
           await fetchJobDescription(userData);
           
-          if (progress === "none") {
-            console.log("User for progress", userData);
-            updateProgress(userData, "none");
-          }
+          // Fetch actual progress from database instead of assuming "none"
+          const currentProgress = await fetchProgress(userData);
+          console.log("Fetched progress from database:", currentProgress);
+          
+          // Set progress to what's actually in the database
+          setProgress(currentProgress);
+          localStorage.setItem("progress", currentProgress);
+          
+          console.log("Progress set to:", currentProgress);
+          
         } else {
           setUser(null);
           router.push("/"); 
@@ -163,7 +171,7 @@ const Dashboard = () => {
     };
 
     fetchUser();
-  }, [router]);
+  }, [router, fetchJobDescription, fetchProgress]);
 
   useEffect(()  => {
     console.log("User has changed to ", user)
@@ -229,20 +237,35 @@ const Dashboard = () => {
     socket.off("receivePopup");
   };
 }, [user, updateProgress, refreshDashboardUI]);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedProgress = localStorage.getItem("progress") || "job_description";
-      setProgress(storedProgress);
-    }
-  }, []);
 
   const isStepUnlocked = (stepKey: string) => {
-    if (!jobDescription) {
+    console.log(`Checking if step '${stepKey}' is unlocked. Current progress: '${progress}', Job Description: ${jobDescription}`);
+    
+    // If no job description assigned, block all steps except job_description
+    if (!jobDescription && stepKey !== "job_description") {
+      console.log(`No job description and step is not job_description, blocking ${stepKey}`);
       return false;
     }
+    
+    // If it's the job_description step but no job assigned, block it
+    if (stepKey === "job_description" && !jobDescription) {
+      console.log(`Job description step but no job assigned, blocking`);
+      return false;
+    }
+    
+    // If progress is "none", only allow job_description step if job is assigned
+    if (progress === "none") {
+      return stepKey === "job_description" && jobDescription;
+    }
+    
     const stepIndex = steps.findIndex(step => step.key === stepKey);
     const progressIndex = steps.findIndex(step => step.key === progress);
-    return stepIndex <= progressIndex;
+    
+    console.log(`Step '${stepKey}' index: ${stepIndex}, Progress '${progress}' index: ${progressIndex}`);
+    
+    const unlocked = stepIndex <= progressIndex;
+    console.log(`Step '${stepKey}' unlocked: ${unlocked}`);
+    return unlocked;
   };
 
   const [flipped, setFlipped] = useState(Array(steps.length).fill(false));
