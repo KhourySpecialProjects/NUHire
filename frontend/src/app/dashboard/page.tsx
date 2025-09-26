@@ -80,8 +80,11 @@ const Dashboard = () => {
         // Refresh job description
         await fetchJobDescription(userData);
         
-        const storedProgress = localStorage.getItem("progress") || "job_description";
-        setProgress(storedProgress);
+        // Fetch current progress from server instead of localStorage
+        const currentProgress = await fetchProgress(userData);
+        setProgress(currentProgress);
+        localStorage.setItem("progress", currentProgress);
+        
         setFlipped(Array(steps.length).fill(false));
       }
       else {
@@ -189,36 +192,43 @@ const Dashboard = () => {
   }, [user, pathname]);
 
 
-  useEffect(() => {
-    socket.on("jobUpdated", async ({ job }) => {
-      localStorage.removeItem("pdf-comments");
-      setPopup({ 
-        headline: "You have been assigned a new job!", 
-        message: `You are an employer for ${job}!` 
-      });
-      console.log("User for progress in jobUpdated", user);
-      updateProgress(user!, "job_description");
-      setProgress("job_description");
-      console.log("about to call refreshDashboardUI");
-      await refreshDashboardUI();
-      setFlipped(Array(steps.length).fill(false));
-      
-      // Refresh job description after job update
-      if (user) {
-        await fetchJobDescription(user);
-      }
+ useEffect(() => {
+  socket.on("jobUpdated", async ({ job }) => {
+    localStorage.removeItem("pdf-comments");
+    setPopup({ 
+      headline: "You have been assigned a new job!", 
+      message: `You are an employer for ${job}!` 
     });
+    console.log("User for progress in jobUpdated", user);
+    
+    // Update progress on server
+    await updateProgress(user!, "job_description");
+    
+    // Update local progress state - ADD THIS LINE
+    setProgress("job_description");
+    
+    // Store in localStorage
+    localStorage.setItem("progress", "job_description");
+    
+    console.log("about to call refreshDashboardUI");
+    await refreshDashboardUI();
+    setFlipped(Array(steps.length).fill(false));
+    
+    // Refresh job description after job update
+    if (user) {
+      await fetchJobDescription(user);
+    }
+  });
 
-    socket.on("receivePopup", ({ headline, message }) => {
-      setPopup({ headline, message });
-    });
+  socket.on("receivePopup", ({ headline, message }) => {
+    setPopup({ headline, message });
+  });
 
-    return () => {
-      socket.off("jobUpdated");
-      socket.off("receivePopup");
-    };
-  }, [user, updateProgress, refreshDashboardUI]);
- 
+  return () => {
+    socket.off("jobUpdated");
+    socket.off("receivePopup");
+  };
+}, [user, updateProgress, refreshDashboardUI]);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedProgress = localStorage.getItem("progress") || "job_description";
