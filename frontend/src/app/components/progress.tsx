@@ -1,7 +1,6 @@
 'use client';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-  console.log("API_BASE_URL:", API_BASE_URL); // Add this line to debug
 
 interface User {
     email: string;
@@ -15,6 +14,7 @@ interface ProgressOperations {
 }
 
 export const useProgressManager = (): ProgressOperations => {
+  console.log("API_BASE_URL:", API_BASE_URL); // Add this line to debug
 
   const fetchProgress = async (user:User): Promise<string> => {
     console.log("fetchProgress called with user:", user);
