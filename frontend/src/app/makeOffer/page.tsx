@@ -589,7 +589,7 @@ export default function MakeOffer() {
     });
   };
 
-  const handleMakeOffer = () => {
+  const handleMakeOffer = async () => {
     const selectedIds = Object.entries(checkedState)
       .filter(([_, checked]) => checked)
       .map(([id]) => Number(id));
@@ -606,17 +606,52 @@ export default function MakeOffer() {
       return;
     }
 
-    socket?.emit("makeOfferRequest", {
-      classId: user!.class,
-      groupId: user!.group_id,
-      candidateId,
-    });
+    try {
+      // Submit offer to database FIRST
+      const response = await fetch(`${API_BASE_URL}/offers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          group_id: user!.group_id,
+          class_id: user!.class,
+          candidate_id: candidateId,
+        })
+      });
 
-    setPopup({
-      headline: "Offer submitted",
-      message: "Awaiting approval from your advisor…",
-    });
-    setOfferPending(true);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setPopup({
+          headline: "Error",
+          message: result.error || "Failed to submit offer",
+        });
+        return;
+      }
+
+      console.log("Offer successfully submitted to database:", result);
+
+      // THEN emit socket event for real-time updates
+      socket?.emit("makeOfferRequest", {
+        classId: user!.class,
+        groupId: user!.group_id,
+        candidateId,
+      });
+
+      setPopup({
+        headline: "Offer submitted",
+        message: "Awaiting approval from your advisor…",
+      });
+      setOfferPending(true);
+
+    } catch (error) {
+      console.error("Error submitting offer:", error);
+      setPopup({
+        headline: "Error",
+        message: "Failed to submit offer. Please try again.",
+      });
+    }
   };
 
   const completeMakeOffer = () => {
@@ -679,10 +714,6 @@ export default function MakeOffer() {
 
             const isAccepted = sentIn[interviewNumber] === true;
             const isRejected = sentIn[interviewNumber] === false;
-
-            console.log(`Candidate ${interviewNumber} votes:`, votes);
-            console.log(`Candidate ${interviewNumber} popup votes:`, popupVotes[interviewNumber]);
-
             return (
               <div
                 key={interviewNumber}
