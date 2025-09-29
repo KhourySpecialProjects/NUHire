@@ -185,34 +185,72 @@ export default function MakeOffer() {
   }, [user]);
 
   useEffect(() => {
-    if (!interviews.length) return;
+    console.log("=== fetchCandidates useEffect triggered ===");
+    console.log("Interviews length:", interviews.length);
+    console.log("Interviews data:", interviews);
+    
+    if (!interviews.length) {
+      console.log("No interviews found, returning early");
+      return;
+    }
 
     const fetchCandidates = async () => {
-      console.log("trying to fetch candidates");
+      console.log("=== Starting fetchCandidates async function ===");
+      console.log("Number of interviews to process:", interviews.length);
+      
       try {
         const fetchedCandidates = await Promise.all(
-          interviews.map(async (interview) => {
+          interviews.map(async (interview, index) => {
             const id = interview.candidate_id;
-            const res = await fetch(`${API_BASE_URL}/canidates/${id}`);
+            const url = `${API_BASE_URL}/canidates/${id}`;
+            
+            console.log(`Fetching candidate ${index + 1}/${interviews.length}:`);
+            console.log("  Interview data:", interview);
+            console.log("  Candidate ID:", id);
+            console.log("  Fetch URL:", url);
+            
+            const res = await fetch(url);
+            console.log(`  Response status for candidate ${id}:`, res.status);
+            console.log(`  Response ok for candidate ${id}:`, res.ok);
 
             if (!res.ok) {
+              console.error(`  ❌ Invalid response for candidate ${id}:`, {
+                status: res.status,
+                statusText: res.statusText,
+                url: url
+              });
               throw new Error(
                 `Invalid response for candidate ${interview.candidate_id}`
               );
             }
 
+            console.log(`  ✅ Successful response for candidate ${id}, parsing JSON...`);
             const data = await res.json();
+            console.log(`  Parsed data for candidate ${id}:`, data);
+            
             return data;
           })
         );
 
-        console.log("Setting candidates:", fetchedCandidates);
+        console.log("=== All candidates fetched successfully ===");
+        console.log("Total candidates fetched:", fetchedCandidates.length);
+        console.log("Fetched candidates data:", fetchedCandidates);
+        console.log("Setting candidates state...");
+        
         setCandidates(fetchedCandidates); // triggers re-render
+        
+        console.log("✅ Candidates state updated successfully");
+        
       } catch (err) {
-        console.error("Error fetching candidates:", err);
+        console.error("=== Error in fetchCandidates ===");
+        console.error("Error type:", typeof err);
+        console.error("Error message:", err instanceof Error ? err.message : err);
+        console.error("Full error object:", err);
+        console.error("Current interviews that caused error:", interviews);
       }
     };
 
+    console.log("Calling fetchCandidates function...");
     fetchCandidates();
   }, [interviews]);
 
