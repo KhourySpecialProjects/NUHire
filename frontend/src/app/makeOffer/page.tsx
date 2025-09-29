@@ -669,7 +669,7 @@ export default function MakeOffer() {
 
         <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
           {interviewsWithVideos.map((interview, index) => {
-            const interviewNumber = interview.candidate_id;
+            const interviewNumber = interview.resume_id;
             const votes = voteCounts[interviewNumber];
 
             const isAccepted = sentIn[interviewNumber] === true;
