@@ -209,44 +209,88 @@ export default function MakeOffer() {
             console.log("  Candidate ID:", id);
             console.log("  Fetch URL:", url);
             
-            const res = await fetch(url);
-            console.log(`  Response status for candidate ${id}:`, res.status);
-            console.log(`  Response ok for candidate ${id}:`, res.ok);
+            try {
+              const res = await fetch(url);
+              console.log(`  Response status for candidate ${id}:`, res.status);
+              console.log(`  Response ok for candidate ${id}:`, res.ok);
 
-            if (!res.ok) {
-              console.error(`  ❌ Invalid response for candidate ${id}:`, {
-                status: res.status,
-                statusText: res.statusText,
-                url: url
-              });
-              throw new Error(
-                `Invalid response for candidate ${interview.candidate_id}`
-              );
+              if (!res.ok) {
+                console.error(`  ❌ Invalid response for candidate ${id}:`, {
+                  status: res.status,
+                  statusText: res.statusText,
+                  url: url
+                });
+                throw new Error(`Invalid response for candidate ${id}: ${res.status}`);
+              }
+
+              console.log(`  ✅ Successful response for candidate ${id}, checking response body...`);
+              
+              // Get response as text first to check if it's empty
+              const responseText = await res.text();
+              console.log(`  Raw response text for candidate ${id}:`, responseText);
+              console.log(`  Response text length for candidate ${id}:`, responseText.length);
+              
+              if (!responseText || responseText.trim() === '') {
+                console.error(`  ❌ Empty response for candidate ${id}`);
+                // Return a default candidate object instead of throwing
+                return {
+                  id: id,
+                  resume_id: null,
+                  interview: "https://www.youtube.com/embed/srw4r3htm4U",
+                  error: "No data found"
+                };
+              }
+              
+              try {
+                const data = JSON.parse(responseText);
+                console.log(`  ✅ Parsed data for candidate ${id}:`, data);
+                return data;
+              } catch (parseError) {
+                console.error(`  ❌ JSON parse error for candidate ${id}:`, parseError);
+                console.error(`  Response text that failed to parse:`, responseText);
+                // Return a default candidate object instead of throwing
+                return {
+                  id: id,
+                  resume_id: null,
+                  interview: "https://www.youtube.com/embed/srw4r3htm4U",
+                  error: "Invalid JSON response"
+                };
+              }
+            } catch (fetchError) {
+              console.error(`  ❌ Fetch error for candidate ${id}:`, fetchError);
+              // Return a default candidate object instead of throwing
+              return {
+                id: id,
+                resume_id: null,
+                interview: "https://www.youtube.com/embed/srw4r3htm4U",
+                error: "Fetch failed"
+              };
             }
-
-            console.log(`  ✅ Successful response for candidate ${id}, parsing JSON...`);
-            const data = await res.json();
-            console.log(`  Parsed data for candidate ${id}:`, data);
-            
-            return data;
           })
         );
 
-        console.log("=== All candidates fetched successfully ===");
+        console.log("=== All candidates fetched (some may have errors) ===");
         console.log("Total candidates fetched:", fetchedCandidates.length);
         console.log("Fetched candidates data:", fetchedCandidates);
-        console.log("Setting candidates state...");
         
-        setCandidates(fetchedCandidates); // triggers re-render
+        // Filter out candidates with errors if you want, or keep them with default data
+        const validCandidates = fetchedCandidates.filter(candidate => !candidate.error);
+        console.log("Valid candidates:", validCandidates.length);
+        
+        // Set all candidates (including those with errors/defaults)
+        setCandidates(fetchedCandidates);
         
         console.log("✅ Candidates state updated successfully");
         
       } catch (err) {
-        console.error("=== Error in fetchCandidates ===");
+        console.error("=== Unexpected error in fetchCandidates ===");
         console.error("Error type:", typeof err);
         console.error("Error message:", err instanceof Error ? err.message : err);
         console.error("Full error object:", err);
         console.error("Current interviews that caused error:", interviews);
+        
+        // Set candidates to empty array to prevent UI issues
+        setCandidates([]);
       }
     };
 
@@ -254,7 +298,7 @@ export default function MakeOffer() {
     fetchCandidates();
   }, [interviews]);
 
-   useEffect(() => {
+  useEffect(() => {
     const handleShowInstructions = () => {
       console.log("Help button clicked - showing instructions");
       setShowInstructions(true);
