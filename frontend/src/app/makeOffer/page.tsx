@@ -320,21 +320,25 @@ export default function MakeOffer() {
             }
 
             const data = await res.json();
-            return data;
+            console.log("Raw resume data:", data);
+            
+            // Fix: If data is an array, take the first element
+            const resumeData = Array.isArray(data) ? data[0] : data;
+            return resumeData;
           })
         );
 
-        console.log("Setting candidates:", fetchedResumes);
+        console.log("Setting resumes:", fetchedResumes);
         setResumes(fetchedResumes);
         console.log("Resumes set:", fetchedResumes);
       } catch (err) {
-        console.error("Error fetching candidates:", err);
+        console.error("Error fetching resumes:", err);
       }
     };
 
     fetchResumes();
   }, [candidates]);
-
+  
   const groupInterviewsByCandidate = (interviews: any[]) => {
     const grouped: { [candidate_id: number]: any[] } = {};
     for (const interview of interviews) {
@@ -406,6 +410,7 @@ export default function MakeOffer() {
       }
 
       // Now find the resume using the candidate's resume_id
+      console.log("candidate res id", candidate.resume_id)
       const resume = resumes.find((r) => r.id === candidate.resume_id);
       console.log(`Looking for resume with id ${candidate.resume_id}:`, resume);
       
@@ -418,7 +423,7 @@ export default function MakeOffer() {
 
     setInterviewsWithVideos(merged);
     console.log("interviewsWithVideos: ", merged);
-  }, [resumes]); // Add all dependencies
+  }, [resumes]);
 
   // Setup socket.io
   useEffect(() => {
