@@ -188,6 +188,7 @@ export default function MakeOffer() {
     if (!interviews.length) return;
 
     const fetchCandidates = async () => {
+      console.log("trying to fetch candidates");
       try {
         const fetchedCandidates = await Promise.all(
           interviews.map(async (interview) => {
