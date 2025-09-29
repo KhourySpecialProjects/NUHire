@@ -418,7 +418,7 @@ export default function MakeOffer() {
 
     setInterviewsWithVideos(merged);
     console.log("interviewsWithVideos: ", merged);
-  }, [interviews, candidates, resumes]); // Add all dependencies
+  }, [resumes]); // Add all dependencies
 
   // Setup socket.io
   useEffect(() => {
