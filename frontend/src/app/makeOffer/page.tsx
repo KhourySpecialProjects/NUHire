@@ -392,6 +392,7 @@ export default function MakeOffer() {
     // Create a mapping of candidate_id from interviews to actual candidate data
     const merged = interviews.map((interview) => {
       console.log("Processing interview:", interview);
+      console.log("The candidates given: ", candidates)
       
       // Find the candidate that matches this interview's candidate_id
       // The interview.candidate_id should match the fetched candidate's ID
