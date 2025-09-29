@@ -2060,13 +2060,13 @@ app.get("/job-assignment/:groupId/:classId", (req, res) => {
 
 // POST - Students submit an offer
 app.post("/offers", (req, res) => {
-  const { group_id, class_id, candidate_id, student_id, status } = req.body;
+  const { group_id, class_id, candidate_id, status } = req.body;
   
-  console.log("Creating new offer:", { group_id, class_id, candidate_id, student_id });
+  console.log("Creating new offer:", { group_id, class_id, candidate_id, status });
   
   db.query(
-    "INSERT INTO Offers (group_id, class_id, candidate_id, student_id, status) VALUES (?, ?, ?, ?, 'pending') ON DUPLICATE KEY UPDATE status = ?",
-    [group_id, class_id, candidate_id, student_id, status],
+    "INSERT INTO Offers (group_id, class_id, candidate_id, status) VALUES (?, ?, ?, ?)",
+    [group_id, class_id, candidate_id, status],
     (err, result) => {
       if (err) {
         console.error("Error creating offer:", err);

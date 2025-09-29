@@ -613,8 +613,8 @@ export default function MakeOffer() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          group: user!.group_id,
-          class: user!.class,
+          group_id: user!.group_id,
+          class_id: user!.class,
           candidate_id: candidateId,
           status: 'pending'
         })
