@@ -381,49 +381,27 @@ export default function MakeOffer() {
   }, [interviews, user]);
 
   useEffect(() => {
-    console.log("=== Merge interviews with videos useEffect triggered ===");
-    console.log("Interviews length:", interviews.length, "Candidates length:", candidates.length);
-    
-    if (!interviews.length || !candidates.length) {
-      console.log("Missing interviews or candidates, returning early");
-      return;
-    }
+    if (!interviews.length || !candidates.length) return;
+    console.log("interviews: ", interviews);
+    console.log("candidates: ", candidates);
 
-    // Create a mapping of candidate_id from interviews to actual candidate data
-    const merged = interviews.map((interview) => {
-      console.log("Processing interview:", interview);
-      console.log("The candidates given: ", candidates)
-      
-      // Find the candidate that matches this interview's candidate_id
-      // The interview.candidate_id should match the fetched candidate's ID
-      const candidate = candidates.find((c) => c.id === interview.resume_id);
-      console.log("Found candidate for interview candidate_id", interview.resume_id, ":", candidate);
-      
-      if (!candidate) {
-        console.warn("No candidate found for interview candidate_id:", interview.resume_id);
-        return {
-          candidate_id: interview.resume_id,
-          video_path: "https://www.youtube.com/embed/srw4r3htm4U", // fallback
-          resume_path: "uploads/resumes/sample1.pdf", // fallback
-        };
-      }
+    const uniqueCandidateIds = [
+      ...new Set(interviews.map((i) => i.candidate_id)),
+    ];
 
-      const resume = resumes.find((r) => r.id === candidate.resume_id);
-      console.log("Found resume for candidate resume_id", candidate.resume_id, ":", resume);
-      
-      const mergedData = {
-        candidate_id: interview.resume_id, // Use the interview's candidate_id for consistency
-        video_path: candidate.interview || "https://www.youtube.com/embed/srw4r3htm4U",
+    const merged = uniqueCandidateIds.map((id) => {
+      const candidate = candidates.find((c) => c.id === id);
+      const resume = resumes.find((r) => r.id === candidate?.resume_id);
+      return {
+        candidate_id: id,
+        video_path:
+          candidate?.interview || "https://www.youtube.com/embed/srw4r3htm4U",
         resume_path: resume?.file_path || "uploads/resumes/sample1.pdf",
       };
-      
-      console.log("Merged data for candidate", interview.resume_id, ":", mergedData);
-      return mergedData;
     });
 
-    console.log("Final merged interviews with videos:", merged);
     setInterviewsWithVideos(merged);
-  }, [interviews, candidates, resumes]); // Add resumes as dependency
+  }, [interviews, candidates]);
 
   // Setup socket.io
   useEffect(() => {
