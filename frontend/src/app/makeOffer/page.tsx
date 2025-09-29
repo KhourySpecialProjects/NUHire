@@ -391,13 +391,13 @@ export default function MakeOffer() {
       ...new Set(interviews.map((i) => i.candidate_id)),
     ];
 
-    const merged = uniqueCandidateIds.map((id) => {
-      const candidate = candidates.find((c) => c.resume_id === id);
+    const merged = uniqueCandidateIds.map((idd) => {
+      const candidate = candidates.find((c) => c.resume_id === idd);
       console.log("candidate we are on", candidate)
       const resume = resumes.find((r) => r.id === candidate.resume_id);
       console.log("res we are on", resume)
       return {
-        candidate_id: id,
+        candidate_id: idd,
         video_path:
           candidate?.interview || "https://www.youtube.com/embed/srw4r3htm4U",
         resume_path: resume?.file_path || "uploads/resumes/sample1.pdf",
