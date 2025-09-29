@@ -2065,7 +2065,7 @@ app.post("/offers", (req, res) => {
   console.log("Creating new offer:", { group_id, class_id, candidate_id, status });
   
   db.query(
-    "INSERT INTO Offers (group, class, candidate_id, status) VALUES (?, ?, ?, ?)",
+    "INSERT INTO Offers (group_id, class_id, candidate_id, status) VALUES (?, ?, ?, ?)",
     [group_id, class_id, candidate_id, status],
     (err, result) => {
       if (err) {
@@ -2089,7 +2089,7 @@ app.get("/offers/pending/:class_id", (req, res) => {
   
   console.log("Fetching pending offers for class:", class_id);
   
-  const query = `SELECT * FROM Offers WHERE class = ?`;
+  const query = `SELECT * FROM Offers WHERE class_id = ?`;
   
   db.query(query, [class_id], (err, results) => {
     if (err) {
@@ -2104,9 +2104,7 @@ app.get("/offers/pending/:class_id", (req, res) => {
 
 app.put("/offers/:offer_id", (req, res) => {
   const { offer_id } = req.params;
-  
-  console.log("Updating offer:", { offer_id, status, advisor_comments });
-  
+    
   if (!['approved', 'rejected'].includes(status)) {
     return res.status(400).json({ error: "Status must be 'approved' or 'rejected'" });
   }
