@@ -402,8 +402,9 @@ export default function JobDescriptionPage() {
         <div className="flex justify-end mt-4 mb-4 mr-4">
           <button
             onClick={() => {
-              updateProgress(user, "res_1");
+              upxdateProgress(user, "res_1");
               localStorage.setItem("progress", "res_1");
+              console.log("Progress updated to res_1");
               window.location.href = '/res-review';
             }}
             className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
