@@ -325,7 +325,8 @@ export default function MakeOffer() {
         );
 
         console.log("Setting candidates:", fetchedResumes);
-        setResumes(fetchedResumes); // triggers re-render
+        setResumes(fetchedResumes);
+        console.log("Resumes set:", fetchedResumes);
       } catch (err) {
         console.error("Error fetching candidates:", err);
       }
@@ -403,7 +404,7 @@ export default function MakeOffer() {
 
     setInterviewsWithVideos(merged);
     console.log("interviewsWithVideos: ", merged);
-  }, [interviews, candidates]);
+  }, [resumes]);
 
   // Setup socket.io
   useEffect(() => {
