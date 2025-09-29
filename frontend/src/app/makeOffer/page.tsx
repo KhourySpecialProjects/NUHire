@@ -396,13 +396,13 @@ export default function MakeOffer() {
       
       // Find the candidate that matches this interview's candidate_id
       // The interview.candidate_id should match the fetched candidate's ID
-      const candidate = candidates.find((c) => c.id === interview.candidate_id);
-      console.log("Found candidate for interview candidate_id", interview.candidate_id, ":", candidate);
+      const candidate = candidates.find((c) => c.id === interview.resume_id);
+      console.log("Found candidate for interview candidate_id", interview.resume_id, ":", candidate);
       
       if (!candidate) {
-        console.warn("No candidate found for interview candidate_id:", interview.candidate_id);
+        console.warn("No candidate found for interview candidate_id:", interview.resume_id);
         return {
-          candidate_id: interview.candidate_id,
+          candidate_id: interview.resume_id,
           video_path: "https://www.youtube.com/embed/srw4r3htm4U", // fallback
           resume_path: "uploads/resumes/sample1.pdf", // fallback
         };
@@ -412,12 +412,12 @@ export default function MakeOffer() {
       console.log("Found resume for candidate resume_id", candidate.resume_id, ":", resume);
       
       const mergedData = {
-        candidate_id: interview.candidate_id, // Use the interview's candidate_id for consistency
+        candidate_id: interview.resume_id, // Use the interview's candidate_id for consistency
         video_path: candidate.interview || "https://www.youtube.com/embed/srw4r3htm4U",
         resume_path: resume?.file_path || "uploads/resumes/sample1.pdf",
       };
       
-      console.log("Merged data for candidate", interview.candidate_id, ":", mergedData);
+      console.log("Merged data for candidate", interview.resume_id, ":", mergedData);
       return mergedData;
     });
 
