@@ -384,13 +384,14 @@ export default function MakeOffer() {
     if (!interviews.length || !candidates.length) return;
     console.log("interviews: ", interviews);
     console.log("candidates: ", candidates);
+    console.log("resumes: ", resumes);
 
     const uniqueCandidateIds = [
       ...new Set(interviews.map((i) => i.candidate_id)),
     ];
 
     const merged = uniqueCandidateIds.map((id) => {
-      const candidate = candidates.find((c) => c.id === id);
+      const candidate = candidates.find((c) => c.resume_id === id);
       const resume = resumes.find((r) => r.id === candidate?.resume_id);
       return {
         candidate_id: id,
