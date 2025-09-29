@@ -220,76 +220,68 @@ export default function MakeOffer() {
                   statusText: res.statusText,
                   url: url
                 });
-                throw new Error(`Invalid response for candidate ${id}: ${res.status}`);
+                throw new Error(
+                  `Invalid response for candidate ${interview.candidate_id}: ${res.status}`
+                );
               }
 
-              console.log(`  ✅ Successful response for candidate ${id}, checking response body...`);
+              // Check if response has content
+              const contentType = res.headers.get('content-type');
+              if (!contentType || !contentType.includes('application/json')) {
+                console.error(`  ❌ Invalid content-type for candidate ${id}:`, contentType);
+                throw new Error(`Invalid content-type for candidate ${id}: ${contentType}`);
+              }
+
+              console.log(`  ✅ Successful response for candidate ${id}, parsing JSON...`);
               
-              // Get response as text first to check if it's empty
+              // Get response text first to debug
               const responseText = await res.text();
-              console.log(`  Raw response text for candidate ${id}:`, responseText);
-              console.log(`  Response text length for candidate ${id}:`, responseText.length);
+              console.log(`  Raw response for candidate ${id}:`, responseText);
               
-              if (!responseText || responseText.trim() === '') {
+              if (!responseText.trim()) {
                 console.error(`  ❌ Empty response for candidate ${id}`);
-                // Return a default candidate object instead of throwing
-                return {
-                  id: id,
-                  resume_id: null,
-                  interview: "https://www.youtube.com/embed/srw4r3htm4U",
-                  error: "No data found"
-                };
+                throw new Error(`Empty response for candidate ${id}`);
+              }
+
+              const data = JSON.parse(responseText);
+              console.log(`  Parsed data for candidate ${id}:`, data);
+              
+              if (!data) {
+                console.error(`  ❌ No data found for candidate ${id}`);
+                throw new Error(`No data found for candidate ${id}`);
               }
               
-              try {
-                const data = JSON.parse(responseText);
-                console.log(`  ✅ Parsed data for candidate ${id}:`, data);
-                return data;
-              } catch (parseError) {
-                console.error(`  ❌ JSON parse error for candidate ${id}:`, parseError);
-                console.error(`  Response text that failed to parse:`, responseText);
-                // Return a default candidate object instead of throwing
-                return {
-                  id: id,
-                  resume_id: null,
-                  interview: "https://www.youtube.com/embed/srw4r3htm4U",
-                  error: "Invalid JSON response"
-                };
-              }
-            } catch (fetchError) {
-              console.error(`  ❌ Fetch error for candidate ${id}:`, fetchError);
-              // Return a default candidate object instead of throwing
-              return {
-                id: id,
-                resume_id: null,
-                interview: "https://www.youtube.com/embed/srw4r3htm4U",
-                error: "Fetch failed"
-              };
+              return data;
+              
+            } catch (parseError) {
+              console.error(`  ❌ Error processing candidate ${id}:`, parseError);
+              // Instead of throwing, return a placeholder or skip this candidate
+              return null; // or create a placeholder object
             }
           })
         );
 
-        console.log("=== All candidates fetched (some may have errors) ===");
-        console.log("Total candidates fetched:", fetchedCandidates.length);
-        console.log("Fetched candidates data:", fetchedCandidates);
+        // Filter out null candidates (failed fetches)
+        const validCandidates = fetchedCandidates.filter(candidate => candidate !== null);
         
-        // Filter out candidates with errors if you want, or keep them with default data
-        const validCandidates = fetchedCandidates.filter(candidate => !candidate.error);
-        console.log("Valid candidates:", validCandidates.length);
+        console.log("=== Candidates fetched successfully ===");
+        console.log("Total candidates attempted:", fetchedCandidates.length);
+        console.log("Valid candidates received:", validCandidates.length);
+        console.log("Valid candidates data:", validCandidates);
+        console.log("Setting candidates state...");
         
-        // Set all candidates (including those with errors/defaults)
-        setCandidates(fetchedCandidates);
+        setCandidates(validCandidates);
         
         console.log("✅ Candidates state updated successfully");
         
       } catch (err) {
-        console.error("=== Unexpected error in fetchCandidates ===");
+        console.error("=== Error in fetchCandidates ===");
         console.error("Error type:", typeof err);
         console.error("Error message:", err instanceof Error ? err.message : err);
         console.error("Full error object:", err);
         console.error("Current interviews that caused error:", interviews);
         
-        // Set candidates to empty array to prevent UI issues
+        // Set empty array to prevent infinite loops
         setCandidates([]);
       }
     };
