@@ -1896,27 +1896,9 @@ app.get("/canidates", (req, res) => {
 //get route to get a list canidates by their ids
 app.get("/canidates/:id", (req, res) => {
   const { id } = req.params;
-  
-  // Validate ID parameter
-  if (!id || isNaN(id)) {
-    return res.status(400).json({ error: "Invalid candidate ID" });
-  }
-  
   db.query("SELECT * FROM Candidates WHERE id = ?", [id], (err, results) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: err.message });
-    }
-    
-    // Check if candidate was found
-    if (!results || results.length === 0) {
-      console.log(`No candidate found with ID: ${id}`);
-      return res.status(404).json({ error: `Candidate with ID ${id} not found` });
-    }
-    
-    const candidate = results[0];
-    console.log(`Found candidate:`, candidate);
-    res.json(candidate);
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results[0]);
   });
 });
 

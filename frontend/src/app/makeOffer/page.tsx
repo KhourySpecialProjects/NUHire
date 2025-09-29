@@ -202,7 +202,7 @@ export default function MakeOffer() {
         const fetchedCandidates = await Promise.all(
           interviews.map(async (interview, index) => {
             const id = interview.candidate_id;
-            const url = `${API_BASE_URL}/canidates/${id}`;
+            const url = `${API_BASE_URL}/canidates/resume/${id}`;
             
             console.log(`Fetching candidate ${index + 1}/${interviews.length}:`);
             console.log("  Interview data:", interview);
