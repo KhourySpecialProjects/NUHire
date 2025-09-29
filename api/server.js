@@ -2065,7 +2065,7 @@ app.post("/offers", (req, res) => {
   console.log("Creating new offer:", { group_id, class_id, candidate_id, status });
   
   db.query(
-    "INSERT INTO Offers (group_id, class_id, candidate_id, status) VALUES (?, ?, ?, ?)",
+    "INSERT INTO Offers (group, class, candidate_id, status) VALUES (?, ?, ?, ?)",
     [group_id, class_id, candidate_id, status],
     (err, result) => {
       if (err) {
