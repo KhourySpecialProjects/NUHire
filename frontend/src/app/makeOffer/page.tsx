@@ -401,6 +401,7 @@ export default function MakeOffer() {
     });
 
     setInterviewsWithVideos(merged);
+    console.log("interviewsWithVideos: ", merged);
   }, [interviews, candidates]);
 
   // Setup socket.io
