@@ -2055,6 +2055,81 @@ app.get("/job-assignment/:groupId/:classId", (req, res) => {
   );
 });
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//offers
+
+// POST - Students submit an offer
+app.post("/offers", (req, res) => {
+  const { group_id, class_id, candidate_id, student_id, status } = req.body;
+  
+  console.log("Creating new offer:", { group_id, class_id, candidate_id, student_id });
+  
+  db.query(
+    "INSERT INTO Offers (group_id, class_id, candidate_id, student_id, status) VALUES (?, ?, ?, ?, 'pending') ON DUPLICATE KEY UPDATE status = ?",
+    [group_id, class_id, candidate_id, student_id, status],
+    (err, result) => {
+      if (err) {
+        console.error("Error creating offer:", err);
+        return res.status(500).json({ error: err.message });
+      }
+          
+      console.log("Offer created successfully:", result.insertId);
+      res.json({ 
+        id: result.insertId, 
+        message: "Offer submitted successfully",
+        offer_id: result.insertId
+      });
+    }
+  );
+});
+
+// GET - Teachers view pending offers for their class
+app.get("/offers/pending/:class_id", (req, res) => {
+  const { class_id } = req.params;
+  
+  console.log("Fetching pending offers for class:", class_id);
+  
+  const query = `SELECT * FROM Offers WHERE class = ?`;
+  
+  db.query(query, [class_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching pending offers:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    console.log(`Found ${results.length} pending offers for class ${class_id}`);
+    res.json(results);
+  });
+});
+
+app.put("/offers/:offer_id", (req, res) => {
+  const { offer_id } = req.params;
+  
+  console.log("Updating offer:", { offer_id, status, advisor_comments });
+  
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: "Status must be 'approved' or 'rejected'" });
+  }
+  
+  db.query(
+    "UPDATE Offers SET status = ? WHERE id = ?",
+    [offer_id],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating offer:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Offer not found" });
+      }
+      
+      console.log("Offer updated successfully");
+      res.json({ message: "Offer updated successfully" });
+    }
+  );
+});
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various
 

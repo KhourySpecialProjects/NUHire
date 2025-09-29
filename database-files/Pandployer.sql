@@ -174,7 +174,7 @@ DROP TABLE IF EXISTS `Moderator`;
 CREATE TABLE `Moderator` (
   `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
-  `crn` int NOT NULL UNIQUE,
+  `crn` int NOT NULL,
   `nom_groups` int NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `crn_UNIQUE` (`crn`)
@@ -212,6 +212,23 @@ CREATE TABLE `Offer_Status` (
   `group_id` varchar(45) NOT NULL,
   `class` int NOT NULL,
   PRIMARY KEY (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `Offers`
+--
+
+DROP TABLE IF EXISTS `Offers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Offers` (
+  `class` int NOT NULL,
+  `group` int NOT NULL,
+  `candidate_id` int NOT NULL,
+  `status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  `id` int NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -350,15 +367,6 @@ CREATE TABLE `Users` (
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Users`
---
-
-LOCK TABLES `Users` WRITE;
-/*!40000 ALTER TABLE `Users` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Users` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -369,4 +377,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-25 13:24:53
+-- Dump completed on 2025-09-29 15:33:41
