@@ -393,7 +393,8 @@ export default function MakeOffer() {
 
     const merged = uniqueCandidateIds.map((id) => {
       const candidate = candidates.find((c) => c.resume_id === id);
-      const resume = resumes.find((r) => r.id === candidate?.resume_id);
+      console.log("candidate we are on", candidate)
+      const resume = resumes.find((r) => r.id === candidate.resume_id);
       console.log("res we are on", resume)
       return {
         candidate_id: id,
