@@ -669,11 +669,19 @@ export default function MakeOffer() {
 
         <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
           {interviewsWithVideos.map((interview, index) => {
-            const interviewNumber = interview.resume_id;
-            const votes = voteCounts[interviewNumber];
+            const interviewNumber = interview.candidate_id;
+            const votes = voteCounts[interviewNumber] || {
+              Overall: 0,
+              Profesionality: 0,
+              Quality: 0,
+              Personality: 0,
+            };
 
             const isAccepted = sentIn[interviewNumber] === true;
             const isRejected = sentIn[interviewNumber] === false;
+
+            console.log(`Candidate ${interviewNumber} votes:`, votes);
+            console.log(`Candidate ${interviewNumber} popup votes:`, popupVotes[interviewNumber]);
 
             return (
               <div
@@ -703,19 +711,35 @@ export default function MakeOffer() {
 
                 <div className="mt-2 space-y-1 text-navy text-sm">
                   <p>
-                    <span className="font-medium">Overall:</span> {Math.max(votes.Overall + popupVotes[interviewNumber]?.question1 || 0, 0)}
+                    <span className="font-medium">Overall:</span> {
+                      Math.max(0, 
+                        ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                   <p>
                     <span className="font-medium">Professional Presence:</span>{" "}
-                    {Math.max(0, votes.Profesionality + popupVotes[interviewNumber]?.question2 || 0 / groupSize)}
+                    {
+                      Math.max(0, 
+                        ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                   <p>
                     <span className="font-medium">Quality of Answer:</span>{" "}
-                    {Math.max(0, (votes.Quality + popupVotes[interviewNumber]?.question3 || 0)/ groupSize)}
+                    {
+                      Math.max(0, 
+                        ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                   <p>
                     <span className="font-medium">Personality:</span>{" "}
-                    {Math.max(0, (votes.Personality + popupVotes[interviewNumber]?.question4 || 0) / groupSize)}
+                    {
+                      Math.max(0, 
+                        ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                 </div>
 
