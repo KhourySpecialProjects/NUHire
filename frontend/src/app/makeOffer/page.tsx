@@ -391,22 +391,34 @@ export default function MakeOffer() {
       ...new Set(interviews.map((i) => i.candidate_id)),
     ];
 
-    const merged = uniqueCandidateIds.map((idd) => {
-      const candidate = candidates.find((c) => c.resume_id === idd);
-      console.log("candidate we are on", candidate)
+    const merged = uniqueCandidateIds.map((id) => {
+      // Fix: Match interview candidate_id with candidate's resume_id (not the candidate's id)
+      const candidate = candidates.find((c) => c.resume_id === id);
+      console.log(`Looking for candidate with resume_id ${id}:`, candidate);
+      
+      if (!candidate) {
+        console.warn(`No candidate found with resume_id ${id}`);
+        return {
+          candidate_id: id,
+          video_path: "https://www.youtube.com/embed/srw4r3htm4U",
+          resume_path: "uploads/resumes/sample1.pdf",
+        };
+      }
+
+      // Now find the resume using the candidate's resume_id
       const resume = resumes.find((r) => r.id === candidate.resume_id);
-      console.log("res we are on", resume)
+      console.log(`Looking for resume with id ${candidate.resume_id}:`, resume);
+      
       return {
-        candidate_id: idd,
-        video_path:
-          candidate?.interview || "https://www.youtube.com/embed/srw4r3htm4U",
+        candidate_id: id,
+        video_path: candidate?.interview || "https://www.youtube.com/embed/srw4r3htm4U",
         resume_path: resume?.file_path || "uploads/resumes/sample1.pdf",
       };
     });
 
     setInterviewsWithVideos(merged);
     console.log("interviewsWithVideos: ", merged);
-  }, [resumes]);
+  }, [interviews, candidates, resumes]); // Add all dependencies
 
   // Setup socket.io
   useEffect(() => {
