@@ -607,16 +607,16 @@ export default function MakeOffer() {
     }
 
     try {
-      // Submit offer to database FIRST
       const response = await fetch(`${API_BASE_URL}/offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          group_id: user!.group_id,
-          class_id: user!.class,
+          group: user!.group_id,
+          class: user!.class,
           candidate_id: candidateId,
+          status: 'pending'
         })
       });
 
