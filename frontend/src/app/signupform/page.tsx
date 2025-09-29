@@ -18,7 +18,6 @@ export default function SignupDetails() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -57,15 +56,8 @@ export default function SignupDetails() {
       return;
     }
 
-    if (affiliation === 'student' && !groupNumber && !courseNumber) {
-      setError('Please enter your group number and course number'); 
-      return;
-    }
-
     if (affiliation === 'student') {
       try {
-        console.log("Group", groupNumber);
-        console.log("Course", courseNumber);
         const res = await fetch(
           `${API_BASE_URL}/moderator-crns/${courseNumber}`,
           { method: 'GET', credentials: 'include' }
@@ -83,16 +75,6 @@ export default function SignupDetails() {
         console.log(emailData);
         if (emailData.length !== 0) {
           setError('This email is set as an instructor.');
-          return;
-        }
-        if (Number(crn) !== Number(courseNumber)) {
-          setError('This CRN does not exist. Please check with your instructor.');
-          return;
-        }
-        if (nom_groups < 1 || nom_groups < groupNumber) {
-          setError(
-            `Group number must be between 1 and ${nom_groups} for this CRN.`
-          );
           return;
         }
       } catch {
@@ -142,16 +124,9 @@ export default function SignupDetails() {
 
       if (response.ok) {
         setMessage('User added successfully!');
-        // Show success message briefly before redirecting
         setTimeout(() => {
-          if (affiliation === 'student') {
-            localStorage.setItem("progress", "");
-            console.log("going to dashboard");
-            router.push('/dashboard'); 
-          } else if (affiliation === 'admin') {
-            console.log("going to dashboard");
-            router.push('/advisor-dashboard');
-          }
+          // Redirect to Keycloak login flow again to set session
+          window.location.href = `${API_BASE_URL}/auth/keycloak`;
         }, 1500);
       } else {
         const errorData = await response.json();
@@ -209,31 +184,6 @@ export default function SignupDetails() {
             <option value="student">Student</option>
             <option value="admin">Faculty</option>
           </select>
-
-          {/* Group number input - only shown for students */}
-          {affiliation === 'student' && (
-            <div  className="w-full rounded-lg flex flex-col gap-4">
-              <input 
-              type="number" 
-              placeholder="CRN *" 
-              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={courseNumber} 
-              onChange={(e) => setCourseNumber(e.target.value)} 
-              required 
-              min="1"
-            />
-            <input 
-              type="number" 
-              placeholder="Group Number *" 
-              className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={groupNumber} 
-              onChange={(e) => setGroupNumber(e.target.value)} 
-              required 
-              min="1"
-            />
-            </div>
-          )}
-
           <button 
             type="submit" 
             className="w-full bg-northeasternWhite text-northeasternRed font-semibold px-4 py-3 rounded-md hover:bg-northeasternRed hover:bg-northeasternWhite transition"
@@ -241,8 +191,16 @@ export default function SignupDetails() {
             Submit
           </button>
         </form>
-        {message && <p className="mt-4 text-green-600 font-semibold text-center">{message}</p>}
-        {error && <p className="mt-4 text-red-600 font-semibold text-center">{error}</p>}
+        {message && (
+          <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+            {message}
+          </div>
+        )}       
+        {error && (
+          <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+            {error}
+          </div>
+        )}     
       </div>
       <footer className="w-full flex justify-center p-2 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl fixed bottom-0 z-20">
         <a

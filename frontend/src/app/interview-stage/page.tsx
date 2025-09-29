@@ -226,7 +226,7 @@ export default function Interview() {
       socket.on("moveGroup", ({groupId, classId, targetPage}) => {
         if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
           updateProgress(user, "offer");
-          localStorage.setItem("progress", "makeOffer");
+          localStorage.setItem("progress", "offer");
           window.location.href = targetPage; 
         }
       });
@@ -454,7 +454,7 @@ useEffect(() => {
   // Complete interview process and move to next stage
   const completeInterview = () => {
     updateProgress(user!, "offer");
-    localStorage.setItem("progress", "makeOffer");
+    localStorage.setItem("progress", "offer");
     window.location.href = '/makeOffer';
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/makeOffer"});
   }

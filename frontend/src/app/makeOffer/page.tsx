@@ -185,37 +185,112 @@ export default function MakeOffer() {
   }, [user]);
 
   useEffect(() => {
-    if (!interviews.length) return;
+    console.log("=== fetchCandidates useEffect triggered ===");
+    console.log("Interviews length:", interviews.length);
+    console.log("Interviews data:", interviews);
+    
+    if (!interviews.length) {
+      console.log("No interviews found, returning early");
+      return;
+    }
 
     const fetchCandidates = async () => {
+      console.log("=== Starting fetchCandidates async function ===");
+      console.log("Number of interviews to process:", interviews.length);
+      
       try {
         const fetchedCandidates = await Promise.all(
-          interviews.map(async (interview) => {
+          interviews.map(async (interview, index) => {
             const id = interview.candidate_id;
-            const res = await fetch(`${API_BASE_URL}/canidates/${id}`);
+            const url = `${API_BASE_URL}/canidates/resume/${id}`;
+            
+            console.log(`Fetching candidate ${index + 1}/${interviews.length}:`);
+            console.log("  Interview data:", interview);
+            console.log("  Candidate ID:", id);
+            console.log("  Fetch URL:", url);
+            
+            try {
+              const res = await fetch(url);
+              console.log(`  Response status for candidate ${id}:`, res.status);
+              console.log(`  Response ok for candidate ${id}:`, res.ok);
 
-            if (!res.ok) {
-              throw new Error(
-                `Invalid response for candidate ${interview.candidate_id}`
-              );
+              if (!res.ok) {
+                console.error(`  ❌ Invalid response for candidate ${id}:`, {
+                  status: res.status,
+                  statusText: res.statusText,
+                  url: url
+                });
+                throw new Error(
+                  `Invalid response for candidate ${interview.candidate_id}: ${res.status}`
+                );
+              }
+
+              // Check if response has content
+              const contentType = res.headers.get('content-type');
+              if (!contentType || !contentType.includes('application/json')) {
+                console.error(`  ❌ Invalid content-type for candidate ${id}:`, contentType);
+                throw new Error(`Invalid content-type for candidate ${id}: ${contentType}`);
+              }
+
+              console.log(`  ✅ Successful response for candidate ${id}, parsing JSON...`);
+              
+              // Get response text first to debug
+              const responseText = await res.text();
+              console.log(`  Raw response for candidate ${id}:`, responseText);
+              
+              if (!responseText.trim()) {
+                console.error(`  ❌ Empty response for candidate ${id}`);
+                throw new Error(`Empty response for candidate ${id}`);
+              }
+
+              const data = JSON.parse(responseText);
+              console.log(`  Parsed data for candidate ${id}:`, data);
+              
+              if (!data) {
+                console.error(`  ❌ No data found for candidate ${id}`);
+                throw new Error(`No data found for candidate ${id}`);
+              }
+              
+              return data;
+              
+            } catch (parseError) {
+              console.error(`  ❌ Error processing candidate ${id}:`, parseError);
+              // Instead of throwing, return a placeholder or skip this candidate
+              return null; // or create a placeholder object
             }
-
-            const data = await res.json();
-            return data;
           })
         );
 
-        console.log("Setting candidates:", fetchedCandidates);
-        setCandidates(fetchedCandidates); // triggers re-render
+        // Filter out null candidates (failed fetches)
+        const validCandidates = fetchedCandidates.filter(candidate => candidate !== null);
+        
+        console.log("=== Candidates fetched successfully ===");
+        console.log("Total candidates attempted:", fetchedCandidates.length);
+        console.log("Valid candidates received:", validCandidates.length);
+        console.log("Valid candidates data:", validCandidates);
+        console.log("Setting candidates state...");
+        
+        setCandidates(validCandidates);
+        
+        console.log("✅ Candidates state updated successfully");
+        
       } catch (err) {
-        console.error("Error fetching candidates:", err);
+        console.error("=== Error in fetchCandidates ===");
+        console.error("Error type:", typeof err);
+        console.error("Error message:", err instanceof Error ? err.message : err);
+        console.error("Full error object:", err);
+        console.error("Current interviews that caused error:", interviews);
+        
+        // Set empty array to prevent infinite loops
+        setCandidates([]);
       }
     };
 
+    console.log("Calling fetchCandidates function...");
     fetchCandidates();
   }, [interviews]);
 
-   useEffect(() => {
+  useEffect(() => {
     const handleShowInstructions = () => {
       console.log("Help button clicked - showing instructions");
       setShowInstructions(true);
@@ -245,20 +320,25 @@ export default function MakeOffer() {
             }
 
             const data = await res.json();
-            return data;
+            console.log("Raw resume data:", data);
+            
+            // Fix: If data is an array, take the first element
+            const resumeData = Array.isArray(data) ? data[0] : data;
+            return resumeData;
           })
         );
 
-        console.log("Setting candidates:", fetchedResumes);
-        setResumes(fetchedResumes); // triggers re-render
+        console.log("Setting resumes:", fetchedResumes);
+        setResumes(fetchedResumes);
+        console.log("Resumes set:", fetchedResumes);
       } catch (err) {
-        console.error("Error fetching candidates:", err);
+        console.error("Error fetching resumes:", err);
       }
     };
 
     fetchResumes();
   }, [candidates]);
-
+  
   const groupInterviewsByCandidate = (interviews: any[]) => {
     const grouped: { [candidate_id: number]: any[] } = {};
     for (const interview of interviews) {
@@ -307,24 +387,43 @@ export default function MakeOffer() {
 
   useEffect(() => {
     if (!interviews.length || !candidates.length) return;
+    console.log("interviews: ", interviews);
+    console.log("candidates: ", candidates);
+    console.log("resumes: ", resumes);
 
     const uniqueCandidateIds = [
       ...new Set(interviews.map((i) => i.candidate_id)),
     ];
 
     const merged = uniqueCandidateIds.map((id) => {
-      const candidate = candidates.find((c) => c.id === id);
-      const resume = resumes.find((r) => r.id === candidate?.resume_id);
+      // Fix: Match interview candidate_id with candidate's resume_id (not the candidate's id)
+      const candidate = candidates.find((c) => c.resume_id === id);
+      console.log(`Looking for candidate with resume_id ${id}:`, candidate);
+      
+      if (!candidate) {
+        console.warn(`No candidate found with resume_id ${id}`);
+        return {
+          candidate_id: id,
+          video_path: "https://www.youtube.com/embed/srw4r3htm4U",
+          resume_path: "uploads/resumes/sample1.pdf",
+        };
+      }
+
+      // Now find the resume using the candidate's resume_id
+      console.log("candidate res id", candidate.resume_id)
+      const resume = resumes.find((r) => r.id === candidate.resume_id);
+      console.log(`Looking for resume with id ${candidate.resume_id}:`, resume);
+      
       return {
         candidate_id: id,
-        video_path:
-          candidate?.interview || "https://www.youtube.com/embed/srw4r3htm4U",
+        video_path: candidate?.interview || "https://www.youtube.com/embed/srw4r3htm4U",
         resume_path: resume?.file_path || "uploads/resumes/sample1.pdf",
       };
     });
 
     setInterviewsWithVideos(merged);
-  }, [interviews, candidates]);
+    console.log("interviewsWithVideos: ", merged);
+  }, [resumes]);
 
   // Setup socket.io
   useEffect(() => {
@@ -530,7 +629,7 @@ export default function MakeOffer() {
       return;
     }
     updateProgress(user!, "employer");
-    localStorage.setItem("progress", "employerPannel");
+    localStorage.setItem("progress", "employer");
     window.location.href = "/dashboard";
   };
 
@@ -571,10 +670,18 @@ export default function MakeOffer() {
         <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
           {interviewsWithVideos.map((interview, index) => {
             const interviewNumber = interview.candidate_id;
-            const votes = voteCounts[interviewNumber];
+            const votes = voteCounts[interviewNumber] || {
+              Overall: 0,
+              Profesionality: 0,
+              Quality: 0,
+              Personality: 0,
+            };
 
             const isAccepted = sentIn[interviewNumber] === true;
             const isRejected = sentIn[interviewNumber] === false;
+
+            console.log(`Candidate ${interviewNumber} votes:`, votes);
+            console.log(`Candidate ${interviewNumber} popup votes:`, popupVotes[interviewNumber]);
 
             return (
               <div
@@ -604,19 +711,35 @@ export default function MakeOffer() {
 
                 <div className="mt-2 space-y-1 text-navy text-sm">
                   <p>
-                    <span className="font-medium">Overall:</span> {Math.max(votes.Overall + popupVotes[interviewNumber]?.question1 || 0, 0)}
+                    <span className="font-medium">Overall:</span> {
+                      Math.max(0, 
+                        ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                   <p>
                     <span className="font-medium">Professional Presence:</span>{" "}
-                    {Math.max(0, votes.Profesionality + popupVotes[interviewNumber]?.question2 || 0 / groupSize)}
+                    {
+                      Math.max(0, 
+                        ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                   <p>
                     <span className="font-medium">Quality of Answer:</span>{" "}
-                    {Math.max(0, (votes.Quality + popupVotes[interviewNumber]?.question3 || 0)/ groupSize)}
+                    {
+                      Math.max(0, 
+                        ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                   <p>
                     <span className="font-medium">Personality:</span>{" "}
-                    {Math.max(0, (votes.Personality + popupVotes[interviewNumber]?.question4 || 0) / groupSize)}
+                    {
+                      Math.max(0, 
+                        ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize
+                      ).toFixed(1)
+                    }
                   </p>
                 </div>
 

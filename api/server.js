@@ -438,7 +438,7 @@ const initializeDatabase = () => {
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (8, 'Interview8', 'https://www.youtube.com/embed/0siE31sqz0Q')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (9, 'Interview9', 'https://www.youtube.com/embed/5v-wyR5emRw')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (10, 'Interview10', 'https://www.youtube.com/embed/TQHW7gGjrCQ')"
-      ];
+  ];
       
   const executeQueries = async () => {
     for (const query of queries) {
@@ -829,7 +829,8 @@ app.get("/auth/keycloak/callback",
     }
 
     const email = user.email;
-
+    console.log("email before query");
+    
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
       if (err) {
         console.error("Database error:", err);
@@ -969,122 +970,84 @@ app.get("/users/:id", (req, res) => {
 
 // post route for creating a new user, which checks if the user already exists in the database and inserts a new user record if not
 app.post("/users", (req, res) => {
-  const { First_name, Last_name, Email, Affiliation, group_id, course_id, job_des } = req.body;
+  const { First_name, Last_name, Email, Affiliation } = req.body;
 
-  // Validate required fields
+  console.log("=== POST /users endpoint hit ===");
+  console.log("Request body:", { First_name, Last_name, Email, Affiliation });
+
   if (!First_name || !Last_name || !Email || !Affiliation) {
+    console.log("❌ Validation failed: Missing required fields");
     return res.status(400).json({ message: "First name, last name, email, and affiliation are required" });
   }
+
+  console.log("✅ Validation passed, checking if user exists in database");
 
   // Check if user already exists
   db.query("SELECT * FROM Users WHERE email = ?", [Email], (err, results) => {
     if (err) {
-      console.error("Database error:", err);
+      console.error("❌ Database error during user lookup:", err);
       return res.status(500).json({ error: err.message });
     }
     
+    console.log(`Database query result: Found ${results.length} users with email ${Email}`);
+    
     if (results.length > 0) {
-      return res.status(200).json({ message: "User already exists" });
-    }
-
-    // Helper function to create user with determined job assignment
-    const createUser = (assignedJob) => {
-      let sql, params;
-      // If student is joining a group with a job, set current_page to 'jobdes'
-      if (Affiliation === 'student' && group_id && course_id) {
-        if (assignedJob) {
-          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des, current_page) VALUES (?, ?, ?, ?, ?, ?, ?, 'jobdes')";
-          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
-        } else {
-          sql = "INSERT INTO Users (f_name, l_name, email, affiliation, group_id, class, job_des) VALUES (?, ?, ?, ?, ?, ?, ?)";
-          params = [First_name, Last_name, Email, Affiliation, group_id, course_id, assignedJob];
-        }
-      } else if (Affiliation === 'student' && course_id) {
-        sql = "INSERT INTO Users (f_name, l_name, email, affiliation, class, job_des) VALUES (?, ?, ?, ?, ?, ?)";
-        params = [First_name, Last_name, Email, Affiliation, course_id, assignedJob];
-      } else {
-        // Basic user creation for faculty/admin
-        sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
-        params = [First_name, Last_name, Email, Affiliation];
-      }
-      // Execute the query
-      db.query(sql, params, (err, result) => {
-        if (err) {
-          console.error("Failed to create user:", err);
-          return res.status(500).json({ error: err.message });
-        }
-        
-        // Log successful user creation
-        console.log(`User created: ${First_name} ${Last_name} (${Email}) as ${Affiliation}${group_id ? `, group: ${group_id}` : ''}${course_id ? `, class: ${course_id}` : ''}${assignedJob ? `, job: ${assignedJob}` : ' with no job'}`);
-        
-        if (Affiliation === 'student') {
-          console.log(`New student ${Email} added to group ${group_id} in class ${course_id}`);
-          io.emit("newStudent", { 
-            classId: course_id
-          });
-
-          // If student was assigned a job, notify them if they're online
-          if (assignedJob) {
-            const studentSocketId = onlineStudents[Email];
-            if (studentSocketId) {
-              io.to(studentSocketId).emit("jobUpdated", { 
-                job: [assignedJob],
-                job_group_id: group_id,
-                class_id: course_id
-              });
-            }
-            console.log(`Notified new student ${Email} about job assignment: ${assignedJob}`);
-          }
-        }
-        // Return success response
-        res.status(201).json({ 
-          id: result.insertId, 
-          First_name, 
-          Last_name, 
-          Email, 
-          Affiliation,
-          ...(group_id && { group_id }),
-          ...(course_id && { course_id }),
-          ...(assignedJob && { job_des: assignedJob })
-        });
-      });
-    };
-
-    // If student is being assigned to a group, check for existing group job
-    if (Affiliation === 'student' && group_id) {
-      console.log(`Checking for existing job in group ${group_id} for new student ${Email}`);
+      console.log("User already exists:", results[0]);
       
-      // Query to find existing group members and their job descriptions
-      db.query("SELECT job_des FROM Users WHERE group_id = ? AND affiliation = 'student' AND job_des IS NOT NULL LIMIT 1", 
-        [group_id], 
-        (err, jobResults) => {
-          if (err) {
-            console.error("Error checking group job assignments:", err);
-            return res.status(500).json({ error: err.message });
-          }
-          
-          let assignedJob = null;
-          
-          if (jobResults.length > 0) {
-            // Group has a job description, assign it to the new student
-            assignedJob = jobResults[0].job_des;
-            console.log(`Found existing job in group ${group_id}: ${assignedJob}`);
-          } else {
-            // No job found in group, check if job_des was explicitly provided
-            if (job_des) {
-              assignedJob = job_des;
-              console.log(`No existing job in group ${group_id}, using provided job: ${job_des}`);
-            } else {
-              console.log(`No existing job in group ${group_id} and no job provided, assigning null`);
-            }
-          }
-          
-          createUser(assignedJob);
-        });
-    } else {
-      // For non-students or students without groups, use provided job_des or null
-      createUser(job_des || null);
+      if (Affiliation === 'student') {
+        console.log("✅ Existing student login successful");
+        return res.status(200).json({ message: "User registered successfully" });
+      }
+      if (Affiliation === 'admin') {
+        console.log("❌ Admin already registered");
+        return res.status(400).json({ message: "Teacher already registered" });
+      }
     }
+
+    console.log("User does not exist, creating new user");
+
+    // Create user without job_des field
+    let sql, params;
+    if (Affiliation === 'admin') {
+      console.log("Creating new admin user");
+      sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
+      params = [First_name, Last_name, Email, Affiliation];
+      
+      console.log("Admin SQL query:", sql);
+      console.log("Admin SQL params:", params);
+      
+    } else {
+      // For students, they need to be assigned to a group first
+      console.log("❌ Student registration blocked - needs group assignment first");
+      return res.status(400).json({ 
+        message: "Students must be assigned to a group by their instructor before registering." 
+      });
+    }
+    
+    console.log("Executing user creation query...");
+    db.query(sql, params, (err, result) => {
+      if (err) {
+        console.error("❌ Failed to create user - Database error:", err);
+        console.error("Error code:", err.code);
+        console.error("Error message:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      console.log("✅ User created successfully");
+      console.log("Insert result:", result);
+      console.log("New user ID:", result.insertId);
+      
+      const responseData = {
+        id: result.insertId, 
+        First_name, 
+        Last_name, 
+        Email, 
+        Affiliation
+      };
+      
+      console.log("Sending successful response:", responseData);
+      res.status(201).json(responseData);
+    });
   });
 });
 
@@ -1127,69 +1090,173 @@ app.post("/update-currentpage", (req, res) => {
 
 // Updates a group of Users' stored job description and resets their progress.
 // Also deletes all notes for affected students.
-app.post("/update-job", (req, res) => {
+// Updates a group of Users' stored job description and resets their progress.
+app.post("/update-job", async (req, res) => {
   const { job_group_id, class_id, job } = req.body;
 
   if (!job_group_id || !class_id || !job || job.length === 0) {
     return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
-  console.log(req.body);
+  console.log("Updating job for group:", req.body);
 
-  // Update job_des and reset progress for all students in the group/class
-  const updatePromises = job.map(title => {
-    return new Promise((resolve, reject) => {
-      db.query(
-        "UPDATE Users SET `job_des` = ?, `current_page` = 'jobdes' WHERE group_id = ? AND class = ? AND affiliation = 'student'",
-        [title, job_group_id, class_id],
-        (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        }
+  try {
+    // Start a transaction for atomic operations
+    await db.promise().query('START TRANSACTION');
+
+    // 1. Update/Insert into Job_Assignment table
+    const jobTitle = Array.isArray(job) ? job[0] : job;
+    await db.promise().query(
+      `INSERT INTO Job_Assignment (\`group\`, \`class\`, job)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE job = VALUES(job)`,
+      [job_group_id, class_id, jobTitle]
+    );
+
+    // 2. Reset current_page for all students in the group/class (remove job_des update)
+    await db.promise().query(
+      "UPDATE Users SET `current_page` = 'jobdes' WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+      [job_group_id, class_id]
+    );
+
+    // 3. Update Progress table - set all group members to 'job_description' step
+    await db.promise().query(
+      "UPDATE Progress SET step = 'job_description' WHERE crn = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // ... rest of your clearing logic remains the same ...
+
+    // 4. Clear InterviewPage table for this class and group
+    await db.promise().query(
+      "DELETE FROM InterviewPage WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 5. Clear MakeOfferPage table for this class and group
+    await db.promise().query(
+      "DELETE FROM MakeOfferPage WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 6. Clear Resume table for this class and group
+    await db.promise().query(
+      "DELETE FROM Resume WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 7. Clear Resumepage2 table for this class and group
+    await db.promise().query(
+      "DELETE FROM Resumepage2 WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 8. Clear Offer_Status table for this class and group
+    await db.promise().query(
+      "DELETE FROM Offer_Status WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 9. Clear Interview_Status table for this class and group
+    await db.promise().query(
+      "DELETE FROM Interview_Status WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 10. Clear InterviewPopup table for this class and group
+    await db.promise().query(
+      "DELETE FROM InterviewPopup WHERE class = ? AND group_id = ?",
+      [class_id, job_group_id]
+    );
+
+    // 11. Get student emails for note deletion and socket notifications
+    const [students] = await db.promise().query(
+      "SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+      [job_group_id, class_id]
+    );
+
+    const emails = students.map(({ email }) => email);
+
+    // 12. Clear Resumepage table for students in this group and class
+    if (emails.length > 0) {
+      const placeholders = emails.map(() => '?').join(',');
+      await db.promise().query(
+        `DELETE rp FROM Resumepage rp
+         JOIN Users u ON rp.student_id = u.id
+         WHERE u.email IN (${placeholders}) AND u.class = ? AND u.group_id = ?`,
+        [...emails, class_id, job_group_id]
       );
-    });
-  });
 
-  // Find all student emails in the group/class
-  db.query(
-    "SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
-    [job_group_id, class_id],
-    (err, results) => {
-      if (err) {
-        return res.status(500).json({ error: "Failed to fetch students for note deletion." });
-      }
-
-      if (global.completedResReview && global.completedResReview[job_group_id]) {
-        global.completedResReview[job_group_id] = new Set();
-        console.log(`Reset completedResReview for group ${job_group_id}`);
-      }
-
-      const emails = results.map(({ email }) => email);
-      if (emails.length > 0) {
-        // Delete all notes for these students
-        db.query("DELETE FROM Notes WHERE user_email IN (?)", [emails], (err2) => {
-          if (err2) {
-            console.error("Error deleting notes for group:", err2);
-          } else {
-            console.log(`Deleted notes for users: ${emails.join(", ")}`);
-          }
-        });
-
-        results.forEach(({ email }) => {
-          const studentSocketId = onlineStudents[email];
-          if (studentSocketId) {
-            io.to(studentSocketId).emit("jobUpdated", {
-              job,
-            });
-          }
-        });
-      }
-      Promise.all(updatePromises)
-        .then(() => res.json({ message: "Group job updated and all notes for group/class deleted successfully!" }))
-        .catch(error => res.status(500).json({ error: error.message }));
+      // 13. Delete all notes for these students
+      await db.promise().query(
+        `DELETE FROM Notes WHERE user_email IN (${placeholders})`,
+        emails
+      );
     }
-  );
+
+    // 14. Reset completion tracking
+    if (global.completedResReview && global.completedResReview[job_group_id]) {
+      global.completedResReview[job_group_id] = new Set();
+      console.log(`Reset completedResReview for group ${job_group_id}`);
+    }
+
+    // Commit the transaction
+    await db.promise().query('COMMIT');
+
+    // 15. Send socket notifications to affected students
+    if (emails.length > 0) {
+      emails.forEach(email => {
+        const studentSocketId = onlineStudents[email];
+        if (studentSocketId) {
+          io.to(studentSocketId).emit("jobUpdated", {
+            job: [jobTitle],
+            group_id: job_group_id,
+            class_id,
+            message: `Your group has been assigned a new job. All progress has been reset.`
+          });
+        }
+      });
+    }
+
+    // 16. Emit general update to class
+    io.emit("groupJobUpdated", {
+      job_group_id,
+      class_id,
+      job: [jobTitle],
+      message: `Group ${job_group_id} job updated - all progress reset`
+    });
+
+    console.log(`Job "${jobTitle}" assigned to Group ${job_group_id} in Class ${class_id}. All related data cleared.`);
+    
+    res.json({ 
+      message: "Group job updated and all related data cleared successfully!",
+      job_group_id,
+      class_id,
+      job: jobTitle,
+      cleared_tables: [
+        "InterviewPage", "MakeOfferPage", "Resume", "Resumepage", 
+        "Resumepage2", "Offer_Status", "Interview_Status", "InterviewPopup", "Notes"
+      ],
+      students_affected: emails.length,
+      job_assignment_updated: true
+    });
+
+  } catch (error) {
+    // Rollback on error
+    try {
+      await db.promise().query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error("Rollback failed:", rollbackError);
+    }
+    
+    console.error("Error updating job and clearing data:", error);
+    res.status(500).json({ 
+      error: "Database error occurred while updating job and clearing data",
+      details: error.message 
+    });
+  }
 });
+
 // Update user's class
 app.post("/update-user-class", (req, res) => {
   if (!req.isAuthenticated()) {
@@ -1847,6 +1914,24 @@ app.get("/canidates/resume/:resume_number", (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Teacher
 
+app.post("/teacher/add-student", (req, res) => {
+  const { class_id, group_id, email, f_name, l_name } = req.body;
+  // if (!class_id || !group_id || !email || !f_name || !l_name) {
+  //   return res.status(400).json({ error: "Missing required fields." });
+  // }
+  db.query(
+    "INSERT INTO Users (email, f_name, l_name, class, group_id, affiliation) VALUES (?, ?, ?, ?, ?, 'student') ON DUPLICATE KEY UPDATE group_id = ?, class = ?, f_name = ?, l_name = ?",
+    [email, f_name, l_name, class_id, group_id, group_id, class_id, f_name, l_name],
+    (err, result) => {
+      if (err) { 
+        console.log("Database error:", err);
+        return res.status(500).json({ error: err.message });
+    }
+      res.json({ success: true });
+    }
+  );
+});
+
 // Update the number of groups for a class (CRN)
 app.post("/teacher/update-groups", (req, res) => {
   const { crn, nom_groups } = req.body;
@@ -1942,6 +2027,30 @@ app.post("/progress", (req, res) => {
         success: true, 
         message: "Progress updated successfully" 
       });
+    }
+  );
+});
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//job asssignments
+
+app.get("/job-assignment/:groupId/:classId", (req, res) => {
+  const { groupId, classId } = req.params;
+  
+  db.query(
+    "SELECT job FROM Job_Assignment WHERE `group` = ? AND `class` = ?",
+    [groupId, classId],
+    (err, results) => {
+      if (err) {
+        console.error("Error fetching job assignment:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ message: "No job assignment found for this group" });
+      }
+      
+      res.json({ job: results[0].job });
     }
   );
 });

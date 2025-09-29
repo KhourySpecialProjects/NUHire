@@ -150,7 +150,7 @@ export default function ResumesPage() {
     socket.on("moveGroup", ({groupId, classId, targetPage}) => {
       if (user && groupId === user.group_id && classId === user.class && targetPage === "/res-review-group") {
         console.log(`Group navigation triggered: moving to ${targetPage}`);
-        localStorage.setItem("progress", "res-review-group");
+        localStorage.setItem("progress", "res_2");
         window.location.href = targetPage; 
       }
   });
@@ -329,7 +329,7 @@ export default function ResumesPage() {
 
   const completeResumes = () => {
     updateProgress(user!, "res_2");
-    localStorage.setItem("progress", "res-review-group");
+    localStorage.setItem("progress", "res_2");
     window.location.href = "/res-review-group";
     socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/res-review-group"});
 

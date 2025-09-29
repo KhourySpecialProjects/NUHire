@@ -3,17 +3,16 @@
 import { useEffect } from "react";
 
 const allowedRoutes: Record<string, string[]> = {
-  "/jobdes": ["jobdes", "res-review", "res-review-group", "interview-stage", "makeOffer", "employerPanel"],
-  "/res-review": ["res-review", "interview-stage"],
-  "/res-review-group": ["res-review-group", "interview-stage"],
-  "/interview-stage": ["interview-stage", "makeOffer"],
-  "/makeOffer": ["makeOffer", "employerPanel"],
-  "/employerPanel": ["employerPanel"],
+  "/jobdes": ["job_description", "res_1", "res_2", "interview", "offer", "employer"],
+  "/res-review": ["res_1", "res_2", "interview", "offer", "employer"],
+  "/res-review-group": ["res_2", "interview", "offer", "employer"],
+  "/interview-stage": ["interview", "offer", "employer"],
+  "/makeOffer": ["offer", "employer"],
+  "/employerPanel": ["employer"],
 };
-
 export const useProgress = () => {
   useEffect(() => {
-    const progress = localStorage.getItem("progress") || "jobdes"; 
+    const progress = localStorage.getItem("progress") || "none"; 
     const currentPath = window.location.pathname;
 
     if (!(currentPath in allowedRoutes)) return;
