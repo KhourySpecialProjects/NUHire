@@ -402,8 +402,8 @@ export default function JobDescriptionPage() {
         <div className="flex justify-end mt-4 mb-4 mr-4">
           <button
             onClick={() => {
-              upxdateProgress(user, "res_1");
-              localStorage.setItem("progress", "res_1");
+              updateProgress(user, "res_1");
+              localStorage.setItem("progress", "res_1"); // update to commmit
               console.log("Progress updated to res_1");
               window.location.href = '/res-review';
             }}
