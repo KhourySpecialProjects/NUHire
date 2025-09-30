@@ -20,10 +20,6 @@ const Grouping = () => {
     group_id: number;
     candidate_id: number;
     status: 'pending' | 'accepted' | 'rejected';
-    resume_id?: number;
-    video_path?: string;
-    resume_path?: string;
-    resume_title?: string;
   }
 
   // General state
@@ -58,12 +54,52 @@ const Grouping = () => {
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
 
-  // Tab 4: Offers - Updated state management
+  // Tab 4: Offers
   const [offersTabClass, setOffersTabClass] = useState("");
-  const [allOffers, setAllOffers] = useState<Offer[]>([]);
   const [pendingOffers, setPendingOffers] = useState<Offer[]>([]);
   const [acceptedOffers, setAcceptedOffers] = useState<Offer[]>([]);
-  const [rejectedOffers, setRejectedOffers] = useState<Offer[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+
+  const refreshOffers = async (classId?: string) => {
+    const targetClassId = classId || offersTabClass;
+    if (!targetClassId) {
+      console.log("No class selected for offers refresh");
+      return;
+    }
+
+    setOffersLoading(true);
+    try {
+      console.log(`Refreshing offers for class ${targetClassId}`);
+      const response = await fetch(`${API_BASE_URL}/offers/class/${targetClassId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch offers: ${response.statusText}`);
+      }
+
+      const offers: Offer[] = await response.json();
+      console.log("Fetched offers:", offers);
+
+      // Filter offers by status
+      const pending = offers.filter(offer => offer.status === 'pending');
+      const accepted = offers.filter(offer => offer.status === 'accepted');
+      
+      setPendingOffers(pending);
+      setAcceptedOffers(accepted);
+            
+    } catch (error) {
+      console.error('Error refreshing offers:', error);
+      setPopup({
+        headline: "Error",
+        message: "Failed to refresh offers. Please try again."
+      });
+      
+      // Clear offers on error
+      setPendingOffers([]);
+      setAcceptedOffers([]);
+    } finally {
+      setOffersLoading(false);
+    }
+  };
 
   // Tab 5: Adding students
   const [addStudentClass, setAddStudentClass] = useState("");
@@ -87,6 +123,8 @@ const Grouping = () => {
     fetchUser();
   }, [router]);
 
+  // Fix the socket handlers and respondToOffer function
+
   // Admin socket setup
   useEffect(() => {
     if (!user || user.affiliation !== "admin") return;
@@ -99,16 +137,21 @@ const Grouping = () => {
 
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
       console.log("Received offer request:", data);
-      // Refresh offers for the current class when new request comes in
+      
+      // If we're currently viewing offers for this class, refresh them
       if (offersTabClass && Number(offersTabClass) === data.classId) {
-        fetchOffersForClass(offersTabClass);
+        console.log("New offer request for current class, refreshing...");
+        refreshOffers();
       }
     };
     
     const onResponse = (data: { classId: number; groupId: number; candidateId: number; accepted: boolean }) => {
-      // Refresh offers when response is sent
+      console.log("Received offer response:", data);
+      
+      // If we're currently viewing offers for this class, refresh them
       if (offersTabClass && Number(offersTabClass) === data.classId) {
-        fetchOffersForClass(offersTabClass);
+        console.log("Offer response for current class, refreshing...");
+        refreshOffers();
       }
     };
 
@@ -122,39 +165,11 @@ const Grouping = () => {
     };
   }, [user, offersTabClass]);
 
-  // Fetch offers for a specific class
-  const fetchOffersForClass = async (classId: string) => {
-    if (!classId) return;
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/offers/class/${classId}`);
-      if (response.ok) {
-        const offers = await response.json();
-        setAllOffers(offers);
-        
-        // Filter offers by status
-        setPendingOffers(offers.filter((offer: Offer) => offer.status === 'pending'));
-        setAcceptedOffers(offers.filter((offer: Offer) => offer.status === 'accepted'));
-        setRejectedOffers(offers.filter((offer: Offer) => offer.status === 'rejected'));
-      } else {
-        console.error('Failed to fetch offers');
-        setAllOffers([]);
-        setPendingOffers([]);
-        setAcceptedOffers([]);
-        setRejectedOffers([]);
-      }
-    } catch (error) {
-      console.error('Error fetching offers:', error);
-      setAllOffers([]);
-      setPendingOffers([]);
-      setAcceptedOffers([]);
-      setRejectedOffers([]);
-    }
-  };
-
   // Updated respond to offer function
   const respondToOffer = async (offerId: number, classId: number, groupId: number, candidateId: number, accepted: boolean) => {
     try {
+      console.log(`Responding to offer ${offerId}: ${accepted ? 'ACCEPT' : 'REJECT'}`);
+      
       // Update database first
       const response = await fetch(`${API_BASE_URL}/offers/${offerId}`, {
         method: 'PUT',
@@ -170,12 +185,16 @@ const Grouping = () => {
         throw new Error('Failed to update offer in database');
       }
 
+      console.log("Database updated successfully");
+
       // Emit socket response
       const socketOffer = io(API_BASE_URL);
       socketOffer.emit("makeOfferResponse", { classId, groupId, candidateId, accepted });
       
-      // Refresh offers for current class
-      fetchOffersForClass(offersTabClass);
+      console.log("Socket response emitted");
+
+      // Refresh offers to show updated status
+      await refreshOffers();
 
       setPopup({
         headline: "Success",
@@ -190,6 +209,31 @@ const Grouping = () => {
       });
     }
   };
+
+  // Also add useEffect to refresh offers when class changes
+  useEffect(() => {
+    if (offersTabClass) {
+      console.log(`Class changed to ${offersTabClass}, refreshing offers...`);
+      refreshOffers(offersTabClass);
+    } else {
+      // Clear offers when no class is selected
+      setPendingOffers([]);
+      setAcceptedOffers([]);
+    }
+  }, [offersTabClass]);
+
+  // Fix the missing setGroupsTabGroups call in Tab 3 useEffect
+  useEffect(() => {
+    if (groupsTabClass) {
+      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
+        .then(res => res.json())
+        .then(data => {
+          setGroupsTabGroups(data); // Fixed this line
+        });
+    } else {
+      setGroupsTabGroups({});
+    }
+  }, [groupsTabClass]);
 
   // Fetch assigned classes
   useEffect(() => {
@@ -234,25 +278,13 @@ const Grouping = () => {
     if (groupsTabClass) {
       fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
         .then(res => res.json())
-        .then(data => {
-          setGroupsTabGroups(data);
+        .then( data => {
+          setGroupsTabGroups
         });
     } else {
       setGroupsTabGroups({});
     }
   }, [groupsTabClass]);
-
-  // Tab 4: Fetch offers when class is selected
-  useEffect(() => {
-    if (offersTabClass) {
-      fetchOffersForClass(offersTabClass);
-    } else {
-      setAllOffers([]);
-      setPendingOffers([]);
-      setAcceptedOffers([]);
-      setRejectedOffers([]);
-    }
-  }, [offersTabClass]);
 
   // Fetch jobs
   useEffect(() => {
@@ -324,7 +356,7 @@ const Grouping = () => {
     setGroupsTabClass(e.target.value);
   };
 
-  // Handler for Tab 4 (Offers)
+  // Handler for Tab 4 
   const handleOffersTabClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setOffersTabClass(e.target.value);
   };
@@ -728,10 +760,22 @@ const Grouping = () => {
               )}
             </div>
           </div>
-          {/* Tab 4: Updated Offers Management */}
-          <div title="Offers Management">
+          {/* Tab 4: Pending & Accepted Offers */}
+{/* Tab 4: Updated Offers Management */}
+          <div title="Pending & Accepted Offers">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-[900px] mx-auto">
-              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Offers Management</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-northeasternRed">Offers Management</h2>
+                {offersTabClass && (
+                  <button
+                    onClick={() => refreshOffers()}
+                    disabled={offersLoading}
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-1 rounded-md font-medium transition-colors"
+                  >
+                    {offersLoading ? "Refreshing..." : "Refresh"}
+                  </button>
+                )}
+              </div>
               
               {/* Class Selection */}
               <div className="mb-6">
@@ -752,7 +796,12 @@ const Grouping = () => {
                 </select>
               </div>
 
-              {!offersTabClass ? (
+              {offersLoading ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center">
+                  <div className="w-8 h-8 border-t-2 border-navy border-solid rounded-full animate-spin mb-2"></div>
+                  <p className="text-navy font-medium">Loading offers...</p>
+                </div>
+              ) : !offersTabClass ? (
                 <div className="flex flex-col items-center justify-center h-48 text-center">
                   <p className="text-northeasternBlack font-medium">Please select a class to view offers</p>
                   <p className="text-gray-500 text-sm mt-1">Offers will appear here after selecting a class</p>
@@ -782,31 +831,6 @@ const Grouping = () => {
                                 Offer ID: {offer.id} | Status: {offer.status}
                               </p>
                             </div>
-                            
-                            {/* Video Preview */}
-                            {offer.video_path && (
-                              <div className="aspect-video mb-3">
-                                <iframe
-                                  className="w-full h-full rounded-lg"
-                                  src={offer.video_path}
-                                  title="Candidate Interview"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  allowFullScreen
-                                />
-                              </div>
-                            )}
-                            
-                            {/* Resume Link */}
-                            {offer.resume_path && (
-                              <a
-                                href={`${API_BASE_URL}/${offer.resume_path}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline block mb-3 text-sm"
-                              >
-                                📄 View Resume ({offer.resume_title || 'Resume'})
-                              </a>
-                            )}
                             
                             {/* Action Buttons */}
                             <div className="flex space-x-2">
@@ -856,65 +880,12 @@ const Grouping = () => {
                                 Status: Accepted | Offer ID: {offer.id}
                               </p>
                             </div>
-                            {offer.resume_path && (
-                              <a
-                                href={`${API_BASE_URL}/${offer.resume_path}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-green-700 hover:underline text-sm"
-                              >
-                                📄 Resume
-                              </a>
-                            )}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center">
                         <p className="text-gray-600">No accepted offers for this class</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Rejected Offers */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-700 mb-3 flex items-center">
-                      Rejected Offers 
-                      <span className="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm">
-                        {rejectedOffers.length}
-                      </span>
-                    </h3>
-                    {rejectedOffers.length > 0 ? (
-                      <div className="space-y-2">
-                        {rejectedOffers.map((offer) => (
-                          <div
-                            key={offer.id}
-                            className="bg-red-50 border border-red-200 p-3 rounded-lg flex items-center justify-between"
-                          >
-                            <div>
-                              <h4 className="font-semibold text-red-800">
-                                Group {offer.group_id} → Candidate {offer.candidate_id}
-                              </h4>
-                              <p className="text-sm text-red-600">
-                                Status: Rejected | Offer ID: {offer.id}
-                              </p>
-                            </div>
-                            {offer.resume_path && (
-                              <a
-                                href={`${API_BASE_URL}/${offer.resume_path}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-red-700 hover:underline text-sm"
-                              >
-                                📄 Resume
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center">
-                        <p className="text-gray-600">No rejected offers for this class</p>
                       </div>
                     )}
                   </div>
