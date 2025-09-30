@@ -2102,8 +2102,10 @@ app.get("/offers/class/:class_id", (req, res) => {
   });
 });
 
-app.post("/offers/:offer_id", (req, res) => {
+app.put("/offers/:offer_id", (req, res) => {
   const { offer_id } = req.params;
+  const { status } = req.body;
+
     
   if (!['approved', 'rejected'].includes(status)) {
     return res.status(400).json({ error: "Status must be 'approved' or 'rejected'" });
@@ -2111,7 +2113,7 @@ app.post("/offers/:offer_id", (req, res) => {
   
   db.query(
     `UPDATE Offers SET status = ? WHERE id = ?`,
-    [offer_id],
+    [status, offer_id],
     (err, result) => {
       if (err) {
         console.error("Error updating offer:", err);
