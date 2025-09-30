@@ -2084,7 +2084,7 @@ app.post("/offers", (req, res) => {
 });
 
 // GET - Teachers view pending offers for their class
-app.get("/offers/:class_id", (req, res) => {
+app.get("/offers/class/:class_id", (req, res) => {
   const { class_id } = req.params;
   
   console.log("Fetching pending offers for class:", class_id);
