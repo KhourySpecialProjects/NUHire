@@ -14,6 +14,18 @@ const Grouping = () => {
     email: string;
   }
 
+  interface Offer {
+    id: number;
+    class_id: number;
+    group_id: number;
+    candidate_id: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    resume_id?: number;
+    video_path?: string;
+    resume_path?: string;
+    resume_title?: string;
+  }
+
   // General state
   const [assignedClassIds, setAssignedClassIds] = useState<string[]>([]);
   const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
@@ -46,9 +58,12 @@ const Grouping = () => {
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
 
-  // Tab 4: Offers
-  const [pendingOffers, setPendingOffers] = useState<{ classId: number; groupId: number; candidateId: number }[]>([]);
-  const [acceptedOffers, setAcceptedOffers] = useState<{ classId: number; groupId: number; candidateId: number }[]>([]);
+  // Tab 4: Offers - Updated state management
+  const [offersTabClass, setOffersTabClass] = useState("");
+  const [allOffers, setAllOffers] = useState<Offer[]>([]);
+  const [pendingOffers, setPendingOffers] = useState<Offer[]>([]);
+  const [acceptedOffers, setAcceptedOffers] = useState<Offer[]>([]);
+  const [rejectedOffers, setRejectedOffers] = useState<Offer[]>([]);
 
   // Tab 5: Adding students
   const [addStudentClass, setAddStudentClass] = useState("");
@@ -84,14 +99,16 @@ const Grouping = () => {
 
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
       console.log("Received offer request:", data);
-      setPendingOffers((prev) => [...prev, data]);
+      // Refresh offers for the current class when new request comes in
+      if (offersTabClass && Number(offersTabClass) === data.classId) {
+        fetchOffersForClass(offersTabClass);
+      }
     };
+    
     const onResponse = (data: { classId: number; groupId: number; candidateId: number; accepted: boolean }) => {
-      if (data.accepted) {
-        setAcceptedOffers((prev) => {
-          if (prev.some(o => o.classId === data.classId && o.groupId === data.groupId && o.candidateId === data.candidateId)) return prev;
-          return [...prev, { classId: data.classId, groupId: data.groupId, candidateId: data.candidateId }];
-        });
+      // Refresh offers when response is sent
+      if (offersTabClass && Number(offersTabClass) === data.classId) {
+        fetchOffersForClass(offersTabClass);
       }
     };
 
@@ -103,14 +120,75 @@ const Grouping = () => {
       socketUpdate.off("makeOfferResponse", onResponse);
       socketUpdate.disconnect();
     };
-  }, [user]);
+  }, [user, offersTabClass]);
 
-  const respondToOffer = (classId: number, groupId: number, candidateId: number, accepted: boolean) => {
-    const socketOffer = io(API_BASE_URL);
-    socketOffer.emit("makeOfferResponse", { classId, groupId, candidateId, accepted });
-    setPendingOffers((prev) =>
-      prev.filter((o) => o.classId !== classId || o.groupId !== groupId || o.candidateId !== candidateId)
-    );
+  // Fetch offers for a specific class
+  const fetchOffersForClass = async (classId: string) => {
+    if (!classId) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/offers/class/${classId}`);
+      if (response.ok) {
+        const offers = await response.json();
+        setAllOffers(offers);
+        
+        // Filter offers by status
+        setPendingOffers(offers.filter((offer: Offer) => offer.status === 'pending'));
+        setAcceptedOffers(offers.filter((offer: Offer) => offer.status === 'accepted'));
+        setRejectedOffers(offers.filter((offer: Offer) => offer.status === 'rejected'));
+      } else {
+        console.error('Failed to fetch offers');
+        setAllOffers([]);
+        setPendingOffers([]);
+        setAcceptedOffers([]);
+        setRejectedOffers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+      setAllOffers([]);
+      setPendingOffers([]);
+      setAcceptedOffers([]);
+      setRejectedOffers([]);
+    }
+  };
+
+  // Updated respond to offer function
+  const respondToOffer = async (offerId: number, classId: number, groupId: number, candidateId: number, accepted: boolean) => {
+    try {
+      // Update database first
+      const response = await fetch(`${API_BASE_URL}/offers/${offerId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: accepted ? 'accepted' : 'rejected'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update offer in database');
+      }
+
+      // Emit socket response
+      const socketOffer = io(API_BASE_URL);
+      socketOffer.emit("makeOfferResponse", { classId, groupId, candidateId, accepted });
+      
+      // Refresh offers for current class
+      fetchOffersForClass(offersTabClass);
+
+      setPopup({
+        headline: "Success",
+        message: `Offer ${accepted ? 'accepted' : 'rejected'} successfully!`
+      });
+
+    } catch (error) {
+      console.error('Error responding to offer:', error);
+      setPopup({
+        headline: "Error",
+        message: "Failed to respond to offer. Please try again."
+      });
+    }
   };
 
   // Fetch assigned classes
@@ -156,13 +234,25 @@ const Grouping = () => {
     if (groupsTabClass) {
       fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
         .then(res => res.json())
-        .then( data => {
-          setGroupsTabGroups
+        .then(data => {
+          setGroupsTabGroups(data);
         });
     } else {
       setGroupsTabGroups({});
     }
   }, [groupsTabClass]);
+
+  // Tab 4: Fetch offers when class is selected
+  useEffect(() => {
+    if (offersTabClass) {
+      fetchOffersForClass(offersTabClass);
+    } else {
+      setAllOffers([]);
+      setPendingOffers([]);
+      setAcceptedOffers([]);
+      setRejectedOffers([]);
+    }
+  }, [offersTabClass]);
 
   // Fetch jobs
   useEffect(() => {
@@ -232,6 +322,11 @@ const Grouping = () => {
   // Handlers for Tab 3
   const handleGroupsTabClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setGroupsTabClass(e.target.value);
+  };
+
+  // Handler for Tab 4 (Offers)
+  const handleOffersTabClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setOffersTabClass(e.target.value);
   };
 
   // Assign group (Tab 1)
@@ -633,79 +728,198 @@ const Grouping = () => {
               )}
             </div>
           </div>
-          {/* Tab 4: Pending & Accepted Offers */}
-          <div title="Pending & Accepted Offers">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
-              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Pending & Accepted Offers</h2>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-navy mb-2">Pending Offers</h3>
-                {pendingOffers.length > 0 ? (
-                  <div className="space-y-2">
-                    {pendingOffers.map(({ classId, groupId, candidateId }) => (
-                      <div
-                        key={`pending-offer-${classId}-${groupId}-${candidateId}`}
-                        className="bg-springWater p-2 rounded border border-wood flex items-center justify-between"
-                      >
-                        <div className="flex-1">
-                          <h4 className="text-base font-semibold text-navy">
-                            Group {groupId} from Class {classId}
-                          </h4>
-                          <p className="text-gray-600">
-                            Wants to make an offer to Candidate {candidateId}
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Awaiting your approval decision
-                          </p>
-                        </div>
-                        <div className="flex space-x-2 ml-2">
-                          <button
-                            onClick={() => respondToOffer(classId, groupId, candidateId, true)}
-                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md font-medium transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => respondToOffer(classId, groupId, candidateId, false)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md font-medium transition-colors"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-springWater border border-wood p-2 rounded-md text-center">
-                    <p className="text-navy">No pending offers at this time</p>
-                  </div>
-                )}
+          {/* Tab 4: Updated Offers Management */}
+          <div title="Offers Management">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-[900px] mx-auto">
+              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Offers Management</h2>
+              
+              {/* Class Selection */}
+              <div className="mb-6">
+                <label className="block text-navy font-semibold mb-2">
+                  Select Class to View Offers
+                </label>
+                <select
+                  value={offersTabClass}
+                  onChange={handleOffersTabClassChange}
+                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a class</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-navy mb-2">Accepted Offers</h3>
-                {acceptedOffers.length > 0 ? (
-                  <div className="space-y-2">
-                    {acceptedOffers.map(({ classId, groupId, candidateId }) => (
-                      <div
-                        key={`accepted-offer-${classId}-${groupId}-${candidateId}`}
-                        className="bg-white p-2 rounded border border-wood flex items-center justify-between"
-                      >
-                        <div className="flex-1">
-                          <h4 className="text-base font-semibold text-navy">
-                            Group {groupId} from Class {classId}
-                          </h4>
-                          <p className="text-gray-600">
-                            Had their offer for Candidate {candidateId} <span className="text-green-700 font-bold">ACCEPTED</span>.
-                          </p>
-                        </div>
+
+              {!offersTabClass ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center">
+                  <p className="text-northeasternBlack font-medium">Please select a class to view offers</p>
+                  <p className="text-gray-500 text-sm mt-1">Offers will appear here after selecting a class</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Pending Offers */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-navy mb-3 flex items-center">
+                      Pending Offers 
+                      <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm">
+                        {pendingOffers.length}
+                      </span>
+                    </h3>
+                    {pendingOffers.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {pendingOffers.map((offer) => (
+                          <div
+                            key={offer.id}
+                            className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg"
+                          >
+                            <div className="mb-3">
+                              <h4 className="text-base font-semibold text-navy">
+                                Group {offer.group_id} → Candidate {offer.candidate_id}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                Offer ID: {offer.id} | Status: {offer.status}
+                              </p>
+                            </div>
+                            
+                            {/* Video Preview */}
+                            {offer.video_path && (
+                              <div className="aspect-video mb-3">
+                                <iframe
+                                  className="w-full h-full rounded-lg"
+                                  src={offer.video_path}
+                                  title="Candidate Interview"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Resume Link */}
+                            {offer.resume_path && (
+                              <a
+                                href={`${API_BASE_URL}/${offer.resume_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline block mb-3 text-sm"
+                              >
+                                📄 View Resume ({offer.resume_title || 'Resume'})
+                              </a>
+                            )}
+                            
+                            {/* Action Buttons */}
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true)}
+                                className="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md font-medium transition-colors"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false)}
+                                className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md font-medium transition-colors"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center">
+                        <p className="text-gray-600">No pending offers for this class</p>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="bg-springWater border border-wood p-2 rounded-md text-center">
-                    <p className="text-navy">No accepted offers yet</p>
+
+                  {/* Accepted Offers */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-700 mb-3 flex items-center">
+                      Accepted Offers 
+                      <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+                        {acceptedOffers.length}
+                      </span>
+                    </h3>
+                    {acceptedOffers.length > 0 ? (
+                      <div className="space-y-2">
+                        {acceptedOffers.map((offer) => (
+                          <div
+                            key={offer.id}
+                            className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-between"
+                          >
+                            <div>
+                              <h4 className="font-semibold text-green-800">
+                                Group {offer.group_id} → Candidate {offer.candidate_id}
+                              </h4>
+                              <p className="text-sm text-green-600">
+                                Status: Accepted | Offer ID: {offer.id}
+                              </p>
+                            </div>
+                            {offer.resume_path && (
+                              <a
+                                href={`${API_BASE_URL}/${offer.resume_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-green-700 hover:underline text-sm"
+                              >
+                                📄 Resume
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center">
+                        <p className="text-gray-600">No accepted offers for this class</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+
+                  {/* Rejected Offers */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-700 mb-3 flex items-center">
+                      Rejected Offers 
+                      <span className="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm">
+                        {rejectedOffers.length}
+                      </span>
+                    </h3>
+                    {rejectedOffers.length > 0 ? (
+                      <div className="space-y-2">
+                        {rejectedOffers.map((offer) => (
+                          <div
+                            key={offer.id}
+                            className="bg-red-50 border border-red-200 p-3 rounded-lg flex items-center justify-between"
+                          >
+                            <div>
+                              <h4 className="font-semibold text-red-800">
+                                Group {offer.group_id} → Candidate {offer.candidate_id}
+                              </h4>
+                              <p className="text-sm text-red-600">
+                                Status: Rejected | Offer ID: {offer.id}
+                              </p>
+                            </div>
+                            {offer.resume_path && (
+                              <a
+                                href={`${API_BASE_URL}/${offer.resume_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-red-700 hover:underline text-sm"
+                              >
+                                📄 Resume
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center">
+                        <p className="text-gray-600">No rejected offers for this class</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           {/* Tab: Add Student to Class & Group */}
