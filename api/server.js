@@ -2107,7 +2107,7 @@ app.put("/offers/:offer_id", (req, res) => {
   const { status } = req.body;
 
     
-  if (!['approved', 'rejected'].includes(status)) {
+  if (!['accepted', 'rejected'].includes(status)) {
     return res.status(400).json({ error: "Status must be 'approved' or 'rejected'" });
   }
   
