@@ -39,6 +39,14 @@ interface InterviewPopup {
   question4: number;
 }
 
+interface Offer {
+  id: number;
+  class_id: number;
+  group_id: number;
+  candidate_id: number;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
 // Main component for the MakeOffer page
 export default function MakeOffer() {
   useProgress();
@@ -79,6 +87,82 @@ export default function MakeOffer() {
   const confirmationCount = confirmations.length;
   const allConfirmed = confirmationCount >= groupSize;
   const [popupVotes, setPopupVotes] = useState<{ [key: number]: InterviewPopup }>({});
+  
+  const [existingOffer, setExistingOffer] = useState<Offer | null>(null);
+  const [checkingOffer, setCheckingOffer] = useState(false);
+
+  const checkExistingOffer = async () => {
+    if (!user?.group_id || !user?.class) return;
+    
+    setCheckingOffer(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/offers/group/${user.group_id}/class/${user.class}`
+      );
+      
+      if (response.ok) {
+        const offer = await response.json();
+        console.log("Existing offer found:", offer);
+        
+        // Fix: Handle null response properly
+        if (offer && offer.id) {
+          setExistingOffer(offer);
+          
+          if (offer.status === 'pending') {
+            setOfferPending(true);
+          } else if (offer.status === 'accepted') {
+            setAcceptedOffer(true);
+            setSentIn(prev => {
+              const newSentIn = [...prev];
+              newSentIn[offer.candidate_id] = true;
+              return newSentIn;
+            });
+          } else if (offer.status === 'rejected') {
+            setSentIn(prev => {
+              const newSentIn = [...prev];
+              newSentIn[offer.candidate_id] = false;
+              return newSentIn;
+            });
+            setOfferPending(false);
+          }
+        } else {
+          // Fix: Set to null when no offer exists
+          console.log("No existing offer found");
+          setExistingOffer(null);
+          setOfferPending(false);
+          setAcceptedOffer(false);
+        }
+      } else {
+        console.log("No existing offer found - response not ok");
+        setExistingOffer(null);
+        setOfferPending(false);
+        setAcceptedOffer(false);
+      }
+    } catch (error) {
+      console.error("Error checking existing offer:", error);
+      setExistingOffer(null);
+      setOfferPending(false);
+      setAcceptedOffer(false);
+    } finally {
+      setCheckingOffer(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.group_id && user?.class) {
+      checkExistingOffer();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user?.group_id || !user?.class) return;
+
+    const interval = setInterval(() => {
+      checkExistingOffer();
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   useEffect(() => {
     if (!user?.group_id || !candidates.length) return;
@@ -500,7 +584,7 @@ export default function MakeOffer() {
         if (accepted) {
           setPopup({
             headline: "Offer accepted!",
-            message: "Congratulations—you’ve extended the offer successfully.",
+            message: "Congratulations—you've extended the offer successfully.",
           });
           setSentIn((prev) => {
             const newSentIn = [...prev];
@@ -509,11 +593,12 @@ export default function MakeOffer() {
           })
 
           setAcceptedOffer(true);
+          setExistingOffer(prev => prev ? {...prev, status: 'accepted'} : null);
         } else {
           setPopup({
             headline: "Offer rejected",
             message:
-              "That candidate wasn’t available or has chosen another offer. Please choose again.",
+              "That candidate wasn't available or has chosen another offer. Please choose again.",
           });
 
           setCheckedState({});
@@ -524,6 +609,7 @@ export default function MakeOffer() {
           })
 
           setOfferPending(false);
+          setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : null);
         }
       }
     );
@@ -567,6 +653,22 @@ export default function MakeOffer() {
   const handleConfirmOffer = (candidateId: number) => {
     if (!socket || !user || !candidateId) return;
     
+    // Check if there's already an offer
+    if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
+      let message = "";
+      if (existingOffer.status === 'pending') {
+        message = "You already have a pending offer awaiting advisor approval.";
+      } else if (existingOffer.status === 'accepted') {
+        message = "You already have an accepted offer. You cannot make another offer.";
+      }
+      
+      setPopup({
+        headline: "Offer Already Exists",
+        message: message
+      });
+      return;
+    }
+    
     // First update local state immediately
     setOfferConfirmations(prev => {
       const currentConfirmations = prev[candidateId] || [];
@@ -590,6 +692,22 @@ export default function MakeOffer() {
   };
 
   const handleMakeOffer = async () => {
+    // Check if there's already an offer
+    if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
+      let message = "";
+      if (existingOffer.status === 'pending') {
+        message = "You already have a pending offer awaiting advisor approval.";
+      } else if (existingOffer.status === 'accepted') {
+        message = "You already have an accepted offer. You cannot make another offer.";
+      }
+      
+      setPopup({
+        headline: "Offer Already Exists",
+        message: message
+      });
+      return;
+    }
+
     const selectedIds = Object.entries(checkedState)
       .filter(([_, checked]) => checked)
       .map(([id]) => Number(id));
@@ -616,7 +734,6 @@ export default function MakeOffer() {
           group_id: user!.group_id,
           class_id: user!.class,
           candidate_id: candidateId,
-          status: 'pending'
         })
       });
 
@@ -631,6 +748,15 @@ export default function MakeOffer() {
       }
 
       console.log("Offer successfully submitted to database:", result);
+
+      // Update existing offer state
+      setExistingOffer({
+        id: result.id,
+        class_id: user!.class,
+        group_id: user!.group_id,
+        candidate_id: candidateId,
+        status: 'pending'
+      });
 
       // THEN emit socket event for real-time updates
       socket?.emit("makeOfferRequest", {
@@ -670,6 +796,8 @@ export default function MakeOffer() {
 
   const selectedCount = Object.values(checkedState).filter(Boolean).length;
 
+  const isOfferDisabled = existingOffer !== null && (existingOffer.status === 'pending' || existingOffer.status === 'accepted');
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
@@ -701,6 +829,28 @@ export default function MakeOffer() {
         <h1 className="text-3xl font-bold text-center text-navy mb-6">
           Make an Offer as a Group
         </h1>
+
+        {/* NEW: Show existing offer status */}
+        {existingOffer && (
+          <div className={`mb-6 p-4 rounded-lg text-center ${
+            existingOffer.status === 'pending' 
+              ? 'bg-yellow-100 border border-yellow-400 text-yellow-800'
+              : existingOffer.status === 'accepted'
+              ? 'bg-green-100 border border-green-400 text-green-800'
+              : 'bg-red-100 border border-red-400 text-red-800'
+          }`}>
+            <h3 className="font-bold mb-2">
+              {existingOffer.status === 'pending' && 'Offer Pending Approval'}
+              {existingOffer.status === 'accepted' && 'Offer Accepted!'}
+              {existingOffer.status === 'rejected' && 'Offer Rejected'}
+            </h3>
+            <p>
+              {existingOffer.status === 'pending' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' is awaiting advisor approval.'}
+              {existingOffer.status === 'accepted' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' has been accepted! Congratulations!'}
+              {existingOffer.status === 'rejected' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' was rejected. You may select a different candidate.'}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
           {interviewsWithVideos.map((interview, index) => {
@@ -784,11 +934,12 @@ export default function MakeOffer() {
                 </a>
 
                 {!isRejected && (
-                  <label className="flex items-center mt-2">
+                  <label className={`flex items-center mt-2 ${isOfferDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <input
                       type="checkbox"
                       checked={checkedState[interviewNumber] || false}
-                      onChange={() => handleCheckboxChange(interviewNumber)}
+                      onChange={() => !isOfferDisabled && handleCheckboxChange(interviewNumber)}
+                      disabled={isOfferDisabled}
                       className="h-4 w-4 text-redHeader"
                     />
                     <span className="ml-2 text-navy text-sm">Selected for Offer</span>
@@ -807,7 +958,7 @@ export default function MakeOffer() {
           />
         )}
 
-        {selectedCount === 1 && (
+        {selectedCount === 1 && !isOfferDisabled && (
           <div className="flex flex-col items-center my-6 gap-4">
             {/* Team confirmation status */}
             <div className="text-center">
@@ -822,10 +973,12 @@ export default function MakeOffer() {
                 // Individual confirmation button
                 <button
                   onClick={() => handleConfirmOffer(selectedCandidateId)}
-                  disabled={hasConfirmed || offerPending}
+                  disabled={hasConfirmed || offerPending || isOfferDisabled}
                   className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
                     hasConfirmed
                       ? "bg-green-500 text-white cursor-not-allowed"
+                      : isOfferDisabled
+                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
                       : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                 >
@@ -835,24 +988,36 @@ export default function MakeOffer() {
                 // Final offer button (only appears when all confirmed)
                 <button
                   onClick={handleMakeOffer}
-                  disabled={offerPending}
-                  className={`px-6 py-3 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
-                    offerPending
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-blue-700"
+                  disabled={offerPending || isOfferDisabled}
+                  className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
+                    offerPending || isOfferDisabled
+                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                      : "bg-redHeader text-white hover:bg-blue-700"
                   }`}
                 >
-                  {offerPending ? "Awaiting Advisor…" : "Make Team Offer"}
+                  {offerPending ? "Awaiting Advisor…" : isOfferDisabled ? "Offer Already Submitted" : "Make Team Offer"}
                 </button>
               )}
             </div>
 
             {/* Status message */}
-            {!allConfirmed && confirmationCount > 0 && (
+            {!allConfirmed && confirmationCount > 0 && !isOfferDisabled && (
               <p className="text-sm text-orange-600 text-center">
                 Waiting for {groupSize - confirmationCount} more team member{groupSize - confirmationCount !== 1 ? 's' : ''} to confirm
               </p>
             )}
+          </div>
+        )}
+
+        {/* NEW: Show message when offer actions are disabled */}
+        {selectedCount === 1 && isOfferDisabled && (
+          <div className="flex flex-col items-center my-6 gap-4">
+            <div className="text-center">
+              <p className="text-gray-600 font-medium">
+                {existingOffer?.status === 'pending' && 'Offer actions disabled - awaiting advisor approval'}
+                {existingOffer?.status === 'accepted' && 'Offer actions disabled - offer already accepted'}
+              </p>
+            </div>
           </div>
         )}
       </div>
