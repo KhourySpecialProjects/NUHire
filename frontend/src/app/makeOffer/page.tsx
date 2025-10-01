@@ -109,20 +109,36 @@ export default function MakeOffer() {
           
           if (offer.status === 'pending') {
             setOfferPending(true);
+            setAcceptedOffer(false);
+            setAbleToMakeOffer(false);
           } else if (offer.status === 'accepted') {
             setAcceptedOffer(true);
+            setOfferPending(false);
+            setAbleToMakeOffer(false);
+            // Fix: Update sentIn to show green card
             setSentIn(prev => {
               const newSentIn = [...prev];
+              // Ensure the array is large enough
+              while (newSentIn.length <= offer.candidate_id) {
+                newSentIn.push('none');
+              }
               newSentIn[offer.candidate_id] = true;
               return newSentIn;
             });
           } else if (offer.status === 'rejected') {
+            setAcceptedOffer(false);
+            setOfferPending(false);
+            setAbleToMakeOffer(true);
+            // Fix: Update sentIn to show red card
             setSentIn(prev => {
               const newSentIn = [...prev];
+              // Ensure the array is large enough
+              while (newSentIn.length <= offer.candidate_id) {
+                newSentIn.push('none');
+              }
               newSentIn[offer.candidate_id] = false;
               return newSentIn;
             });
-            setOfferPending(false);
           }
         } else {
           // Fix: Set to null when no offer exists
@@ -130,19 +146,25 @@ export default function MakeOffer() {
           setExistingOffer(null);
           setOfferPending(false);
           setAcceptedOffer(false);
+          setAbleToMakeOffer(true);
+          // Reset sentIn array
+          setSentIn(['none', 'none', 'none', 'none']);
         }
       } else {
         console.log("No existing offer found - response not ok");
         setExistingOffer(null);
         setOfferPending(false);
         setAcceptedOffer(false);
+        setAbleToMakeOffer(true);
+        setSentIn(['none', 'none', 'none', 'none']);
       }
     } catch (error) {
       console.error("Error checking existing offer:", error);
       setExistingOffer(null);
       setOfferPending(false);
       setAcceptedOffer(false);
-    } finally {
+      setAbleToMakeOffer(true);
+      setSentIn(['none', 'none', 'none', 'none']);
     }
   };
 
@@ -577,9 +599,12 @@ export default function MakeOffer() {
             message: "Congratulations—you've extended the offer successfully.",
           });
           setSentIn((prev) => {
-            const newSentIn = [...prev];
-            newSentIn[candidateId] = true; 
-            return newSentIn;
+          const newSentIn = [...prev];
+          while (newSentIn.length <= candidateId) {
+            newSentIn.push('none');
+          }
+          newSentIn[candidateId] = true; 
+          return newSentIn;
           })
 
           setAcceptedOffer(true);
@@ -594,16 +619,26 @@ export default function MakeOffer() {
           setCheckedState({});
           setSentIn((prev) => {
             const newSentIn = [...prev];
+            // Ensure the array is large enough
+            while (newSentIn.length <= candidateId) {
+              newSentIn.push('none');
+            }
             newSentIn[candidateId] = false; 
             return newSentIn;
-          })
+          });
 
           setOfferPending(false);
-          setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : null);
-          setAbleToMakeOffer(true);
-        }
+        setAcceptedOffer(false);
+        setAbleToMakeOffer(true);
+        setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : {
+          id: 0,
+          class_id: classId,
+          group_id: groupId,
+          candidate_id: candidateId,
+          status: 'rejected'
+        });
       }
-    );
+    });
 
     socket.on(
       "checkboxUpdated",
@@ -774,14 +809,13 @@ export default function MakeOffer() {
   };
 
   const completeMakeOffer = () => {
-    const selectedCount = Object.values(checkedState).filter(Boolean).length;
-    if (selectedCount !== 1) {
-      setPopup({
-        headline: "Action Required",
-        message: "Please select exactly one candidate to make an offer.",
-      });
-      return;
-    }
+    if (!acceptedOffer) {
+    setPopup({
+      headline: "Offer Required",
+      message: "You need to have an accepted offer before proceeding to the employer panel.",
+    });
+    return;
+  }
     updateProgress(user!, "employer");
     localStorage.setItem("progress", "employer");
     window.location.href = "/dashboard";
@@ -1030,7 +1064,7 @@ export default function MakeOffer() {
               ? "cursor-not-allowed opacity-50"
               : "hover:bg-blue-400"
           }`}
-          disabled={acceptedOffer}
+          disabled={!acceptedOffer} 
         >
           Next: Employer Panel →
         </button>
