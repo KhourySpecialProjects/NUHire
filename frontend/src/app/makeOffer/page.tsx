@@ -153,16 +153,6 @@ export default function MakeOffer() {
   }, [user]);
 
   useEffect(() => {
-    if (!user?.group_id || !user?.class) return;
-
-    const interval = setInterval(() => {
-      checkExistingOffer();
-    }, 5000); // Check every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [user]);
-
-  useEffect(() => {
     if (!user?.group_id || !candidates.length) return;
 
     const fetchPopupVotes = async () => {
@@ -570,6 +560,8 @@ export default function MakeOffer() {
           candidateId,
           accepted,
         });
+
+        checkExistingOffer();
 
         if(classId !== user.class) {
           console.log("Class Id is not defined");
