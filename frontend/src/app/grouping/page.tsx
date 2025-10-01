@@ -53,7 +53,7 @@ const Grouping = () => {
   // Tab 3: Groups in Class (independent state)
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
-
+  const [groupsTabStudents, setGroupsTabStudents] = useState<Student[]>([]);
   // Tab 4: Offers
   const [offersTabClass, setOffersTabClass] = useState("");
   const [pendingOffers, setPendingOffers] = useState<Offer[]>([]);
@@ -122,6 +122,20 @@ const Grouping = () => {
     };
     fetchUser();
   }, [router]);
+
+
+  useEffect(() => {
+    if (groupsTabClass) {
+      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+        .then(res => res.json())
+        .then(data => {
+          setGroupsTabStudents(data);
+        });
+    } else {
+      // Clear data when no class is selected
+      setGroupsTabStudents([]);
+    }
+  }, [groupsTabClass]);
 
   // Fix the socket handlers and respondToOffer function
 
@@ -723,7 +737,7 @@ const Grouping = () => {
                   <p className="text-gray-500 text-sm mt-1">Groups will appear here after selecting a class</p>
                 </div>
               ) : groupsTabGroups && Object.keys(groupsTabGroups).length > 0 ? (
-                Object.entries(groupsTabGroups).map(([group_id, students]) => (
+                Object.entries(groupsTabGroups).map(([group_id, jobStudents]) => (
                   <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
                     {isNaN(Number(group_id)) ? (
                       <h3 className="text-xl font-semibold text-red-600">No groups found</h3>
@@ -731,8 +745,8 @@ const Grouping = () => {
                       <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
                     )}
                     <ul className="list-none pl-0 text-navy mt-1">
-                      {Array.isArray(students) && students.length > 0 ? (
-                        students.map((student: any, index: number) => (
+                      {Array.isArray(groupsTabStudents) && groupsTabStudents.length > 0 ? (
+                        groupsTabStudents.map((student: any, index: number) => (
                           <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
                             <div className="flex items-center space-x-2">
                               <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
