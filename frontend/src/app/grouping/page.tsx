@@ -261,25 +261,45 @@ const Grouping = () => {
     }
   }, [selectedJobClass]);
 
-  // Tab 3: Fetch groups for independent class selection
-  // Fix the missing setGroupsTabGroups call in Tab 3 useEffect
-  useEffect(() => {
-    if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(data => {
-          setGroupsTabGroups(data); // Fixed this line
-        });
-      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(data2 => {
-          setGroupsTabStudents(data2);
-        });
-    } else {
-      setGroupsTabGroups({});
-      setGroupsTabStudents([]);
-    }
-  }, [groupsTabClass]);
+ useEffect(() => {
+  if (groupsTabClass) {
+    console.log("=== TAB 3 DEBUG ===");
+    console.log("Selected class:", groupsTabClass);
+    
+    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
+      .then(res => {
+        console.log("Groups API response status:", res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Groups API raw response:", data);
+        console.log("Groups data type:", typeof data);
+        console.log("Groups data keys:", Object.keys(data));
+        setGroupsTabGroups(data);
+      })
+      .catch(err => {
+        console.error("Groups API error:", err);
+      });
+      
+    fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+      .then(res => {
+        console.log("Students API response status:", res.status);
+        return res.json();
+      })
+      .then(data2 => {
+        console.log("Students API raw response:", data2);
+        console.log("Students data type:", typeof data2);
+        console.log("Students array length:", Array.isArray(data2) ? data2.length : 'Not an array');
+        setGroupsTabStudents(data2);
+      })
+      .catch(err => {
+        console.error("Students API error:", err);
+      });
+  } else {
+    setGroupsTabGroups({});
+    setGroupsTabStudents([]);
+  }
+}, [groupsTabClass]);
 
   // Fetch jobs
   useEffect(() => {
