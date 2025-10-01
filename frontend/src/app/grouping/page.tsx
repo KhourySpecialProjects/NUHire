@@ -123,20 +123,6 @@ const Grouping = () => {
     fetchUser();
   }, [router]);
 
-
-  useEffect(() => {
-    if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(data => {
-          setGroupsTabStudents(data);
-          console.log("Fetched students for groups tab:", groupsTabStudents);
-        });
-    } else {
-      setGroupsTabStudents([]);
-    }
-  }, [groupsTabClass]);
-
   // Fix the socket handlers and respondToOffer function
 
   // Admin socket setup
@@ -245,8 +231,15 @@ const Grouping = () => {
         .then(data => {
           setGroupsTabGroups(data); // Fixed this line
         });
+      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+        .then(res => res.json())
+        .then(data2 => {
+          setGroupsTabStudents(data2);
+          console.log("Fetched students for groups tab:", groupsTabStudents);
+        });
     } else {
       setGroupsTabGroups({});
+      setGroupsTabStudents([]);
     }
   }, [groupsTabClass]);
 
