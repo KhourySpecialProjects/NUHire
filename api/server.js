@@ -18,6 +18,7 @@ const FRONT_URL = process.env.REACT_APP_FRONT_URL;
 const app = express();
 const http = require("http");
 const { Server } = require("socket.io");
+const { groupCollapsed } = require("console");
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const server = http.createServer(app); // Use HTTP server for Socket.io
@@ -2083,7 +2084,24 @@ app.post("/offers", (req, res) => {
   );
 });
 
-// GET - Teachers view pending offers for their class
+app.get("/offers/group/:group_id/class/:class_id", (req, res) => {
+  const { group_id, class_id } = req.params;
+  
+  console.log("Fetching pending offers for class:", class_id);
+  
+  const query = `SELECT * FROM Offers WHERE class_id = ? AND group_id = ?`;
+  
+  db.query(query, [class_id, group_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching pending offers:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    res.json(results);
+  });
+
+});
+
 app.get("/offers/class/:class_id", (req, res) => {
   const { class_id } = req.params;
   
