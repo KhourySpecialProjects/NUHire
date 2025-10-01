@@ -18,6 +18,7 @@ const FRONT_URL = process.env.REACT_APP_FRONT_URL;
 const app = express();
 const http = require("http");
 const { Server } = require("socket.io");
+const { groupCollapsed } = require("console");
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const server = http.createServer(app); // Use HTTP server for Socket.io
@@ -2051,6 +2052,98 @@ app.get("/job-assignment/:groupId/:classId", (req, res) => {
       }
       
       res.json({ job: results[0].job });
+    }
+  );
+});
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//offers
+
+// POST - Students submit an offer
+app.post("/offers", (req, res) => {
+  const { group_id, class_id, candidate_id, status } = req.body;
+  
+  console.log("Creating new offer:", { group_id, class_id, candidate_id, status });
+  
+  db.query(
+    "INSERT INTO Offers (group_id, class_id, candidate_id, status) VALUES (?, ?, ?, ?)",
+    [group_id, class_id, candidate_id, status],
+    (err, result) => {
+      if (err) {
+        console.error("Error creating offer:", err);
+        return res.status(500).json({ error: err.message });
+      }
+          
+      console.log("Offer created successfully:", result.insertId);
+      res.json({ 
+        id: result.insertId, 
+        message: "Offer submitted successfully",
+        offer_id: result.insertId
+      });
+    }
+  );
+});
+
+app.get("/offers/group/:group_id/class/:class_id", (req, res) => {
+  const { group_id, class_id } = req.params;
+  
+  console.log("Fetching pending offers for class:", class_id);
+  
+  const query = `SELECT * FROM Offers WHERE class_id = ? AND group_id = ?`;
+  
+  db.query(query, [class_id, group_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching pending offers:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    res.json(results);
+  });
+
+});
+
+app.get("/offers/class/:class_id", (req, res) => {
+  const { class_id } = req.params;
+  
+  console.log("Fetching pending offers for class:", class_id);
+  
+  const query = `SELECT * FROM Offers WHERE class_id = ?`;
+  
+  db.query(query, [class_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching pending offers:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    console.log(`Found ${results.length} pending offers for class ${class_id}`);
+    res.json(results);
+  });
+});
+
+app.put("/offers/:offer_id", (req, res) => {
+  const { offer_id } = req.params;
+  const { status } = req.body;
+
+    
+  if (!['accepted', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: "Status must be 'approved' or 'rejected'" });
+  }
+  
+  db.query(
+    `UPDATE Offers SET status = ? WHERE id = ?`,
+    [status, offer_id],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating offer:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Offer not found" });
+      }
+      
+      console.log("Offer updated successfully");
+      res.json({ message: "Offer updated successfully" });
     }
   );
 });
