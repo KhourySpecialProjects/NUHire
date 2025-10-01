@@ -903,7 +903,7 @@ export default function MakeOffer() {
               </p>
             </div>
 
-            {/* Confirmation/Offer buttons */}
+            {/* Confirmation/Offer button */}
             <div className="flex gap-4">
               {!allConfirmed ? (
                 // Individual confirmation button
