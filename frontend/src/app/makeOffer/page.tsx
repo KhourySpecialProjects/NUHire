@@ -734,6 +734,7 @@ export default function MakeOffer() {
           group_id: user!.group_id,
           class_id: user!.class,
           candidate_id: candidateId,
+          status: `pending`,
         })
       });
 
@@ -1039,7 +1040,7 @@ export default function MakeOffer() {
               : "hover:bg-blue-400"
           }`}
         >
-          Next: Employer Pannel →
+          Next: Employer Panel →
         </button>
       </footer>
     </div>
