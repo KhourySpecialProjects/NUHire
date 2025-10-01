@@ -123,20 +123,6 @@ const Grouping = () => {
     fetchUser();
   }, [router]);
 
-
-  useEffect(() => {
-    if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(data => {
-          setGroupsTabStudents(data);
-        });
-    } else {
-      // Clear data when no class is selected
-      setGroupsTabStudents([]);
-    }
-  }, [groupsTabClass]);
-
   // Fix the socket handlers and respondToOffer function
 
   // Admin socket setup
