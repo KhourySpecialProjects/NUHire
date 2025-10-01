@@ -274,7 +274,6 @@ const Grouping = () => {
         .then(res => res.json())
         .then(data2 => {
           setGroupsTabStudents(data2);
-          console.log("Fetched students for groups tab:", groupsTabStudents);
         });
     } else {
       setGroupsTabGroups({});
