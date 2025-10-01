@@ -89,12 +89,11 @@ export default function MakeOffer() {
   const [popupVotes, setPopupVotes] = useState<{ [key: number]: InterviewPopup }>({});
   
   const [existingOffer, setExistingOffer] = useState<Offer | null>(null);
-  const [checkingOffer, setCheckingOffer] = useState(false);
+  const [ableToMakeOffer, setAbleToMakeOffer] = useState(true);
 
   const checkExistingOffer = async () => {
     if (!user?.group_id || !user?.class) return;
     
-    setCheckingOffer(true);
     try {
       const response = await fetch(
         `${API_BASE_URL}/offers/group/${user.group_id}/class/${user.class}`
@@ -144,7 +143,6 @@ export default function MakeOffer() {
       setOfferPending(false);
       setAcceptedOffer(false);
     } finally {
-      setCheckingOffer(false);
     }
   };
 
@@ -610,6 +608,7 @@ export default function MakeOffer() {
 
           setOfferPending(false);
           setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : null);
+          setAbleToMakeOffer(true);
         }
       }
     );
@@ -705,6 +704,7 @@ export default function MakeOffer() {
         headline: "Offer Already Exists",
         message: message
       });
+      setAbleToMakeOffer(false);
       return;
     }
 
@@ -1010,13 +1010,12 @@ export default function MakeOffer() {
           </div>
         )}
 
-        {/* NEW: Show message when offer actions are disabled */}
         {selectedCount === 1 && isOfferDisabled && (
           <div className="flex flex-col items-center my-6 gap-4">
             <div className="text-center">
               <p className="text-gray-600 font-medium">
-                {existingOffer?.status === 'pending' && 'Offer actions disabled - awaiting advisor approval'}
-                {existingOffer?.status === 'accepted' && 'Offer actions disabled - offer already accepted'}
+                {ableToMakeOffer && !acceptedOffer && 'Offer actions disabled - awaiting advisor approval'}
+                {ableToMakeOffer && acceptedOffer && 'Offer actions disabled - offer already accepted'}
               </p>
             </div>
           </div>
