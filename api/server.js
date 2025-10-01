@@ -166,11 +166,10 @@ app.use(session({
   saveUninitialized: false,
   store: sessionStore,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS in production
+    secure: true, // Set `true` if using HTTPS
     httpOnly: true,
     sameSite: "None",
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // For cross-origin
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
