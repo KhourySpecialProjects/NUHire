@@ -924,7 +924,7 @@ export default function MakeOffer() {
                 // Final offer button (only appears when all confirmed)
                 <button
                   onClick={handleMakeOffer}
-                  disabled={offerPending || isOfferDisabled}
+                  disabled={offerPending || isOfferDisabled || acceptedOffer}
                   className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
                     offerPending || isOfferDisabled
                       ? "bg-gray-400 text-gray-200 cursor-not-allowed"
