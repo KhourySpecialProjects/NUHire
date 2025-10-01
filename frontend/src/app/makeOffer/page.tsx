@@ -101,7 +101,6 @@ export default function MakeOffer() {
       
       if (response.ok) {
         const offer = await response.json();
-        console.log("Existing offer found:", offer);
         
         // Fix: Handle null response properly
         if (offer && offer.id) {
@@ -125,13 +124,10 @@ export default function MakeOffer() {
             setOfferPending(false);
           }
         } else {
-          // Fix: Set to null when no offer exists
-          console.log("No existing offer found");
           setExistingOffer(null);
           setOfferPending(false);
         }
       } else {
-        console.log("No existing offer found - response not ok");
         setExistingOffer(null);
         setOfferPending(false);
       }
@@ -144,7 +140,6 @@ export default function MakeOffer() {
   };
 
   useEffect(() => {
-    console.log("ableToMakeOffer", ableToMakeOffer);
   }, [ableToMakeOffer]);
 
   useEffect(() => {
@@ -234,7 +229,6 @@ export default function MakeOffer() {
         const response = await fetch(
           `${API_BASE_URL}/interview/group/${user.group_id}?class=${user.class}`
         );
-        console.log("fetching interviews for class: ", user.class);
         const data = await response.json();
 
         setInterviews(data);
@@ -258,34 +252,19 @@ export default function MakeOffer() {
   }, [user]);
 
   useEffect(() => {
-    console.log("=== fetchCandidates useEffect triggered ===");
-    console.log("Interviews length:", interviews.length);
-    console.log("Interviews data:", interviews);
-    
     if (!interviews.length) {
-      console.log("No interviews found, returning early");
       return;
     }
 
     const fetchCandidates = async () => {
-      console.log("=== Starting fetchCandidates async function ===");
-      console.log("Number of interviews to process:", interviews.length);
-      
       try {
         const fetchedCandidates = await Promise.all(
           interviews.map(async (interview, index) => {
             const id = interview.candidate_id;
             const url = `${API_BASE_URL}/canidates/resume/${id}`;
-            
-            console.log(`Fetching candidate ${index + 1}/${interviews.length}:`);
-            console.log("  Interview data:", interview);
-            console.log("  Candidate ID:", id);
-            console.log("  Fetch URL:", url);
-            
+          
             try {
               const res = await fetch(url);
-              console.log(`  Response status for candidate ${id}:`, res.status);
-              console.log(`  Response ok for candidate ${id}:`, res.ok);
 
               if (!res.ok) {
                 console.error(`  ❌ Invalid response for candidate ${id}:`, {
@@ -304,12 +283,9 @@ export default function MakeOffer() {
                 console.error(`  ❌ Invalid content-type for candidate ${id}:`, contentType);
                 throw new Error(`Invalid content-type for candidate ${id}: ${contentType}`);
               }
-
-              console.log(`  ✅ Successful response for candidate ${id}, parsing JSON...`);
               
               // Get response text first to debug
               const responseText = await res.text();
-              console.log(`  Raw response for candidate ${id}:`, responseText);
               
               if (!responseText.trim()) {
                 console.error(`  ❌ Empty response for candidate ${id}`);
@@ -317,7 +293,6 @@ export default function MakeOffer() {
               }
 
               const data = JSON.parse(responseText);
-              console.log(`  Parsed data for candidate ${id}:`, data);
               
               if (!data) {
                 console.error(`  ❌ No data found for candidate ${id}`);
@@ -336,17 +311,8 @@ export default function MakeOffer() {
 
         // Filter out null candidates (failed fetches)
         const validCandidates = fetchedCandidates.filter(candidate => candidate !== null);
-        
-        console.log("=== Candidates fetched successfully ===");
-        console.log("Total candidates attempted:", fetchedCandidates.length);
-        console.log("Valid candidates received:", validCandidates.length);
-        console.log("Valid candidates data:", validCandidates);
-        console.log("Setting candidates state...");
-        
         setCandidates(validCandidates);
-        
-        console.log("✅ Candidates state updated successfully");
-        
+              
       } catch (err) {
         console.error("=== Error in fetchCandidates ===");
         console.error("Error type:", typeof err);
@@ -359,13 +325,11 @@ export default function MakeOffer() {
       }
     };
 
-    console.log("Calling fetchCandidates function...");
     fetchCandidates();
   }, [interviews]);
 
   useEffect(() => {
     const handleShowInstructions = () => {
-      console.log("Help button clicked - showing instructions");
       setShowInstructions(true);
     };
 
@@ -393,7 +357,6 @@ export default function MakeOffer() {
             }
 
             const data = await res.json();
-            console.log("Raw resume data:", data);
             
             // Fix: If data is an array, take the first element
             const resumeData = Array.isArray(data) ? data[0] : data;
@@ -401,9 +364,7 @@ export default function MakeOffer() {
           })
         );
 
-        console.log("Setting resumes:", fetchedResumes);
         setResumes(fetchedResumes);
-        console.log("Resumes set:", fetchedResumes);
       } catch (err) {
         console.error("Error fetching resumes:", err);
       }
@@ -460,9 +421,6 @@ export default function MakeOffer() {
 
   useEffect(() => {
     if (!interviews.length || !candidates.length) return;
-    console.log("interviews: ", interviews);
-    console.log("candidates: ", candidates);
-    console.log("resumes: ", resumes);
 
     const uniqueCandidateIds = [
       ...new Set(interviews.map((i) => i.candidate_id)),
@@ -471,7 +429,6 @@ export default function MakeOffer() {
     const merged = uniqueCandidateIds.map((id) => {
       // Fix: Match interview candidate_id with candidate's resume_id (not the candidate's id)
       const candidate = candidates.find((c) => c.resume_id === id);
-      console.log(`Looking for candidate with resume_id ${id}:`, candidate);
       
       if (!candidate) {
         console.warn(`No candidate found with resume_id ${id}`);
@@ -482,10 +439,7 @@ export default function MakeOffer() {
         };
       }
 
-      // Now find the resume using the candidate's resume_id
-      console.log("candidate res id", candidate.resume_id)
       const resume = resumes.find((r) => r.id === candidate.resume_id);
-      console.log(`Looking for resume with id ${candidate.resume_id}:`, resume);
       
       return {
         candidate_id: id,
@@ -495,7 +449,6 @@ export default function MakeOffer() {
     });
 
     setInterviewsWithVideos(merged);
-    console.log("interviewsWithVideos: ", merged);
   }, [resumes]);
 
   // Setup socket.io
@@ -510,7 +463,6 @@ export default function MakeOffer() {
     socket.on("connect", () => {
       setIsConnected(true);
       socket?.emit("joinGroup", `group_${user.group_id}_class_${user.class}`);
-      console.log()
     });
 
     socket.on("disconnect", () => {
@@ -555,21 +507,13 @@ export default function MakeOffer() {
         candidateId: number;
         accepted: boolean;
       }) => {
-        console.log("Received Response: ", {
-          classId,
-          groupId,
-          candidateId,
-          accepted,
-        });
 
         checkExistingOffer();
 
         if(classId !== user.class) {
-          console.log("Class Id is not defined");
           return
         }
         if(groupId !== user.group_id) {
-          console.log("GroupId is not defined");
           return
         }
         if (accepted) {
@@ -740,8 +684,6 @@ export default function MakeOffer() {
         });
         return;
       }
-
-      console.log("Offer successfully submitted to database:", result);
 
       // Update existing offer state
       setExistingOffer({
