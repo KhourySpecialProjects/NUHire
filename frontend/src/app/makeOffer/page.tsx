@@ -963,7 +963,7 @@ export default function MakeOffer() {
                 // Individual confirmation button
                 <button
                   onClick={() => handleConfirmOffer(selectedCandidateId)}
-                  disabled={hasConfirmed || offerPending || isOfferDisabled}
+                  disabled={hasConfirmed || offerPending || isOfferDisabled || !ableToMakeOffer}
                   className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
                     hasConfirmed
                       ? "bg-green-500 text-white cursor-not-allowed"
