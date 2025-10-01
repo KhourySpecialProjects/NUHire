@@ -280,7 +280,7 @@ const Grouping = () => {
       fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
         .then(res => res.json())
         .then( data => {
-          setGroupsTabGroups
+          setGroupsTabGroups(data)
         });
     } else {
       setGroupsTabGroups({});
