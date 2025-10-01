@@ -123,6 +123,20 @@ const Grouping = () => {
     fetchUser();
   }, [router]);
 
+
+  useEffect(() => {
+    if (groupsTabClass) {
+      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+        .then(res => res.json())
+        .then(data => {
+          setGroupsTabStudents(data);
+          console.log("Fetched students for groups tab:", groupsTabStudents);
+        });
+    } else {
+      setGroupsTabStudents([]);
+    }
+  }, [groupsTabClass]);
+
   // Fix the socket handlers and respondToOffer function
 
   // Admin socket setup
@@ -275,20 +289,17 @@ const Grouping = () => {
   }, [selectedJobClass]);
 
   // Tab 3: Fetch groups for independent class selection
-useEffect(() => {
-  if (groupsTabClass) {
-    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("Tab 3 - Raw API response:", data);
-        console.log("Tab 3 - Object.keys:", Object.keys(data));
-        console.log("Tab 3 - Object.entries:", Object.entries(data));
-        setGroupsTabGroups(data);
-      });
-  } else {
-    setGroupsTabGroups({});
-  }
-}, [groupsTabClass]);
+  useEffect(() => {
+    if (groupsTabClass) {
+      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
+        .then(res => res.json())
+        .then( data => {
+          setGroupsTabGroups(data)
+        });
+    } else {
+      setGroupsTabGroups({});
+    }
+  }, [groupsTabClass]);
 
   // Fetch jobs
   useEffect(() => {
