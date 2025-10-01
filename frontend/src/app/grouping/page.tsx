@@ -223,26 +223,6 @@ const Grouping = () => {
     }
   }, [offersTabClass]);
 
-  // Fix the missing setGroupsTabGroups call in Tab 3 useEffect
-  useEffect(() => {
-    if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(data => {
-          setGroupsTabGroups(data); // Fixed this line
-        });
-      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(data2 => {
-          setGroupsTabStudents(data2);
-          console.log("Fetched students for groups tab:", groupsTabStudents);
-        });
-    } else {
-      setGroupsTabGroups({});
-      setGroupsTabStudents([]);
-    }
-  }, [groupsTabClass]);
-
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
@@ -282,15 +262,23 @@ const Grouping = () => {
   }, [selectedJobClass]);
 
   // Tab 3: Fetch groups for independent class selection
+  // Fix the missing setGroupsTabGroups call in Tab 3 useEffect
   useEffect(() => {
     if (groupsTabClass) {
       fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
         .then(res => res.json())
-        .then( data => {
-          setGroupsTabGroups(data)
+        .then(data => {
+          setGroupsTabGroups(data); // Fixed this line
+        });
+      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+        .then(res => res.json())
+        .then(data2 => {
+          setGroupsTabStudents(data2);
+          console.log("Fetched students for groups tab:", groupsTabStudents);
         });
     } else {
       setGroupsTabGroups({});
+      setGroupsTabStudents([]);
     }
   }, [groupsTabClass]);
 
