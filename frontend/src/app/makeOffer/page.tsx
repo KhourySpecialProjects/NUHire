@@ -129,19 +129,16 @@ export default function MakeOffer() {
           console.log("No existing offer found");
           setExistingOffer(null);
           setOfferPending(false);
-          setAcceptedOffer(false);
         }
       } else {
         console.log("No existing offer found - response not ok");
         setExistingOffer(null);
         setOfferPending(false);
-        setAcceptedOffer(false);
       }
     } catch (error) {
       console.error("Error checking existing offer:", error);
       setExistingOffer(null);
       setOfferPending(false);
-      setAcceptedOffer(false);
     } finally {
     }
   };
