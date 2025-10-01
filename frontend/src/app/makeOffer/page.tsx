@@ -1030,6 +1030,7 @@ export default function MakeOffer() {
               ? "cursor-not-allowed opacity-50"
               : "hover:bg-blue-400"
           }`}
+          disabled={acceptedOffer}
         >
           Next: Employer Panel →
         </button>

@@ -136,6 +136,7 @@ const Grouping = () => {
     socketUpdate.emit("adminOnline", { adminEmail: user.email });
 
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
+      refreshOffers();
       console.log("Received offer request:", data);
       
       // If we're currently viewing offers for this class, refresh them
