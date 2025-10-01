@@ -153,7 +153,7 @@ const sessionStore = new MySQLStore({
   port: parseInt(url.port) || 3306,
   user: url.username,
   password: url.password,
-  database: url.pathname.slice(1), // Remove leading '/'
+  database: url.pathname.slice(1), 
   ssl: {
     rejectUnauthorized: false
   }
