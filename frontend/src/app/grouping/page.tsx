@@ -753,16 +753,6 @@ const Grouping = () => {
                 )}
               </div>
 
-              {/* Debug info */}
-              {groupsTabClass && (
-                <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
-                  <p><strong>DEBUG:</strong></p>
-                  <p>Students array length: {groupsTabStudents.length}</p>
-                  <p>Groups object keys: {Object.keys(groupsTabGroups).join(', ')}</p>
-                  <p>Students data: {JSON.stringify(groupsTabStudents)}</p>
-                </div>
-              )}
-
               {!groupsTabClass ? (
                 <div className="flex flex-col items-center justify-center h-48 text-center">
                   <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
