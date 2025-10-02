@@ -1727,7 +1727,20 @@ app.get("/jobdes/title", (req, res) => {
 
 //Gets all stored resumes
 app.get("/resume_pdf", (req, res) => {
-  db.query("SELECT * FROM Resume_pdfs", (err, results) => {
+  const query = `
+    SELECT 
+      r.id, 
+      r.title, 
+      r.file_path,
+      c.f_name as first_name,
+      c.l_name as last_name,
+      c.interview
+    FROM Resume_pdfs r
+    LEFT JOIN Candidates c ON r.id = c.resume_id
+    ORDER BY r.id DESC
+  `;
+  
+  db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
