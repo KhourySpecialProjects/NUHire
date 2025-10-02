@@ -1056,7 +1056,7 @@ app.post("/users", (req, res) => {
 app.get("/students", async (req, res) => {
   const { class: classId } = req.query;
   
-  let query = "SELECT f_name, l_name, email FROM Users WHERE affiliation = 'student'";
+  let query = "SELECT f_name, l_name, email, group_id FROM Users WHERE affiliation = 'student'";
   let params = [];
   
   if (classId) {
