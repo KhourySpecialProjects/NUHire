@@ -371,7 +371,7 @@ const Upload = () => {
 
         {/* Resume Upload Section */}
         <div className="border-4 border-northeasternBlack rounded-lg p-4 bg-white">
-          <h2 className="text-2xl font-bold text-navy mb-4">Upload Resume</h2>
+          <h2 className="text-2xl font-bold text-navy mb-4">Upload Candidate</h2>
           
           <div className="space-y-3">
             <input 
@@ -419,21 +419,21 @@ const Upload = () => {
               onClick={uploadResume} 
               disabled={resumeUploading} 
               className="w-full bg-northeasternBlack text-northeasternWhite p-3 rounded-md hover:bg-navy transition duration-200 disabled:bg-gray-400">
-              {resumeUploading ? "Uploading..." : "Upload Resume"}
+              {resumeUploading ? "Uploading..." : "Upload Candidate"}
             </button>
           </div>
 
-          <h3 className="text-xl font-bold mt-6 mb-3">Existing Resumes</h3>
+          <h3 className="text-xl font-bold mt-6 mb-3">Existing Candidates</h3>
           <div className="max-h-60 overflow-y-auto">
             {resumes.length === 0 ? (
-              <p className="text-gray-500">No resumes uploaded yet.</p>
+              <p className="text-gray-500">No Candidates uploaded yet.</p>
             ) : (
               <ul className="space-y-2">
                 {resumes.map((resume) => (
                   <li key={resume.id} className="border border-gray-200 p-3 rounded-md">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="font-semibold text-navy">{resume.title}</div>
+                        <div className="font-semibold text-navy">{resume.first_name} {resume.last_name}</div>
                         {resume.first_name && resume.last_name && (
                           <div className="text-sm text-gray-600">
                             {resume.first_name} {resume.last_name}
