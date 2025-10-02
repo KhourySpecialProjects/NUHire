@@ -724,7 +724,7 @@ const Grouping = () => {
               </button>
             </div>
           </div>
-          {/* Tab 3: Groups in Class - Fix the student display */}
+          {/* Tab 3: Groups in Class */}
           <div title="Groups in Class">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">
@@ -746,6 +746,11 @@ const Grouping = () => {
                     </option>
                   ))}
                 </select>
+                {classes.length === 0 && (
+                  <p className="text-red-500 text-sm mt-1">
+                    You have no assigned classes. Please contact the administrator.
+                  </p>
+                )}
               </div>
 
               {!groupsTabClass ? (
@@ -753,65 +758,44 @@ const Grouping = () => {
                   <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
                   <p className="text-gray-500 text-sm mt-1">Groups will appear here after selecting a class</p>
                 </div>
-              ) : (
-                (() => {
-                  console.log("Rendering groups. Groups data:", groupsTabGroups);
-                  console.log("Students data:", groupsTabStudents);
+              ) : groupsTabGroups && Object.keys(groupsTabGroups).length > 0 ? (
+                Object.keys(groupsTabGroups).map((groupId, index) => {
+                  // Get students for this specific group from groupsTabGroups
+                  const studentsInGroup = groupsTabGroups[groupId] || [];
                   
-                  // groupsTabGroups is an object where keys are group_ids and values are arrays of student emails
-                  // groupsTabStudents is an array of student objects with email, f_name, l_name
-                  
-                  return Object.keys(groupsTabGroups).length > 0 ? (
-                    Object.entries(groupsTabGroups).map(([group_id, studentEmails]) => {
-                      // studentEmails should be an array of email strings for this group
-                      const studentsInGroup = Array.isArray(studentEmails) 
-                        ? studentEmails
-                            .map((email: string) => 
-                              groupsTabStudents.find((s: Student) => s.email === email)
-                            )
-                            .filter(Boolean) // Remove undefined entries
-                        : [];
-                      
-                      console.log(`Group ${group_id} emails:`, studentEmails);
-                      console.log(`Group ${group_id} matched students:`, studentsInGroup);
-                      
-                      return (
-                        <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
-                          <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
-                          <ul className="list-none pl-0 text-navy mt-1">
-                            {studentsInGroup.length > 0 ? (
-                              studentsInGroup.map((student: any, index: number) => (
-                                <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
-                                  <div className="flex items-center space-x-2">
-                                    <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                    <span className="font-medium">
-                                      {student.f_name && student.l_name 
-                                        ? `${student.f_name} ${student.l_name}` 
-                                        : student.email.split('@')[0]
-                                      } ({student.email})
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-2 text-sm">
-                                    <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                                      {student.current_page || 'No page'}
-                                    </span>
-                                    <span className="text-gray-600">
-                                      No job assigned
-                                    </span>
-                                  </div>
-                                </li>
-                              ))
-                            ) : (
-                              <li className="text-gray-500 italic">No students assigned</li>
-                            )}
-                          </ul>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-northeasternBlack text-center">No groups found for this class.</p>
+                  return (
+                    <div key={groupId} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
+                      <h3 className="text-xl font-semibold text-navy">Group {index + 1}</h3>
+                      <ul className="list-none pl-0 text-navy mt-1">
+                        {studentsInGroup.length > 0 ? (
+                          studentsInGroup.map((studentEmail: string, idx: number) => {
+                            // Find the full student object from groupsTabStudents
+                            const student = groupsTabStudents.find((s: Student) => s.email === studentEmail);
+                            
+                            if (!student) return null;
+                            
+                            return (
+                              <li key={idx} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium">
+                                    {student.f_name && student.l_name 
+                                      ? `${student.f_name} ${student.l_name}` 
+                                      : student.email.split('@')[0]
+                                    } ({student.email})
+                                  </span>
+                                </div>
+                              </li>
+                            );
+                          })
+                        ) : (
+                          <li className="text-gray-500 italic">No students assigned</li>
+                        )}
+                      </ul>
+                    </div>
                   );
-                })()
+                })
+              ) : (
+                <p className="text-northeasternBlack text-center">No groups found for this class.</p>
               )}
             </div>
           </div>
