@@ -114,6 +114,10 @@ export default function ResReviewGroup() {
   }, [router]);
     
   useEffect(() => {
+    console.log("Resumes has changes:", resumes)
+  }, [resumes]);
+
+  useEffect(() => {
     if (!user) return; // Only check for user, not socket
 
     // If socket exists but is not connected, close it
@@ -232,7 +236,11 @@ export default function ResReviewGroup() {
   const fetchResumes = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/resume_pdf`);
-      const data: { file_path: string; id: number; title: string; uploaded_at: string, f_name: string, l_name: string }[] = await response.json();
+      const data: { file_path: string; id: number; title: string, f_name: string, l_name: string }[] = await response.json();
+
+      console.log("Raw resume data from API:", data);
+      console.log("First resume item:", data[0]);
+    
       const formatted: Resume[] = data.map(item => ({
       resume_number: item.id,
       file_path: item.file_path,
