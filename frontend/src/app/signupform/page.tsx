@@ -106,10 +106,10 @@ export default function SignupDetails() {
 
     // Create user object
     const user = { 
-      f_name: firstName, 
-      l_name: lastName, 
-      email: email, 
-      affiliation: affiliation,
+      First_name: firstName, 
+      Last_name: lastName, 
+      Email: email, 
+      Affiliation: affiliation,
       // Include group_id only for students
       ...(affiliation === 'student' && { group_id: groupNumber, course_id: courseNumber })
     };
