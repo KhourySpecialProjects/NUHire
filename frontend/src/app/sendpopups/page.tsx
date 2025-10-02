@@ -428,15 +428,6 @@ const SendPopups = () => {
                   Groups in {selectedClass ? `Class ${selectedClass}` : 'All Classes'}
               </h2>
               
-              {/* Add debug info */}
-              {selectedClass && (
-                  <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
-                      <p><strong>DEBUG:</strong></p>
-                      <p>Groups object keys: {Object.keys(groups).join(', ')}</p>
-                      <p>Total groups: {Object.keys(groups).length}</p>
-                  </div>
-              )}
-              
               {groups && Object.keys(groups).length > 0 ? (
                   Object.entries(groups).map(([group_id, students]) => (
                       <div
