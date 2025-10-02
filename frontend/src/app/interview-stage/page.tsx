@@ -29,7 +29,18 @@ interface Interview {
   id: number;
   resume_id: number;
   interview: string;
+  first_name: string; 
+  last_name: string;  
 }
+
+const [interviews, setInterviews] = useState<Array<{
+  resume_id: number;
+  title: string;
+  video_path: string;
+  interview: string;
+  first_name: string;  
+  last_name: string;   
+}>>([]);
 
 interface Resume {
   resume_number: number;
@@ -59,12 +70,6 @@ export default function Interview() {
   const [fadingEffect, setFadingEffect] = useState(false);
   const [finished, setFinished] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const [interviews, setInterviews] = useState<Array<{
-    resume_id: number;
-    title: string;
-    video_path: string;
-    interview: string;
-  }>>([]);
   const interviewInstructions = [
     "Watch each candidate's interview video carefully.",
     "Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.",
@@ -100,6 +105,60 @@ export default function Interview() {
     }
   };
 
+  const fetchCandidates = async () => {
+    try {
+      // Get all resumes for the group and filter by class
+      const resumeResponse = await axios.get(
+        `${API_BASE_URL}/resume/group/${user!.group_id}?class=${user!.class}`, 
+        { timeout: 8000 }
+      );
+      
+      const allResumes: Resume[] = resumeResponse.data;
+      
+      // Filter to get only checked resumes and ensure no duplicates
+      const checkedResumes = allResumes
+      .filter((resume: Resume) => resume.checked === 1)
+      .reduce<Resume[]>((unique, resume) => {
+        if (!unique.some((r) => r.resume_number === resume.resume_number)) {
+          unique.push(resume);
+        }
+        return unique;
+      }, []);
+      
+      if (checkedResumes.length === 0) {
+        setInterviews([]);
+        return;
+      }
+      
+      // Fetch candidate data for each unique checked resume - UPDATED to include names
+      const candidatePromises = checkedResumes.map(resume => 
+        axios.get(`${API_BASE_URL}/canidates/resume/${resume.resume_number}`, { 
+          timeout: 8000 
+        })
+        .then(response => ({
+          resume_id: response.data.resume_id,
+          title: response.data.title || `Candidate ${response.data.resume_id}`,
+          interview: response.data.interview,
+          video_path: response.data.interview,
+          // Add candidate name fields
+          first_name: response.data.f_name || 'Unknown',
+          last_name: response.data.l_name || 'Name'
+        }))
+        .catch(err => {
+          console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
+          return null;
+        })
+      );
+      const results = await Promise.allSettled(candidatePromises);
+
+      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any; first_name: string; last_name: string } => item !== null).slice(0,4));
+      
+    } catch (err) {
+      console.error("Error fetching interviews:", err);
+      setError('Failed to load interview data. Please try refreshing the page.');
+    }
+  };
+  
   // Listen for group submission updates
   useEffect(() => {
     if (!user) return;
@@ -254,67 +313,6 @@ export default function Interview() {
     }
   }, [user, pathname]); // Remove interviews from dependency array
 
-  // Fetch candidates data when user is loaded
-// Fetch candidates data when user is loaded
-useEffect(() => {
-  if (!user?.group_id) return;
-  
-  
-  const fetchCandidates = async () => {
-    try {
-      // Get all resumes for the group and filter by class
-      const resumeResponse = await axios.get(
-        `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
-        { timeout: 8000 }
-      );
-      
-      const allResumes: Resume[] = resumeResponse.data;
-      
-      // Filter to get only checked resumes and ensure no duplicates
-      const checkedResumes = allResumes
-      .filter((resume: Resume) => resume.checked === 1)
-      .reduce<Resume[]>((unique, resume) => {
-        if (!unique.some((r) => r.resume_number === resume.resume_number)) {
-          unique.push(resume);
-        }
-        return unique;
-      }, []);
-      
-      
-      if (checkedResumes.length === 0) {
-        setInterviews([]);
-        return;
-      }
-      
-      // Fetch candidate data for each unique checked resume
-      const candidatePromises = checkedResumes.map(resume => 
-        axios.get(`${API_BASE_URL}/canidates/resume/${resume.resume_number}`, { 
-          timeout: 8000 
-        })
-        .then(response => ({
-          resume_id: response.data.resume_id,
-          title: response.data.title || `Candidate ${response.data.resume_id}`,
-          interview: response.data.interview,
-          video_path: response.data.interview
-        }))
-        .catch(err => {
-          console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
-          return null;
-        })
-      );
-      const results = await Promise.allSettled(candidatePromises);
-
-      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null).slice(0,4));
-      
-    } catch (err) {
-      console.error("Error fetching interviews:", err);
-      setError('Failed to load interview data. Please try refreshing the page.');
-    }
-  };
-  
-  fetchCandidates();
-}, [user]); // This will run whenever user changes 
-  
   const currentVid = interviews[videoIndex];
 
   // Listen for popup messages
@@ -625,9 +623,9 @@ useEffect(() => {
         <div className={`md:w-2/3 flex flex-col items-center justify-center p-4 md:p-8 ${fadingEffect ? 'opacity-50 transition-opacity duration-500' : 'opacity-100 transition-opacity duration-500'}`}>
           <h1 className="text-xl font-rubik font-bold mb-4 text-center">
             {noShow ? "Candidate No-Show" : 
-             interviews.length > 0 && videoIndex >= 0 && videoIndex < interviews.length ? 
-             `Candidate Interview ${videoIndex + 1}` : 
-             "Loading Interview..."}
+            currentVid && currentVid.first_name && currentVid.last_name ? 
+            `Evaluating ${currentVid.first_name} ${currentVid.last_name}` : 
+            "Evaluation"}
           </h1>
           <div className="w-full max-w-4xl aspect-video border-4 border-redHeader mb-5 rounded-lg shadow-lg mx-auto">
             {noShow ? (
