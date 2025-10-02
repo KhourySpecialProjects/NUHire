@@ -33,15 +33,6 @@ interface Interview {
   last_name: string;  
 }
 
-const [interviews, setInterviews] = useState<Array<{
-  resume_id: number;
-  title: string;
-  video_path: string;
-  interview: string;
-  first_name: string;  
-  last_name: string;   
-}>>([]);
-
 interface Resume {
   resume_number: number;
   checked: number;
@@ -71,6 +62,15 @@ export default function Interview() {
   const [finished, setFinished] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
+
+  const [interviews, setInterviews] = useState<Array<{
+    resume_id: number;
+    title: string;
+    video_path: string;
+    interview: string;
+    first_name: string;  
+    last_name: string;   
+  }>>([]);
   const interviewInstructions = [
     "Watch each candidate's interview video carefully.",
     "Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.",
