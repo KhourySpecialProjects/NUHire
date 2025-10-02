@@ -33,6 +33,15 @@ interface Interview {
   last_name: string;  
 }
 
+const [interviews, setInterviews] = useState<Array<{
+  resume_id: number;
+  title: string;
+  video_path: string;
+  interview: string;
+  first_name: string;  
+  last_name: string;   
+}>>([]);
+
 interface Resume {
   resume_number: number;
   checked: number;
@@ -49,14 +58,6 @@ export default function Interview() {
   const pathname = usePathname();
   const [noShow, setNoShow] = useState(false);
   const [donePopup, setDonePopup] = useState(false);
-  const [interviews, setInterviews] = useState<Array<{
-    resume_id: number;
-    title: string;
-    video_path: string;
-    interview: string;
-    first_name: string;  
-    last_name: string;   
-  }>>([]);
   
   // Rating states
   const [overall, setOverall] = useState(5); 
@@ -69,6 +70,7 @@ export default function Interview() {
   const [fadingEffect, setFadingEffect] = useState(false);
   const [finished, setFinished] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+
   const interviewInstructions = [
     "Watch each candidate's interview video carefully.",
     "Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.",
@@ -101,60 +103,6 @@ export default function Interview() {
       console.log("Group size fetched:", response.data.count);
     } catch (err) {
       console.error("Failed to fetch group size:", err);
-    }
-  };
-
-  const fetchCandidates = async () => {
-    try {
-      // Get all resumes for the group and filter by class
-      const resumeResponse = await axios.get(
-        `${API_BASE_URL}/resume/group/${user!.group_id}?class=${user!.class}`, 
-        { timeout: 8000 }
-      );
-      
-      const allResumes: Resume[] = resumeResponse.data;
-      
-      // Filter to get only checked resumes and ensure no duplicates
-      const checkedResumes = allResumes
-      .filter((resume: Resume) => resume.checked === 1)
-      .reduce<Resume[]>((unique, resume) => {
-        if (!unique.some((r) => r.resume_number === resume.resume_number)) {
-          unique.push(resume);
-        }
-        return unique;
-      }, []);
-      
-      if (checkedResumes.length === 0) {
-        setInterviews([]);
-        return;
-      }
-      
-      // Fetch candidate data for each unique checked resume - UPDATED to include names
-      const candidatePromises = checkedResumes.map(resume => 
-        axios.get(`${API_BASE_URL}/canidates/resume/${resume.resume_number}`, { 
-          timeout: 8000 
-        })
-        .then(response => ({
-          resume_id: response.data.resume_id,
-          title: response.data.title || `Candidate ${response.data.resume_id}`,
-          interview: response.data.interview,
-          video_path: response.data.interview,
-          // Add candidate name fields
-          first_name: response.data.f_name || 'Unknown',
-          last_name: response.data.l_name || 'Name'
-        }))
-        .catch(err => {
-          console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
-          return null;
-        })
-      );
-      const results = await Promise.allSettled(candidatePromises);
-
-      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any; first_name: string; last_name: string } => item !== null).slice(0,4));
-      
-    } catch (err) {
-      console.error("Error fetching interviews:", err);
-      setError('Failed to load interview data. Please try refreshing the page.');
     }
   };
 
@@ -312,6 +260,69 @@ export default function Interview() {
     }
   }, [user, pathname]); // Remove interviews from dependency array
 
+  // Fetch candidates data when user is loaded
+// Fetch candidates data when user is loaded
+useEffect(() => {
+  if (!user?.group_id) return;
+  
+  
+  const fetchCandidates = async () => {
+    try {
+      // Get all resumes for the group and filter by class
+      const resumeResponse = await axios.get(
+        `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
+        { timeout: 8000 }
+      );
+      
+      const allResumes: Resume[] = resumeResponse.data;
+      
+      // Filter to get only checked resumes and ensure no duplicates
+      const checkedResumes = allResumes
+      .filter((resume: Resume) => resume.checked === 1)
+      .reduce<Resume[]>((unique, resume) => {
+        if (!unique.some((r) => r.resume_number === resume.resume_number)) {
+          unique.push(resume);
+        }
+        return unique;
+      }, []);
+      
+      
+      if (checkedResumes.length === 0) {
+        setInterviews([]);
+        return;
+      }
+      
+      // Fetch candidate data for each unique checked resume
+      const candidatePromises = checkedResumes.map(resume => 
+        axios.get(`${API_BASE_URL}/canidates/resume/${resume.resume_number}`, { 
+          timeout: 8000 
+        })
+        .then(response => ({
+          resume_id: response.data.resume_id,
+          title: response.data.title || `Candidate ${response.data.resume_id}`,
+          interview: response.data.interview,
+          video_path: response.data.interview,
+          first_name: response.data.first_name,
+          last_name: response.data.last_name,
+        }))
+        .catch(err => {
+          console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
+          return null;
+        })
+      );
+      const results = await Promise.allSettled(candidatePromises);
+
+      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null).slice(0,4));
+      
+    } catch (err) {
+      console.error("Error fetching interviews:", err);
+      setError('Failed to load interview data. Please try refreshing the page.');
+    }
+  };
+  
+  fetchCandidates();
+}, [user]); // This will run whenever user changes 
+  
   const currentVid = interviews[videoIndex];
 
   // Listen for popup messages
