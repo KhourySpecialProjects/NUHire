@@ -430,7 +430,7 @@ const Upload = () => {
             ) : (
               <ul className="space-y-2">
                 {resumes.map((resume) => (
-                  <li key={resume.id}>
+                  <li key={resume.id} className="border border-gray-200 p-3 rounded-md">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="font-semibold text-navy">{resume.first_name} {resume.last_name}</div>
