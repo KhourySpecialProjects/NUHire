@@ -33,15 +33,6 @@ interface Interview {
   last_name: string;  
 }
 
-const [interviews, setInterviews] = useState<Array<{
-  resume_id: number;
-  title: string;
-  video_path: string;
-  interview: string;
-  first_name: string;  
-  last_name: string;   
-}>>([]);
-
 interface Resume {
   resume_number: number;
   checked: number;
@@ -58,6 +49,14 @@ export default function Interview() {
   const pathname = usePathname();
   const [noShow, setNoShow] = useState(false);
   const [donePopup, setDonePopup] = useState(false);
+  const [interviews, setInterviews] = useState<Array<{
+    resume_id: number;
+    title: string;
+    video_path: string;
+    interview: string;
+    first_name: string;  
+    last_name: string;   
+  }>>([]);
   
   // Rating states
   const [overall, setOverall] = useState(5); 
@@ -158,7 +157,7 @@ export default function Interview() {
       setError('Failed to load interview data. Please try refreshing the page.');
     }
   };
-  
+
   // Listen for group submission updates
   useEffect(() => {
     if (!user) return;
