@@ -430,15 +430,10 @@ const Upload = () => {
             ) : (
               <ul className="space-y-2">
                 {resumes.map((resume) => (
-                  <li key={resume.id} className="border border-gray-200 p-3 rounded-md">
+                  <li key={resume.id}>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="font-semibold text-navy">{resume.first_name} {resume.last_name}</div>
-                        {resume.first_name && resume.last_name && (
-                          <div className="text-sm text-gray-600">
-                            {resume.first_name} {resume.last_name}
-                          </div>
-                        )}
                         <div className="flex gap-2 mt-1">
                           <a href={`${API_BASE_URL}/${resume.file_path}`} target="_blank" className="text-blue-500 text-sm hover:underline">
                             View PDF
