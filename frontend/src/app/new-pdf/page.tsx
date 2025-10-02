@@ -35,16 +35,21 @@ const Upload = () => {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [resumes, setResumes] = useState<Resume[]>([]);
-  const [title, setTitle] = useState("");
+  
+  // Separate states for Job Description
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobFile, setJobFile] = useState<File | null>(null);
+  const [jobUploading, setJobUploading] = useState(false);
+  
+  // Separate states for Resume
   const [resTitle, setResTitle] = useState("");
-  // New states for resume upload
   const [resFirstName, setResFirstName] = useState("");
   const [resLastName, setResLastName] = useState("");
   const [resYouTubeVideo, setResYouTubeVideo] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const router = useRouter();
-  const [jobFile, setJobFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  
+  const router = useRouter();
   const [pendingOffers, setPendingOffers] = useState<
   { classId: number; groupId: number; candidateId: number }[]
   >([]);  
@@ -167,63 +172,86 @@ const Upload = () => {
     }
   };
 
-const handleJobFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (e.target.files && e.target.files.length > 0) {
-    setJobFile(e.target.files[0]);
-  }
-};
-const handleResumeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (e.target.files && e.target.files.length > 0) {
-    setResumeFile(e.target.files[0]);
-  }
-};
+  const handleJobFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setJobFile(e.target.files[0]);
+    }
+  };
 
-// Helper function to validate YouTube URL
-const isValidYouTubeUrl = (url: string) => {
-  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/).+/;
-  return youtubeRegex.test(url);
-};
+  const handleResumeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setResumeFile(e.target.files[0]);
+    }
+  };
 
-const uploadFile = async (type: "job" | "resume") => {
-  const fileToUpload = type === "job" ? jobFile : resumeFile;
-  if (!fileToUpload) return setPopup({ headline: "Error", message: "No file selected for upload." });
-  
-  if (type === "job" && !title.trim()) {
-    return setPopup({ headline: "Error", message: "Please enter a job title before uploading." });
-  }
-  
-  if (type === "resume") {
+  // Helper function to validate YouTube URL
+  const isValidYouTubeUrl = (url: string) => {
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/).+/;
+    return youtubeRegex.test(url);
+  };
+
+  // Separate upload function for Job Description
+  const uploadJobDescription = async () => {
+    if (!jobFile) return setPopup({ headline: "Error", message: "No file selected for upload." });
+    if (!jobTitle.trim()) return setPopup({ headline: "Error", message: "Please enter a job title before uploading." });
+
+    const formData = new FormData();
+    formData.append("jobDescription", jobFile);
+
+    try {
+      setJobUploading(true);
+
+      const response = await fetch(`${API_BASE_URL}/upload/job`, { 
+        method: "POST", 
+        body: formData 
+      });
+
+      if (!response.ok) throw new Error("Job description upload failed");
+      const { filePath } = await response.json();
+
+      await fetch(`${API_BASE_URL}/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: jobTitle, filePath }),
+      });
+
+      fetchJobs();
+      // Clear job form
+      setJobTitle("");
+      setJobFile(null);
+      
+      setPopup({ headline: "Success", message: "Job description uploaded successfully!" });
+    } catch (error) {
+      console.error("Job upload error:", error);
+      setPopup({ headline: "Error", message: "Job description upload failed. Please try again." });
+    } finally {
+      setJobUploading(false);
+    }
+  };
+
+  // Separate upload function for Resume
+  const uploadResume = async () => {
+    if (!resumeFile) return setPopup({ headline: "Error", message: "No file selected for upload." });
     if (!resTitle.trim()) return setPopup({ headline: "Error", message: "Please enter a resume title before uploading." });
     if (!resFirstName.trim()) return setPopup({ headline: "Error", message: "Please enter the candidate's first name." });
     if (!resLastName.trim()) return setPopup({ headline: "Error", message: "Please enter the candidate's last name." });
     if (!resYouTubeVideo.trim()) return setPopup({ headline: "Error", message: "Please enter a YouTube video URL." });
     if (!isValidYouTubeUrl(resYouTubeVideo)) return setPopup({ headline: "Error", message: "Please enter a valid YouTube URL." });
-  }
 
-  const formData = new FormData();
-  formData.append(type === "job" ? "jobDescription" : "resume", fileToUpload);
+    const formData = new FormData();
+    formData.append("resume", resumeFile);
 
-  try {
-    setUploading(true);
+    try {
+      setResumeUploading(true);
 
-    const response = await fetch(`${API_BASE_URL}/upload/${type}`, { 
-      method: "POST", 
-      body: formData 
-    });
-
-    if (!response.ok) throw new Error("File upload failed");
-    const { filePath } = await response.json();
-
-    if (type === "job") {
-      await fetch(`${API_BASE_URL}/jobs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, filePath }),
+      const response = await fetch(`${API_BASE_URL}/upload/resume`, { 
+        method: "POST", 
+        body: formData 
       });
-      fetchJobs();
-      setTitle("");
-      setJobFile(null);
-    } else if (type === "resume") {
+
+      if (!response.ok) throw new Error("Resume upload failed");
+      const { filePath } = await response.json();
+
       await fetch(`${API_BASE_URL}/resume_pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -235,22 +263,23 @@ const uploadFile = async (type: "job" | "resume") => {
           vid: resYouTubeVideo
         }),
       });
+
       fetchResumes();
+      // Clear resume form
       setResTitle("");
       setResFirstName("");
       setResLastName("");
       setResYouTubeVideo("");
       setResumeFile(null);
+      
+      setPopup({ headline: "Success", message: "Resume uploaded successfully!" });
+    } catch (error) {
+      console.error("Resume upload error:", error);
+      setPopup({ headline: "Error", message: "Resume upload failed. Please try again." });
+    } finally {
+      setResumeUploading(false);
     }
-    
-    setPopup({ headline: "Success", message: `${type === "job" ? "Job description" : "Resume"} uploaded successfully!` });
-  } catch (error) {
-    console.error("Upload error:", error);
-    setPopup({ headline: "Error", message: "Upload failed. Please try again." });
-  } finally {
-    setUploading(false);
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -277,8 +306,8 @@ const uploadFile = async (type: "job" | "resume") => {
             <input 
               type="text" 
               placeholder="Enter job title" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
+              value={jobTitle} 
+              onChange={(e) => setJobTitle(e.target.value)} 
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy" 
             />
             
@@ -290,10 +319,10 @@ const uploadFile = async (type: "job" | "resume") => {
             />
             
             <button 
-              onClick={() => uploadFile("job")} 
-              disabled={uploading} 
+              onClick={uploadJobDescription} 
+              disabled={jobUploading} 
               className="w-full bg-northeasternBlack text-northeasternWhite p-3 rounded-md hover:bg-navy transition duration-200 disabled:bg-gray-400">
-              {uploading ? "Uploading..." : "Upload Job Description"}
+              {jobUploading ? "Uploading..." : "Upload Job Description"}
             </button>
           </div>
 
@@ -370,10 +399,10 @@ const uploadFile = async (type: "job" | "resume") => {
             />
             
             <button 
-              onClick={() => uploadFile("resume")} 
-              disabled={uploading} 
+              onClick={uploadResume} 
+              disabled={resumeUploading} 
               className="w-full bg-northeasternBlack text-northeasternWhite p-3 rounded-md hover:bg-navy transition duration-200 disabled:bg-gray-400">
-              {uploading ? "Uploading..." : "Upload Resume"}
+              {resumeUploading ? "Uploading..." : "Upload Resume"}
             </button>
           </div>
 
