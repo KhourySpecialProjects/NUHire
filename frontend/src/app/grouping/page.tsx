@@ -946,17 +946,17 @@ const Grouping = () => {
           </div>
           {/* Tab: Add Student to Class & Group */}
           <div title="Add Student to Class & Group">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
-              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Add Student to Class & Group</h2>
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[60vh] w-[1000px] mx-auto">
+              <h2 className="text-2xl font-bold text-northeasternRed mb-6">Add Student to Class & Group</h2>
               
-              <div className="mb-4">
+              <div className="mb-6">
                 <label className="block text-navy font-semibold mb-2">
                   Select Class (CRN)
                 </label>
                 <select
                   value={addStudentClass}
                   onChange={e => setAddStudentClass(e.target.value)}
-                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a class</option>
                   {classes.map(classItem => (
@@ -968,14 +968,14 @@ const Grouping = () => {
               </div>
               
               {/* Updated Group Selection - Now a Dropdown */}
-              <div className="mb-4">
+              <div className="mb-6">
                 <label className="block text-navy font-semibold mb-2">
                   Group Number
                 </label>
                 <select
                   value={addStudentGroup}
                   onChange={e => setAddStudentGroup(e.target.value)}
-                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={!addStudentClass || addStudentAvailableGroups === 0}
                 >
                   <option value="">
@@ -1001,8 +1001,8 @@ const Grouping = () => {
                 )}
               </div>
               
-              {/* NEW: First and Last Name Row */}
-              <div className="mb-4">
+              {/* First and Last Name Row */}
+              <div className="mb-6">
                 <label className="block text-navy font-semibold mb-2">
                   Student Name
                 </label>
@@ -1012,7 +1012,7 @@ const Grouping = () => {
                       type="text"
                       value={addStudentFirstName}
                       onChange={e => setAddStudentFirstName(e.target.value)}
-                      className="w-full p-2 border border-wood bg-springWater rounded-md"
+                      className="w-full p-3 border border-wood bg-springWater rounded-md"
                       placeholder="First name"
                     />
                   </div>
@@ -1021,14 +1021,14 @@ const Grouping = () => {
                       type="text"
                       value={addStudentLastName}
                       onChange={e => setAddStudentLastName(e.target.value)}
-                      className="w-full p-2 border border-wood bg-springWater rounded-md"
+                      className="w-full p-3 border border-wood bg-springWater rounded-md"
                       placeholder="Last name"
                     />
                   </div>
                 </div>
               </div>
               
-              <div className="mb-4">
+              <div className="mb-6">
                 <label className="block text-navy font-semibold mb-2">
                   Student Email
                 </label>
@@ -1036,14 +1036,14 @@ const Grouping = () => {
                   type="email"
                   value={addStudentEmail}
                   onChange={e => setAddStudentEmail(e.target.value)}
-                  className="w-full p-2 border border-wood bg-springWater rounded-md"
+                  className="w-full p-3 border border-wood bg-springWater rounded-md"
                   placeholder="Enter student email"
                 />
               </div>
               
               <div className="flex justify-center">
                 <button
-                  className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
+                  className="bg-northeasternRed text-white px-6 py-3 rounded font-bold hover:bg-navy transition text-lg"
                   onClick={addStudentToClassGroup}
                 >
                   Add Student
