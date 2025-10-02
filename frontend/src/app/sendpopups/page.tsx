@@ -171,23 +171,46 @@ const SendPopups = () => {
       fetchAssignedClasses();
     }, [user]);
 
-    // Fetch groups filtered by class
-    useEffect(() => {
-        const fetchGroups = async () => {
-            if (!selectedClass) return;
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
-                const data = await response.json();
-                setGroups(data);
-            } catch (error) {
-                console.error("Error fetching groups:", error);
-            }
-        };
+  useEffect(() => {
+      const fetchGroups = async () => {
+          if (!selectedClass) return;
+          
+          try {
+              // Fetch students instead of groups, then group them by group_id
+              const response = await fetch(`${API_BASE_URL}/students?class=${selectedClass}`);
+              const studentsData = await response.json();
+              
+              // Group students by their group_id
+              const groupedData: Record<string, any[]> = {};
+              
+              studentsData.forEach((student: any) => {
+                  if (student.group_id) {
+                      const groupId = student.group_id.toString();
+                      if (!groupedData[groupId]) {
+                          groupedData[groupId] = [];
+                      }
+                      groupedData[groupId].push({
+                          name: student.f_name && student.l_name 
+                              ? `${student.f_name} ${student.l_name}` 
+                              : student.email.split('@')[0],
+                          email: student.email,
+                          online: student.online || false,
+                          current_page: student.current_page || 'No page',
+                          job_des: student.job_des || 'No job'
+                      });
+                  }
+              });
+              
+              console.log("Grouped students data:", groupedData);
+              setGroups(groupedData);
+          } catch (error) {
+              console.error("Error fetching students:", error);
+          }
+      };
 
-        if (selectedClass) {
-        fetchGroups();
-        }
+      if (selectedClass) {
+          fetchGroups();
+      }
   }, [selectedClass]);
 
   if (loading) {
@@ -401,53 +424,58 @@ const SendPopups = () => {
 
           {/* Groups Display Section */}
           <div className="mt-6">
-            <h2 className="text-2xl font-bold text-northeasternBlack mb-4">Groups in {selectedClass ? `Class ${selectedClass}` : 'All Classes'}</h2>
-            {groups && Object.keys(groups).length > 0 ? (
-              Object.entries(groups).map(([group_id, students]) => (
-                <div
-                  key={group_id}
-                  className="bg-northeasternWhite mb-4 p-4 border rounded-lg shadow-sm"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-northeasternBlack">
-                      Group {group_id}
-                    </h3>
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5 text-blue-500 accent-navy cursor-pointer"
-                      checked={selectedGroups.includes(group_id)}
-                      onChange={() => handleCheckboxChange(group_id)}
-                    />
-                  </div>
-                  <ul className="list-none pl-0 text-navy mt-2">
-                    {Array.isArray(students) && students.length > 0 ? (
-                      students.map((student, index) => (
-                        <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded ">
-                          <div className="flex items-center space-x-3">
-                            <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                            <span className="font-medium">
-                              {student.name} ({student.email})
-                            </span>
+              <h2 className="text-2xl font-bold text-northeasternBlack mb-4">
+                  Groups in {selectedClass ? `Class ${selectedClass}` : 'All Classes'}
+              </h2>
+              
+              {groups && Object.keys(groups).length > 0 ? (
+                  Object.entries(groups).map(([group_id, students]) => (
+                      <div
+                          key={group_id}
+                          className="bg-northeasternWhite mb-4 p-4 border rounded-lg shadow-sm"
+                      >
+                          <div className="flex items-center justify-between mb-2">
+                              <h3 className="text-lg font-semibold text-northeasternBlack">
+                                  Group {group_id}
+                              </h3>
+                              <input
+                                  type="checkbox"
+                                  className="h-5 w-5 text-blue-500 accent-navy cursor-pointer"
+                                  checked={selectedGroups.includes(group_id)}
+                                  onChange={() => handleCheckboxChange(group_id)}
+                              />
                           </div>
-                          <div className="flex items-center space-x-4 text-sm">
-                            <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                              {student.current_page || 'No page'}
-                            </span>
-                            <span className="text-gray-600">
-                              {student.job_des || 'No job'}
-                            </span>
-                          </div>
-                        </li>
-                      ))
-                    ) : (
-                      <li>No students assigned</li>
-                    )}
-                  </ul>
-                </div>
-              ))
-            ) : (
-              <p className="text-sand text-center">No groups found for this class.</p>
-            )}
+                          <ul className="list-none pl-0 text-navy mt-2">
+                              {Array.isArray(students) && students.length > 0 ? (
+                                  students.map((student, index) => (
+                                      <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded">
+                                          <div className="flex items-center space-x-3">
+                                              <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                              <span className="font-medium">
+                                                  {student.name} ({student.email})
+                                              </span>
+                                          </div>
+                                          <div className="flex items-center space-x-4 text-sm">
+                                              <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                                  {student.current_page || 'No page'}
+                                              </span>
+                                              <span className="text-gray-600">
+                                                  {student.job_des || 'No job'}
+                                              </span>
+                                          </div>
+                                      </li>
+                                  ))
+                              ) : (
+                                  <li className="text-gray-500">No students assigned to this group</li>
+                              )}
+                          </ul>
+                      </div>
+                  ))
+              ) : selectedClass ? (
+                  <p className="text-gray-500 text-center">No students with group assignments found for this class.</p>
+              ) : (
+                  <p className="text-gray-500 text-center">Please select a class to view groups.</p>
+              )}
           </div>
 
         <div className="flex justify-center">

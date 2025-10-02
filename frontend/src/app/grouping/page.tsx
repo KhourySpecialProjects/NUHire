@@ -53,7 +53,7 @@ const Grouping = () => {
   // Tab 3: Groups in Class (independent state)
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
-
+  const [groupsTabStudents, setGroupsTabStudents] = useState<Student[]>([]);
   // Tab 4: Offers
   const [offersTabClass, setOffersTabClass] = useState("");
   const [pendingOffers, setPendingOffers] = useState<Offer[]>([]);
@@ -105,6 +105,9 @@ const Grouping = () => {
   const [addStudentClass, setAddStudentClass] = useState("");
   const [addStudentGroup, setAddStudentGroup] = useState("");
   const [addStudentEmail, setAddStudentEmail] = useState("");
+  const [addStudentFirstName, setAddStudentFirstName] = useState("");
+  const [addStudentLastName, setAddStudentLastName] = useState("");
+  const [addStudentAvailableGroups, setAddStudentAvailableGroups] = useState<number>(0); 
  
   // Fetch user
   useEffect(() => {
@@ -223,19 +226,6 @@ const Grouping = () => {
     }
   }, [offersTabClass]);
 
-  // Fix the missing setGroupsTabGroups call in Tab 3 useEffect
-  useEffect(() => {
-    if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(data => {
-          setGroupsTabGroups(data); // Fixed this line
-        });
-    } else {
-      setGroupsTabGroups({});
-    }
-  }, [groupsTabClass]);
-
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
@@ -274,18 +264,45 @@ const Grouping = () => {
     }
   }, [selectedJobClass]);
 
-  // Tab 3: Fetch groups for independent class selection
-  useEffect(() => {
-    if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then( data => {
-          setGroupsTabGroups
-        });
-    } else {
-      setGroupsTabGroups({});
-    }
-  }, [groupsTabClass]);
+ useEffect(() => {
+  if (groupsTabClass) {
+    console.log("=== TAB 3 DEBUG ===");
+    console.log("Selected class:", groupsTabClass);
+    
+    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
+      .then(res => {
+        console.log("Groups API response status:", res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Groups API raw response:", data);
+        console.log("Groups data type:", typeof data);
+        console.log("Groups data keys:", Object.keys(data));
+        setGroupsTabGroups(data);
+      })
+      .catch(err => {
+        console.error("Groups API error:", err);
+      });
+      
+    fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+      .then(res => {
+        console.log("Students API response status:", res.status);
+        return res.json();
+      })
+      .then(data2 => {
+        console.log("Students API raw response:", data2);
+        console.log("Students data type:", typeof data2);
+        console.log("Students array length:", Array.isArray(data2) ? data2.length : 'Not an array');
+        setGroupsTabStudents(data2);
+      })
+      .catch(err => {
+        console.error("Students API error:", err);
+      });
+  } else {
+    setGroupsTabGroups({});
+    setGroupsTabStudents([]);
+  }
+}, [groupsTabClass]);
 
   // Fetch jobs
   useEffect(() => {
@@ -293,6 +310,21 @@ const Grouping = () => {
       .then(res => res.json())
       .then(setJobs);
   }, []);
+
+  useEffect(() => {
+  if (addStudentClass) {
+    const selectedClassData = classes.find(c => c.id.toString() === addStudentClass);
+    if (selectedClassData) {
+      const match = selectedClassData.name.match(/\((\d+) groups?\)/);
+      if (match) {
+        setAddStudentAvailableGroups(parseInt(match[1]));
+      }
+    }
+  } else {
+    setAddStudentAvailableGroups(0);
+    setAddStudentGroup(""); 
+  }
+}, [addStudentClass, classes]);
 
   // Handlers for Tab 1
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -441,7 +473,7 @@ const Grouping = () => {
   }
 
   const addStudentToClassGroup = async () => {
-    if (!addStudentClass || !addStudentGroup || !addStudentEmail) {
+    if (!addStudentClass || !addStudentGroup || !addStudentEmail || !addStudentFirstName || !addStudentLastName) {
       setPopup({ headline: "Error", message: "Please fill out all fields." });
       return;
     }
@@ -453,15 +485,18 @@ const Grouping = () => {
           class_id: addStudentClass,
           group_id: addStudentGroup,
           email: addStudentEmail,
-          f_name: "",
-          l_name: "",
+          f_name: addStudentFirstName,
+          l_name: addStudentLastName,
         }),
       });
       if (res.ok) {
         setPopup({ headline: "Success", message: "Student added to class and group!" });
+        // Clear all fields after success
         setAddStudentClass("");
         setAddStudentGroup("");
         setAddStudentEmail("");
+        setAddStudentFirstName("");
+        setAddStudentLastName("");
       } else {
         setPopup({ headline: "Error", message: "Failed to add student." });
       }
@@ -689,7 +724,7 @@ const Grouping = () => {
               </button>
             </div>
           </div>
-          {/* Tab 3: Groups in Class (independent state) */}
+          {/* Tab 3: Groups in Class - FIXED VERSION */}
           <div title="Groups in Class">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">
@@ -717,52 +752,67 @@ const Grouping = () => {
                   </p>
                 )}
               </div>
+
               {!groupsTabClass ? (
                 <div className="flex flex-col items-center justify-center h-48 text-center">
                   <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
                   <p className="text-gray-500 text-sm mt-1">Groups will appear here after selecting a class</p>
                 </div>
-              ) : groupsTabGroups && Object.keys(groupsTabGroups).length > 0 ? (
-                Object.entries(groupsTabGroups).map(([group_id, students]) => (
-                  <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
-                    {isNaN(Number(group_id)) ? (
-                      <h3 className="text-xl font-semibold text-red-600">No groups found</h3>
-                    ) : (
-                      <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
-                    )}
-                    <ul className="list-none pl-0 text-navy mt-1">
-                      {Array.isArray(students) && students.length > 0 ? (
-                        students.map((student: any, index: number) => (
-                          <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
-                            <div className="flex items-center space-x-2">
-                              <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                              <span className="font-medium">
-                                {student.name} ({student.email})
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-2 text-sm">
-                              <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                                {student.current_page || 'No page'}
-                              </span>
-                              <span className="text-gray-600">
-                                {student.job_des || 'No job'}
-                              </span>
-                            </div>
-                          </li>
-                        ))
-                      ) : (
-                        <li>No students assigned</li>
-                      )}
-                    </ul>
-                  </div>
-                ))
+              ) : groupsTabStudents.length > 0 ? (
+                // Group students by their group_id from the students array
+                (() => {
+                  // Create groups from the students data
+                  const studentsByGroup: { [key: string]: any[] } = {};
+                  
+                  groupsTabStudents.forEach((student: any) => {
+                    if (student.group_id) {
+                      const groupId = student.group_id.toString();
+                      if (!studentsByGroup[groupId]) {
+                        studentsByGroup[groupId] = [];
+                      }
+                      studentsByGroup[groupId].push(student);
+                    }
+                  });
+
+                  return Object.keys(studentsByGroup).length > 0 ? (
+                    Object.entries(studentsByGroup).map(([group_id, students]) => (
+                      <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
+                        <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
+                        <ul className="list-none pl-0 text-navy mt-1">
+                          {students.map((student: any, index: number) => (
+                            <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
+                              <div className="flex items-center space-x-2">
+                                <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                <span className="font-medium">
+                                  {student.f_name && student.l_name 
+                                    ? `${student.f_name} ${student.l_name}` 
+                                    : student.email.split('@')[0]
+                                  } ({student.email})
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm">
+                                <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                  {student.current_page || 'No page'}
+                                </span>
+                                <span className="text-gray-600">
+                                  No job assigned
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-northeasternBlack text-center">No students with group assignments found for this class.</p>
+                  );
+                })()
               ) : (
-                <p className="text-northeasternBlack text-center">No groups found for this class.</p>
+                <p className="text-northeasternBlack text-center">No students found for this class.</p>
               )}
             </div>
           </div>
           {/* Tab 4: Pending & Accepted Offers */}
-{/* Tab 4: Updated Offers Management */}
           <div title="Pending & Accepted Offers">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-[900px] mx-auto">
               <div className="flex items-center justify-between mb-4">
@@ -898,6 +948,7 @@ const Grouping = () => {
           <div title="Add Student to Class & Group">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">Add Student to Class & Group</h2>
+              
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
                   Select Class (CRN)
@@ -915,19 +966,68 @@ const Grouping = () => {
                   ))}
                 </select>
               </div>
+              
+              {/* Updated Group Selection - Now a Dropdown */}
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
                   Group Number
                 </label>
-                <input
-                  type="number"
-                  min={1}
+                <select
                   value={addStudentGroup}
                   onChange={e => setAddStudentGroup(e.target.value)}
-                  className="w-full p-2 border border-wood bg-springWater rounded-md"
-                  placeholder="Enter group number"
-                />
+                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!addStudentClass || addStudentAvailableGroups === 0}
+                >
+                  <option value="">
+                    {!addStudentClass 
+                      ? "Select a class first" 
+                      : addStudentAvailableGroups === 0 
+                        ? "No groups available" 
+                        : "Select a group"
+                    }
+                  </option>
+                  {addStudentAvailableGroups > 0 && 
+                    Array.from({ length: addStudentAvailableGroups }, (_, i) => i + 1).map(groupNum => (
+                      <option key={groupNum} value={groupNum}>
+                        Group {groupNum}
+                      </option>
+                    ))
+                  }
+                </select>
+                {addStudentClass && addStudentAvailableGroups > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Available groups: 1 to {addStudentAvailableGroups}
+                  </p>
+                )}
               </div>
+              
+              {/* NEW: First and Last Name Row */}
+              <div className="mb-4">
+                <label className="block text-navy font-semibold mb-2">
+                  Student Name
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      value={addStudentFirstName}
+                      onChange={e => setAddStudentFirstName(e.target.value)}
+                      className="w-full p-2 border border-wood bg-springWater rounded-md"
+                      placeholder="First name"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={addStudentLastName}
+                      onChange={e => setAddStudentLastName(e.target.value)}
+                      className="w-full p-2 border border-wood bg-springWater rounded-md"
+                      placeholder="Last name"
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
                   Student Email
@@ -940,6 +1040,7 @@ const Grouping = () => {
                   placeholder="Enter student email"
                 />
               </div>
+              
               <div className="flex justify-center">
                 <button
                   className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
