@@ -106,6 +106,10 @@ export default function Interview() {
     }
   };
 
+  useEffect(() => {
+    console.log("Interviews updated:", interviews);
+  }, [interviews]);
+  
   // Listen for group submission updates
   useEffect(() => {
     if (!user) return;
