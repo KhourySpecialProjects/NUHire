@@ -1734,31 +1734,45 @@ app.get("/resume_pdf", (req, res) => {
 });
 
 //Posts a new resume into the database as long as it's given the resume title and the file path
-app.post("/resume_pdf", async (req, res) => {
+app.post("/resume_pdf", (req, res) => {
   const { resTitle, filePath, f_name, l_name, vid } = req.body;
 
   if (!resTitle || !filePath || !f_name || !l_name || !vid) {
     return res.status(400).json({ error: "Missing fields" });
   }
 
-  try {
-    // Insert into Resume_pdfs table with names
-    const resumeSql = "INSERT INTO Resume_pdfs (title, file_path) VALUES (?, ?)";
-    const resumeResult = await db.query(resumeSql, [resTitle, filePath]);
+  // First, insert into Resume_pdfs table
+  const resumeSql = "INSERT INTO Resume_pdfs (title, file_path) VALUES (?, ?)";
+  db.query(resumeSql, [resTitle, filePath], (err, resumeResult) => {
+    if (err) {
+      console.error("Error inserting resume:", err);
+      
+      // Handle duplicate entry error specifically
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ 
+          error: "A resume with this title already exists. Please choose a different title." 
+        });
+      }
+      
+      return res.status(500).json({ error: "Database error" });
+    }
+
     const resumeId = resumeResult.insertId;
 
-    // Insert into Candidates table with resume_id and interview URL
+    // Then, insert into Candidates table
     const candidateSql = "INSERT INTO Candidates (resume_id, interview, f_name, l_name) VALUES (?, ?, ?, ?)";
-    await db.query(candidateSql, [resumeId, vid, f_name, l_name]);
+    db.query(candidateSql, [resumeId, vid, f_name, l_name], (err2, candidateResult) => {
+      if (err2) {
+        console.error("Error inserting candidate:", err2);
+        return res.status(500).json({ error: "Database error" });
+      }
 
-    res.json({ 
-      message: "Resume and candidate added successfully!",
-      resumeId: resumeId
+      res.json({ 
+        message: "Resume and candidate added successfully!",
+        resumeId: resumeId
+      });
     });
-  } catch (error) {
-    console.error("Error inserting into DB:", error);
-    res.status(500).json({ error: "Database error" });
-  }
+  });
 });
 
 

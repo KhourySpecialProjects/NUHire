@@ -219,16 +219,20 @@ const Upload = () => {
       // Clear job form
       setJobTitle("");
       setJobFile(null);
+      const resumeFileInput = document.querySelector('input[type="file"][accept="application/pdf"]:last-of-type') as HTMLInputElement;
+      if (resumeFileInput) {
+        resumeFileInput.value = '';
+      }
       
-      setPopup({ headline: "Success", message: "Job description uploaded successfully!" });
+      setPopup({ headline: "Success", message: "Resume uploaded successfully!" });
     } catch (error) {
-      console.error("Job upload error:", error);
-      setPopup({ headline: "Error", message: "Job description upload failed. Please try again." });
+      console.error("Resume upload error:", error);
+      setPopup({ headline: "Error", message: "Failed to upload" });
     } finally {
-      setJobUploading(false);
+      setResumeUploading(false);
     }
   };
-
+  
   // Separate upload function for Resume
   const uploadResume = async () => {
     if (!resumeFile) return setPopup({ headline: "Error", message: "No file selected for upload." });
@@ -252,7 +256,7 @@ const Upload = () => {
       if (!response.ok) throw new Error("Resume upload failed");
       const { filePath } = await response.json();
 
-      await fetch(`${API_BASE_URL}/resume_pdf`, {
+      const dbResponse = await fetch(`${API_BASE_URL}/resume_pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -264,6 +268,11 @@ const Upload = () => {
         }),
       });
 
+      if (!dbResponse.ok) {
+        const errorData = await dbResponse.json();
+        throw new Error(errorData.error || "Database error");
+      }
+
       fetchResumes();
       // Clear resume form
       setResTitle("");
@@ -272,10 +281,18 @@ const Upload = () => {
       setResYouTubeVideo("");
       setResumeFile(null);
       
+      // Reset the resume file input - fix the selector to target the second file input
+      const resumeFileInput = document.querySelector('input[type="file"][accept="application/pdf"]:last-of-type') as HTMLInputElement;
+      if (resumeFileInput) {
+        resumeFileInput.value = '';
+      }
+      
       setPopup({ headline: "Success", message: "Resume uploaded successfully!" });
     } catch (error) {
       console.error("Resume upload error:", error);
-      setPopup({ headline: "Error", message: "Resume upload failed. Please try again." });
+      // Fix: Properly handle the unknown error type
+      const errorMessage = error instanceof Error ? error.message : "Resume upload failed. Please try again.";
+      setPopup({ headline: "Error", message: errorMessage });
     } finally {
       setResumeUploading(false);
     }
