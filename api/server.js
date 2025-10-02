@@ -98,6 +98,7 @@ app.post('/upload/job', upload.single('jobDescription'), (req, res) => {
 });
 
 // Delete route for deleting files, which removes the file from the server and deletes its record from the database
+// Delete route for deleting files, which removes the file from the server and deletes its record from the database
 app.delete('/delete/resume/:fileName', (req, res) => {
   const fileName = req.params.fileName;
   const filePath = path.join(__dirname, 'uploads/resumes', fileName);
@@ -105,12 +106,43 @@ app.delete('/delete/resume/:fileName', (req, res) => {
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
 
-    db.query("DELETE FROM Resume_pdfs WHERE file_path = ?", [`uploads/resumes/${fileName}`], (err, result) => {
+    // First, get the resume ID to delete the associated candidate
+    db.query("SELECT id FROM Resume_pdfs WHERE file_path = ?", [`uploads/resumes/${fileName}`], (err, resumeResults) => {
       if (err) {
-        console.error("Database deletion error:", err);
-        return res.status(500).json({ error: "Database deletion failed" });
+        console.error("Database lookup error:", err);
+        return res.status(500).json({ error: "Database lookup failed" });
       }
-      res.json({ message: `File "${fileName}" deleted successfully.` });
+
+      if (resumeResults.length === 0) {
+        return res.status(404).json({ error: "Resume not found in database" });
+      }
+
+      const resumeId = resumeResults[0].id;
+
+      // Delete from Candidates table first (due to foreign key constraint)
+      db.query("DELETE FROM Candidates WHERE resume_id = ?", [resumeId], (err, candidateResult) => {
+        if (err) {
+          console.error("Candidate deletion error:", err);
+          return res.status(500).json({ error: "Candidate deletion failed" });
+        }
+
+        console.log(`Deleted ${candidateResult.affectedRows} candidate(s) for resume ID ${resumeId}`);
+
+        // Then delete from Resume_pdfs table
+        db.query("DELETE FROM Resume_pdfs WHERE file_path = ?", [`uploads/resumes/${fileName}`], (err, resumeResult) => {
+          if (err) {
+            console.error("Resume deletion error:", err);
+            return res.status(500).json({ error: "Resume deletion failed" });
+          }
+
+          console.log(`Deleted resume: ${fileName}, Resume ID: ${resumeId}`);
+          res.json({ 
+            message: `File "${fileName}" and associated candidate deleted successfully.`,
+            deletedResume: resumeResult.affectedRows > 0,
+            deletedCandidate: candidateResult.affectedRows > 0
+          });
+        });
+      });
     });
 
   } else {
