@@ -296,28 +296,51 @@ useEffect(() => {
         return;
       }
       
-      // Fetch candidate data for each unique checked resume
       const candidatePromises = checkedResumes.map(resume => 
         axios.get(`${API_BASE_URL}/canidates/resume/${resume.resume_number}`, { 
           timeout: 8000 
         })
-        .then(response => ({
-          resume_id: response.data.resume_id,
-          title: response.data.title || `Candidate ${response.data.resume_id}`,
-          interview: response.data.interview,
-          video_path: response.data.interview,
-          first_name: response.data.first_name,
-          last_name: response.data.last_name,
-        }))
+        .then(response => {
+          console.log(`Raw response for resume ${resume.resume_number}:`, response.data);
+          
+          const candidateData = {
+            resume_id: response.data.resume_id,
+            title: response.data.title || `Candidate ${response.data.resume_id}`,
+            interview: response.data.interview,
+            video_path: response.data.interview,
+            first_name: response.data.first_name,
+            last_name: response.data.last_name,
+          };
+          
+          console.log(`Formatted candidate data for resume ${resume.resume_number}:`, candidateData);
+          return candidateData;
+        })
         .catch(err => {
           console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
           return null;
         })
       );
-      const results = await Promise.allSettled(candidatePromises);
 
-      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null).slice(0,4));
-      
+      const results = await Promise.allSettled(candidatePromises);
+      console.log("Promise.allSettled results:", results);
+
+      // Log each result individually
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          console.log(`Result ${index} (fulfilled):`, result.value);
+        } else {
+          console.log(`Result ${index} (rejected):`, result.reason);
+        }
+      });
+
+      const finalInterviews = results
+        .map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null)
+        .filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null)
+        .slice(0,4);
+
+      setInterviews(finalInterviews);
+
+      console.log("Final interviews array:", finalInterviews);
     } catch (err) {
       console.error("Error fetching interviews:", err);
       setError('Failed to load interview data. Please try refreshing the page.');
