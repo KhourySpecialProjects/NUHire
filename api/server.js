@@ -1735,16 +1735,26 @@ app.get("/resume_pdf", (req, res) => {
 
 //Posts a new resume into the database as long as it's given the resume title and the file path
 app.post("/resume_pdf", async (req, res) => {
-  const { resTitle, filePath } = req.body;
+  const { resTitle, filePath, f_name, l_name, vid } = req.body;
 
-  if (!resTitle || !filePath) {
-    return res.status(400).json({ error: "Missing title or filePath" });
+  if (!resTitle || !filePath || !f_name || !l_name || !vid) {
+    return res.status(400).json({ error: "Missing fields" });
   }
 
   try {
-    const sql = "INSERT INTO Resume_pdfs (title, file_path) VALUES (?, ?)";
-    await db.query(sql, [resTitle, filePath]);
-    res.json({ message: "resume added successfully!" });
+    // Insert into Resume_pdfs table with names
+    const resumeSql = "INSERT INTO Resume_pdfs (title, file_path) VALUES (?, ?)";
+    const resumeResult = await db.query(resumeSql, [resTitle, filePath]);
+    const resumeId = resumeResult.insertId;
+
+    // Insert into Candidates table with resume_id and interview URL
+    const candidateSql = "INSERT INTO Candidates (resume_id, interview, f_name, l_name) VALUES (?, ?, ?, ?)";
+    await db.query(candidateSql, [resumeId, vid, f_name, l_name]);
+
+    res.json({ 
+      message: "Resume and candidate added successfully!",
+      resumeId: resumeId
+    });
   } catch (error) {
     console.error("Error inserting into DB:", error);
     res.status(500).json({ error: "Database error" });
