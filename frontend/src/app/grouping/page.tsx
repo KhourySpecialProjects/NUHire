@@ -105,6 +105,9 @@ const Grouping = () => {
   const [addStudentClass, setAddStudentClass] = useState("");
   const [addStudentGroup, setAddStudentGroup] = useState("");
   const [addStudentEmail, setAddStudentEmail] = useState("");
+  const [addStudentFirstName, setAddStudentFirstName] = useState("");
+  const [addStudentLastName, setAddStudentLastName] = useState("");
+  const [addStudentAvailableGroups, setAddStudentAvailableGroups] = useState<number>(0); 
  
   // Fetch user
   useEffect(() => {
@@ -308,6 +311,21 @@ const Grouping = () => {
       .then(setJobs);
   }, []);
 
+  useEffect(() => {
+  if (addStudentClass) {
+    const selectedClassData = classes.find(c => c.id.toString() === addStudentClass);
+    if (selectedClassData) {
+      const match = selectedClassData.name.match(/\((\d+) groups?\)/);
+      if (match) {
+        setAddStudentAvailableGroups(parseInt(match[1]));
+      }
+    }
+  } else {
+    setAddStudentAvailableGroups(0);
+    setAddStudentGroup(""); 
+  }
+}, [addStudentClass, classes]);
+
   // Handlers for Tab 1
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newClass = e.target.value;
@@ -455,7 +473,7 @@ const Grouping = () => {
   }
 
   const addStudentToClassGroup = async () => {
-    if (!addStudentClass || !addStudentGroup || !addStudentEmail) {
+    if (!addStudentClass || !addStudentGroup || !addStudentEmail || !addStudentFirstName || !addStudentLastName) {
       setPopup({ headline: "Error", message: "Please fill out all fields." });
       return;
     }
@@ -467,15 +485,18 @@ const Grouping = () => {
           class_id: addStudentClass,
           group_id: addStudentGroup,
           email: addStudentEmail,
-          f_name: "",
-          l_name: "",
+          f_name: addStudentFirstName,
+          l_name: addStudentLastName,
         }),
       });
       if (res.ok) {
         setPopup({ headline: "Success", message: "Student added to class and group!" });
+        // Clear all fields after success
         setAddStudentClass("");
         setAddStudentGroup("");
         setAddStudentEmail("");
+        setAddStudentFirstName("");
+        setAddStudentLastName("");
       } else {
         setPopup({ headline: "Error", message: "Failed to add student." });
       }
@@ -912,6 +933,7 @@ const Grouping = () => {
           <div title="Add Student to Class & Group">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
               <h2 className="text-2xl font-bold text-northeasternRed mb-4">Add Student to Class & Group</h2>
+              
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
                   Select Class (CRN)
@@ -929,19 +951,68 @@ const Grouping = () => {
                   ))}
                 </select>
               </div>
+              
+              {/* Updated Group Selection - Now a Dropdown */}
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
                   Group Number
                 </label>
-                <input
-                  type="number"
-                  min={1}
+                <select
                   value={addStudentGroup}
                   onChange={e => setAddStudentGroup(e.target.value)}
-                  className="w-full p-2 border border-wood bg-springWater rounded-md"
-                  placeholder="Enter group number"
-                />
+                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!addStudentClass || addStudentAvailableGroups === 0}
+                >
+                  <option value="">
+                    {!addStudentClass 
+                      ? "Select a class first" 
+                      : addStudentAvailableGroups === 0 
+                        ? "No groups available" 
+                        : "Select a group"
+                    }
+                  </option>
+                  {addStudentAvailableGroups > 0 && 
+                    Array.from({ length: addStudentAvailableGroups }, (_, i) => i + 1).map(groupNum => (
+                      <option key={groupNum} value={groupNum}>
+                        Group {groupNum}
+                      </option>
+                    ))
+                  }
+                </select>
+                {addStudentClass && addStudentAvailableGroups > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Available groups: 1 to {addStudentAvailableGroups}
+                  </p>
+                )}
               </div>
+              
+              {/* NEW: First and Last Name Row */}
+              <div className="mb-4">
+                <label className="block text-navy font-semibold mb-2">
+                  Student Name
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      value={addStudentFirstName}
+                      onChange={e => setAddStudentFirstName(e.target.value)}
+                      className="w-full p-2 border border-wood bg-springWater rounded-md"
+                      placeholder="First name"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={addStudentLastName}
+                      onChange={e => setAddStudentLastName(e.target.value)}
+                      className="w-full p-2 border border-wood bg-springWater rounded-md"
+                      placeholder="Last name"
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="mb-4">
                 <label className="block text-navy font-semibold mb-2">
                   Student Email
@@ -954,6 +1025,7 @@ const Grouping = () => {
                   placeholder="Enter student email"
                 />
               </div>
+              
               <div className="flex justify-center">
                 <button
                   className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
