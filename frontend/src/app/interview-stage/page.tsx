@@ -29,6 +29,8 @@ interface Interview {
   id: number;
   resume_id: number;
   interview: string;
+  first_name: string; 
+  last_name: string;  
 }
 
 interface Resume {
@@ -59,11 +61,15 @@ export default function Interview() {
   const [fadingEffect, setFadingEffect] = useState(false);
   const [finished, setFinished] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+
+
   const [interviews, setInterviews] = useState<Array<{
     resume_id: number;
     title: string;
     video_path: string;
     interview: string;
+    first_name: string;  
+    last_name: string;   
   }>>([]);
   const interviewInstructions = [
     "Watch each candidate's interview video carefully.",
@@ -100,6 +106,10 @@ export default function Interview() {
     }
   };
 
+  useEffect(() => {
+    console.log("Interviews updated:", interviews);
+  }, [interviews]);
+  
   // Listen for group submission updates
   useEffect(() => {
     if (!user) return;
@@ -286,26 +296,51 @@ useEffect(() => {
         return;
       }
       
-      // Fetch candidate data for each unique checked resume
       const candidatePromises = checkedResumes.map(resume => 
         axios.get(`${API_BASE_URL}/canidates/resume/${resume.resume_number}`, { 
           timeout: 8000 
         })
-        .then(response => ({
-          resume_id: response.data.resume_id,
-          title: response.data.title || `Candidate ${response.data.resume_id}`,
-          interview: response.data.interview,
-          video_path: response.data.interview
-        }))
+        .then(response => {
+          console.log(`Raw response for resume ${resume.resume_number}:`, response.data);
+          
+          const candidateData = {
+            resume_id: response.data.resume_id,
+            title: response.data.title || `Candidate ${response.data.resume_id}`,
+            interview: response.data.interview,
+            video_path: response.data.interview,
+            first_name: response.data.f_name,
+            last_name: response.data.l_name,
+          };
+          
+          console.log(`Formatted candidate data for resume ${resume.resume_number}:`, candidateData);
+          return candidateData;
+        })
         .catch(err => {
           console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
           return null;
         })
       );
-      const results = await Promise.allSettled(candidatePromises);
 
-      setInterviews(results.map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null).filter((item): item is { resume_id: any; title: any; interview: any; video_path: any } => item !== null).slice(0,4));
-      
+      const results = await Promise.allSettled(candidatePromises);
+      console.log("Promise.allSettled results:", results);
+
+      // Log each result individually
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          console.log(`Result ${index} (fulfilled):`, result.value);
+        } else {
+          console.log(`Result ${index} (rejected):`, result.reason);
+        }
+      });
+
+      const finalInterviews = results
+        .map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null)
+        .filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null)
+        .slice(0,4);
+
+      setInterviews(finalInterviews);
+
+      console.log("Final interviews array:", finalInterviews);
     } catch (err) {
       console.error("Error fetching interviews:", err);
       setError('Failed to load interview data. Please try refreshing the page.');
@@ -625,9 +660,9 @@ useEffect(() => {
         <div className={`md:w-2/3 flex flex-col items-center justify-center p-4 md:p-8 ${fadingEffect ? 'opacity-50 transition-opacity duration-500' : 'opacity-100 transition-opacity duration-500'}`}>
           <h1 className="text-xl font-rubik font-bold mb-4 text-center">
             {noShow ? "Candidate No-Show" : 
-             interviews.length > 0 && videoIndex >= 0 && videoIndex < interviews.length ? 
-             `Candidate Interview ${videoIndex + 1}` : 
-             "Loading Interview..."}
+            currentVid && currentVid.first_name && currentVid.last_name ? 
+            `Evaluating ${currentVid.first_name} ${currentVid.last_name}` : 
+            "Evaluation"}
           </h1>
           <div className="w-full max-w-4xl aspect-video border-4 border-redHeader mb-5 rounded-lg shadow-lg mx-auto">
             {noShow ? (

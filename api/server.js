@@ -98,6 +98,7 @@ app.post('/upload/job', upload.single('jobDescription'), (req, res) => {
 });
 
 // Delete route for deleting files, which removes the file from the server and deletes its record from the database
+// Delete route for deleting files, which removes the file from the server and deletes its record from the database
 app.delete('/delete/resume/:fileName', (req, res) => {
   const fileName = req.params.fileName;
   const filePath = path.join(__dirname, 'uploads/resumes', fileName);
@@ -105,12 +106,43 @@ app.delete('/delete/resume/:fileName', (req, res) => {
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
 
-    db.query("DELETE FROM Resume_pdfs WHERE file_path = ?", [`uploads/resumes/${fileName}`], (err, result) => {
+    // First, get the resume ID to delete the associated candidate
+    db.query("SELECT id FROM Resume_pdfs WHERE file_path = ?", [`uploads/resumes/${fileName}`], (err, resumeResults) => {
       if (err) {
-        console.error("Database deletion error:", err);
-        return res.status(500).json({ error: "Database deletion failed" });
+        console.error("Database lookup error:", err);
+        return res.status(500).json({ error: "Database lookup failed" });
       }
-      res.json({ message: `File "${fileName}" deleted successfully.` });
+
+      if (resumeResults.length === 0) {
+        return res.status(404).json({ error: "Resume not found in database" });
+      }
+
+      const resumeId = resumeResults[0].id;
+
+      // Delete from Candidates table first (due to foreign key constraint)
+      db.query("DELETE FROM Candidates WHERE resume_id = ?", [resumeId], (err, candidateResult) => {
+        if (err) {
+          console.error("Candidate deletion error:", err);
+          return res.status(500).json({ error: "Candidate deletion failed" });
+        }
+
+        console.log(`Deleted ${candidateResult.affectedRows} candidate(s) for resume ID ${resumeId}`);
+
+        // Then delete from Resume_pdfs table
+        db.query("DELETE FROM Resume_pdfs WHERE file_path = ?", [`uploads/resumes/${fileName}`], (err, resumeResult) => {
+          if (err) {
+            console.error("Resume deletion error:", err);
+            return res.status(500).json({ error: "Resume deletion failed" });
+          }
+
+          console.log(`Deleted resume: ${fileName}, Resume ID: ${resumeId}`);
+          res.json({ 
+            message: `File "${fileName}" and associated candidate deleted successfully.`,
+            deletedResume: resumeResult.affectedRows > 0,
+            deletedCandidate: candidateResult.affectedRows > 0
+          });
+        });
+      });
     });
 
   } else {
@@ -419,16 +451,16 @@ const initializeDatabase = () => {
     "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample8', 'uploads/resumes/sample8.pdf')",
     "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample9', 'uploads/resumes/sample9.pdf')",
     "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample10', 'uploads/resumes/sample10.pdf')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (1, 'https://www.youtube.com/embed/OVAMb6Kui6A')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (2, 'https://www.youtube.com/embed/KCm6JVtoRdo')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (3, 'https://www.youtube.com/embed/srw4r3htm4U')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (4, 'https://www.youtube.com/embed/sjTxmq68RXU')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (5, 'https://www.youtube.com/embed/sjTxmq68RXU')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (6, 'https://www.youtube.com/embed/6bJTEZnTT5A')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (7, 'https://www.youtube.com/embed/es7XtrloDIQ')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (8, 'https://www.youtube.com/embed/0siE31sqz0Q')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (9, 'https://www.youtube.com/embed/5v-wyR5emRw')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`) VALUES (10, 'https://www.youtube.com/embed/TQHW7gGjrCQ')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (1, 'https://www.youtube.com/embed/OVAMb6Kui6A', 'Aisha', 'Patel')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (2, 'https://www.youtube.com/embed/KCm6JVtoRdo', 'Casey', 'Fisch')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (3, 'https://www.youtube.com/embed/srw4r3htm4U', 'Ethan', 'Martinez')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (4, 'https://www.youtube.com/embed/sjTxmq68RXU', 'Jason', 'Jones')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (5, 'https://www.youtube.com/embed/sjTxmq68RXU', 'Lucas', 'Nyugen')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (6, 'https://www.youtube.com/embed/6bJTEZnTT5A', 'Maya', 'Collins')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (7, 'https://www.youtube.com/embed/es7XtrloDIQ', 'Paula', 'McCartney')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (8, 'https://www.youtube.com/embed/0siE31sqz0Q', 'Alex', 'Johnson')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (9, 'https://www.youtube.com/embed/5v-wyR5emRw', 'Jordan', 'Lee')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (10, 'https://www.youtube.com/embed/TQHW7gGjrCQ', 'Zhiyuan', 'Yang')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (1, 'Interview1', 'https://www.youtube.com/embed/OVAMb6Kui6A')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (2, 'Interview2', 'https://www.youtube.com/embed/KCm6JVtoRdo')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (3, 'Interview3', 'https://www.youtube.com/embed/srw4r3htm4U')",
@@ -1623,7 +1655,7 @@ app.get("/interview/group/:group_id", (req, res) => {
   if (studentClass) {
     // You'll need to join with the Users table to filter by class
     query = `
-      SELECT r.* 
+      SELECT r.* , u.f_name, u.l_name
       FROM InterviewPage r
       JOIN Users u ON r.student_id = u.id
       WHERE r.group_id = ? AND u.class = ?
@@ -1727,28 +1759,65 @@ app.get("/jobdes/title", (req, res) => {
 
 //Gets all stored resumes
 app.get("/resume_pdf", (req, res) => {
-  db.query("SELECT * FROM Resume_pdfs", (err, results) => {
+  const query = `
+    SELECT 
+      r.id, 
+      r.title, 
+      r.file_path,
+      c.f_name as first_name,
+      c.l_name as last_name,
+      c.interview
+    FROM Resume_pdfs r
+    LEFT JOIN Candidates c ON r.id = c.resume_id
+    ORDER BY r.id DESC
+  `;
+  
+  db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
 });
 
 //Posts a new resume into the database as long as it's given the resume title and the file path
-app.post("/resume_pdf", async (req, res) => {
-  const { resTitle, filePath } = req.body;
+app.post("/resume_pdf", (req, res) => {
+  const { resTitle, filePath, f_name, l_name, vid } = req.body;
 
-  if (!resTitle || !filePath) {
-    return res.status(400).json({ error: "Missing title or filePath" });
+  if (!resTitle || !filePath || !f_name || !l_name || !vid) {
+    return res.status(400).json({ error: "Missing fields" });
   }
 
-  try {
-    const sql = "INSERT INTO Resume_pdfs (title, file_path) VALUES (?, ?)";
-    await db.query(sql, [resTitle, filePath]);
-    res.json({ message: "resume added successfully!" });
-  } catch (error) {
-    console.error("Error inserting into DB:", error);
-    res.status(500).json({ error: "Database error" });
-  }
+  // First, insert into Resume_pdfs table
+  const resumeSql = "INSERT INTO Resume_pdfs (title, file_path) VALUES (?, ?)";
+  db.query(resumeSql, [resTitle, filePath], (err, resumeResult) => {
+    if (err) {
+      console.error("Error inserting resume:", err);
+      
+      // Handle duplicate entry error specifically
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ 
+          error: "A resume with this title already exists. Please choose a different title." 
+        });
+      }
+      
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    const resumeId = resumeResult.insertId;
+
+    // Then, insert into Candidates table
+    const candidateSql = "INSERT INTO Candidates (resume_id, interview, f_name, l_name) VALUES (?, ?, ?, ?)";
+    db.query(candidateSql, [resumeId, vid, f_name, l_name], (err2, candidateResult) => {
+      if (err2) {
+        console.error("Error inserting candidate:", err2);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      res.json({ 
+        message: "Resume and candidate added successfully!",
+        resumeId: resumeId
+      });
+    });
+  });
 });
 
 

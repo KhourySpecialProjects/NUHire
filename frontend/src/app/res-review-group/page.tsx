@@ -41,6 +41,8 @@ export default function ResReviewGroup() {
     resume_number: number;
     file_path: string;
     checked: boolean;
+    first_name: string;
+    last_name: string;
     vote: "yes" | "no" | "unanswered";
   }
 
@@ -111,6 +113,10 @@ export default function ResReviewGroup() {
     fetchUser();
   }, [router]);
     
+  useEffect(() => {
+    console.log("Resumes has changes:", resumes)
+  }, [resumes]);
+
   useEffect(() => {
     if (!user) return; // Only check for user, not socket
 
@@ -230,7 +236,11 @@ export default function ResReviewGroup() {
   const fetchResumes = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/resume_pdf`);
-      const data: { file_path: string; id: number; title: string; uploaded_at: string }[] = await response.json();
+      const data: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await response.json();
+
+      console.log("Raw resume data from API:", data);
+      console.log("First resume item:", data[0]);
+    
       const formatted: Resume[] = data.map(item => ({
       resume_number: item.id,
       file_path: item.file_path,
@@ -240,6 +250,8 @@ export default function ResReviewGroup() {
           ? "yes"
           : "no"
         : "unanswered",
+      first_name: item.first_name,
+      last_name: item.last_name
     }));
 
       setResumes(formatted);
@@ -426,7 +438,7 @@ export default function ResReviewGroup() {
               <option value="">— choose resume —</option>
               {resumes.slice(0,10).map(r => (
                 <option key={r.resume_number} value={r.resume_number}>
-                  Resume {r.resume_number}
+                 {r.first_name} {r.last_name}
                 </option>
               ))}
             </select>
@@ -463,7 +475,7 @@ export default function ResReviewGroup() {
                   className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl p-6 flex flex-col justify-between transition"
                 >
                   <h3 className="text-xl font-semibold text-navy mb-2">
-                    Resume {n}
+                    {resume.first_name} {resume.last_name}
                   </h3>
                   <a
                     href={`${API_BASE_URL}/${resume.file_path}`}

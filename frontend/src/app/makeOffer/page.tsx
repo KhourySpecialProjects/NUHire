@@ -436,6 +436,8 @@ export default function MakeOffer() {
           candidate_id: id,
           video_path: "https://www.youtube.com/embed/srw4r3htm4U",
           resume_path: "uploads/resumes/sample1.pdf",
+          f_name: "Unknown",
+          l_name: "Candidate"
         };
       }
 
@@ -445,6 +447,8 @@ export default function MakeOffer() {
         candidate_id: id,
         video_path: candidate?.interview || "https://www.youtube.com/embed/srw4r3htm4U",
         resume_path: resume?.file_path || "uploads/resumes/sample1.pdf",
+        f_name: candidate?.f_name || "First",
+        l_name: candidate?.l_name || "Last"
       };
     });
 
@@ -812,7 +816,7 @@ export default function MakeOffer() {
                 }`}
               >
                 <h3 className="text-xl font-semibold text-navy text-center">
-                  Candidate {interviewNumber}
+                   {interview.f_name} {interview.l_name} {isAccepted && "✓ Offered"} {isRejected && "✗ Not Offered"}
                 </h3>
 
                 <div className="aspect-video w-full">
