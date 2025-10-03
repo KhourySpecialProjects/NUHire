@@ -308,8 +308,8 @@ useEffect(() => {
             title: response.data.title || `Candidate ${response.data.resume_id}`,
             interview: response.data.interview,
             video_path: response.data.interview,
-            first_name: response.data.first_name,
-            last_name: response.data.last_name,
+            first_name: response.data.f_name,
+            last_name: response.data.l_name,
           };
           
           console.log(`Formatted candidate data for resume ${resume.resume_number}:`, candidateData);
