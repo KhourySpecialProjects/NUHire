@@ -1655,7 +1655,7 @@ app.get("/interview/group/:group_id", (req, res) => {
   if (studentClass) {
     // You'll need to join with the Users table to filter by class
     query = `
-      SELECT r.* 
+      SELECT r.* , u.f_name, u.l_name
       FROM InterviewPage r
       JOIN Users u ON r.student_id = u.id
       WHERE r.group_id = ? AND u.class = ?
