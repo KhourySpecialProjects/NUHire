@@ -272,7 +272,7 @@ const Dashboard = () => {
 
   const handleFlip = (idx: number) => {
     if (!isStepUnlocked(steps[idx].key)) return;
-    if (steps[idx].key === "employerPannel") return;
+    if (steps[idx].key === "employer") return;
     setFlipped((prev) => {
       const newArr = [...prev];
       newArr[idx] = !newArr[idx];
@@ -309,7 +309,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
             {steps.map((step, idx) => {
               const unlocked = isStepUnlocked(step.key);
-              const isEmployerPanel = step.key === "employerPannel";
+              const isEmployerPanel = step.key === "employer";
               return (
                 <div
                   key={step.key}
