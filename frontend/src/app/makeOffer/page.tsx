@@ -803,6 +803,12 @@ export default function MakeOffer() {
               Personality: 0,
             };
 
+            const isNoShow = (
+              (votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0) <= -1000 ||
+              (votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0) <= -1000 ||
+              (votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0) <= -1000 ||
+              (votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0) <= -1000
+            );
             const isAccepted = sentIn[interviewNumber] === true;
             const isRejected = sentIn[interviewNumber] === false;
             return (
@@ -813,11 +819,16 @@ export default function MakeOffer() {
                     ? "bg-green-100 border border-green-500"
                     : isRejected
                     ? "bg-red-100 border border-red-300 pointer-events-none"
+                    : isNoShow
+                    ? "bg-gray-100 border border-gray-400 opacity-75" // Special styling for No Show
                     : "bg-wood"
                 }`}
               >
                 <h3 className="text-xl font-semibold text-navy text-center">
-                   {interview.f_name} {interview.l_name} {isAccepted && "✓ Offered"} {isRejected && "✗ Not Offered"}
+                  {interview.f_name} {interview.l_name} 
+                  {isAccepted && " ✓ Offered"} 
+                  {isRejected && " ✗ Not Offered"}
+                  {isNoShow && " (No Show)"}
                 </h3>
 
                 <div className="aspect-video w-full">
@@ -832,37 +843,42 @@ export default function MakeOffer() {
                 </div>
 
                 <div className="mt-2 space-y-1 text-navy text-sm">
-                  <p>
+                <p>
                     <span className="font-medium">Overall:</span> {
-                      Math.max(0, 
-                        ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize
-                      ).toFixed(1)
+                    (() => {
+                        const totalVotes = (votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0);
+                        if (totalVotes <= -1000) return "No Show";
+                        return Math.max(0, totalVotes / groupSize).toFixed(1);
+                    })()
                     }
-                  </p>
-                  <p>
-                    <span className="font-medium">Professional Presence:</span>{" "}
-                    {
-                      Math.max(0, 
-                        ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize
-                      ).toFixed(1)
+                </p>
+                <p>
+                    <span className="font-medium">Professional Presence:</span> {
+                    (() => {
+                        const totalVotes = (votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0);
+                        if (totalVotes <= -1000) return "No Show";
+                        return Math.max(0, totalVotes / groupSize).toFixed(1);
+                    })()
                     }
-                  </p>
-                  <p>
-                    <span className="font-medium">Quality of Answer:</span>{" "}
-                    {
-                      Math.max(0, 
-                        ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize
-                      ).toFixed(1)
+                </p>
+                <p>
+                    <span className="font-medium">Quality of Answer:</span> {
+                    (() => {
+                        const totalVotes = (votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0);
+                        if (totalVotes <= -1000) return "No Show";
+                        return Math.max(0, totalVotes / groupSize).toFixed(1);
+                    })()
                     }
-                  </p>
-                  <p>
-                    <span className="font-medium">Personality:</span>{" "}
-                    {
-                      Math.max(0, 
-                        ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize
-                      ).toFixed(1)
+                </p>
+                <p>
+                    <span className="font-medium">Personality:</span> {
+                    (() => {
+                        const totalVotes = (votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0);
+                        if (totalVotes <= -1000) return "No Show";
+                        return Math.max(0, totalVotes / groupSize).toFixed(1);
+                    })()
                     }
-                  </p>
+                </p>
                 </div>
 
                 <a
@@ -874,7 +890,7 @@ export default function MakeOffer() {
                   View / Download Resume
                 </a>
 
-                {!isRejected && (
+                {!isRejected && !isNoShow && ( // Add !isNoShow here
                   <label className={`flex items-center mt-2 ${isOfferDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <input
                       type="checkbox"
@@ -885,6 +901,13 @@ export default function MakeOffer() {
                     />
                     <span className="ml-2 text-navy text-sm">Selected for Offer</span>
                   </label>
+                )}
+
+                {/* Add a message for No Show candidates */}
+                {isNoShow && (
+                  <div className="text-center text-red-600 text-sm font-medium bg-red-50 p-2 rounded">
+                    This candidate did not show up for the interview
+                  </div>
                 )}
               </div>
             );
