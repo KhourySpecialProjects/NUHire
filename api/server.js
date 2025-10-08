@@ -626,6 +626,8 @@ io.on("connection", (socket) => {
   socket.on("updateRatingsWithPresetBackend", ({ classId, groupId, candidateId, vote, isNoShow }) => {
     const roomId = `group_${groupId}_class_${classId}`;
   
+    console.log(`Sending preset vote update to room ${roomId} for candidate ${candidateId}`);
+
     io.to(roomId).emit("updateRatingsWithPresetFrontend", {
       classId,
       groupId,

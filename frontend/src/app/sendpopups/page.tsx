@@ -353,7 +353,8 @@ const SendPopups = () => {
           groups: validGroups,
           headline,
           message,
-          class: selectedClass
+          class: selectedClass, 
+          candidateId: selectedCandidate,
         });
 
         setPopup({ 
