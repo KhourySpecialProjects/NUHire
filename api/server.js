@@ -1974,6 +1974,45 @@ app.get("/moderator-classes-full/:email", (req, res) => {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Canidates API routes
 
+// Add this route to get candidates being interviewed by specific groups
+app.get('/candidates-by-groups/:classId/:groupIds', (req, res) => {
+  const { classId, groupIds } = req.params;
+  const groupIdArray = groupIds.split(',');
+  
+  console.log(`Fetching candidates being interviewed by groups ${groupIds} in class ${classId}`);
+  
+  const placeholders = groupIdArray.map(() => '?').join(',');
+  
+  const query = `
+    SELECT DISTINCT 
+      c.resume_id as id, 
+      c.f_name, 
+      c.l_name, 
+      c.resume_id,
+      r.title
+    FROM Candidates c
+    INNER JOIN Resume_pdfs r ON c.resume_id = r.id
+    INNER JOIN Resume res ON res.resume_number = c.resume_id
+    INNER JOIN Users u ON res.student_id = u.id
+    WHERE u.class = ? 
+      AND u.group_id IN (${placeholders})
+      AND res.checked = 1
+    ORDER BY c.f_name, c.l_name
+  `;
+  
+  const params = [classId, ...groupIdArray];
+  
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching candidates by groups:', err);
+      return res.status(500).json({ error: 'Failed to fetch candidates' });
+    }
+    
+    console.log(`Found ${results.length} candidates being interviewed by groups ${groupIds} in class ${classId}`);
+    res.json(results);
+  });
+});
+
 // Add this route to fetch candidates by class
 app.get('/candidates-by-class/:classId', (req, res) => {
   const { classId } = req.params;
