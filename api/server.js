@@ -1678,20 +1678,32 @@ app.delete("/interview/:student_id", (req, res) => {
 }
 );
 
-app.get('/interview-popup/:candidateId/:groupId/:classId', async (req, res) => {
-  try {
-    const { candidateId, groupId, classId } = req.params;
+app.get('/interview-popup/:candidateId/:groupId/:classId', (req, res) => {
+  const { candidateId, groupId, classId } = req.params;
+  
+  console.log(`Fetching popup votes for candidate ${candidateId}, group ${groupId}, class ${classId}`);
+  
+  const query = 'SELECT * FROM InterviewPopup WHERE candidate_id = ? AND group_id = ? AND class = ?';
+  
+  db.query(query, [candidateId, groupId, classId], (err, results) => {
+    if (err) {
+      console.error('Error fetching interview popup votes:', err);
+      return res.status(500).json({ error: 'Failed to fetch interview popup votes' });
+    }
     
-    const [rows] = await db.promise().query(
-      'SELECT * FROM InterviewPopup WHERE candidate_id = ? AND group_id = ? AND class = ?',
-      [candidateId, groupId, classId]
-    );
-
-    res.json(rows[0] || { question1: 0, question2: 0, question3: 0, question4: 0 });
-  } catch (error) {
-    console.error('Error fetching interview popup votes:', error);
-    res.status(500).json({ error: 'Failed to fetch interview popup votes' });
-  }
+    console.log(`Found ${results.length} popup vote records for candidate ${candidateId}`);
+    
+    // Return the first result or default values
+    const result = results[0] || { 
+      question1: 0, 
+      question2: 0, 
+      question3: 0, 
+      question4: 0 
+    };
+    
+    console.log('Returning popup votes:', result);
+    res.json(result);
+  });
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
