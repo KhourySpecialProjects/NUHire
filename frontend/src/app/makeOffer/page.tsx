@@ -160,7 +160,7 @@ export default function MakeOffer() {
         
         const results = await Promise.all(promises);
         const votesMap = results.reduce((acc, vote, index) => {
-          acc[candidates[index].id] = vote;
+          acc[candidates[index].resume_id] = vote;
           return acc;
         }, {});
         
