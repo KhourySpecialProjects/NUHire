@@ -145,32 +145,53 @@ const SendPopups = () => {
       fetchUser();
     }, []);
 
-    useEffect(() => {
-      const fetchCandidates = async () => {
-        if (!selectedClass) {
-          setCandidates([]);
-          return;
-        }
+  useEffect(() => {
+  const fetchCandidates = async () => {
+    // Only fetch candidates if class is selected AND groups are selected (for presets)
+    if (!selectedClass || (selectedPreset && selectedGroups.length === 0)) {
+      setCandidates([]);
+      return;
+    }
+    
+    try {
+      let url;
+      if (selectedGroups.length > 0) {
+        // Fetch candidates being interviewed by selected groups
+        const groupIds = selectedGroups.join(',');
+        url = `${API_BASE_URL}/candidates-by-groups/${selectedClass}/${groupIds}`;
+      } else {
+        // Fallback to all candidates in class (for non-preset popups)
+        url = `${API_BASE_URL}/candidates-by-class/${selectedClass}`;
+      }
+      
+      console.log("Fetching candidates from:", url);
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const candidatesData = await response.json();
         
-        try {
-          // Fetch candidates for the selected class
-          const response = await fetch(`${API_BASE_URL}/candidates-by-class/${selectedClass}`);
-          if (response.ok) {
-            const candidatesData = await response.json();
-            setCandidates(candidatesData);
-          } else {
-            console.error("Failed to fetch candidates");
-            setCandidates([]);
-          }
-        } catch (error) {
-          console.error("Error fetching candidates:", error);
-          setCandidates([]);
-        }
-      };
+        // Format the data to include the name field
+        const formattedCandidates = candidatesData.map((candidate: any) => ({
+          resume_id: candidate.id || candidate.resume_id,
+          name: `${candidate.f_name} ${candidate.l_name}`,
+          f_name: candidate.f_name,
+          l_name: candidate.l_name
+        }));
+        
+        console.log("Formatted candidates:", formattedCandidates);
+        setCandidates(formattedCandidates);
+      } else {
+        console.error("Failed to fetch candidates");
+        setCandidates([]);
+      }
+    } catch (error) {
+      console.error("Error fetching candidates:", error);
+      setCandidates([]);
+    }
+  };
 
-      fetchCandidates();
-    }, [selectedClass]);
-
+  fetchCandidates();
+}, [selectedClass, selectedGroups, selectedPreset]); // Add selectedGroups and selectedPreset as dependencies
     // Fetch available classes
     useEffect(() => {
       const fetchAssignedClasses = async () => {
@@ -301,9 +322,24 @@ const SendPopups = () => {
   };
 
   const sendPopups = async () => {
-    if (!headline || !message || selectedGroups.length === 0) {
-      setPopup({ headline: "Error", message: "Please fill in all fields and select at least one group." });
-      return;
+  if (!headline || !message || selectedGroups.length === 0) {
+    setPopup({ headline: "Error", message: "Please fill in all fields and select at least one group." });
+    return;
+  }
+
+  // Add validation for preset candidate selection
+  const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
+    if (selectedPresetData) {
+      if (!selectedCandidate) {
+        setPopup({ headline: "Error", message: "Please select a candidate for this preset popup." });
+        return;
+      }
+      
+      // Validate that the selected candidate is actually being interviewed by the selected groups
+      if (candidates.length === 0) {
+        setPopup({ headline: "Error", message: "The selected groups are not currently interviewing any candidates." });
+        return;
+      }
     }
 
     setSending(true);
@@ -437,27 +473,39 @@ const SendPopups = () => {
               </div>
 
               {/* Add candidate selection dropdown - only show when preset is selected */}
+              {/* Update the candidate selection dropdown */}
               {selectedPreset && (
                 <div className="mb-6">
                   <label className="text-lg font-rubik text-northeasternBlack block mb-2">
                     Select Candidate for {selectedPreset}:
                   </label>
-                  <select
-                    value={selectedCandidate}
-                    onChange={(e) => setSelectedCandidate(e.target.value)}
-                    className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Select a Candidate --</option>
-                    {candidates.map((candidate, index) => (
-                      <option key={candidate.resume_id} value={candidate.resume_id}>
-                        {candidate.name} (ID: {candidate.resume_id})
-                      </option>
-                    ))}
-                  </select>
-                  {candidates.length === 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      No candidates found for this class.
-                  </p>
+                  
+                  {selectedGroups.length === 0 ? (
+                    <div className="p-3 border border-yellow-400 bg-yellow-50 rounded-md">
+                      <p className="text-yellow-800 text-sm">
+                        Please select at least one group first to see the candidates they are interviewing.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        value={selectedCandidate}
+                        onChange={(e) => setSelectedCandidate(e.target.value)}
+                        className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">-- Select a Candidate --</option>
+                        {candidates.map((candidate) => (
+                          <option key={candidate.resume_id} value={candidate.resume_id}>
+                            {candidate.name} (ID: {candidate.resume_id})
+                          </option>
+                        ))}
+                      </select>
+                      {candidates.length === 0 && selectedGroups.length > 0 && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          The selected groups are not currently interviewing any candidates.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               )}
