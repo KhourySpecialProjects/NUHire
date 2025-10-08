@@ -165,6 +165,7 @@ export default function MakeOffer() {
         }, {});
         
         setPopupVotes(votesMap);
+        console.log("Fetched popup votes:", popupVotes);
       } catch (error) {
         console.error('Error fetching popup votes:', error);
       }
