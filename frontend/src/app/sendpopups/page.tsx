@@ -329,7 +329,7 @@ const SendPopups = () => {
                 classId: selectedClass,
                 groupId,
                 vote: selectedPresetData.vote,
-                candidateID: selectedCandidate,
+                candidateId: selectedCandidate,
                 isNoShow: selectedPresetData.title === "No Show"
               });
             }
