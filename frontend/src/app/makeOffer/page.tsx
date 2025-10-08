@@ -154,7 +154,7 @@ export default function MakeOffer() {
     const fetchPopupVotes = async () => {
       try {
         const promises = candidates.map(candidate => 
-          fetch(`${API_BASE_URL}/interview-popup/${candidate.id}/${user.group_id}/${user.class}`)
+          fetch(`${API_BASE_URL}/interview-popup/${candidate.resume_id}/${user.group_id}/${user.class}`)
             .then(res => res.json())
         );
         

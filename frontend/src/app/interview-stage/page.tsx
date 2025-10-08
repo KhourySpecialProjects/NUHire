@@ -385,8 +385,8 @@ useEffect(() => {
 
     console.log("Setting up socket listeners with user:", user.id, "and currentVid:", currentVid.resume_id);
 
-    socket.on("updateRatingsWithPresetFrontend", ({ classId, groupId, vote, isNoShow }) => {
-      console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow });
+    socket.on("updateRatingsWithPresetFrontend", ({ classId, groupId, vote, isNoShow, candidateId }) => {
+      console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow, candidateId });
       
       const voteData = {
         student_id: user.id,
@@ -396,7 +396,7 @@ useEffect(() => {
         question2: isNoShow ? -10000 : (vote.qualityOfAnswer || 0),
         question3: isNoShow ? -10000 : (vote.personality || 0),
         question4: isNoShow ? -10000 : (vote.overall || 0),
-        candidate_id: currentVid.resume_id
+        candidate_id: candidateId
       };
       
       console.log("Emitting sentPresetVotes with data:", voteData);
