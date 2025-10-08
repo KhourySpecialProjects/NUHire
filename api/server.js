@@ -626,7 +626,6 @@ io.on("connection", (socket) => {
   socket.on("updateRatingsWithPresetBackend", ({ classId, groupId, candidateId, vote, isNoShow }) => {
     const roomId = `group_${groupId}_class_${classId}`;
   
-    console.log(`Sending preset vote update to room ${roomId} for candidate ${candidateId}`);
 
     io.to(roomId).emit("updateRatingsWithPresetFrontend", {
       classId,
@@ -1974,42 +1973,6 @@ app.get("/moderator-classes-full/:email", (req, res) => {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Canidates API routes
-
-useEffect(() => {
-  const fetchCandidates = async () => {
-    if (!selectedClass) {
-      setCandidates([]);
-      return;
-    }
-    
-    try {
-      // Fetch candidates for the selected class
-      const response = await fetch(`${API_BASE_URL}/candidates-by-class/${selectedClass}`);
-      if (response.ok) {
-        const candidatesData = await response.json();
-        
-        // Format the data to include the name field
-        const formattedCandidates = candidatesData.map((candidate) => ({
-          resume_id: candidate.id || candidate.resume_id,
-          name: `${candidate.f_name} ${candidate.l_name}`,
-          f_name: candidate.f_name,
-          l_name: candidate.l_name
-        }));
-        
-        console.log("Formatted candidates:", formattedCandidates);
-        setCandidates(formattedCandidates);
-      } else {
-        console.error("Failed to fetch candidates");
-        setCandidates([]);
-      }
-    } catch (error) {
-      console.error("Error fetching candidates:", error);
-      setCandidates([]);
-    }
-  };
-
-  fetchCandidates();
-}, [selectedClass]);
 
 // Add this route to fetch candidates by class
 app.get('/candidates-by-class/:classId', (req, res) => {
