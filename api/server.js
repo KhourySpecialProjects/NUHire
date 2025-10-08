@@ -460,7 +460,7 @@ const initializeDatabase = () => {
     "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (7, 'https://youtu.be/1dIhJmX4uLo', 'Paula', 'McCartney')",
     "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (8, 'https://youtu.be/cnIv3Zf5nJo', 'Alex', 'Johnson')",
     "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (9, 'https://youtu.be/0aVcquEhOtQ', 'Jordan', 'Lee')",
-    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (10, 'https://www.youtube.com/embed/TQHW7gGjrCQ', 'Zhiyuan', 'Yang')",
+    "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (10, 'https://youtu.be/HS3ShcKt288', 'Zhiyuan', 'Yang')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (1, 'Interview1', 'https://youtu.be/aA7k6WM4_7A')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (2, 'Interview2', 'https://youtu.be/4d6v7p0N9Sg')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (3, 'Interview3', 'https://youtu.be/typ4aN11feI')",
@@ -470,7 +470,7 @@ const initializeDatabase = () => {
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (7, 'Interview7', 'https://youtu.be/1dIhJmX4uLo')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (8, 'Interview8', 'https://youtu.be/cnIv3Zf5nJo')",
     "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (9, 'Interview9', 'https://youtu.be/0aVcquEhOtQ')",
-    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (10, 'Interview10', 'https://www.youtube.com/embed/TQHW7gGjrCQ')"
+    "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (10, 'Interview10', 'https://youtu.be/HS3ShcKt288')"
   ];
       
   const executeQueries = async () => {
