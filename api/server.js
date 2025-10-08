@@ -596,7 +596,7 @@ io.on("connection", (socket) => {
 
   // Listen for the "sendPopupToGroups" event, which is emitted by the client when an admin wants to send a popup message to specific groups
   // The server queries the database to get the email addresses of students in the specified groups
-  socket.on("sendPopupToGroups", ({ groups, headline, message, class: classId }) => {
+  socket.on("sendPopupToGroups", ({ groups, headline, message, class: classId, candidateId }) => {
     if (!groups || groups.length === 0) return;
   
     let query = "SELECT email FROM Users WHERE group_id IN (?) AND affiliation = 'student'";
@@ -612,7 +612,7 @@ io.on("connection", (socket) => {
         results.forEach(({ email }) => {
           const studentSocketId = onlineStudents[email];
           if (studentSocketId) {
-            io.to(studentSocketId).emit("receivePopup", { headline, message });
+            io.to(studentSocketId).emit("receivePopup", { headline, message, candidateId });
           }
         });
   
@@ -623,12 +623,13 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("updateRatingsWithPresetBackend", ({ classId, groupId, vote, isNoShow }) => {
+  socket.on("updateRatingsWithPresetBackend", ({ classId, groupId, candidateId, vote, isNoShow }) => {
     const roomId = `group_${groupId}_class_${classId}`;
   
     io.to(roomId).emit("updateRatingsWithPresetFrontend", {
       classId,
       groupId,
+      candidateId,
       vote,
       isNoShow
     });
@@ -789,7 +790,8 @@ io.on("connection", (socket) => {
           question3 = question3 + VALUES(question3),
           question4 = question4 + VALUES(question4)`;
 
-      await db.promise().query(query, [
+      // Use callback instead of promise since your db connection isn't using mysql2/promise
+      db.query(query, [
         candidate_id,
         group_id,
         classId,
@@ -797,14 +799,18 @@ io.on("connection", (socket) => {
         question2,
         question3,
         question4
-      ]);
+      ], (err, result) => {
+        if (err) {
+          console.error('Error updating interview popup votes:', err);
+        } else {
+          console.log(`Updated interview popup votes for candidate ${candidate_id} in group ${group_id} class ${classId}`);
+        }
+      });
 
-      console.log(`Updated interview popup votes for candidate ${candidate_id} in group ${group_id} class ${classId}`);
     } catch (error) {
-      console.error('Error updating interview popup votes:', error);
+      console.error('Error in sentPresetVotes:', error);
     }
   });
-
   socket.on("teamConfirmSelection", ({ groupId, classId, studentId, roomId }) => {
     io.to(roomId).emit("teamConfirmSelection", {
       groupId,
@@ -1966,6 +1972,38 @@ app.get("/moderator-classes-full/:email", (req, res) => {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Canidates API routes
+
+// Add this route to fetch candidates by class
+app.get('/candidates-by-class/:classId', (req, res) => {
+  const { classId } = req.params;
+  
+  console.log(`Fetching candidates for class ${classId}`);
+  
+  const query = `
+    SELECT DISTINCT 
+      c.resume_id as id, 
+      c.f_name, 
+      c.l_name, 
+      c.resume_id,
+      r.title
+    FROM Candidates c
+    INNER JOIN Resume_pdfs r ON c.resume_id = r.id
+    INNER JOIN Resume res ON res.resume_number = c.resume_id
+    INNER JOIN Users u ON res.student_id = u.id
+    WHERE u.class = ?
+    ORDER BY c.f_name, c.l_name
+  `;
+  
+  db.query(query, [classId], (err, results) => {
+    if (err) {
+      console.error('Error fetching candidates by class:', err);
+      return res.status(500).json({ error: 'Failed to fetch candidates' });
+    }
+    
+    console.log(`Found ${results.length} candidates for class ${classId}`);
+    res.json(results);
+  });
+});
 
 // get route for retrieving all candidates from the database
 app.get("/canidates", (req, res) => {

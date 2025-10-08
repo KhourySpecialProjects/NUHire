@@ -23,7 +23,12 @@ const SendPopups = () => {
   interface ModeratorClass {
   crn: number;
   nom_groups: number;
-}
+  }
+
+  interface Candidate {
+    name: string;
+    resume_id: number;
+  }
 
   interface Student {
     f_name: string;
@@ -43,10 +48,10 @@ const SendPopups = () => {
     const [classes, setClasses] = useState<{id: number, name: string}[]>([]);
     const [selectedClass, setSelectedClass] = useState<string>("");
     const router = useRouter(); 
-    const [pendingOffers, setPendingOffers] = useState<
-    { classId: number; groupId: number; candidateId: number }[]
-  >([]);
+    const [pendingOffers, setPendingOffers] = useState<{ classId: number; groupId: number; candidateId: number }[]>([]);
     const [assignedClassIds, setAssignedClassIds] = useState<string[]>([]);
+    const [candidates, setCandidates] = useState<Candidate[]>([]);
+    const [selectedCandidate, setSelectedCandidate] = useState<string>("");
 
 
     const checkGroupProgress = async (groupId: string, classId: string, requiredLocation: string): Promise<boolean> => {
@@ -140,6 +145,32 @@ const SendPopups = () => {
       fetchUser();
     }, []);
 
+    useEffect(() => {
+      const fetchCandidates = async () => {
+        if (!selectedClass) {
+          setCandidates([]);
+          return;
+        }
+        
+        try {
+          // Fetch candidates for the selected class
+          const response = await fetch(`${API_BASE_URL}/candidates-by-class/${selectedClass}`);
+          if (response.ok) {
+            const candidatesData = await response.json();
+            setCandidates(candidatesData);
+          } else {
+            console.error("Failed to fetch candidates");
+            setCandidates([]);
+          }
+        } catch (error) {
+          console.error("Error fetching candidates:", error);
+          setCandidates([]);
+        }
+      };
+
+      fetchCandidates();
+    }, [selectedClass]);
+
     // Fetch available classes
     useEffect(() => {
       const fetchAssignedClasses = async () => {
@@ -231,6 +262,7 @@ const SendPopups = () => {
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedClass(e.target.value);
     setSelectedGroups([]); // Reset selected groups when class changes
+    setSelectedCandidate("");
   };
 
   const handleCheckboxChange = (groupId: string) => {
@@ -248,6 +280,7 @@ const SendPopups = () => {
       setHeadline(preset.headline);
       setMessage(preset.message);
     }
+    setSelectedCandidate("");
   };
 
   const respondToOffer = (
@@ -296,6 +329,7 @@ const SendPopups = () => {
                 classId: selectedClass,
                 groupId,
                 vote: selectedPresetData.vote,
+                candidateID: selectedCandidate,
                 isNoShow: selectedPresetData.title === "No Show"
               });
             }
@@ -331,7 +365,8 @@ const SendPopups = () => {
           groups: selectedGroups,
           headline,
           message,
-          class: selectedClass
+          class: selectedClass,
+          candidateId: selectedCandidate,
         });
 
         setPopup({ headline: "Success", message: "Popups sent successfully!" });
@@ -341,6 +376,7 @@ const SendPopups = () => {
       setMessage("");
       setSelectedGroups([]);
       setSelectedPreset("");
+      setSelectedCandidate("");
     } catch (error) {
       console.error("Error sending popups:", error);
       setPopup({ headline: "Error", message: "Failed to send popups. Please try again." });
@@ -398,6 +434,32 @@ const SendPopups = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Add candidate selection dropdown - only show when preset is selected */}
+              {selectedPreset && (
+                <div className="mb-6">
+                  <label className="text-lg font-rubik text-northeasternBlack block mb-2">
+                    Select Candidate for {selectedPreset}:
+                  </label>
+                  <select
+                    value={selectedCandidate}
+                    onChange={(e) => setSelectedCandidate(e.target.value)}
+                    className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select a Candidate --</option>
+                    {candidates.map((candidate, index) => (
+                      <option key={candidate.resume_id} value={candidate.resume_id}>
+                        {candidate.name} (ID: {candidate.resume_id})
+                      </option>
+                    ))}
+                  </select>
+                  {candidates.length === 0 && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      No candidates found for this class.
+                  </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-col gap-4 mb-6">
                 <label className="text-lg text-Black font-rubik">Headline:</label>
