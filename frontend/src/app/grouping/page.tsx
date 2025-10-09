@@ -31,6 +31,18 @@ const Grouping = () => {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [donePopup, setDonePopup] = useState(false);
   
+  // Delete confirmation popup state
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    show: boolean;
+    studentEmail: string;
+    studentName: string;
+    classId: string;
+  }>({
+    show: false,
+    studentEmail: '',
+    studentName: '',
+    classId: ''
+  });
 
   // Tab 1: Class & Student Assignment
   const [students, setStudents] = useState<Student[]>([]);
@@ -62,6 +74,78 @@ const Grouping = () => {
   const [addStudentFirstName, setAddStudentFirstName] = useState("");
   const [addStudentLastName, setAddStudentLastName] = useState("");
   const [addStudentAvailableGroups, setAddStudentAvailableGroups] = useState<number>(0); 
+
+  // Function to refresh groups tab students
+  const refreshGroupsTabStudents = () => {
+    if (groupsTabClass) {
+      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+        .then(res => res.json())
+        .then(setGroupsTabStudents)
+        .catch(err => {
+          console.error("Students API error:", err);
+        });
+    }
+  };
+
+  // Delete student function
+  const handleDeleteStudent = async (studentEmail: string, studentName: string, classId: string) => {
+    setDeleteConfirmation({
+      show: true,
+      studentEmail,
+      studentName,
+      classId
+    });
+  };
+
+  const confirmDeleteStudent = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/teacher/del`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          class_id: deleteConfirmation.classId,
+          email: deleteConfirmation.studentEmail
+        }),
+      });
+
+      if (response.ok) {
+        setPopup({ 
+          headline: "Success", 
+          message: `${deleteConfirmation.studentName} has been removed from the class successfully!` 
+        });
+        // Refresh the students list
+        refreshGroupsTabStudents();
+      } else {
+        setPopup({ 
+          headline: "Error", 
+          message: "Failed to remove student from class." 
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      setPopup({ 
+        headline: "Error", 
+        message: "Failed to remove student from class." 
+      });
+    } finally {
+      // Close the confirmation popup
+      setDeleteConfirmation({
+        show: false,
+        studentEmail: '',
+        studentName: '',
+        classId: ''
+      });
+    }
+  };
+
+  const cancelDeleteStudent = () => {
+    setDeleteConfirmation({
+      show: false,
+      studentEmail: '',
+      studentName: '',
+      classId: ''
+    });
+  };
  
   // Fetch user
   useEffect(() => {
@@ -696,13 +780,13 @@ const Grouping = () => {
               Groups in Class
             </div>
           </div>
-          <div className="flex-1 flex flex-col min-h-0"> {/* Changed: Added flex flex-col min-h-0 */}
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex-1 flex flex-col min-h-0"> {/* Changed: Added flex-1 flex flex-col min-h-0 */}
-              <h2 className="text-2xl font-bold text-northeasternRed mb-4 flex-shrink-0"> {/* Added flex-shrink-0 */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex-1 flex flex-col min-h-0">
+              <h2 className="text-2xl font-bold text-northeasternRed mb-4 flex-shrink-0">
                 {groupsTabClass ? `Groups in Class ${groupsTabClass}` : 'Groups'}
               </h2>
               
-              <div className="mb-4 flex-shrink-0"> {/* Added flex-shrink-0 */}
+              <div className="mb-4 flex-shrink-0">
                 <label className="block text-navy font-semibold mb-2">
                   Select a class to view groups
                 </label>
@@ -720,7 +804,7 @@ const Grouping = () => {
                 </select>
               </div>
 
-              <div className="flex-1 overflow-y-auto min-h-0"> {/* Changed: Added min-h-0 */}
+              <div className="flex-1 overflow-y-auto min-h-0">
                 {!groupsTabClass ? (
                   <div className="flex flex-col items-center justify-center h-48 text-center">
                     <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
@@ -741,29 +825,45 @@ const Grouping = () => {
                     });
 
                     return Object.keys(studentsByGroup).length > 0 ? (
-                      <div className="space-y-2"> {/* Added wrapper with space-y-2 */}
+                      <div className="space-y-2">
                         {Object.entries(studentsByGroup).map(([group_id, students]) => (
-                          <div key={group_id} className="bg-springWater border border-wood p-3 rounded-md shadow"> {/* Increased padding */}
-                            <h3 className="text-xl font-semibold text-navy mb-2">Group {group_id}</h3> {/* Added margin bottom */}
-                            <div className="space-y-1"> {/* Changed from ul to div with space-y-1 */}
+                          <div key={group_id} className="bg-springWater border border-wood p-3 rounded-md shadow">
+                            <h3 className="text-xl font-semibold text-navy mb-2">Group {group_id}</h3>
+                            <div className="space-y-1">
                               {students.map((student: any, index: number) => (
-                                <div key={index} className="flex items-center justify-between p-2 bg-white rounded"> {/* Changed from li to div */}
-                                  <div className="flex items-center space-x-2">
+                                <div key={index} className="flex items-center justify-between p-2 bg-white rounded">
+                                  <div className="flex items-center space-x-2 flex-1">
                                     <span className={`w-3 h-3 rounded-full flex-shrink-0 ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                    <span className="font-medium text-sm"> {/* Added text-sm for better spacing */}
+                                    <span className="font-medium text-sm">
                                       {student.f_name && student.l_name 
                                         ? `${student.f_name} ${student.l_name}` 
                                         : student.email.split('@')[0]
                                       } ({student.email})
                                     </span>
                                   </div>
-                                  <div className="flex items-center space-x-2 text-xs"> {/* Changed to text-xs */}
-                                    <span className={`px-2 py-1 rounded whitespace-nowrap ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                                      {student.current_page || 'No page'}
-                                    </span>
-                                    <span className="text-gray-600 whitespace-nowrap"> {/* Added whitespace-nowrap */}
-                                      No job assigned
-                                    </span>
+                                  <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-1 text-xs">
+                                      <span className={`px-2 py-1 rounded whitespace-nowrap ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                        {student.current_page || 'No page'}
+                                      </span>
+                                      <span className="text-gray-600 whitespace-nowrap">
+                                        No job assigned
+                                      </span>
+                                    </div>
+                                    {/* Delete Button */}
+                                    <button
+                                      onClick={() => handleDeleteStudent(
+                                        student.email, 
+                                        student.f_name && student.l_name 
+                                          ? `${student.f_name} ${student.l_name}` 
+                                          : student.email.split('@')[0],
+                                        groupsTabClass
+                                      )}
+                                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                                      title="Remove student from class"
+                                    >
+                                      Delete
+                                    </button>
                                   </div>
                                 </div>
                               ))}
@@ -787,6 +887,33 @@ const Grouping = () => {
           </div>
         </div>
       </div>
+      
+      {/* Delete Confirmation Popup */}
+      {deleteConfirmation.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-red-600 mb-4">Confirm Deletion</h3>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to remove <strong>{deleteConfirmation.studentName}</strong> from this class? 
+              This action cannot be undone.
+            </p>
+            <div className="flex space-x-4 justify-end">
+              <button
+                onClick={cancelDeleteStudent}
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-md font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteStudent}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md font-medium transition-colors"
+              >
+                Delete Student
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {popup && (
         <Popup
