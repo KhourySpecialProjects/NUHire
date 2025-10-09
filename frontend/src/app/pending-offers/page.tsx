@@ -226,19 +226,21 @@ const OffersManagement = () => {
       <div className="flex-1 p-6 flex justify-center items-start">
         <div className="max-w-6xl w-full"> 
           <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-northeasternRed text-center">Offers Management</h1>
-              {offersTabClass && (
+            <div className="grid grid-cols-3 items-center mb-6">
+            <div></div>
+            <h1 className="text-3xl font-bold text-northeasternRed text-center">Offers Management</h1>
+            <div className="flex justify-end">
+                {offersTabClass && (
                 <button
-                  onClick={() => refreshOffers()}
-                  disabled={offersLoading}
-                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                    onClick={() => refreshOffers()}
+                    disabled={offersLoading}
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors"
                 >
-                  {offersLoading ? "Refreshing..." : "Refresh"}
+                    {offersLoading ? "Refreshing..." : "Refresh"}
                 </button>
-              )}
+                )}
             </div>
-            
+        </div>
             {/* Class Selection - Centered */}
             <div className="mb-8 flex flex-col items-center">
               <label className="block text-navy font-semibold mb-3 text-lg text-center">
