@@ -54,7 +54,7 @@ const Grouping = () => {
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
   const [groupsTabStudents, setGroupsTabStudents] = useState<Student[]>([]);
-  
+
   // Tab 4: Offers
   const [offersTabClass, setOffersTabClass] = useState("");
   const [pendingOffers, setPendingOffers] = useState<Offer[]>([]);
@@ -509,7 +509,7 @@ const Grouping = () => {
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-hidden">
         <Tabs>
           {/* Tab 1: Class & Student Assignment */}
           <div title="Class & Student Assignment">
@@ -727,90 +727,93 @@ const Grouping = () => {
           </div>
           {/* Tab 3: Groups in Class - FIXED VERSION */}
           <div title="Groups in Class">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[45vh] w-[900px] mx-auto">
-              <h2 className="text-2xl font-bold text-northeasternRed mb-4">
-                {groupsTabClass ? `Groups in Class ${groupsTabClass}` : 'Groups'}
-              </h2>
-              <div className="mb-4">
-                <label className="block text-navy font-semibold mb-2">
-                  Select a class to view groups
-                </label>
-                <select
-                  value={groupsTabClass}
-                  onChange={handleGroupsTabClassChange}
-                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a class</option>
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                {classes.length === 0 && (
-                  <p className="text-red-500 text-sm mt-1">
-                    You have no assigned classes. Please contact the administrator.
-                  </p>
-                )}
-              </div>
-
-              {!groupsTabClass ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center">
-                  <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
-                  <p className="text-gray-500 text-sm mt-1">Groups will appear here after selecting a class</p>
+            {/* This will be the right side panel */}
+            <div className="h-full overflow-y-auto"> {/* Make sure this tab content can scroll */}
+              <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 h-full">
+                {/* Your Groups in Class content */}
+                <h2 className="text-2xl font-bold text-northeasternRed mb-4">
+                  {groupsTabClass ? `Groups in Class ${groupsTabClass}` : 'Groups'}
+                </h2>
+                
+                {/* Rest of your content */}
+                <div className="mb-4">
+                  <label className="block text-navy font-semibold mb-2">
+                    Select a class to view groups
+                  </label>
+                  <select
+                    value={groupsTabClass}
+                    onChange={handleGroupsTabClassChange}
+                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a class</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ) : groupsTabStudents.length > 0 ? (
-                // Group students by their group_id from the students array
-                (() => {
-                  // Create groups from the students data
-                  const studentsByGroup: { [key: string]: any[] } = {};
-                  
-                  groupsTabStudents.forEach((student: any) => {
-                    if (student.group_id) {
-                      const groupId = student.group_id.toString();
-                      if (!studentsByGroup[groupId]) {
-                        studentsByGroup[groupId] = [];
-                      }
-                      studentsByGroup[groupId].push(student);
-                    }
-                  });
 
-                  return Object.keys(studentsByGroup).length > 0 ? (
-                    Object.entries(studentsByGroup).map(([group_id, students]) => (
-                      <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
-                        <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
-                        <ul className="list-none pl-0 text-navy mt-1">
-                          {students.map((student: any, index: number) => (
-                            <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
-                              <div className="flex items-center space-x-2">
-                                <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                <span className="font-medium">
-                                  {student.f_name && student.l_name 
-                                    ? `${student.f_name} ${student.l_name}` 
-                                    : student.email.split('@')[0]
-                                  } ({student.email})
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-2 text-sm">
-                                <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                                  {student.current_page || 'No page'}
-                                </span>
-                                <span className="text-gray-600">
-                                  No job assigned
-                                </span>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))
+                {/* Groups content with proper scrolling */}
+                <div className="overflow-y-auto flex-1">
+                  {!groupsTabClass ? (
+                    <div className="flex flex-col items-center justify-center h-48 text-center">
+                      <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
+                      <p className="text-gray-500 text-sm mt-1">Groups will appear here after selecting a class</p>
+                    </div>
+                  ) : groupsTabStudents.length > 0 ? (
+                    /* Your existing groups rendering logic */
+                    (() => {
+                      const studentsByGroup: { [key: string]: any[] } = {};
+                      
+                      groupsTabStudents.forEach((student: any) => {
+                        if (student.group_id) {
+                          const groupId = student.group_id.toString();
+                          if (!studentsByGroup[groupId]) {
+                            studentsByGroup[groupId] = [];
+                          }
+                          studentsByGroup[groupId].push(student);
+                        }
+                      });
+
+                      return Object.keys(studentsByGroup).length > 0 ? (
+                        Object.entries(studentsByGroup).map(([group_id, students]) => (
+                          <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
+                            <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
+                            <ul className="list-none pl-0 text-navy mt-1">
+                              {students.map((student: any, index: number) => (
+                                <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
+                                  <div className="flex items-center space-x-2">
+                                    <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                    <span className="font-medium">
+                                      {student.f_name && student.l_name 
+                                        ? `${student.f_name} ${student.l_name}` 
+                                        : student.email.split('@')[0]
+                                      } ({student.email})
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-2 text-sm">
+                                    <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                      {student.current_page || 'No page'}
+                                    </span>
+                                    <span className="text-gray-600">
+                                      No job assigned
+                                    </span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-northeasternBlack text-center">No students with group assignments found for this class.</p>
+                      );
+                    })()
                   ) : (
-                    <p className="text-northeasternBlack text-center">No students with group assignments found for this class.</p>
-                  );
-                })()
-              ) : (
-                <p className="text-northeasternBlack text-center">No students found for this class.</p>
-              )}
+                    <p className="text-northeasternBlack text-center">No students found for this class.</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           {/* Tab 4: Pending & Accepted Offers */}
