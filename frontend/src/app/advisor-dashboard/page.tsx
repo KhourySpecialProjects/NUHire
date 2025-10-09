@@ -21,9 +21,6 @@ const Dashboard = () => {
   // State variables to manage user data and loading state
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pendingOffers, setPendingOffers] = useState<
-    { classId: number; groupId: number; candidateId: number }[]
-  >([]);
   const router = useRouter();
 
   const socket = io(API_BASE_URL);
@@ -56,19 +53,6 @@ const Dashboard = () => {
 
   socket.emit("adminOnline", { adminEmail: user?.email });
 
-  // Set up Socket.IO event listeners after component mounts
-  useEffect(() => {
-    const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
-      const { classId, groupId, candidateId } = data;
-      setPendingOffers((prev) => [...prev, {classId, groupId, candidateId }]);
-    };
-  
-    socket.on("makeOfferRequest", onRequest);
-    return () => {
-      socket.off("makeOfferRequest", onRequest);
-    };
-  }, []);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
@@ -85,23 +69,6 @@ const Dashboard = () => {
     router.push("/");
     return null; // Return null to avoid rendering anything else
   }
-
-  const respondToOffer = (
-    classId: number,
-    groupId: number,
-    candidateId: number,
-    accepted: boolean
-  ) => {
-    socket.emit("makeOfferResponse", {
-      classId,
-      groupId,
-      candidateId,
-      accepted,
-    });
-    setPendingOffers((prev) =>
-      prev.filter((o) => o.classId != classId || o.groupId !== groupId || o.candidateId !== candidateId)
-    );
-  };
 
   // Render the dashboard if the user is an admin
   return (
@@ -141,28 +108,14 @@ const Dashboard = () => {
               <span className="text-5xl mb-2">📢</span>
               Send Popups
             </Link>
+            <Link
+              href="/pending-offers"
+              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+            >
+              <span className="text-5xl mb-2">🤝</span>
+              Candidate Offers
+            </Link>
           </div>
-
-        {/* Render pending offers as popups */}
-        {pendingOffers.map(({classId, groupId, candidateId }) => (
-          <div
-            key={`offer-${classId}-${groupId}-${candidateId}`}
-            className="fixed inset-0 bg-northeasternBlack bg-opacity-70 flex justify-center items-center z-50"
-          >
-            <div className="bg-northeasternWhite p-6 rounded-lg shadow-lg max-w-md mx-auto border-2 border-northeasternRed">
-              <AdminReactionPopup
-                headline={`Group ${groupId} from Class ${classId} wants to offer Candidate ${candidateId}`}
-                message="Do you approve?"
-                onAccept={() => 
-                  respondToOffer(classId, groupId, candidateId, true)
-                }
-                onReject={() => 
-                  respondToOffer(classId, groupId, candidateId, false)
-                }
-              />
-            </div>
-          </div>
-        ))}
       </main>
     </div>
   );
