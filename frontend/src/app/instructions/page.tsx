@@ -67,7 +67,7 @@ export default function InstructionsPage() {
   const handleContinue = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/user-get-see-dash`, {
-        method: "POST",
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
