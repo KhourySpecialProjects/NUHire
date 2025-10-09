@@ -14,7 +14,7 @@ const Tabs: React.FC<TabProps> = ({ children }) => {
   return (
     <div className="flex gap-4 h-full">
       {/* Left side - Main tabs */}
-      <div className="flex-1">
+      <div className="w-1/2">
         <div className="flex mb-4">
           {mainTabs.map((tab, idx) => (
             <button

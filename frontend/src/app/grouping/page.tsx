@@ -54,6 +54,7 @@ const Grouping = () => {
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
   const [groupsTabStudents, setGroupsTabStudents] = useState<Student[]>([]);
+  
   // Tab 4: Offers
   const [offersTabClass, setOffersTabClass] = useState("");
   const [pendingOffers, setPendingOffers] = useState<Offer[]>([]);
