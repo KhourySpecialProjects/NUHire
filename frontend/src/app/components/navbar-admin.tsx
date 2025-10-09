@@ -30,6 +30,7 @@ const NavbarAdmin = () => {
     { label: "Profile", path: "/userProfile" },
     { label: "Create and View Groups", path: "/grouping" },
     { label: "Send Popups", path: "/sendpopups" },
+    { label: "Candidate Offers", path: "/candidate-offers" },
     { label: "Upload Jobs and Resumes", path: "/new-pdf" },
   ];
 

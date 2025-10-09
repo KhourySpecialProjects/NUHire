@@ -227,7 +227,7 @@ const OffersManagement = () => {
       {/* Page Title */}
       <div className="flex justify-center items-center py-6">
         <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
-          Pending Offers
+          Candidate Offers
         </h1>
       </div>
 
