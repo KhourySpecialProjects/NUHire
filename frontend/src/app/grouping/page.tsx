@@ -100,7 +100,7 @@ const Grouping = () => {
   const confirmDeleteStudent = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/teacher/del-student`, {
-        method: "POST",
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: deleteConfirmation.studentEmail
