@@ -72,7 +72,7 @@ const SendPopups = () => {
       title: "Internal Referral",
       headline: "Internal Referral",
       message:
-        "This person has an internal referral for this position! The averages of scores will be skewed in favor of the candidate!",
+        "{candidateName} has an internal referral for this position! The averages of scores will be skewed in favor of the candidate!",
       location: "interview",
       vote: {
         overall: 10,
@@ -85,7 +85,7 @@ const SendPopups = () => {
       title: "No Show",
       headline: "Abandoned Interview",
       message:
-        "This candidate did not show up for the interview. You can change the scores, but everything will be saved as the lowest score.",
+        "{candidateName} did not show up for the interview. You can change the scores, but everything will be saved as the lowest score.",
       location: "interview",
       vote: {
         overall: -1000,
@@ -98,7 +98,7 @@ const SendPopups = () => {
       title: "Resume Discrepancy",
       headline: "Inconsistent Information",
       message:
-        "The candidate's resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
+        "{candidateName}'s resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
       location: "interview",
       vote: {
         overall: -5,
@@ -111,7 +111,7 @@ const SendPopups = () => {
       title: "Late Arrival",
       headline: "Late Interview Start",
       message:
-        "The candidate arrived late to the interview. This may have impacted the flow and available time for questions.",
+        "{candidateName} arrived late to the interview. This may have impacted the flow and available time for questions.",
       location: "interview",
       vote: {
         overall: -5,
@@ -302,6 +302,19 @@ const SendPopups = () => {
     setSelectedCandidate("");
   };
 
+  const handleCandidateSelection = (candidateId: string) => {
+    setSelectedCandidate(candidateId);
+    if (selectedPreset) {
+      const preset = presetPopups.find((p) => p.title === selectedPreset);
+      const candidate = candidates.find((c) => c.resume_id.toString() === candidateId);
+      
+      if (preset && candidate) {
+        const messageWithName = preset.message.replace('{candidateName}', candidate.name);
+        setMessage(messageWithName);
+      }
+    }
+  };
+
   const respondToOffer = (
     classId: number,
     groupId: number,
@@ -485,7 +498,7 @@ const SendPopups = () => {
                   
                   <select
                     value={selectedCandidate}
-                    onChange={(e) => setSelectedCandidate(e.target.value)}
+                    onChange={(e) => handleCandidateSelection(e.target.value)} // Updated to use new function
                     className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Select a Candidate --</option>
