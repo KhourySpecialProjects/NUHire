@@ -2,7 +2,6 @@
 import React from "react";
 import Image from "next/image";
 import Slideshow from "./components/slideshow";
-import EnvDebugger from "./components/debugger";
 import './globals.css';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -21,7 +20,6 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center font-rubik relative overflow-hidden">
       {/* Slideshow Background */}
-      <EnvDebugger />
       <Slideshow />
 
       {/* Semi-transparent overlay for better text readability */}
