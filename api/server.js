@@ -884,7 +884,7 @@ app.get("/auth/keycloak/callback",
         if (dbUser.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
-          if (dbUser.seen = 1) {
+          if (dbUser.seen === 1) {
             return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
           }
           else{
