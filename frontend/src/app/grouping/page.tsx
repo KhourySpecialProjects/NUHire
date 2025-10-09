@@ -981,13 +981,13 @@ const Grouping = () => {
               Groups in Class
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 h-full">
-              <h2 className="text-2xl font-bold text-northeasternRed mb-4">
+          <div className="flex-1 flex flex-col min-h-0"> {/* Changed: Added flex flex-col min-h-0 */}
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex-1 flex flex-col min-h-0"> {/* Changed: Added flex-1 flex flex-col min-h-0 */}
+              <h2 className="text-2xl font-bold text-northeasternRed mb-4 flex-shrink-0"> {/* Added flex-shrink-0 */}
                 {groupsTabClass ? `Groups in Class ${groupsTabClass}` : 'Groups'}
               </h2>
               
-              <div className="mb-4">
+              <div className="mb-4 flex-shrink-0"> {/* Added flex-shrink-0 */}
                 <label className="block text-navy font-semibold mb-2">
                   Select a class to view groups
                 </label>
@@ -1005,7 +1005,7 @@ const Grouping = () => {
                 </select>
               </div>
 
-              <div className="overflow-y-auto flex-1">
+              <div className="flex-1 overflow-y-auto min-h-0"> {/* Changed: Added min-h-0 */}
                 {!groupsTabClass ? (
                   <div className="flex flex-col items-center justify-center h-48 text-center">
                     <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
@@ -1026,40 +1026,46 @@ const Grouping = () => {
                     });
 
                     return Object.keys(studentsByGroup).length > 0 ? (
-                      Object.entries(studentsByGroup).map(([group_id, students]) => (
-                        <div key={group_id} className="bg-springWater border border-wood p-2 rounded-md mb-2 shadow">
-                          <h3 className="text-xl font-semibold text-navy">Group {group_id}</h3>
-                          <ul className="list-none pl-0 text-navy mt-1">
-                            {students.map((student: any, index: number) => (
-                              <li key={index} className="mb-1 flex items-center justify-between p-1 bg-white rounded">
-                                <div className="flex items-center space-x-2">
-                                  <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                  <span className="font-medium">
-                                    {student.f_name && student.l_name 
-                                      ? `${student.f_name} ${student.l_name}` 
-                                      : student.email.split('@')[0]
-                                    } ({student.email})
-                                  </span>
+                      <div className="space-y-2"> {/* Added wrapper with space-y-2 */}
+                        {Object.entries(studentsByGroup).map(([group_id, students]) => (
+                          <div key={group_id} className="bg-springWater border border-wood p-3 rounded-md shadow"> {/* Increased padding */}
+                            <h3 className="text-xl font-semibold text-navy mb-2">Group {group_id}</h3> {/* Added margin bottom */}
+                            <div className="space-y-1"> {/* Changed from ul to div with space-y-1 */}
+                              {students.map((student: any, index: number) => (
+                                <div key={index} className="flex items-center justify-between p-2 bg-white rounded"> {/* Changed from li to div */}
+                                  <div className="flex items-center space-x-2">
+                                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                    <span className="font-medium text-sm"> {/* Added text-sm for better spacing */}
+                                      {student.f_name && student.l_name 
+                                        ? `${student.f_name} ${student.l_name}` 
+                                        : student.email.split('@')[0]
+                                      } ({student.email})
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-2 text-xs"> {/* Changed to text-xs */}
+                                    <span className={`px-2 py-1 rounded whitespace-nowrap ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                      {student.current_page || 'No page'}
+                                    </span>
+                                    <span className="text-gray-600 whitespace-nowrap"> {/* Added whitespace-nowrap */}
+                                      No job assigned
+                                    </span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-2 text-sm">
-                                  <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                                    {student.current_page || 'No page'}
-                                  </span>
-                                  <span className="text-gray-600">
-                                    No job assigned
-                                  </span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     ) : (
-                      <p className="text-northeasternBlack text-center">No students with group assignments found for this class.</p>
+                      <div className="flex flex-col items-center justify-center h-48 text-center">
+                        <p className="text-northeasternBlack">No students with group assignments found for this class.</p>
+                      </div>
                     );
                   })()
                 ) : (
-                  <p className="text-northeasternBlack text-center">No students found for this class.</p>
+                  <div className="flex flex-col items-center justify-center h-48 text-center">
+                    <p className="text-northeasternBlack">No students found for this class.</p>
+                  </div>
                 )}
               </div>
             </div>
