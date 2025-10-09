@@ -2076,12 +2076,24 @@ app.get("/canidates/resume/:resume_number", (req, res) => {
 
 app.post("/teacher/add-student", (req, res) => {
   const { class_id, group_id, email, f_name, l_name } = req.body;
-  // if (!class_id || !group_id || !email || !f_name || !l_name) {
-  //   return res.status(400).json({ error: "Missing required fields." });
-  // }
   db.query(
     "INSERT INTO Users (email, f_name, l_name, class, group_id, affiliation) VALUES (?, ?, ?, ?, ?, 'student') ON DUPLICATE KEY UPDATE group_id = ?, class = ?, f_name = ?, l_name = ?",
     [email, f_name, l_name, class_id, group_id, group_id, class_id, f_name, l_name],
+    (err, result) => {
+      if (err) { 
+        console.log("Database error:", err);
+        return res.status(500).json({ error: err.message });
+    }
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete("/teacher/del-student", (req, res) => {
+  const { email } = req.body;
+  db.query(
+    "DELETE FROM Users WHERE email = ?",
+    [email],
     (err, result) => {
       if (err) { 
         console.log("Database error:", err);
