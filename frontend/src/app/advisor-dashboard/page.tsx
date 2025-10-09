@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"; // Importing useRouter for navigati
 import Link from "next/link"; // Importing Link for client-side navigation
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
 import { io } from "socket.io-client"; // Importing Socket.IO for real-time communication
-import AdminReactionPopup from "../components/adminReactionPopup"; // Importing popup component for offers
 import Slideshow from "../components/slideshow"; // Importing slideshow component for background
 
 const Dashboard = () => {
@@ -86,34 +85,34 @@ const Dashboard = () => {
       </div>
 
       <main className="flex flex-col items-center justify-center flex-grow z-10">
-        <div className="mt-6 gap-8 flex flex-row justify-center items-center">
+        <div className="mt-6 gap-6 flex flex-row justify-center items-center">
             <Link
               href="/grouping"
-              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
             >
-              <span className="text-5xl mb-2">👥</span>
-              Create and View Groups
+              <span className="text-4xl mb-2">👥</span>
+              <span>Create and View Groups</span>
             </Link>
             <Link 
               href="/new-pdf" 
-              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
             >
-              <span className="text-5xl mb-2">📤</span>
-              Upload Job Descriptions and Resumes
+              <span className="text-4xl mb-2">📤</span>
+              <span>Upload Job and Resumes</span>
             </Link>
             <Link
               href="/sendpopups"
-              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
             >
-              <span className="text-5xl mb-2">📢</span>
-              Send Popups
+              <span className="text-4xl mb-2">📢</span>
+              <span>Send Popups</span>
             </Link>
             <Link
-              href="/pending-offers"
-              className="px-16 py-16 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center text-2xl"
+              href="/offers"
+              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
             >
-              <span className="text-5xl mb-2">🤝</span>
-              Candidate Offers
+              <span className="text-4xl mb-2">🤝</span>
+              <span>Candidate Offers</span>
             </Link>
           </div>
       </main>
