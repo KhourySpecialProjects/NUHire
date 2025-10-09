@@ -232,17 +232,17 @@ const OffersManagement = () => {
       </div>
 
       <div className="flex-1 p-6 flex justify-center items-start">
-        <div className="max-w-2xl w-full"> {/* Changed: Reduced from max-w-6xl to max-w-4xl */}
+        <div className="max-w-2xl w-full">
           <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6">
             <div className="grid grid-cols-3 items-center mb-6">
               <div></div>
-              <h2 className="text-2xl font-bold text-northeasternRed text-center">Offers Management</h2> {/* Changed: Reduced from text-3xl to text-2xl */}
+              <h2 className="text-2xl font-bold text-northeasternRed text-center">Offers Management</h2>
               <div className="flex justify-end">
                 {offersTabClass && (
                   <button
                     onClick={() => refreshOffers()}
                     disabled={offersLoading}
-                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm" // Changed: Reduced padding and added text-sm
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
                   >
                     {offersLoading ? "Refreshing..." : "Refresh"}
                   </button>
@@ -251,14 +251,14 @@ const OffersManagement = () => {
             </div>
             
             {/* Class Selection - Centered */}
-            <div className="mb-6 flex flex-col items-center"> {/* Changed: Reduced mb-8 to mb-6 */}
-              <label className="block text-navy font-semibold mb-2 text-base text-center"> {/* Changed: Reduced text-lg to text-base and mb-3 to mb-2 */}
+            <div className="mb-6 flex flex-col items-center">
+              <label className="block text-navy font-semibold mb-2 text-base text-center">
                 Select Class to View Offers
               </label>
               <select
                 value={offersTabClass}
                 onChange={handleOffersTabClassChange}
-                className="w-full max-w-sm p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed: Reduced max-w-md to max-w-sm and p-3 to p-2
+                className="w-full max-w-sm p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select a class</option>
                 {classes.map(c => (
@@ -270,65 +270,103 @@ const OffersManagement = () => {
             </div>
 
             {offersLoading ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center"> {/* Changed: Reduced h-64 to h-48 */}
-                <div className="w-10 h-10 border-t-4 border-navy border-solid rounded-full animate-spin mb-3"></div> {/* Changed: Reduced w-12 h-12 to w-10 h-10 and mb-4 to mb-3 */}
-                <p className="text-navy font-medium text-base">Loading offers...</p> {/* Changed: Reduced text-lg to text-base */}
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <div className="w-10 h-10 border-t-4 border-navy border-solid rounded-full animate-spin mb-3"></div>
+                <p className="text-navy font-medium text-base">Loading offers...</p>
               </div>
             ) : !offersTabClass ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center"> {/* Changed: Reduced h-64 to h-48 */}
-                <p className="text-northeasternBlack font-medium text-base">Please select a class to view offers</p> {/* Changed: Reduced text-lg to text-base */}
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <p className="text-northeasternBlack font-medium text-base">Please select a class to view offers</p>
                 <p className="text-gray-500 text-sm mt-2">Offers will appear here after selecting a class</p>
               </div>
             ) : (
-              <div className="space-y-6"> {/* Changed: Reduced space-y-8 to space-y-6 */}
+              <div className="space-y-6">
                 {/* Pending Offers */}
                 <div>
-                  <h3 className="text-xl font-semibold text-navy mb-3 flex items-center justify-center"> {/* Changed: Reduced text-2xl to text-xl and mb-4 to mb-3 */}
+                  <h3 className="text-xl font-semibold text-navy mb-3 flex items-center justify-center">
                     Pending Offers 
-                    <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-base"> {/* Changed: Reduced ml-3 to ml-2, px-3 to px-2, and text-lg to text-base */}
+                    <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-base">
                       {pendingOffers.length}
                     </span>
                   </h3>
                   {pendingOffers.length > 0 ? (
-                    <div className="flex justify-center"> 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl"> {/* Changed: Removed lg:grid-cols-3, reduced gap-6 to gap-4, and max-w-5xl to max-w-3xl */}
-                        {pendingOffers.map((offer) => (
-                          <div
-                            key={offer.id}
-                            className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg shadow-md" // Changed: Reduced p-6 to p-4
-                          >
-                            <div className="mb-3 text-center"> {/* Changed: Reduced mb-4 to mb-3 */}
-                              <h4 className="text-base font-semibold text-navy"> {/* Changed: Reduced text-lg to text-base */}
-                                Group {offer.group_id} → Candidate {offer.candidate_id}
-                              </h4>
-                              <p className="text-xs text-gray-600 mt-1"> {/* Changed: Reduced text-sm to text-xs */}
-                                Offer ID: {offer.id} | Status: {offer.status}
-                              </p>
+                    <div className="flex flex-col items-center w-full"> {/* Changed: Added flex flex-col items-center w-full */}
+                      {pendingOffers.length === 1 ? (
+                        // Single offer - centered
+                        <div className="w-full max-w-sm"> {/* Changed: Single offer gets max-w-sm and centered */}
+                          {pendingOffers.map((offer) => (
+                            <div
+                              key={offer.id}
+                              className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg shadow-md"
+                            >
+                              <div className="mb-3 text-center">
+                                <h4 className="text-base font-semibold text-navy">
+                                  Group {offer.group_id} → Candidate {offer.candidate_id}
+                                </h4>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Offer ID: {offer.id} | Status: {offer.status}
+                                </p>
+                              </div>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true)}
+                                  className="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false)}
+                                  className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
+                                >
+                                  Reject
+                                </button>
+                              </div>
                             </div>
-                            
-                            {/* Action Buttons */}
-                            <div className="flex space-x-2"> {/* Changed: Reduced space-x-3 to space-x-2 */}
-                              <button
-                                onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true)}
-                                className="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm" // Changed: Reduced px-4 to px-3 and added text-sm
-                              >
-                                Accept
-                              </button>
-                              <button
-                                onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false)}
-                                className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm" // Changed: Reduced px-4 to px-3 and added text-sm
-                              >
-                                Reject
-                              </button>
+                          ))}
+                        </div>
+                      ) : (
+                        // Multiple offers - grid layout
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl"> {/* Changed: Responsive grid with max-w-2xl */}
+                          {pendingOffers.map((offer) => (
+                            <div
+                              key={offer.id}
+                              className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg shadow-md"
+                            >
+                              <div className="mb-3 text-center">
+                                <h4 className="text-base font-semibold text-navy">
+                                  Group {offer.group_id} → Candidate {offer.candidate_id}
+                                </h4>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Offer ID: {offer.id} | Status: {offer.status}
+                                </p>
+                              </div>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true)}
+                                  className="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false)}
+                                  className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
+                                >
+                                  Reject
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex justify-center"> 
-                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center max-w-sm"> {/* Changed: Reduced p-6 to p-4 and max-w-md to max-w-sm */}
-                        <p className="text-gray-600 text-base">No pending offers for this class</p> {/* Changed: Reduced text-lg to text-base */}
+                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center max-w-sm">
+                        <p className="text-gray-600 text-base">No pending offers for this class</p>
                       </div>
                     </div>
                   )}
@@ -336,29 +374,29 @@ const OffersManagement = () => {
 
                 {/* Accepted Offers */}
                 <div>
-                  <h3 className="text-xl font-semibold text-green-700 mb-3 flex items-center justify-center"> {/* Changed: Reduced text-2xl to text-xl and mb-4 to mb-3 */}
+                  <h3 className="text-xl font-semibold text-green-700 mb-3 flex items-center justify-center">
                     Accepted Offers 
-                    <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-base"> {/* Changed: Reduced ml-3 to ml-2, px-3 to px-2, and text-lg to text-base */}
+                    <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-base">
                       {acceptedOffers.length}
                     </span>
                   </h3>
                   {acceptedOffers.length > 0 ? (
                     <div className="flex justify-center"> 
-                      <div className="space-y-2 w-full max-w-3xl"> {/* Changed: Reduced space-y-3 to space-y-2 and max-w-4xl to max-w-3xl */}
+                      <div className="space-y-2 w-full max-w-2xl"> {/* Changed: Reduced max-w-3xl to max-w-2xl for consistency */}
                         {acceptedOffers.map((offer) => (
                           <div
                             key={offer.id}
-                            className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-between shadow-sm" // Changed: Reduced p-4 to p-3
+                            className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-between shadow-sm"
                           >
                             <div className="text-center flex-1"> 
-                              <h4 className="font-semibold text-green-800 text-base"> {/* Changed: Reduced text-lg to text-base */}
+                              <h4 className="font-semibold text-green-800 text-base">
                                 Group {offer.group_id} → Candidate {offer.candidate_id}
                               </h4>
-                              <p className="text-xs text-green-600 mt-1"> {/* Changed: Reduced text-sm to text-xs */}
+                              <p className="text-xs text-green-600 mt-1">
                                 Status: Accepted | Offer ID: {offer.id}
                               </p>
                             </div>
-                            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium ml-3"> {/* Changed: Reduced px-3 to px-2, text-sm to text-xs, and ml-4 to ml-3 */}
+                            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium ml-3">
                               ✓ Accepted
                             </div>
                           </div>
@@ -367,8 +405,8 @@ const OffersManagement = () => {
                     </div>
                   ) : (
                     <div className="flex justify-center"> 
-                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center max-w-sm"> {/* Changed: Reduced p-6 to p-4 and max-w-md to max-w-sm */}
-                        <p className="text-gray-600 text-base">No accepted offers for this class</p> {/* Changed: Reduced text-lg to text-base */}
+                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center max-w-sm">
+                        <p className="text-gray-600 text-base">No accepted offers for this class</p>
                       </div>
                     </div>
                   )}
