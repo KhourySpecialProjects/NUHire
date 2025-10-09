@@ -109,7 +109,7 @@ const Navbar = () => {
             </button>
           </div>
           <button
-            className="block px-4 py-2 font-rubik text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
+            className="block px-4 py-2 font-rubik text-northeasternBlack hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
             onClick={() => { setIsOpen(false); router.push("/dashboard"); }}
           >
             Dashboard

@@ -6,6 +6,7 @@ import Slideshow from "../components/slideshow";
 
 export default function InstructionsPage() {
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const FRONT_URL = process.env.NEXT_PUBLIC_FRONT_URL;
@@ -19,8 +20,10 @@ export default function InstructionsPage() {
 
         if (response.ok) {
           setName(userData.f_name + " " + userData.l_name);
+          setEmail(userData.email); // Set the email from userData
         } else {
           setName("");
+          setEmail("");
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -32,8 +35,60 @@ export default function InstructionsPage() {
     fetchUser();
   }, [router]);
 
-  const handleContinue = () => {
-    window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(name)}`;
+  const updateUserSeeDash = async () => {
+    try {
+      console.log("Updating user-see-dash field for email:", email);
+      
+      const response = await fetch(`${API_BASE_URL}/user-see-dash`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          user_email: email
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Successfully updated user-see-dash field:", result);
+        return true;
+      } else {
+        console.error("Failed to update user-see-dash field:", response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating user-see-dash field:", error);
+      return false;
+    }
+  };
+
+  const handleContinue = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user-get-see-dash`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: name
+        }),
+      });
+
+      const res = await response.json();
+      if (res === 1) {
+        window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(name)}`;
+      } else {
+        updateUserSeeDash();
+        window.location.href = `https://nuhire-wgez.onrender.com/about}`;
+      }
+    } catch (error) {
+      console.error("Error calling user-see-dash:", error);
+      updateUserSeeDash();
+      window.location.href = `https://nuhire-wgez.onrender.com/about`;
+    }
   };
 
   if (loading) {

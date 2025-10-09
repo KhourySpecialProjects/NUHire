@@ -904,17 +904,14 @@ app.get("/auth/user", (req, res) => {
   console.log("Session passport:", req.session.passport);
   console.log("Cookies received:", req.headers.cookie);
 
-  // Check if session exists but passport data is missing
   if (req.sessionID && !req.session.passport) {
     console.log("❌ Session exists but no passport data - authentication expired");
-    return res.status(401).json({ 
-      message: "Authentication expired", 
-      needsReauth: true 
-    });
+    return res.redirect("/auth/keycloak");
   }
 
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized" });
+    console.log("❌ User not authenticated - redirecting to sign in");
+    return res.redirect("/auth/keycloak"); 
   }
   
   res.json(req.user);
@@ -2319,6 +2316,41 @@ app.put("/offers/:offer_id", (req, res) => {
   );
 });
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Seen instuctions already 
+app.post("/user-see-dash", (req, res) => {
+  const { user_email } = req.body;
+
+  if (!user_email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  db.query("UPDATE Users SET `seen` = 1 WHERE email = ?", [user_email], (err, result) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Failed to update seen." });
+    }
+    res.json({ message: "seen updated successfully!" });
+  }
+  );
+});
+
+app.get("/user-get-see-dash", (req, res) => {
+  const { user_email } = req.body;
+
+  if (!user_email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  db.query("SELECT `seen` FROM Users WHERE email = ?", [user_email], (err, result) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Failed to obtain seen." });
+    }
+    res.json({ message: "seen obtained successfully!" });
+  }
+  );
+});
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various
 
