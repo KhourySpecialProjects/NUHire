@@ -44,7 +44,6 @@ const Grouping = () => {
     classId: ''
   });
 
-  // Tab 1: Class & Student Assignment
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
   const [groups, setGroups] = useState<{ [key: string]: any }>({});
@@ -53,7 +52,6 @@ const Grouping = () => {
   const [group_id, setGroupId] = useState("");
   const [updateNumGroups, setUpdateNumGroups] = useState<number | "">("");
 
-  // Tab 2: Job Assignment
   interface Job { title: string; [key: string]: any; }
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<Job[]>([]);
@@ -62,12 +60,10 @@ const Grouping = () => {
   const [selectedJobGroup, setSelectedJobGroup] = useState("");
   const [job_group_id, setGroupIdJob] = useState("");
    
-  // Tab 3: Groups in Class (independent state)
   const [groupsTabClass, setGroupsTabClass] = useState("");
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
   const [groupsTabStudents, setGroupsTabStudents] = useState<Student[]>([]);
 
-  // Tab 5: Adding students
   const [addStudentClass, setAddStudentClass] = useState("");
   const [addStudentGroup, setAddStudentGroup] = useState("");
   const [addStudentEmail, setAddStudentEmail] = useState("");
@@ -444,7 +440,196 @@ const Grouping = () => {
         {/* Left side - Main tabs */}
         <div className="flex-1 flex flex-col">
           <Tabs>
-            {/* Tab 1: Class & Student Assignment */}
+
+            {/* Tab 1: Add Student to Class & Group */}
+            <div title="Add Student to Class & Group">
+              <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[70vh] w-full">
+                <h2 className="text-2xl font-bold text-northeasternRed mb-6">Add Student to Class & Group</h2>
+                
+                <div className="mb-6">
+                  <label className="block text-navy font-semibold mb-2">
+                    Select Class (CRN)
+                  </label>
+                  <select
+                    value={addStudentClass}
+                    onChange={e => setAddStudentClass(e.target.value)}
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a class</option>
+                    {classes.map(classItem => (
+                      <option key={classItem.id} value={classItem.id}>
+                        {classItem.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Updated Group Selection - Now a Dropdown */}
+                <div className="mb-6">
+                  <label className="block text-navy font-semibold mb-2">
+                    Group Number
+                  </label>
+                  <select
+                    value={addStudentGroup}
+                    onChange={e => setAddStudentGroup(e.target.value)}
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!addStudentClass || addStudentAvailableGroups === 0}
+                  >
+                    <option value="">
+                      {!addStudentClass 
+                        ? "Select a class first" 
+                        : addStudentAvailableGroups === 0 
+                          ? "No groups available" 
+                          : "Select a group"
+                      }
+                    </option>
+                    {addStudentAvailableGroups > 0 && 
+                      Array.from({ length: addStudentAvailableGroups }, (_, i) => i + 1).map(groupNum => (
+                        <option key={groupNum} value={groupNum}>
+                          Group {groupNum}
+                        </option>
+                      ))
+                    }
+                  </select>
+                  {addStudentClass && addStudentAvailableGroups > 0 && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Available groups: 1 to {addStudentAvailableGroups}
+                    </p>
+                  )}
+                </div>
+                
+                {/* First and Last Name Row */}
+                <div className="mb-6">
+                  <label className="block text-navy font-semibold mb-2">
+                    Student Name
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <input
+                        type="text"
+                        value={addStudentFirstName}
+                        onChange={e => setAddStudentFirstName(e.target.value)}
+                        className="w-full p-3 border border-wood bg-springWater rounded-md"
+                        placeholder="First name"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        value={addStudentLastName}
+                        onChange={e => setAddStudentLastName(e.target.value)}
+                        className="w-full p-3 border border-wood bg-springWater rounded-md"
+                        placeholder="Last name"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-navy font-semibold mb-2">
+                    Student Email
+                  </label>
+                  <input
+                    type="email"
+                    value={addStudentEmail}
+                    onChange={e => setAddStudentEmail(e.target.value)}
+                    className="w-full p-3 border border-wood bg-springWater rounded-md"
+                    placeholder="Enter student email"
+                  />
+                </div>
+                
+                <div className="flex justify-center">
+                  <button
+                    className="bg-northeasternRed text-white px-6 py-3 rounded font-bold hover:bg-navy transition text-lg"
+                    onClick={addStudentToClassGroup}
+                  >
+                    Add Student
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Tab 2: Job Assignment */}
+            <div title="Job Assignment">
+              <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
+                <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
+                <div className="mb-4">
+                  <label className="block text-navy font-semibold mb-2">
+                    Assign Groups to Jobs
+                  </label>
+                  <select
+                    value={selectedJobClass}
+                    onChange={handleJobClassChange}
+                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a class</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  {classes.length === 0 && (
+                    <p className="text-red-500 text-sm mt-1">
+                      You have no assigned classes. Please contact the administrator.
+                    </p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <select
+                    value={selectedJobGroup}
+                    onChange={handleJobGroupChange}
+                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a group</option>
+                    {jobGroups && Object.keys(jobGroups).map((groupId, index) => (
+                      <option key={groupId} value={groupId}>
+                        Group {index + 1}
+                      </option>
+                    ))}
+                  </select>
+                  {jobGroups && Object.keys(jobGroups).length === 0 && (
+                    <p className="text-red-500 text-sm mt-1">
+                      No groups available in this class.
+                    </p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <select
+                    onChange={handleJobSelection}
+                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a job</option>
+                    {jobs.map((job, index) => (
+                      <option key={`${job.title}-${index}`} value={job.title}>
+                        {job.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-4 space-y-2 flex-1 overflow-y-auto">
+                  {selectedJobs.map(job => (
+                    <div key={job.title} className="flex items-center justify-between p-2 bg-springWater rounded-md">
+                      <span className="text-navy">{job.title}</span>
+                      <button
+                        onClick={() => handleRemoveJob(job.title)}
+                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={handleAssignJob}
+                  className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed hover:text-white transition"
+                >
+                  Assign Job
+                </button>
+              </div>
+            </div>
+
+            {/* Tab 3: Class & Student Assignment */}
             <div title="Class & Student Assignment">
               <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
                 <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
@@ -582,193 +767,6 @@ const Grouping = () => {
               </div>
             </div>
 
-            {/* Tab 2: Job Assignment */}
-            <div title="Job Assignment">
-              <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
-                <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
-                <div className="mb-4">
-                  <label className="block text-navy font-semibold mb-2">
-                    Assign Groups to Jobs
-                  </label>
-                  <select
-                    value={selectedJobClass}
-                    onChange={handleJobClassChange}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a class</option>
-                    {classes.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  {classes.length === 0 && (
-                    <p className="text-red-500 text-sm mt-1">
-                      You have no assigned classes. Please contact the administrator.
-                    </p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <select
-                    value={selectedJobGroup}
-                    onChange={handleJobGroupChange}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a group</option>
-                    {jobGroups && Object.keys(jobGroups).map((groupId, index) => (
-                      <option key={groupId} value={groupId}>
-                        Group {index + 1}
-                      </option>
-                    ))}
-                  </select>
-                  {jobGroups && Object.keys(jobGroups).length === 0 && (
-                    <p className="text-red-500 text-sm mt-1">
-                      No groups available in this class.
-                    </p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <select
-                    onChange={handleJobSelection}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a job</option>
-                    {jobs.map((job, index) => (
-                      <option key={`${job.title}-${index}`} value={job.title}>
-                        {job.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-4 space-y-2 flex-1 overflow-y-auto">
-                  {selectedJobs.map(job => (
-                    <div key={job.title} className="flex items-center justify-between p-2 bg-springWater rounded-md">
-                      <span className="text-navy">{job.title}</span>
-                      <button
-                        onClick={() => handleRemoveJob(job.title)}
-                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={handleAssignJob}
-                  className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed hover:text-white transition"
-                >
-                  Assign Job
-                </button>
-              </div>
-            </div>
-
-            {/* Tab 3: Add Student to Class & Group */}
-            <div title="Add Student to Class & Group">
-              <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[70vh] w-full">
-                <h2 className="text-2xl font-bold text-northeasternRed mb-6">Add Student to Class & Group</h2>
-                
-                <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Select Class (CRN)
-                  </label>
-                  <select
-                    value={addStudentClass}
-                    onChange={e => setAddStudentClass(e.target.value)}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a class</option>
-                    {classes.map(classItem => (
-                      <option key={classItem.id} value={classItem.id}>
-                        {classItem.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Updated Group Selection - Now a Dropdown */}
-                <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Group Number
-                  </label>
-                  <select
-                    value={addStudentGroup}
-                    onChange={e => setAddStudentGroup(e.target.value)}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={!addStudentClass || addStudentAvailableGroups === 0}
-                  >
-                    <option value="">
-                      {!addStudentClass 
-                        ? "Select a class first" 
-                        : addStudentAvailableGroups === 0 
-                          ? "No groups available" 
-                          : "Select a group"
-                      }
-                    </option>
-                    {addStudentAvailableGroups > 0 && 
-                      Array.from({ length: addStudentAvailableGroups }, (_, i) => i + 1).map(groupNum => (
-                        <option key={groupNum} value={groupNum}>
-                          Group {groupNum}
-                        </option>
-                      ))
-                    }
-                  </select>
-                  {addStudentClass && addStudentAvailableGroups > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Available groups: 1 to {addStudentAvailableGroups}
-                    </p>
-                  )}
-                </div>
-                
-                {/* First and Last Name Row */}
-                <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Student Name
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <input
-                        type="text"
-                        value={addStudentFirstName}
-                        onChange={e => setAddStudentFirstName(e.target.value)}
-                        className="w-full p-3 border border-wood bg-springWater rounded-md"
-                        placeholder="First name"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={addStudentLastName}
-                        onChange={e => setAddStudentLastName(e.target.value)}
-                        className="w-full p-3 border border-wood bg-springWater rounded-md"
-                        placeholder="Last name"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Student Email
-                  </label>
-                  <input
-                    type="email"
-                    value={addStudentEmail}
-                    onChange={e => setAddStudentEmail(e.target.value)}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md"
-                    placeholder="Enter student email"
-                  />
-                </div>
-                
-                <div className="flex justify-center">
-                  <button
-                    className="bg-northeasternRed text-white px-6 py-3 rounded font-bold hover:bg-navy transition text-lg"
-                    onClick={addStudentToClassGroup}
-                  >
-                    Add Student
-                  </button>
-                </div>
-              </div>
-            </div>
           </Tabs>
         </div>
 
