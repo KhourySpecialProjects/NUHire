@@ -232,7 +232,7 @@ const OffersManagement = () => {
       </div>
 
       <div className="flex-1 p-6 flex justify-center items-start">
-        <div className="max-w-4xl w-full"> {/* Changed: Reduced from max-w-6xl to max-w-4xl */}
+        <div className="max-w-2xl w-full"> {/* Changed: Reduced from max-w-6xl to max-w-4xl */}
           <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6">
             <div className="grid grid-cols-3 items-center mb-6">
               <div></div>
