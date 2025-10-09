@@ -74,7 +74,6 @@ const Dashboard = () => {
       const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
       const userData = await response.json();
       if (response.ok) {
-        console.log("inside response ok refreshDashboardUI");
         setUser(userData);
         
         // Refresh job description
@@ -141,8 +140,6 @@ const Dashboard = () => {
         const userData = await response.json();
 
         if (response.ok) {
-          console.log("=== INITIAL USER FETCH ===");
-          console.log("User data:", userData);
           setUser(userData);
           
           // Fetch job description for this user
@@ -150,13 +147,11 @@ const Dashboard = () => {
           
           // Fetch actual progress from database instead of assuming "none"
           const currentProgress = await fetchProgress(userData);
-          console.log("Fetched progress from database:", currentProgress);
           
           // Set progress to what's actually in the database
           setProgress(currentProgress);
           localStorage.setItem("progress", currentProgress);
           
-          console.log("Progress set to:", currentProgress);
           
         } else {
           setUser(null);
@@ -174,7 +169,6 @@ const Dashboard = () => {
   }, [router, fetchJobDescription, fetchProgress]);
 
   useEffect(()  => {
-    console.log("User has changed to ", user)
   }, [user]);
 
   useEffect(() => {
@@ -207,7 +201,6 @@ const Dashboard = () => {
       headline: "You have been assigned a new job!", 
       message: `You are an employer for ${job}!` 
     });
-    console.log("User for progress in jobUpdated", user);
     
     // Update progress on server
     await updateProgress(user!, "job_description");
@@ -218,7 +211,6 @@ const Dashboard = () => {
     // Store in localStorage
     localStorage.setItem("progress", "job_description");
     
-    console.log("about to call refreshDashboardUI");
     await refreshDashboardUI();
     setFlipped(Array(steps.length).fill(false));
     
@@ -239,17 +231,14 @@ const Dashboard = () => {
 }, [user, updateProgress, refreshDashboardUI]);
 
   const isStepUnlocked = (stepKey: string) => {
-    console.log(`Checking if step '${stepKey}' is unlocked. Current progress: '${progress}', Job Description: ${jobDescription}`);
     
     // If no job description assigned, block all steps except job_description
     if (!jobDescription && stepKey !== "job_description") {
-      console.log(`No job description and step is not job_description, blocking ${stepKey}`);
       return false;
     }
     
     // If it's the job_description step but no job assigned, block it
     if (stepKey === "job_description" && !jobDescription) {
-      console.log(`Job description step but no job assigned, blocking`);
       return false;
     }
     
@@ -261,10 +250,8 @@ const Dashboard = () => {
     const stepIndex = steps.findIndex(step => step.key === stepKey);
     const progressIndex = steps.findIndex(step => step.key === progress);
     
-    console.log(`Step '${stepKey}' index: ${stepIndex}, Progress '${progress}' index: ${progressIndex}`);
     
     const unlocked = stepIndex <= progressIndex;
-    console.log(`Step '${stepKey}' unlocked: ${unlocked}`);
     return unlocked;
   };
 

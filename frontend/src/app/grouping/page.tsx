@@ -773,7 +773,7 @@ const Grouping = () => {
         {/* Right side - Fixed Groups in Class panel */}
         <div className="w-1/2 border-l-4 border-northeasternBlack pl-4 flex flex-col h-full">
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex-1 flex flex-col min-h-0">
+            <div className="bg-northeasternWhite rounded-lg p-4 flex-1 flex flex-col min-h-0">
               <h2 className="text-2xl font-bold text-center text-northeasternRed mb-4 flex-shrink-0">
                 {groupsTabClass ? `Groups in Class ${groupsTabClass}` : 'Groups'}
               </h2>
