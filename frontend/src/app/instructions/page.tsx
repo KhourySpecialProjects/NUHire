@@ -65,30 +65,8 @@ export default function InstructionsPage() {
   };
 
   const handleContinue = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/user-get-see-dash`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          name: name
-        }),
-      });
-
-      const res = await response.json();
-      if (res === 1) {
-        window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(name)}`;
-      } else {
-        updateUserSeeDash();
-        window.location.href = `https://nuhire-wgez.onrender.com/about}`;
-      }
-    } catch (error) {
-      console.error("Error calling user-see-dash:", error);
-      updateUserSeeDash();
-      window.location.href = `https://nuhire-wgez.onrender.com/about`;
-    }
+    updateUserSeeDash();
+    window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(name)}`;
   };
 
   if (loading) {
