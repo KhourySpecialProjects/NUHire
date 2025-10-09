@@ -2318,38 +2318,93 @@ app.put("/offers/:offer_id", (req, res) => {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Seen instuctions already 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Seen instructions already 
 app.post("/user-see-dash", (req, res) => {
+  console.log("=== POST /user-see-dash endpoint hit ===");
+  console.log("Request body:", req.body);
+  console.log("Request headers:", req.headers);
+  console.log("Session ID:", req.sessionID);
+  console.log("Authenticated user:", req.user);
+  
   const { user_email } = req.body;
 
   if (!user_email) {
+    console.log("❌ Validation failed: Missing user_email");
     return res.status(400).json({ error: "Email is required." });
   }
+
+  console.log("✅ Validation passed, updating seen flag for email:", user_email);
 
   db.query("UPDATE Users SET `seen` = 1 WHERE email = ?", [user_email], (err, result) => {
     if (err) {
-      console.error("Database error:", err);
+      console.error("❌ Database error in user-see-dash POST:", err);
+      console.error("Error code:", err.code);
+      console.error("Error message:", err.message);
       return res.status(500).json({ error: "Failed to update seen." });
     }
-    res.json({ message: "seen updated successfully!" });
-  }
-  );
+    
+    console.log("✅ Database update successful");
+    console.log("Update result:", result);
+    console.log("Affected rows:", result.affectedRows);
+    console.log("Changed rows:", result.changedRows);
+    
+    if (result.affectedRows === 0) {
+      console.log("⚠️ Warning: No rows affected - user email may not exist:", user_email);
+    } else {
+      console.log(`✅ Successfully updated seen flag for user: ${user_email}`);
+    }
+    
+    const responseData = { message: "seen updated successfully!" };
+    console.log("Sending response:", responseData);
+    res.json(responseData);
+  });
 });
 
-app.get("/user-get-see-dash", (req, res) => {
+app.post("/user-get-see-dash", (req, res) => {
+  console.log("=== POST /user-get-see-dash endpoint hit ===");
+  console.log("Request body:", req.body);
+  console.log("Request headers:", req.headers);
+  console.log("Session ID:", req.sessionID);
+  console.log("Authenticated user:", req.user);
+  
   const { user_email } = req.body;
 
   if (!user_email) {
+    console.log("❌ Validation failed: Missing user_email");
     return res.status(400).json({ error: "Email is required." });
   }
 
+  console.log("✅ Validation passed, fetching seen flag for email:", user_email);
+
   db.query("SELECT `seen` FROM Users WHERE email = ?", [user_email], (err, result) => {
     if (err) {
-      console.error("Database error:", err);
+      console.error("❌ Database error in user-get-see-dash:", err);
+      console.error("Error code:", err.code);
+      console.error("Error message:", err.message);
       return res.status(500).json({ error: "Failed to obtain seen." });
     }
-    res.json({ message: "seen obtained successfully!" });
-  }
-  );
+    
+    console.log("✅ Database query successful");
+    console.log("Query result:", result);
+    console.log("Result length:", result.length);
+    
+    if (result.length === 0) {
+      console.log("⚠️ Warning: No user found with email:", user_email);
+      return res.status(404).json({ error: "User not found." });
+    }
+    
+    const seenValue = result[0].seen;
+    console.log(`✅ Successfully retrieved seen flag for user ${user_email}: ${seenValue}`);
+    
+    const responseData = { 
+      message: "seen obtained successfully!",
+      seen: seenValue,
+      user_email: user_email
+    };
+    console.log("Sending response:", responseData);
+    res.json(responseData);
+  });
 });
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various
