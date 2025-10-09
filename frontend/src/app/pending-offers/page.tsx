@@ -223,11 +223,11 @@ const OffersManagement = () => {
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
-      <div className="flex-1 p-6 flex justify-center items-start"> {/* Changed: Added flex justify-center items-start */}
-        <div className="max-w-6xl w-full"> {/* Changed: Added w-full */}
+      <div className="flex-1 p-6 flex justify-center items-start">
+        <div className="max-w-6xl w-full"> 
           <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-northeasternRed">Offers Management</h1>
+              <h1 className="text-3xl font-bold text-northeasternRed text-center">Offers Management</h1>
               {offersTabClass && (
                 <button
                   onClick={() => refreshOffers()}
@@ -240,8 +240,8 @@ const OffersManagement = () => {
             </div>
             
             {/* Class Selection - Centered */}
-            <div className="mb-8 flex flex-col items-center"> {/* Changed: Added flex flex-col items-center */}
-              <label className="block text-navy font-semibold mb-3 text-lg text-center"> {/* Added text-center */}
+            <div className="mb-8 flex flex-col items-center">
+              <label className="block text-navy font-semibold mb-3 text-lg text-center">
                 Select Class to View Offers
               </label>
               <select
@@ -272,21 +272,21 @@ const OffersManagement = () => {
               <div className="space-y-8">
                 {/* Pending Offers */}
                 <div>
-                  <h2 className="text-2xl font-semibold text-navy mb-4 flex items-center justify-center"> {/* Changed: Added justify-center */}
+                  <h2 className="text-2xl font-semibold text-navy mb-4 flex items-center justify-center"> 
                     Pending Offers 
                     <span className="ml-3 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-lg">
                       {pendingOffers.length}
                     </span>
                   </h2>
                   {pendingOffers.length > 0 ? (
-                    <div className="flex justify-center"> {/* Changed: Added flex justify-center wrapper */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"> {/* Changed: Added max-w-5xl */}
+                    <div className="flex justify-center"> 
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"> 
                         {pendingOffers.map((offer) => (
                           <div
                             key={offer.id}
                             className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg shadow-md"
                           >
-                            <div className="mb-4 text-center"> {/* Changed: Added text-center */}
+                            <div className="mb-4 text-center"> 
                               <h3 className="text-lg font-semibold text-navy">
                                 Group {offer.group_id} → Candidate {offer.candidate_id}
                               </h3>
@@ -315,8 +315,8 @@ const OffersManagement = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-center"> {/* Changed: Added flex justify-center wrapper */}
-                      <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center max-w-md"> {/* Changed: Added max-w-md */}
+                    <div className="flex justify-center"> 
+                      <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center max-w-md"> 
                         <p className="text-gray-600 text-lg">No pending offers for this class</p>
                       </div>
                     </div>
@@ -325,21 +325,21 @@ const OffersManagement = () => {
 
                 {/* Accepted Offers */}
                 <div>
-                  <h2 className="text-2xl font-semibold text-green-700 mb-4 flex items-center justify-center"> {/* Changed: Added justify-center */}
+                  <h2 className="text-2xl font-semibold text-green-700 mb-4 flex items-center justify-center"> 
                     Accepted Offers 
                     <span className="ml-3 bg-green-100 text-green-800 px-3 py-1 rounded-full text-lg">
                       {acceptedOffers.length}
                     </span>
                   </h2>
                   {acceptedOffers.length > 0 ? (
-                    <div className="flex justify-center"> {/* Changed: Added flex justify-center wrapper */}
-                      <div className="space-y-3 w-full max-w-4xl"> {/* Changed: Added max-w-4xl */}
+                    <div className="flex justify-center"> 
+                      <div className="space-y-3 w-full max-w-4xl"> 
                         {acceptedOffers.map((offer) => (
                           <div
                             key={offer.id}
                             className="bg-green-50 border border-green-200 p-4 rounded-lg flex items-center justify-between shadow-sm"
                           >
-                            <div className="text-center flex-1"> {/* Changed: Added text-center flex-1 */}
+                            <div className="text-center flex-1"> 
                               <h3 className="font-semibold text-green-800 text-lg">
                                 Group {offer.group_id} → Candidate {offer.candidate_id}
                               </h3>
@@ -347,7 +347,7 @@ const OffersManagement = () => {
                                 Status: Accepted | Offer ID: {offer.id}
                               </p>
                             </div>
-                            <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium ml-4"> {/* Changed: Added ml-4 */}
+                            <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium ml-4"> 
                               ✓ Accepted
                             </div>
                           </div>
@@ -355,8 +355,8 @@ const OffersManagement = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-center"> {/* Changed: Added flex justify-center wrapper */}
-                      <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center max-w-md"> {/* Changed: Added max-w-md */}
+                    <div className="flex justify-center"> 
+                      <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center max-w-md"> 
                         <p className="text-gray-600 text-lg">No accepted offers for this class</p>
                       </div>
                     </div>
