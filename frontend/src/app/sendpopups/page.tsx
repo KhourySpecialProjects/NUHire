@@ -526,41 +526,6 @@ const SendPopups = () => {
                 />
               </div>
 
-              {/* Selected Group Display */}
-              {selectedGroup && groups[selectedGroup] && (
-                <div className="mt-6">
-                  <h2 className="text-2xl font-bold text-northeasternBlack mb-4">
-                    Selected Group {selectedGroup}
-                  </h2>
-                  
-                  <div className="bg-northeasternWhite mb-4 p-4 border rounded-lg shadow-sm">
-                    <h3 className="text-lg font-semibold text-northeasternBlack mb-2">
-                      Group {selectedGroup} ({groups[selectedGroup].length} students)
-                    </h3>
-                    <ul className="list-none pl-0 text-navy mt-2">
-                      {groups[selectedGroup].map((student, index) => (
-                        <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded">
-                          <div className="flex items-center space-x-3">
-                            <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                            <span className="font-medium">
-                              {student.name} ({student.email})
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm">
-                            <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                              {student.current_page || 'No page'}
-                            </span>
-                            <span className="text-gray-600">
-                              {student.job_des || 'No job'}
-                            </span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
               <div className="flex justify-center">
                 <button
                   onClick={sendPopups}
