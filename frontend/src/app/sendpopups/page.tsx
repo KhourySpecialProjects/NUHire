@@ -333,7 +333,7 @@ const SendPopups = () => {
   };
 
   const sendPopups = async () => {
-  if (!headline || !message || !selectedGroup) { // Updated validation
+  if (!headline || !message || !selectedGroup) {
     setPopup({ headline: "Error", message: "Please fill in all fields and select a group." });
     return;
   }
@@ -357,7 +357,7 @@ const SendPopups = () => {
 
     try {
       const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
-        
+      
       if (selectedPresetData) {
         const hasValidProgress = await checkGroupProgress(selectedGroup, selectedClass, selectedPresetData.location);
         
@@ -383,21 +383,26 @@ const SendPopups = () => {
           });
         }
 
+        // Get the candidate name for the socket emission
+        const selectedCandidateData = candidates.find(c => c.resume_id.toString() === selectedCandidate);
+        const candidateName = selectedCandidateData ? selectedCandidateData.name : `Candidate ${selectedCandidate}`;
+
         socket.emit("sendPopupToGroups", {
-          groups: [selectedGroup], // Send as array with single group
+          groups: [selectedGroup],
           headline,
           message,
           class: selectedClass, 
           candidateId: selectedCandidate,
+          candidateName: candidateName, // Send the candidate name instead of just ID
         });
 
         setPopup({ 
           headline: "Success", 
-          message: `Popup sent successfully to Group ${selectedGroup}!` 
+          message: `Popup sent successfully to Group ${selectedGroup} about ${candidateName}!` 
         });
       } else {
         socket.emit("sendPopupToGroups", {
-          groups: [selectedGroup], // Send as array with single group
+          groups: [selectedGroup],
           headline,
           message,
           class: selectedClass,
@@ -409,7 +414,7 @@ const SendPopups = () => {
 
       setHeadline("");
       setMessage("");
-      setSelectedGroup(""); // Reset single group
+      setSelectedGroup("");
       setSelectedPreset("");
       setSelectedCandidate("");
     } catch (error) {
@@ -498,7 +503,7 @@ const SendPopups = () => {
                   
                   <select
                     value={selectedCandidate}
-                    onChange={(e) => handleCandidateSelection(e.target.value)} // Updated to use new function
+                    onChange={(e) => handleCandidateSelection(e.target.value)}
                     className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Select a Candidate --</option>
