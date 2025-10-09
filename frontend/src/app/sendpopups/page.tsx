@@ -40,7 +40,7 @@ const SendPopups = () => {
     const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
     const [loading, setLoading] = useState(true);
     const [groups, setGroups] = useState<Record<string, any>>({});
-    const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+    const [selectedGroup, setSelectedGroup] = useState<string>(""); // Changed from selectedGroups array to single group
     const [headline, setHeadline] = useState("");
     const [message, setMessage] = useState(""); 
     const [sending, setSending] = useState(false);
@@ -98,7 +98,7 @@ const SendPopups = () => {
       title: "Resume Discrepancy",
       headline: "Inconsistent Information",
       message:
-        "The candidate’s resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
+        "The candidate's resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
       location: "interview",
       vote: {
         overall: -5,
@@ -147,18 +147,17 @@ const SendPopups = () => {
 
   useEffect(() => {
   const fetchCandidates = async () => {
-    // Only fetch candidates if class is selected AND groups are selected (for presets)
-    if (!selectedClass || (selectedPreset && selectedGroups.length === 0)) {
+    // Only fetch candidates if class is selected AND group is selected (for presets)
+    if (!selectedClass || (selectedPreset && !selectedGroup)) {
       setCandidates([]);
       return;
     }
     
     try {
       let url;
-      if (selectedGroups.length > 0) {
-        // Fetch candidates being interviewed by selected groups
-        const groupIds = selectedGroups.join(',');
-        url = `${API_BASE_URL}/candidates-by-groups/${selectedClass}/${groupIds}`;
+      if (selectedGroup) {
+        // Fetch candidates being interviewed by selected group
+        url = `${API_BASE_URL}/candidates-by-groups/${selectedClass}/${selectedGroup}`;
       } else {
         // Fallback to all candidates in class (for non-preset popups)
         url = `${API_BASE_URL}/candidates-by-class/${selectedClass}`;
@@ -191,7 +190,8 @@ const SendPopups = () => {
   };
 
   fetchCandidates();
-}, [selectedClass, selectedGroups, selectedPreset]); // Add selectedGroups and selectedPreset as dependencies
+}, [selectedClass, selectedGroup, selectedPreset]); // Updated dependencies
+
     // Fetch available classes
     useEffect(() => {
       const fetchAssignedClasses = async () => {
@@ -282,16 +282,14 @@ const SendPopups = () => {
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedClass(e.target.value);
-    setSelectedGroups([]); // Reset selected groups when class changes
+    setSelectedGroup(""); // Reset selected group when class changes
     setSelectedCandidate("");
   };
 
-  const handleCheckboxChange = (groupId: string) => {
-    setSelectedGroups((prevSelected) =>
-      prevSelected.includes(groupId)
-        ? prevSelected.filter((id) => id !== groupId)
-        : [...prevSelected, groupId]
-    );
+  // Updated to handle single group selection
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedGroup(e.target.value);
+    setSelectedCandidate(""); // Reset candidate when group changes
   };
 
   const handlePresetSelection = (presetTitle: string) => {
@@ -322,8 +320,8 @@ const SendPopups = () => {
   };
 
   const sendPopups = async () => {
-  if (!headline || !message || selectedGroups.length === 0) {
-    setPopup({ headline: "Error", message: "Please fill in all fields and select at least one group." });
+  if (!headline || !message || !selectedGroup) { // Updated validation
+    setPopup({ headline: "Error", message: "Please fill in all fields and select a group." });
     return;
   }
 
@@ -335,9 +333,9 @@ const SendPopups = () => {
         return;
       }
       
-      // Validate that the selected candidate is actually being interviewed by the selected groups
+      // Validate that the selected candidate is actually being interviewed by the selected group
       if (candidates.length === 0) {
-        setPopup({ headline: "Error", message: "The selected groups are not currently interviewing any candidates." });
+        setPopup({ headline: "Error", message: "The selected group is not currently interviewing any candidates." });
         return;
       }
     }
@@ -348,45 +346,32 @@ const SendPopups = () => {
       const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
         
       if (selectedPresetData) {
-        const validGroups = [];
-        const invalidGroups = [];
-
-        for (const groupId of selectedGroups) {
-          console.log(selectedGroups)
-          const hasValidProgress = await checkGroupProgress(groupId, selectedClass, selectedPresetData.location);
-          if (hasValidProgress) {
-            validGroups.push(groupId);
-
-            console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData)
-            
-            if (selectedPresetData.vote) {
-              console.log("emitting updateRatingsWithPreset")
-              socket.emit("updateRatingsWithPresetBackend", {
-                classId: selectedClass,
-                groupId,
-                vote: selectedPresetData.vote,
-                candidateId: selectedCandidate,
-                isNoShow: selectedPresetData.title === "No Show"
-              });
-            }
-          } else {
-            invalidGroups.push(groupId);
-          }
-        }
-
-        if (invalidGroups.length > 0) {
+        const hasValidProgress = await checkGroupProgress(selectedGroup, selectedClass, selectedPresetData.location);
+        
+        if (!hasValidProgress) {
           setPopup({ 
             headline: "Warning", 
-            message: `Groups ${invalidGroups.join(', ')} are not at the ${selectedPresetData.location} stage and will not receive the popup.` 
+            message: `Group ${selectedGroup} is not at the ${selectedPresetData.location} stage and will not receive the popup.` 
           });
-            
-          if (validGroups.length === 0) {
-            setSending(false);
-            return;
-          }
+          setSending(false);
+          return;
         }
+
+        console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData)
+        
+        if (selectedPresetData.vote) {
+          console.log("emitting updateRatingsWithPreset")
+          socket.emit("updateRatingsWithPresetBackend", {
+            classId: selectedClass,
+            groupId: selectedGroup,
+            vote: selectedPresetData.vote,
+            candidateId: selectedCandidate,
+            isNoShow: selectedPresetData.title === "No Show"
+          });
+        }
+
         socket.emit("sendPopupToGroups", {
-          groups: validGroups,
+          groups: [selectedGroup], // Send as array with single group
           headline,
           message,
           class: selectedClass, 
@@ -395,28 +380,28 @@ const SendPopups = () => {
 
         setPopup({ 
           headline: "Success", 
-          message: `Popups sent successfully to ${validGroups.length} group(s)!` 
+          message: `Popup sent successfully to Group ${selectedGroup}!` 
         });
       } else {
         socket.emit("sendPopupToGroups", {
-          groups: selectedGroups,
+          groups: [selectedGroup], // Send as array with single group
           headline,
           message,
           class: selectedClass,
           candidateId: selectedCandidate,
         });
 
-        setPopup({ headline: "Success", message: "Popups sent successfully!" });
+        setPopup({ headline: "Success", message: "Popup sent successfully!" });
       }
 
       setHeadline("");
       setMessage("");
-      setSelectedGroups([]);
+      setSelectedGroup(""); // Reset single group
       setSelectedPreset("");
       setSelectedCandidate("");
     } catch (error) {
       console.error("Error sending popups:", error);
-      setPopup({ headline: "Error", message: "Failed to send popups. Please try again." });
+      setPopup({ headline: "Error", message: "Failed to send popup. Please try again." });
     } finally {
       setSending(false);
     }
@@ -433,7 +418,7 @@ const SendPopups = () => {
         </h1>
 
         <p className="text-lg text-center text-northeasternRed mb-4">
-          Select a preset or create a custom message to send to selected groups
+          Select a preset or create a custom message to send to a selected group
           of students.
         </p>
 
@@ -454,7 +439,26 @@ const SendPopups = () => {
             </select>
           </div>
 
+          {/* Group Selection Dropdown - appears right after class selection */}
           {selectedClass && (
+            <div className="mb-6">
+              <label className="text-lg text-northeasternBlack font-rubik block mb-2">Select Group:</label>
+              <select
+                value={selectedGroup}
+                onChange={handleGroupChange}
+                className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Select a Group --</option>
+                {Object.keys(groups).map((groupId) => (
+                  <option key={groupId} value={groupId}>
+                    Group {groupId} ({groups[groupId]?.length || 0} students)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {selectedClass && selectedGroup && (
             <>
               <div className="mb-6">
                 <label className="text-lg font-rubik text-northeasternBlack block mb-2">Choose a Preset:</label>
@@ -472,40 +476,29 @@ const SendPopups = () => {
                 </select>
               </div>
 
-              {/* Add candidate selection dropdown - only show when preset is selected */}
-              {/* Update the candidate selection dropdown */}
+              {/* Candidate selection dropdown - only show when preset is selected */}
               {selectedPreset && (
                 <div className="mb-6">
                   <label className="text-lg font-rubik text-northeasternBlack block mb-2">
                     Select Candidate for {selectedPreset}:
                   </label>
                   
-                  {selectedGroups.length === 0 ? (
-                    <div className="p-3 border border-yellow-400 bg-yellow-50 rounded-md">
-                      <p className="text-yellow-800 text-sm">
-                        Please select at least one group first to see the candidates they are interviewing.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <select
-                        value={selectedCandidate}
-                        onChange={(e) => setSelectedCandidate(e.target.value)}
-                        className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">-- Select a Candidate --</option>
-                        {candidates.map((candidate) => (
-                          <option key={candidate.resume_id} value={candidate.resume_id}>
-                            {candidate.name} (ID: {candidate.resume_id})
-                          </option>
-                        ))}
-                      </select>
-                      {candidates.length === 0 && selectedGroups.length > 0 && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          The selected groups are not currently interviewing any candidates.
-                        </p>
-                      )}
-                    </>
+                  <select
+                    value={selectedCandidate}
+                    onChange={(e) => setSelectedCandidate(e.target.value)}
+                    className="w-full p-3 border border-wood bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select a Candidate --</option>
+                    {candidates.map((candidate) => (
+                      <option key={candidate.resume_id} value={candidate.resume_id}>
+                        {candidate.name} (ID: {candidate.resume_id})
+                      </option>
+                    ))}
+                  </select>
+                  {candidates.length === 0 && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      The selected group is not currently interviewing any candidates.
+                    </p>
                   )}
                 </div>
               )}
@@ -521,7 +514,7 @@ const SendPopups = () => {
                        focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 />
 
-                <label className="text-lg text-northeasternBlack font-rubik">Content:</label>
+                <label className="text-lg text-northeasternBlack font-rubik">Message:</label>
                 <textarea
                   placeholder="Enter your message here"
                   value={message}
@@ -533,76 +526,57 @@ const SendPopups = () => {
                 />
               </div>
 
-          {/* Groups Display Section */}
-          <div className="mt-6">
-              <h2 className="text-2xl font-bold text-northeasternBlack mb-4">
-                  Groups in {selectedClass ? `Class ${selectedClass}` : 'All Classes'}
-              </h2>
-              
-              {groups && Object.keys(groups).length > 0 ? (
-                  Object.entries(groups).map(([group_id, students]) => (
-                      <div
-                          key={group_id}
-                          className="bg-northeasternWhite mb-4 p-4 border rounded-lg shadow-sm"
-                      >
-                          <div className="flex items-center justify-between mb-2">
-                              <h3 className="text-lg font-semibold text-northeasternBlack">
-                                  Group {group_id}
-                              </h3>
-                              <input
-                                  type="checkbox"
-                                  className="h-5 w-5 text-blue-500 accent-navy cursor-pointer"
-                                  checked={selectedGroups.includes(group_id)}
-                                  onChange={() => handleCheckboxChange(group_id)}
-                              />
+              {/* Selected Group Display */}
+              {selectedGroup && groups[selectedGroup] && (
+                <div className="mt-6">
+                  <h2 className="text-2xl font-bold text-northeasternBlack mb-4">
+                    Selected Group {selectedGroup}
+                  </h2>
+                  
+                  <div className="bg-northeasternWhite mb-4 p-4 border rounded-lg shadow-sm">
+                    <h3 className="text-lg font-semibold text-northeasternBlack mb-2">
+                      Group {selectedGroup} ({groups[selectedGroup].length} students)
+                    </h3>
+                    <ul className="list-none pl-0 text-navy mt-2">
+                      {groups[selectedGroup].map((student, index) => (
+                        <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded">
+                          <div className="flex items-center space-x-3">
+                            <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                            <span className="font-medium">
+                              {student.name} ({student.email})
+                            </span>
                           </div>
-                          <ul className="list-none pl-0 text-navy mt-2">
-                              {Array.isArray(students) && students.length > 0 ? (
-                                  students.map((student, index) => (
-                                      <li key={index} className="mb-2 flex items-center justify-between p-2 bg-white rounded">
-                                          <div className="flex items-center space-x-3">
-                                              <span className={`w-3 h-3 rounded-full ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                              <span className="font-medium">
-                                                  {student.name} ({student.email})
-                                              </span>
-                                          </div>
-                                          <div className="flex items-center space-x-4 text-sm">
-                                              <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                                                  {student.current_page || 'No page'}
-                                              </span>
-                                              <span className="text-gray-600">
-                                                  {student.job_des || 'No job'}
-                                              </span>
-                                          </div>
-                                      </li>
-                                  ))
-                              ) : (
-                                  <li className="text-gray-500">No students assigned to this group</li>
-                              )}
-                          </ul>
-                      </div>
-                  ))
-              ) : selectedClass ? (
-                  <p className="text-gray-500 text-center">No students with group assignments found for this class.</p>
-              ) : (
-                  <p className="text-gray-500 text-center">Please select a class to view groups.</p>
+                          <div className="flex items-center space-x-4 text-sm">
+                            <span className={`px-2 py-1 rounded ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                              {student.current_page || 'No page'}
+                            </span>
+                            <span className="text-gray-600">
+                              {student.job_des || 'No job'}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               )}
-          </div>
 
-        <div className="flex justify-center">
-          <button
-            onClick={sendPopups}
-            disabled={sending || selectedGroups.length === 0}
-            className={`mt-6 px-6 py-3 font-semibold rounded-md transition 
-                          ${
-                            sending || selectedGroups.length === 0
-                              ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-northeasternRed text-white"
-                          }`}
-          >
-            {sending ? "Sending..." : "Send Popups"}
-          </button>
-        </div>
+              <div className="flex justify-center">
+                <button
+                  onClick={sendPopups}
+                  disabled={sending || !selectedGroup} // Updated condition
+                  className={`mt-6 px-6 py-3 font-semibold rounded-md transition 
+                              ${
+                                sending || !selectedGroup
+                                  ? "bg-gray-400 cursor-not-allowed"
+                                  : "bg-northeasternRed text-white"
+                              }`}
+                >
+                  {sending ? "Sending..." : "Send Popup"}
+                </button>
+              </div>
+            </>
+          )}
 
         {pendingOffers.map(({classId, groupId, candidateId }) => (
           <div
@@ -622,8 +596,7 @@ const SendPopups = () => {
             />
           </div>
         ))}
-      </>
-    )}
+
     {popup && (
               <Popup
                 headline={popup.headline}
