@@ -2462,20 +2462,20 @@ app.post('/teacher/create-groups', (req, res) => {
     });
   }
 
-  // First, delete existing groups for this class
-  db.query('DELETE FROM Groups WHERE class_id = ?', [class_id], (err, result) => {
+  // First, delete existing groups for this class - FIXED: Added backticks around Groups
+  db.query('DELETE FROM `Groups` WHERE class_id = ?', [class_id], (err, result) => {
     if (err) {
       console.error('Error deleting existing groups:', err);
       return res.status(500).json({ error: 'Failed to clear existing groups' });
     }
 
-    // Create new groups
+    // Create new groups - FIXED: Added backticks around Groups
     const groupInserts = [];
     for (let i = 1; i <= num_groups; i++) {
       groupInserts.push([class_id, i, max_students_per_group]);
     }
 
-    const insertQuery = 'INSERT INTO Groups (class_id, group_number, max_students) VALUES ?';
+    const insertQuery = 'INSERT INTO `Groups` (class_id, group_number, max_students) VALUES ?';
     
     db.query(insertQuery, [groupInserts], (err, result) => {
       if (err) {
@@ -2483,8 +2483,8 @@ app.post('/teacher/create-groups', (req, res) => {
         return res.status(500).json({ error: 'Failed to create groups' });
       }
 
-      // Update the class record with the new number of groups
-      db.query('UPDATE Classes SET nom_groups = ? WHERE crn = ?', [num_groups, class_id], (updateErr, updateResult) => {
+      // Update the Moderator table with the new number of groups - FIXED: Use Moderator table
+      db.query('UPDATE `Moderator` SET nom_groups = ? WHERE crn = ?', [num_groups, class_id], (updateErr, updateResult) => {
         if (updateErr) {
           console.error('Error updating class group count:', updateErr);
           // Groups were created successfully, so we'll return success even if class update fails
@@ -2501,7 +2501,7 @@ app.post('/teacher/create-groups', (req, res) => {
   });
 });
 
-// GET /class-info/:classId
+// GET /class-info/:classId - FIXED: Updated to use Moderator table and Groups table
 app.get('/class-info/:classId', (req, res) => {
   const { classId } = req.params;
   
@@ -2509,12 +2509,12 @@ app.get('/class-info/:classId', (req, res) => {
   
   const query = `
     SELECT 
-      c.crn,
-      c.nom_groups,
+      m.crn,
+      m.nom_groups,
       COALESCE(g.max_students, 4) as slots_per_group
-    FROM Classes c
-    LEFT JOIN Groups g ON c.crn = g.class_id
-    WHERE c.crn = ?
+    FROM Moderator m
+    LEFT JOIN \`Groups\` g ON m.crn = g.class_id
+    WHERE m.crn = ?
     LIMIT 1
   `;
   
@@ -2533,7 +2533,7 @@ app.get('/class-info/:classId', (req, res) => {
   });
 });
 
-// POST /student/join-group
+// POST /student/join-group - FIXED: Added backticks around Groups
 app.post('/student/join-group', (req, res) => {
   const { email, class_id, group_id } = req.body;
   
@@ -2545,13 +2545,13 @@ app.post('/student/join-group', (req, res) => {
     });
   }
 
-  // First check if the group has space
+  // First check if the group has space - FIXED: Added backticks and used correct column names
   const checkCapacityQuery = `
     SELECT 
       g.max_students,
       COUNT(u.email) as current_students
-    FROM Groups g
-    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class_id = g.class_id
+    FROM \`Groups\` g
+    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
     WHERE g.class_id = ? AND g.group_number = ?
     GROUP BY g.max_students
   `;
@@ -2576,8 +2576,8 @@ app.post('/student/join-group', (req, res) => {
       });
     }
     
-    // Update the user's group assignment
-    const updateQuery = 'UPDATE Users SET group_id = ? WHERE email = ? AND class_id = ?';
+    // Update the user's group assignment - FIXED: Use correct column names
+    const updateQuery = 'UPDATE Users SET group_id = ? WHERE email = ? AND class = ?';
     
     db.query(updateQuery, [group_id, email, class_id], (updateErr, updateResult) => {
       if (updateErr) {
@@ -2599,7 +2599,7 @@ app.post('/student/join-group', (req, res) => {
   });
 });
 
-// GET /group-slots/:classId
+// GET /group-slots/:classId - FIXED: Added backticks and used correct column names
 app.get('/group-slots/:classId', (req, res) => {
   const { classId } = req.params;
   
@@ -2621,8 +2621,8 @@ app.get('/group-slots/:classId', (req, res) => {
           ELSE NULL 
         END
       ) as students
-    FROM Groups g
-    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class_id = g.class_id
+    FROM \`Groups\` g
+    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
     WHERE g.class_id = ?
     GROUP BY g.group_number, g.max_students
     ORDER BY g.group_number
@@ -2647,7 +2647,7 @@ app.get('/group-slots/:classId', (req, res) => {
   });
 });
 
-// GET /groups (update existing)
+// GET /groups (update existing) - FIXED: Added backticks and used correct column names
 app.get('/groups', (req, res) => {
   const { class: classId } = req.query;
   
@@ -2660,8 +2660,8 @@ app.get('/groups', (req, res) => {
       g.group_number,
       g.max_students,
       COUNT(u.email) as student_count
-    FROM Groups g
-    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class_id = g.class_id
+    FROM \`Groups\` g
+    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
     WHERE g.class_id = ?
     GROUP BY g.group_number, g.max_students
     ORDER BY g.group_number
