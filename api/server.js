@@ -2411,6 +2411,248 @@ app.post("/user-get-see-dash", (req, res) => {
     res.json(responseData);
   });
 });
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Groups API routes
+
+// POST /teacher/create-groups
+app.post('/teacher/create-groups', (req, res) => {
+  const { class_id, num_groups, max_students_per_group } = req.body;
+  
+  console.log('Creating groups for class:', class_id);
+  console.log('Number of groups:', num_groups);
+  console.log('Max students per group:', max_students_per_group);
+  
+  if (!class_id || !num_groups || !max_students_per_group) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: class_id, num_groups, max_students_per_group' 
+    });
+  }
+
+  // First, delete existing groups for this class
+  db.query('DELETE FROM Groups WHERE class_id = ?', [class_id], (err, result) => {
+    if (err) {
+      console.error('Error deleting existing groups:', err);
+      return res.status(500).json({ error: 'Failed to clear existing groups' });
+    }
+
+    // Create new groups
+    const groupInserts = [];
+    for (let i = 1; i <= num_groups; i++) {
+      groupInserts.push([class_id, i, max_students_per_group]);
+    }
+
+    const insertQuery = 'INSERT INTO Groups (class_id, group_number, max_students) VALUES ?';
+    
+    db.query(insertQuery, [groupInserts], (err, result) => {
+      if (err) {
+        console.error('Error creating groups:', err);
+        return res.status(500).json({ error: 'Failed to create groups' });
+      }
+
+      // Update the class record with the new number of groups
+      db.query('UPDATE Classes SET nom_groups = ? WHERE crn = ?', [num_groups, class_id], (updateErr, updateResult) => {
+        if (updateErr) {
+          console.error('Error updating class group count:', updateErr);
+          // Groups were created successfully, so we'll return success even if class update fails
+        }
+
+        console.log(`Successfully created ${num_groups} groups for class ${class_id}`);
+        res.json({ 
+          message: 'Groups created successfully',
+          groups_created: num_groups,
+          max_students_per_group: max_students_per_group
+        });
+      });
+    });
+  });
+});
+
+// GET /class-info/:classId
+app.get('/class-info/:classId', (req, res) => {
+  const { classId } = req.params;
+  
+  console.log('Fetching class info for:', classId);
+  
+  const query = `
+    SELECT 
+      c.crn,
+      c.nom_groups,
+      COALESCE(g.max_students, 4) as slots_per_group
+    FROM Classes c
+    LEFT JOIN Groups g ON c.crn = g.class_id
+    WHERE c.crn = ?
+    LIMIT 1
+  `;
+  
+  db.query(query, [classId], (err, result) => {
+    if (err) {
+      console.error('Error fetching class info:', err);
+      return res.status(500).json({ error: 'Failed to fetch class information' });
+    }
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+    
+    console.log('Class info result:', result[0]);
+    res.json(result[0]);
+  });
+});
+
+// POST /student/join-group
+app.post('/student/join-group', (req, res) => {
+  const { email, class_id, group_id } = req.body;
+  
+  console.log('Student joining group:', { email, class_id, group_id });
+  
+  if (!email || !class_id || !group_id) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: email, class_id, group_id' 
+    });
+  }
+
+  // First check if the group has space
+  const checkCapacityQuery = `
+    SELECT 
+      g.max_students,
+      COUNT(u.email) as current_students
+    FROM Groups g
+    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class_id = g.class_id
+    WHERE g.class_id = ? AND g.group_number = ?
+    GROUP BY g.max_students
+  `;
+  
+  db.query(checkCapacityQuery, [class_id, group_id], (err, capacityResult) => {
+    if (err) {
+      console.error('Error checking group capacity:', err);
+      return res.status(500).json({ error: 'Failed to check group capacity' });
+    }
+    
+    if (capacityResult.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+    
+    const { max_students, current_students } = capacityResult[0];
+    
+    if (current_students >= max_students) {
+      return res.status(400).json({ 
+        error: 'Group is full',
+        current_students: current_students,
+        max_students: max_students
+      });
+    }
+    
+    // Update the user's group assignment
+    const updateQuery = 'UPDATE Users SET group_id = ? WHERE email = ? AND class_id = ?';
+    
+    db.query(updateQuery, [group_id, email, class_id], (updateErr, updateResult) => {
+      if (updateErr) {
+        console.error('Error assigning student to group:', updateErr);
+        return res.status(500).json({ error: 'Failed to join group' });
+      }
+      
+      if (updateResult.affectedRows === 0) {
+        return res.status(404).json({ error: 'Student not found in this class' });
+      }
+      
+      console.log(`Student ${email} successfully joined group ${group_id} in class ${class_id}`);
+      res.json({ 
+        message: 'Successfully joined group',
+        group_id: group_id,
+        class_id: class_id
+      });
+    });
+  });
+});
+
+// GET /group-slots/:classId
+app.get('/group-slots/:classId', (req, res) => {
+  const { classId } = req.params;
+  
+  console.log('Fetching group slots for class:', classId);
+  
+  const query = `
+    SELECT 
+      g.group_number,
+      g.max_students,
+      COUNT(u.email) as occupied_slots,
+      JSON_ARRAYAGG(
+        CASE 
+          WHEN u.email IS NOT NULL 
+          THEN JSON_OBJECT(
+            'f_name', u.f_name, 
+            'l_name', u.l_name, 
+            'email', u.email
+          )
+          ELSE NULL 
+        END
+      ) as students
+    FROM Groups g
+    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class_id = g.class_id
+    WHERE g.class_id = ?
+    GROUP BY g.group_number, g.max_students
+    ORDER BY g.group_number
+  `;
+  
+  db.query(query, [classId], (err, result) => {
+    if (err) {
+      console.error('Error fetching group slots:', err);
+      return res.status(500).json({ error: 'Failed to fetch group slots' });
+    }
+    
+    // Process the result to clean up the students array
+    const processedResult = result.map(group => ({
+      group_id: group.group_number,
+      max_slots: group.max_students,
+      occupied_slots: group.occupied_slots,
+      students: group.students ? group.students.filter(student => student !== null) : []
+    }));
+    
+    console.log('Group slots result:', processedResult);
+    res.json(processedResult);
+  });
+});
+
+// GET /groups (update existing)
+app.get('/groups', (req, res) => {
+  const { class: classId } = req.query;
+  
+  if (!classId) {
+    return res.status(400).json({ error: 'Class ID is required' });
+  }
+  
+  const query = `
+    SELECT 
+      g.group_number,
+      g.max_students,
+      COUNT(u.email) as student_count
+    FROM Groups g
+    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class_id = g.class_id
+    WHERE g.class_id = ?
+    GROUP BY g.group_number, g.max_students
+    ORDER BY g.group_number
+  `;
+  
+  db.query(query, [classId], (err, result) => {
+    if (err) {
+      console.error('Error fetching groups:', err);
+      return res.status(500).json({ error: 'Failed to fetch groups' });
+    }
+    
+    // Convert to the format your frontend expects
+    const groupsObject = {};
+    result.forEach(group => {
+      groupsObject[group.group_number] = {
+        max_students: group.max_students,
+        student_count: group.student_count
+      };
+    });
+    
+    res.json(groupsObject);
+  });
+});
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various
 
