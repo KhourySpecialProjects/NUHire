@@ -829,6 +829,7 @@ io.on("connection", (socket) => {
       classId: data.classId,
       message: data.message
     });
+
   });
 
   // Teacher closes group assignment
@@ -910,11 +911,17 @@ app.get("/auth/keycloak/callback",
         if (dbUser.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
-          if (dbUser.seen === 1) {
-            return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
-          }
-          else{
-             return res.redirect(`${FRONT_URL}/about`);
+          if (dbUser.group_id) {
+            // User has a group, proceed with normal flow
+            if (dbUser.seen === 1) {
+              return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+            }
+            else{
+              return res.redirect(`${FRONT_URL}/about`);
+            }
+          } else {
+            // User doesn't have a group, send to waiting page
+            return res.redirect(`${FRONT_URL}/waitingGroup`);
           }
         }
       } else {
