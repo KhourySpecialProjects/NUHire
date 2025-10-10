@@ -821,6 +821,32 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on('allowGroupAssignment', (data) => {
+    console.log('Teacher allowing group assignment for class:', data.classId);
+    
+    // Broadcast to all students in the specific class
+    socket.broadcast.emit('allowGroupAssignment', {
+      classId: data.classId,
+      message: data.message
+    });
+  });
+
+  // Teacher closes group assignment
+  socket.on('groupAssignmentClosed', (data) => {
+    console.log('Teacher closing group assignment for class:', data.classId);
+    
+    // Broadcast to all students in the specific class
+    socket.broadcast.emit('groupAssignmentClosed', {
+      classId: data.classId,
+      message: data.message
+    });
+  });
+
+  socket.on('joinClass', (data) => {
+    socket.join(`class_${data.classId}`);
+    console.log(`Student joined class room: class_${data.classId}`);
+  });
+
   // Listens for the "disconnect" event, which is emitted when a client disconnects from the server
   // The server removes the student from the onlineStudents object and emits the "updateOnlineStudents" event to all connected clients
   socket.on("disconnect", () => {
