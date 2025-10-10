@@ -52,6 +52,10 @@ export default function WaitingGroupPage() {
     fetchUser();
   }, [router]);
 
+  useEffect(() => {
+    console.log("User data:", user);
+  }, [user]);
+
   // Socket connection for listening to teacher's group assignment authorization
   useEffect(() => {
     if (!user?.class_id) return;
