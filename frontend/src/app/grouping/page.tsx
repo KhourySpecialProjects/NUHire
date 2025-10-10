@@ -52,6 +52,12 @@ const Grouping = () => {
   const [group_id, setGroupId] = useState("");
   const [updateNumGroups, setUpdateNumGroups] = useState<number | "">("");
 
+  // New Create Groups tab state
+  const [createGroupsClass, setCreateGroupsClass] = useState("");
+  const [numGroups, setNumGroups] = useState<number | "">("");
+  const [maxStudentsPerGroup, setMaxStudentsPerGroup] = useState<number | "">("");
+  const [createGroupsLoading, setCreateGroupsLoading] = useState(false);
+
   interface Job { title: string; [key: string]: any; }
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<Job[]>([]);
@@ -64,13 +70,6 @@ const Grouping = () => {
   const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
   const [groupsTabStudents, setGroupsTabStudents] = useState<Student[]>([]);
 
-  const [addStudentClass, setAddStudentClass] = useState("");
-  const [addStudentGroup, setAddStudentGroup] = useState("");
-  const [addStudentEmail, setAddStudentEmail] = useState("");
-  const [addStudentFirstName, setAddStudentFirstName] = useState("");
-  const [addStudentLastName, setAddStudentLastName] = useState("");
-  const [addStudentAvailableGroups, setAddStudentAvailableGroups] = useState<number>(0); 
-
   // Function to refresh groups tab students
   const refreshGroupsTabStudents = () => {
     if (groupsTabClass) {
@@ -80,6 +79,67 @@ const Grouping = () => {
         .catch(err => {
           console.error("Students API error:", err);
         });
+    }
+  };
+
+  // Create Groups function
+  const handleCreateGroups = async () => {
+    if (!createGroupsClass || !numGroups || !maxStudentsPerGroup) {
+      setPopup({ 
+        headline: "Incomplete Information", 
+        message: "Please select a class and enter both number of groups and max students per group." 
+      });
+      return;
+    }
+
+    if (user?.affiliation === "admin" && !assignedClassIds.includes(createGroupsClass)) {
+      setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
+      return;
+    }
+
+    setCreateGroupsLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/teacher/create-groups`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          class_id: createGroupsClass,
+          num_groups: numGroups,
+          max_students_per_group: maxStudentsPerGroup
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setPopup({ 
+          headline: "Success", 
+          message: `Successfully created ${numGroups} groups with maximum ${maxStudentsPerGroup} students each for class ${createGroupsClass}!` 
+        });
+        
+        // Reset form
+        setNumGroups("");
+        setMaxStudentsPerGroup("");
+        
+        // Refresh groups data if the same class is selected
+        if (groupsTabClass === createGroupsClass) {
+          refreshGroupsTabStudents();
+        }
+      } else {
+        const errorData = await response.json();
+        setPopup({ 
+          headline: "Error", 
+          message: errorData.message || "Failed to create groups. Please try again." 
+        });
+      }
+    } catch (error) {
+      console.error('Error creating groups:', error);
+      setPopup({ 
+        headline: "Error", 
+        message: "Failed to create groups. Please try again." 
+      });
+    } finally {
+      setCreateGroupsLoading(false);
     }
   };
 
@@ -244,20 +304,15 @@ const Grouping = () => {
       .then(setJobs);
   }, []);
 
-  useEffect(() => {
-  if (addStudentClass) {
-    const selectedClassData = classes.find(c => c.id.toString() === addStudentClass);
-    if (selectedClassData) {
-      const match = selectedClassData.name.match(/\((\d+) groups?\)/);
-      if (match) {
-        setAddStudentAvailableGroups(parseInt(match[1]));
-      }
+  // Handlers for Create Groups tab
+  const handleCreateGroupsClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newClass = e.target.value;
+    if (user?.affiliation === "admin" && newClass && !assignedClassIds.includes(newClass)) {
+      setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
+      return;
     }
-  } else {
-    setAddStudentAvailableGroups(0);
-    setAddStudentGroup(""); 
-  }
-}, [addStudentClass, classes]);
+    setCreateGroupsClass(newClass);
+  };
 
   // Handlers for Tab 1
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -400,39 +455,6 @@ const Grouping = () => {
     return <div>This account is not authorized for this page</div>;
   }
 
-  const addStudentToClassGroup = async () => {
-    if (!addStudentClass || !addStudentGroup || !addStudentEmail || !addStudentFirstName || !addStudentLastName) {
-      setPopup({ headline: "Error", message: "Please fill out all fields." });
-      return;
-    }
-    try {
-      const res = await fetch(`${API_BASE_URL}/teacher/add-student`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          class_id: addStudentClass,
-          group_id: addStudentGroup,
-          email: addStudentEmail,
-          f_name: addStudentFirstName,
-          l_name: addStudentLastName,
-        }),
-      });
-      if (res.ok) {
-        setPopup({ headline: "Success", message: "Student added to class and group!" });
-        // Clear all fields after success
-        setAddStudentClass("");
-        setAddStudentGroup("");
-        setAddStudentEmail("");
-        setAddStudentFirstName("");
-        setAddStudentLastName("");
-      } else {
-        setPopup({ headline: "Error", message: "Failed to add student." });
-      }
-    } catch {
-      setPopup({ headline: "Error", message: "Failed to add student." });
-    }
-  };
-
   return (
     <div className="flex flex-col h-screen bg-sand font-rubik">
       <NavbarAdmin />
@@ -441,115 +463,126 @@ const Grouping = () => {
         <div className="flex-1 flex flex-col">
           <Tabs>
 
-            {/* Tab 1: Add Student to Class & Group */}
-            <div title="Add Student to Class & Group">
+            {/* NEW TAB: Create Groups - First tab */}
+            <div title="Create Groups">
               <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[70vh] w-full">
-                <h2 className="text-2xl font-bold text-northeasternRed mb-6">Add Student to Class & Group</h2>
+                <h2 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Create Groups</h2>
+                <p className="text-lg text-navy mb-6 text-center">
+                  Set up groups for your class with specific capacity limits
+                </p>
                 
+                {/* Class Selection */}
                 <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Select Class (CRN)
+                  <label className="block text-navy font-semibold mb-3 text-lg">
+                    Select Class
                   </label>
                   <select
-                    value={addStudentClass}
-                    onChange={e => setAddStudentClass(e.target.value)}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={createGroupsClass}
+                    onChange={handleCreateGroupsClassChange}
+                    className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
                   >
-                    <option value="">Select a class</option>
+                    <option value="">Choose a class...</option>
                     {classes.map(classItem => (
                       <option key={classItem.id} value={classItem.id}>
                         {classItem.name}
                       </option>
                     ))}
                   </select>
-                </div>
-                
-                {/* Updated Group Selection - Now a Dropdown */}
-                <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Group Number
-                  </label>
-                  <select
-                    value={addStudentGroup}
-                    onChange={e => setAddStudentGroup(e.target.value)}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={!addStudentClass || addStudentAvailableGroups === 0}
-                  >
-                    <option value="">
-                      {!addStudentClass 
-                        ? "Select a class first" 
-                        : addStudentAvailableGroups === 0 
-                          ? "No groups available" 
-                          : "Select a group"
-                      }
-                    </option>
-                    {addStudentAvailableGroups > 0 && 
-                      Array.from({ length: addStudentAvailableGroups }, (_, i) => i + 1).map(groupNum => (
-                        <option key={groupNum} value={groupNum}>
-                          Group {groupNum}
-                        </option>
-                      ))
-                    }
-                  </select>
-                  {addStudentClass && addStudentAvailableGroups > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Available groups: 1 to {addStudentAvailableGroups}
+                  {classes.length === 0 && (
+                    <p className="text-red-500 text-sm mt-2">
+                      You have no assigned classes. Please contact the administrator.
                     </p>
                   )}
                 </div>
-                
-                {/* First and Last Name Row */}
+
+                {/* Number of Groups */}
                 <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Student Name
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <input
-                        type="text"
-                        value={addStudentFirstName}
-                        onChange={e => setAddStudentFirstName(e.target.value)}
-                        className="w-full p-3 border border-wood bg-springWater rounded-md"
-                        placeholder="First name"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={addStudentLastName}
-                        onChange={e => setAddStudentLastName(e.target.value)}
-                        className="w-full p-3 border border-wood bg-springWater rounded-md"
-                        placeholder="Last name"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <label className="block text-navy font-semibold mb-2">
-                    Student Email
+                  <label className="block text-navy font-semibold mb-3 text-lg">
+                    Number of Groups
                   </label>
                   <input
-                    type="email"
-                    value={addStudentEmail}
-                    onChange={e => setAddStudentEmail(e.target.value)}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md"
-                    placeholder="Enter student email"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={numGroups || ""}
+                    onChange={(e) => setNumGroups(Number(e.target.value))}
+                    placeholder="Enter number of groups (e.g., 5)"
+                    className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
                   />
+                  <p className="text-sm text-gray-600 mt-1">
+                    How many groups do you want to create for this class?
+                  </p>
                 </div>
-                
+
+                {/* Max Students Per Group */}
+                <div className="mb-8">
+                  <label className="block text-navy font-semibold mb-3 text-lg">
+                    Maximum Students Per Group
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={maxStudentsPerGroup || ""}
+                    onChange={(e) => setMaxStudentsPerGroup(Number(e.target.value))}
+                    placeholder="Enter max students per group (e.g., 4)"
+                    className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Maximum number of students that can join each group
+                  </p>
+                </div>
+
+                {/* Summary */}
+                {createGroupsClass && numGroups && maxStudentsPerGroup && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 className="font-semibold text-navy mb-2">Summary:</h3>
+                    <ul className="text-sm text-navy space-y-1">
+                      <li>• Class: CRN {createGroupsClass}</li>
+                      <li>• {numGroups} groups will be created</li>
+                      <li>• Each group can have up to {maxStudentsPerGroup} students</li>
+                      <li>• Total capacity: {(numGroups as number) * (maxStudentsPerGroup as number)} students</li>
+                    </ul>
+                  </div>
+                )}
+
+                {/* Create Button */}
                 <div className="flex justify-center">
                   <button
-                    className="bg-northeasternRed text-white px-6 py-3 rounded font-bold hover:bg-navy transition text-lg"
-                    onClick={addStudentToClassGroup}
+                    onClick={handleCreateGroups}
+                    disabled={createGroupsLoading || !createGroupsClass || !numGroups || !maxStudentsPerGroup}
+                    className={`px-8 py-4 rounded-md font-bold text-lg transition-all ${
+                      createGroupsLoading || !createGroupsClass || !numGroups || !maxStudentsPerGroup
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-northeasternRed text-white hover:bg-navy hover:shadow-lg transform hover:scale-105'
+                    }`}
                   >
-                    Add Student
+                    {createGroupsLoading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                        <span>Creating Groups...</span>
+                      </div>
+                    ) : (
+                      'Create Groups'
+                    )}
                   </button>
+                </div>
+
+                {/* Instructions */}
+                <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h3 className="font-semibold text-navy mb-2">📋 Instructions:</h3>
+                  <ul className="text-sm text-navy space-y-1">
+                    <li>1. Select the class you want to create groups for</li>
+                    <li>2. Enter how many groups you want (recommended: 4-8 groups)</li>
+                    <li>3. Set the maximum students per group (recommended: 3-5 students)</li>
+                    <li>4. Click "Create Groups" to set up the group structure</li>
+                    <li>5. Students can then assign themselves to available groups</li>
+                  </ul>
                 </div>
               </div>
             </div>
 
-            {/* Tab 2: Job Assignment */}
+            {/* Tab: Job Assignment */}
             <div title="Job Assignment">
               <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
                 <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
@@ -629,7 +662,7 @@ const Grouping = () => {
               </div>
             </div>
 
-            {/* Tab 3: Class & Student Assignment */}
+            {/* Tab: Class & Student Assignment */}
             <div title="Class & Student Assignment">
               <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
                 <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
