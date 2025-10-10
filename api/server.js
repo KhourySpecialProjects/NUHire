@@ -1045,14 +1045,20 @@ app.get("/users/:id", (req, res) => {
 
 // post route for creating a new user, which checks if the user already exists in the database and inserts a new user record if not
 app.post("/users", (req, res) => {
-  const { First_name, Last_name, Email, Affiliation } = req.body;
+  const { First_name, Last_name, Email, Affiliation, Class } = req.body; // ADDED: Class field
 
   console.log("=== POST /users endpoint hit ===");
-  console.log("Request body:", { First_name, Last_name, Email, Affiliation });
+  console.log("Request body:", { First_name, Last_name, Email, Affiliation, Class });
 
   if (!First_name || !Last_name || !Email || !Affiliation) {
     console.log("❌ Validation failed: Missing required fields");
     return res.status(400).json({ message: "First name, last name, email, and affiliation are required" });
+  }
+
+  // ADDED: Require class for students
+  if (Affiliation === 'student' && !Class) {
+    console.log("❌ Validation failed: Class required for students");
+    return res.status(400).json({ message: "Class is required for students" });
   }
 
   console.log("✅ Validation passed, checking if user exists in database");
@@ -1081,7 +1087,7 @@ app.post("/users", (req, res) => {
 
     console.log("User does not exist, creating new user");
 
-    // Create user - UPDATED: Allow students to register without group assignment
+    // Create user with class assignment
     let sql, params;
     if (Affiliation === 'admin') {
       console.log("Creating new admin user");
@@ -1092,10 +1098,10 @@ app.post("/users", (req, res) => {
       console.log("Admin SQL params:", params);
       
     } else if (Affiliation === 'student') {
-      // FIXED: Allow students to register without group assignment
-      console.log("Creating new student user without group assignment");
-      sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
-      params = [First_name, Last_name, Email, Affiliation];
+      // FIXED: Include class assignment for students
+      console.log("Creating new student user with class assignment");
+      sql = "INSERT INTO Users (f_name, l_name, email, affiliation, class) VALUES (?, ?, ?, ?, ?)";
+      params = [First_name, Last_name, Email, Affiliation, Class];
       
       console.log("Student SQL query:", sql);
       console.log("Student SQL params:", params);
@@ -1122,7 +1128,8 @@ app.post("/users", (req, res) => {
         First_name, 
         Last_name, 
         Email, 
-        Affiliation
+        Affiliation,
+        Class: Affiliation === 'student' ? Class : undefined
       };
       
       console.log("Sending successful response:", responseData);
@@ -1130,6 +1137,7 @@ app.post("/users", (req, res) => {
     });
   });
 });
+
 // Update the students endpoint to filter by class
 app.get("/students", async (req, res) => {
   const { class: classId } = req.query;
