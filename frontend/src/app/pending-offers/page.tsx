@@ -13,6 +13,14 @@ const OffersManagement = () => {
     group_id: number;
     candidate_id: number;
     status: 'pending' | 'accepted' | 'rejected';
+    candidate_name?: string; // Add optional candidate name field
+  }
+
+  interface Candidate {
+    id: number;
+    f_name: string;
+    l_name: string;
+    name?: string;
   }
 
   // General state
@@ -28,6 +36,34 @@ const OffersManagement = () => {
   const [pendingOffers, setPendingOffers] = useState<Offer[]>([]);
   const [acceptedOffers, setAcceptedOffers] = useState<Offer[]>([]);
   const [offersLoading, setOffersLoading] = useState(false);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+  // Function to fetch candidate names
+  const fetchCandidates = async (classId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/candidates-by-class/${classId}`);
+      if (response.ok) {
+        const candidatesData = await response.json();
+        const formattedCandidates = candidatesData.map((candidate: any) => ({
+          id: candidate.id || candidate.resume_id,
+          f_name: candidate.f_name,
+          l_name: candidate.l_name,
+          name: `${candidate.f_name} ${candidate.l_name}`
+        }));
+        setCandidates(formattedCandidates);
+        return formattedCandidates;
+      }
+    } catch (error) {
+      console.error('Error fetching candidates:', error);
+    }
+    return [];
+  };
+
+  // Function to get candidate name by ID
+  const getCandidateName = (candidateId: number, candidatesList: Candidate[]) => {
+    const candidate = candidatesList.find(c => c.id === candidateId);
+    return candidate ? candidate.name : `Candidate ${candidateId}`;
+  };
 
   const refreshOffers = async (classId?: string) => {
     const targetClassId = classId || offersTabClass;
@@ -39,18 +75,29 @@ const OffersManagement = () => {
     setOffersLoading(true);
     try {
       console.log(`Refreshing offers for class ${targetClassId}`);
-      const response = await fetch(`${API_BASE_URL}/offers/class/${targetClassId}`);
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch offers: ${response.statusText}`);
+      // Fetch both offers and candidates
+      const [offersResponse, candidatesData] = await Promise.all([
+        fetch(`${API_BASE_URL}/offers/class/${targetClassId}`),
+        fetchCandidates(targetClassId)
+      ]);
+      
+      if (!offersResponse.ok) {
+        throw new Error(`Failed to fetch offers: ${offersResponse.statusText}`);
       }
 
-      const offers: Offer[] = await response.json();
+      const offers: Offer[] = await offersResponse.json();
       console.log("Fetched offers:", offers);
 
+      // Add candidate names to offers
+      const offersWithNames = offers.map(offer => ({
+        ...offer,
+        candidate_name: getCandidateName(offer.candidate_id, candidatesData)
+      }));
+
       // Filter offers by status
-      const pending = offers.filter(offer => offer.status === 'pending');
-      const accepted = offers.filter(offer => offer.status === 'accepted');
+      const pending = offersWithNames.filter(offer => offer.status === 'pending');
+      const accepted = offersWithNames.filter(offer => offer.status === 'accepted');
       
       setPendingOffers(pending);
       setAcceptedOffers(accepted);
@@ -129,7 +176,7 @@ const OffersManagement = () => {
   }, [user, offersTabClass]);
 
   // Updated respond to offer function
-  const respondToOffer = async (offerId: number, classId: number, groupId: number, candidateId: number, accepted: boolean) => {
+  const respondToOffer = async (offerId: number, classId: number, groupId: number, candidateId: number, accepted: boolean, candidateName?: string) => {
     try {
       console.log(`Responding to offer ${offerId}: ${accepted ? 'ACCEPT' : 'REJECT'}`);
       
@@ -159,9 +206,10 @@ const OffersManagement = () => {
       // Refresh offers to show updated status
       await refreshOffers();
 
+      const candidateDisplayName = candidateName || `Candidate ${candidateId}`;
       setPopup({
         headline: "Success",
-        message: `Offer ${accepted ? 'accepted' : 'rejected'} successfully!`
+        message: `Offer for ${candidateDisplayName} ${accepted ? 'accepted' : 'rejected'} successfully!`
       });
 
     } catch (error) {
@@ -290,10 +338,10 @@ const OffersManagement = () => {
                     </span>
                   </h3>
                   {pendingOffers.length > 0 ? (
-                    <div className="flex flex-col items-center w-full"> {/* Changed: Added flex flex-col items-center w-full */}
+                    <div className="flex flex-col items-center w-full">
                       {pendingOffers.length === 1 ? (
                         // Single offer - centered
-                        <div className="w-full max-w-sm"> {/* Changed: Single offer gets max-w-sm and centered */}
+                        <div className="w-full max-w-sm">
                           {pendingOffers.map((offer) => (
                             <div
                               key={offer.id}
@@ -301,7 +349,7 @@ const OffersManagement = () => {
                             >
                               <div className="mb-3 text-center">
                                 <h4 className="text-base font-semibold text-navy">
-                                  Group {offer.group_id} → Candidate {offer.candidate_id}
+                                  Group {offer.group_id} → {offer.candidate_name}
                                 </h4>
                                 <p className="text-xs text-gray-600 mt-1">
                                   Offer ID: {offer.id} | Status: {offer.status}
@@ -311,13 +359,13 @@ const OffersManagement = () => {
                               {/* Action Buttons */}
                               <div className="flex space-x-2">
                                 <button
-                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true)}
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true, offer.candidate_name)}
                                   className="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
                                 >
                                   Accept
                                 </button>
                                 <button
-                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false)}
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false, offer.candidate_name)}
                                   className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
                                 >
                                   Reject
@@ -328,7 +376,7 @@ const OffersManagement = () => {
                         </div>
                       ) : (
                         // Multiple offers - grid layout
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl"> {/* Changed: Responsive grid with max-w-2xl */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
                           {pendingOffers.map((offer) => (
                             <div
                               key={offer.id}
@@ -336,7 +384,7 @@ const OffersManagement = () => {
                             >
                               <div className="mb-3 text-center">
                                 <h4 className="text-base font-semibold text-navy">
-                                  Group {offer.group_id} → Candidate {offer.candidate_id}
+                                  Group {offer.group_id} → {offer.candidate_name}
                                 </h4>
                                 <p className="text-xs text-gray-600 mt-1">
                                   Offer ID: {offer.id} | Status: {offer.status}
@@ -346,13 +394,13 @@ const OffersManagement = () => {
                               {/* Action Buttons */}
                               <div className="flex space-x-2">
                                 <button
-                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true)}
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, true, offer.candidate_name)}
                                   className="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
                                 >
                                   Accept
                                 </button>
                                 <button
-                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false)}
+                                  onClick={() => respondToOffer(offer.id, offer.class_id, offer.group_id, offer.candidate_id, false, offer.candidate_name)}
                                   className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md font-medium transition-colors text-sm"
                                 >
                                   Reject
@@ -382,7 +430,7 @@ const OffersManagement = () => {
                   </h3>
                   {acceptedOffers.length > 0 ? (
                     <div className="flex justify-center"> 
-                      <div className="space-y-2 w-full max-w-2xl"> {/* Changed: Reduced max-w-3xl to max-w-2xl for consistency */}
+                      <div className="space-y-2 w-full max-w-2xl">
                         {acceptedOffers.map((offer) => (
                           <div
                             key={offer.id}
@@ -390,7 +438,7 @@ const OffersManagement = () => {
                           >
                             <div className="text-center flex-1"> 
                               <h4 className="font-semibold text-green-800 text-base">
-                                Group {offer.group_id} → Candidate {offer.candidate_id}
+                                Group {offer.group_id} → {offer.candidate_name}
                               </h4>
                               <p className="text-xs text-green-600 mt-1">
                                 Status: Accepted | Offer ID: {offer.id}
