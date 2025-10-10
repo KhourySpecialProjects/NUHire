@@ -1081,7 +1081,7 @@ app.post("/users", (req, res) => {
 
     console.log("User does not exist, creating new user");
 
-    // Create user without job_des field
+    // Create user - UPDATED: Allow students to register without group assignment
     let sql, params;
     if (Affiliation === 'admin') {
       console.log("Creating new admin user");
@@ -1091,12 +1091,17 @@ app.post("/users", (req, res) => {
       console.log("Admin SQL query:", sql);
       console.log("Admin SQL params:", params);
       
+    } else if (Affiliation === 'student') {
+      // FIXED: Allow students to register without group assignment
+      console.log("Creating new student user without group assignment");
+      sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
+      params = [First_name, Last_name, Email, Affiliation];
+      
+      console.log("Student SQL query:", sql);
+      console.log("Student SQL params:", params);
     } else {
-      // For students, they need to be assigned to a group first
-      console.log("❌ Student registration blocked - needs group assignment first");
-      return res.status(400).json({ 
-        message: "Students must be assigned to a group by their instructor before registering." 
-      });
+      console.log("❌ Invalid affiliation:", Affiliation);
+      return res.status(400).json({ message: "Invalid affiliation" });
     }
     
     console.log("Executing user creation query...");
@@ -1125,7 +1130,6 @@ app.post("/users", (req, res) => {
     });
   });
 });
-
 // Update the students endpoint to filter by class
 app.get("/students", async (req, res) => {
   const { class: classId } = req.query;
