@@ -920,16 +920,15 @@ app.get("/auth/keycloak/callback",
               return res.redirect(`${FRONT_URL}/about`);
             }
           } else {
-            // User doesn't have a group, send to waiting page
             const firstName = encodeURIComponent(user.f_name || '');
             const lastName = encodeURIComponent(user.l_name || '');
-          return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
+            return res.redirect(`${FRONT_URL}/waitingGroup`);
           }
         }
       } else {
+        console.log("User not found in database, redirecting to signup form");
         const firstName = encodeURIComponent(user.f_name || '');
         const lastName = encodeURIComponent(user.l_name || '');
-        console.log(`Redirecting new user to signup: ${email} (${firstName} ${lastName})`);
         return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
       }
     });
