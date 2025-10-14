@@ -61,12 +61,11 @@ export default function WaitingGroupPage() {
     if (!user?.class_id) return;
 
     // Listen for group assignment authorization from teacher
-    socket.on('allowGroupAssignment', (data) => {
-      console.log('Received group assignment authorization:', data);
+    socket.on('allowGroupAssignment', ({classId, message}) => {
+      console.log('Received group assignment authorization:', );
       
       // Check if this authorization is for the current user's class
-      if (data.classId === user.class_id) {
-        console.log("inside groupAssignmetOpened listener", data);
+      if (classId === user.class_id) {
 
         setGroupAssignmentAllowed(true);
         setPopup({
@@ -82,10 +81,8 @@ export default function WaitingGroupPage() {
     });
 
     // Listen for any other relevant events
-    socket.on('groupAssignmentClosed', (data) => {
-      console.log("inside groupAssignmentClosed listener", data);
-
-      if (data.classId === user.class_id) {
+    socket.on('groupAssignmentClosed', ({classId, message}) => {
+      if (classId === user.class_id) {
         setGroupAssignmentAllowed(false);
         setPopup({
           headline: "Group Assignment Closed",

@@ -2154,21 +2154,54 @@ app.post("/teacher/update-groups", (req, res) => {
   if (!crn || !nom_groups) {
     return res.status(400).json({ error: "crn and nom_groups are required" });
   }
-  console.log(crn, nom_groups);
-  db.query(
-    "UPDATE Moderator SET nom_groups = ? WHERE crn = ?",
-    [nom_groups, crn],
-    (err, result) => {
-      if (err) {
-        console.error("Database error in /moderator-crns/update-groups:", err);
-        return res.status(500).json({ error: err.message });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "CRN not found" });
-      }
-      res.json({ success: true, crn, nom_groups });
+  
+  console.log('Updating groups for CRN:', crn, 'to', nom_groups, 'groups');
+
+  // First, check if groups already exist for this CRN
+  db.query('SELECT COUNT(*) as group_count FROM `Groups` WHERE class_id = ?', [crn], (err, result) => {
+    if (err) {
+      console.error('Error checking existing groups:', err);
+      return res.status(500).json({ error: 'Failed to check existing groups' });
     }
-  );
+
+    const existingGroupCount = result[0].group_count;
+    console.log(`Found ${existingGroupCount} existing groups for CRN ${crn}`);
+
+    if (existingGroupCount > 0) {
+      console.log(`Groups already exist for CRN ${crn}. Cannot update group count.`);
+      return res.status(400).json({ 
+        error: "Groups already exist for this class. Cannot update group count after groups have been created.",
+        existing_groups: existingGroupCount,
+        crn: crn
+      });
+    }
+
+    // No existing groups found, proceed with updating the Moderator table
+    console.log(`No existing groups found for CRN ${crn}. Proceeding with update.`);
+    
+    db.query(
+      "UPDATE Moderator SET nom_groups = ? WHERE crn = ?",
+      [nom_groups, crn],
+      (err, result) => {
+        if (err) {
+          console.error("Database error in /teacher/update-groups:", err);
+          return res.status(500).json({ error: err.message });
+        }
+        
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: "CRN not found" });
+        }
+        
+        console.log(`Successfully updated group count for CRN ${crn} to ${nom_groups} groups`);
+        res.json({ 
+          success: true, 
+          crn, 
+          nom_groups,
+          message: `Group count updated to ${nom_groups} for CRN ${crn}`
+        });
+      }
+    );
+  });
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
