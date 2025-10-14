@@ -541,6 +541,10 @@ io.on("connection", (socket) => {
     socket.join(group_id);
   });
 
+    socket.on('joinClass', (classId) => {
+    socket.join(`class_${classId}`);
+  });
+
   // Listen for the "check" event, which is emitted by the client when a checkbox is checked or unchecked
   // The server emits the checkbox update to all clients in the specified group room    
   // Listen for the "check" event
@@ -825,7 +829,7 @@ io.on("connection", (socket) => {
     console.log('Teacher allowing group assignment for class:', classId);
     
     // Broadcast to all students in the specific class
-    io.emit('allowGroupAssignment', {
+    io.to(`class_${classId}`).emit('allowGroupAssignment', {
       classId: classId,
       message: message
     });
@@ -837,7 +841,7 @@ io.on("connection", (socket) => {
     console.log('Teacher closing group assignment for class:', classId);
     
     // Broadcast to all students in the specific class
-    io.emit('groupAssignmentClosed', {
+    io.to(`class_${classId}`).emit('groupAssignmentClosed', {
       classId: classId,
       message: message
     });

@@ -60,6 +60,10 @@ export default function WaitingGroupPage() {
   useEffect(() => {
     if (!user?.class_id) return;
 
+    socket.emit('joinClass', { 
+      classId: user.class_id,
+    });
+
     // Listen for group assignment authorization from teacher
     socket.on('allowGroupAssignment', ({classId, message}) => {
       console.log('Received group assignment authorization:', );
