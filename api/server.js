@@ -921,7 +921,7 @@ app.get("/auth/keycloak/callback",
             }
           } else {
             // User doesn't have a group, send to waiting page
-            return res.redirect(`${FRONT_URL}/waitingGroup`);
+            return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(dbUser.First_name || '')}&lastName=${encodeURIComponent(dbUser.Last_name || '')}`);
           }
         }
       } else {

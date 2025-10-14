@@ -60,8 +60,6 @@ export default function WaitingGroupPage() {
   useEffect(() => {
     if (!user?.class_id) return;
 
-    const socket = io(API_BASE_URL);
-
     // Listen for group assignment authorization from teacher
     socket.on('allowGroupAssignment', (data) => {
       console.log('Received group assignment authorization:', data);
@@ -86,7 +84,7 @@ export default function WaitingGroupPage() {
     // Listen for any other relevant events
     socket.on('groupAssignmentClosed', (data) => {
       console.log("inside groupAssignmentClosed listener", data);
-      
+
       if (data.classId === user.class_id) {
         setGroupAssignmentAllowed(false);
         setPopup({
