@@ -65,10 +65,7 @@ export default function WaitingGroupPage() {
     console.log("✅ Setting up socket connection for class:", user.class);
 
     // FIXED: Create socket inside useEffect
-    const socket = io(API_BASE_URL, {
-      transports: ['websocket', 'polling'],
-      timeout: 5000
-    });
+    const socket = io(API_BASE_URL);
 
     // Handle connection
     socket.on('connect', () => {
@@ -79,7 +76,7 @@ export default function WaitingGroupPage() {
       socket.emit('joinClass', { 
         classId: user.class,
       });
-      console.log('📡 Emitted joinClass for class:', user.class);
+      console.log('➡️ Emitted joinClass for class: class_user', user.class);
     });
 
     socket.on('disconnect', () => {

@@ -541,7 +541,8 @@ io.on("connection", (socket) => {
     socket.join(group_id);
   });
 
-    socket.on('joinClass', (classId) => {
+  socket.on('joinClass', (classId) => {
+    console.log(`Socket ${socket.id} joining class room: class_${classId}`);
     socket.join(`class_${classId}`);
   });
 
