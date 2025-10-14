@@ -12,7 +12,7 @@ export default function WaitingGroupPage() {
     f_name: string;
     l_name: string;
     email: string;
-    class_id?: number;
+    class?: number; // FIXED: Use 'class' instead of 'class_id'
     group_id?: number;
   }
 
@@ -20,8 +20,8 @@ export default function WaitingGroupPage() {
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [groupAssignmentAllowed, setGroupAssignmentAllowed] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false); // Added for debugging
   const router = useRouter();
-  const socket = io(API_BASE_URL);
 
   // Fetch user information
   useEffect(() => {
@@ -29,6 +29,8 @@ export default function WaitingGroupPage() {
       try {
         const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await response.json();
+
+        console.log("Raw user data from API:", userData); // DEBUG
 
         if (response.ok) {
           setUser(userData);
@@ -52,51 +54,85 @@ export default function WaitingGroupPage() {
     fetchUser();
   }, [router]);
 
-  useEffect(() => {
-    console.log("User data:", user);
-  }, [user]);
-
   // Socket connection for listening to teacher's group assignment authorization
   useEffect(() => {
-    if (!user?.class_id) return;
+    // FIXED: Check for 'class' instead of 'class_id'
+    if (!user?.class) {
+      console.log("❌ No class found for user:", user);
+      return;
+    }
 
-    socket.emit('joinClass', { 
-      classId: user.class_id,
+    console.log("✅ Setting up socket connection for class:", user.class);
+
+    // FIXED: Create socket inside useEffect
+    const socket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'],
+      timeout: 5000
+    });
+
+    // Handle connection
+    socket.on('connect', () => {
+      console.log('✅ Connected to socket server, ID:', socket.id);
+      setSocketConnected(true);
+      
+      // FIXED: Join class room after connection
+      socket.emit('joinClass', { 
+        classId: user.class,
+        userEmail: user.email 
+      });
+      console.log('📡 Emitted joinClass for class:', user.class);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ Disconnected from socket server');
+      setSocketConnected(false);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('❌ Socket connection error:', error);
+      setSocketConnected(false);
     });
 
     // Listen for group assignment authorization from teacher
-    socket.on('allowGroupAssignment', ({classId, message}) => {
-      console.log('Received group assignment authorization:', );
+    socket.on('allowGroupAssignment', (data) => {
+      console.log('🎉 Received allowGroupAssignment event:', data);
+      console.log('User class:', user.class, 'Event class:', data.classId);
       
-      // Check if this authorization is for the current user's class
-      if (classId === user.class_id) {
-
+      // FIXED: Compare with user.class instead of user.class_id
+      if (data.classId === user.class) {
+        console.log('✅ Class match! Enabling group assignment');
         setGroupAssignmentAllowed(true);
         setPopup({
           headline: "Group Assignment Available!",
-          message: "Your teacher has enabled group selection. You can now choose your group!"
+          message: data.message
         });
         
         // Redirect to group assignment page after a short delay
         setTimeout(() => {
+          console.log('🔄 Redirecting to assignGroup');
           router.push("/assignGroup");
         }, 3000);
+      } else {
+        console.log('❌ Class mismatch, ignoring event');
       }
     });
 
     // Listen for any other relevant events
-    socket.on('groupAssignmentClosed', ({classId, message}) => {
-      if (classId === user.class_id) {
+    socket.on('groupAssignmentClosed', (data) => {
+      console.log('🚫 Received groupAssignmentClosed event:', data);
+      
+      if (data.classId === user.class) {
         setGroupAssignmentAllowed(false);
         setPopup({
           headline: "Group Assignment Closed",
-          message: "The teacher has closed group selection for now."
+          message: data.message
         });
       }
     });
 
-    // Cleanup socket connection
+    // FIXED: Cleanup socket connection properly
     return () => {
+      console.log('🧹 Cleaning up socket connection');
       socket.disconnect();
     };
   }, [user, router]);
@@ -136,6 +172,15 @@ export default function WaitingGroupPage() {
       <div className="z-10 flex flex-col items-center justify-center relative flex-grow p-8">
         <div className="max-w-2xl w-full text-center">
           
+          {/* DEBUG PANEL - Remove in production */}
+          <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4 text-sm text-left">
+            <h4 className="font-semibold mb-2">🐛 Debug Info:</h4>
+            <p>User Class: {user.class || 'Not assigned'}</p>
+            <p>Socket Connected: {socketConnected ? '✅ Yes' : '❌ No'}</p>
+            <p>Group Assignment Allowed: {groupAssignmentAllowed ? '✅ Yes' : '❌ No'}</p>
+            <p>User Email: {user.email}</p>
+          </div>
+
           {!groupAssignmentAllowed ? (
             // Waiting State
             <>
@@ -147,14 +192,25 @@ export default function WaitingGroupPage() {
                 <p className="text-xl text-northeasternBlack mb-4">
                   Hello, {user.f_name} {user.l_name}!
                 </p>
-                {user.class_id && (
+                {/* FIXED: Use user.class instead of user.class_id */}
+                {user.class && (
                   <p className="text-lg text-navy mb-6">
-                    Class CRN: {user.class_id}
+                    Class CRN: {user.class}
                   </p>
                 )}
               </div>
 
-              {/* Waiting Animation and Message */}
+              {/* Socket Connection Status */}
+              <div className="mb-4">
+                <div className="flex items-center justify-center space-x-2 text-sm">
+                  <div className={`w-3 h-3 rounded-full ${socketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                  <span className={socketConnected ? 'text-green-700' : 'text-red-700'}>
+                    {socketConnected ? 'Connected to server' : 'Connecting to server...'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rest of your existing UI... */}
               <div className="bg-white rounded-lg shadow-lg border-4 border-northeasternBlack p-8 mb-8">
                 <div className="flex flex-col items-center space-y-6">
                   {/* Animated waiting icon */}
