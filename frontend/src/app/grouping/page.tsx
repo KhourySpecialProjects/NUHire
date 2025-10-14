@@ -335,7 +335,6 @@ const Grouping = () => {
         socket.emit('allowGroupAssignment', {
           classId: parseInt(createGroupsClass),
           message: 'Your teacher has enabled group selection. You can now choose your group!',
-          teacherEmail: user?.email
         });
         
         setPopup({ 
@@ -387,7 +386,6 @@ const Grouping = () => {
         socket.emit('groupAssignmentClosed', {
           classId: parseInt(createGroupsClass),
           message: 'Group assignment has been closed by your teacher.',
-          teacherEmail: user?.email
         });
         
         setPopup({ 

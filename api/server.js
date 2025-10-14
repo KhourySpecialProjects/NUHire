@@ -821,7 +821,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on('allowGroupAssignment', (data) => {
+  socket.on('allowGroupAssignment', ({classId, message}) => {
     console.log('Teacher allowing group assignment for class:', data.classId);
     
     // Broadcast to all students in the specific class
@@ -833,7 +833,7 @@ io.on("connection", (socket) => {
   });
 
   // Teacher closes group assignment
-  socket.on('groupAssignmentClosed', (data) => {
+  socket.on('groupAssignmentClosed', ({classId, message}) => {
     console.log('Teacher closing group assignment for class:', data.classId);
     
     // Broadcast to all students in the specific class
