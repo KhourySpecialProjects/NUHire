@@ -20,8 +20,8 @@ export default function WaitingGroupPage() {
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [groupAssignmentAllowed, setGroupAssignmentAllowed] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
   const router = useRouter();
+  const socket = io(API_BASE_URL);
 
   // Fetch user information
   useEffect(() => {
@@ -61,19 +61,6 @@ export default function WaitingGroupPage() {
     if (!user?.class_id) return;
 
     const socket = io(API_BASE_URL);
-
-    socket.on('connect', () => {
-      console.log('Connected to socket server');
-      setSocketConnected(true);
-      
-      // Join the class room to receive class-specific events
-      socket.emit('joinClass', { classId: user.class_id });
-    });
-
-    socket.on('disconnect', () => {
-      console.log('Disconnected from socket server');
-      setSocketConnected(false);
-    });
 
     // Listen for group assignment authorization from teacher
     socket.on('allowGroupAssignment', (data) => {
@@ -185,14 +172,6 @@ export default function WaitingGroupPage() {
                     <p className="text-md text-gray-600">
                       Please wait while your teacher prepares the group assignment process...
                     </p>
-                  </div>
-
-                  {/* Socket connection status */}
-                  <div className="flex items-center space-x-2 text-sm">
-                    <div className={`w-3 h-3 rounded-full ${socketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                    <span className={socketConnected ? 'text-green-700' : 'text-red-700'}>
-                      {socketConnected ? 'Connected to server' : 'Connecting to server...'}
-                    </span>
                   </div>
                 </div>
               </div>

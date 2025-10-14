@@ -1045,7 +1045,7 @@ app.get("/users/:id", (req, res) => {
 
 // post route for creating a new user, which checks if the user already exists in the database and inserts a new user record if not
 app.post("/users", (req, res) => {
-  const { First_name, Last_name, Email, Affiliation, Class } = req.body; // ADDED: Class field
+  const { First_name, Last_name, Email, Affiliation, Class } = req.body; 
 
   console.log("=== POST /users endpoint hit ===");
   console.log("Request body:", { First_name, Last_name, Email, Affiliation, Class });
