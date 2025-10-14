@@ -829,7 +829,7 @@ io.on("connection", (socket) => {
     console.log('Teacher allowing group assignment for class:', classId);
     
     // Broadcast to all students in the specific class
-    io.to(`class_${classId}`).emit('allowGroupAssignment', {
+    io.to(`class_${classId}`).emit('allowGroupAssignmentStudent', {
       classId: classId,
       message: message
     });
@@ -841,7 +841,7 @@ io.on("connection", (socket) => {
     console.log('Teacher closing group assignment for class:', classId);
     
     // Broadcast to all students in the specific class
-    io.to(`class_${classId}`).emit('groupAssignmentClosed', {
+    io.to(`class_${classId}`).emit('groupAssignmentClosedStudent', {
       classId: classId,
       message: message
     });

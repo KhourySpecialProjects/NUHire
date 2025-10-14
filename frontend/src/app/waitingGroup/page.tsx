@@ -93,7 +93,7 @@ export default function WaitingGroupPage() {
     });
 
     // Listen for group assignment authorization from teacher
-    socket.on('allowGroupAssignment', (data) => {
+    socket.on('allowGroupAssignmentStudent', (data) => {
       console.log('🎉 Received allowGroupAssignment event:', data);
       console.log('User class:', user.class, 'Event class:', data.classId);
       
@@ -117,7 +117,7 @@ export default function WaitingGroupPage() {
     });
 
     // Listen for any other relevant events
-    socket.on('groupAssignmentClosed', (data) => {
+    socket.on('groupAssignmentClosedStudent', (data) => {
       console.log('🚫 Received groupAssignmentClosed event:', data);
       
       if (data.classId === user.class) {
