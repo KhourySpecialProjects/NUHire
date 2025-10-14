@@ -11,7 +11,6 @@ import Popup from "../components/popup";
 interface ModeratorInfo {
   id: number;
   crn: number;
-  nom_groups: number;
   admin_email: string;
 }
 
@@ -19,7 +18,7 @@ const ModDashboard = () => {
   const [info, setInfo] = useState<ModeratorInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-  const [form, setForm] = useState({ admin_email: "", crn: "", nom_groups: "" });
+  const [form, setForm] = useState({ admin_email: "", crn: "" }); // REMOVED: nom_groups
   const [submitting, setSubmitting] = useState(false);
   const [deletingCRN, setDeletingCRN] = useState<number | null>(null);
 
@@ -58,14 +57,14 @@ const ModDashboard = () => {
         body: JSON.stringify({
           admin_email: form.admin_email,
           crn: Number(form.crn),
-          nom_groups: Number(form.nom_groups),
+          // REMOVED: nom_groups: Number(form.nom_groups),
         }),
       });
       if (res.status === 409) {
         setPopup({ headline: "Duplicate", message: "This CRN already exists." });
       } else if (res.ok) {
-        setForm({ admin_email: "", crn: "", nom_groups: "" });
-        console.log("setting sucess popup");
+        setForm({ admin_email: "", crn: "" }); // REMOVED: nom_groups: ""
+        console.log("setting success popup");
         setPopup({ headline: "Success", message: "Class added!" });
         socket.emit("moderatorClassAdded", {
             admin_email: form.admin_email,
@@ -145,7 +144,7 @@ const ModDashboard = () => {
                   >
                     <div>
                       <div className="font-bold text-northeasternRed">CRN: {i.crn}</div>
-                      <div className="text-navy text-sm">Groups: {i.nom_groups}</div>
+                      {/* REMOVED: Groups: {i.nom_groups} */}
                       <div className="text-navy text-sm">Admin: {i.admin_email}</div>
                     </div>
                     <button
@@ -183,15 +182,7 @@ const ModDashboard = () => {
                 className="border p-2 rounded"
                 required
               />
-              <input
-                type="number"
-                name="nom_groups"
-                placeholder="Number of Groups"
-                value={form.nom_groups}
-                onChange={handleFormChange}
-                className="border p-2 rounded"
-                required
-              />
+              {/* REMOVED: Number of Groups input field */}
               <button
                 type="submit"
                 className="bg-navy text-white py-2 rounded hover:bg-navy/80 transition"
@@ -204,21 +195,15 @@ const ModDashboard = () => {
         </div>
       </div>
       </div>
+      {/* REMOVED: Duplicate popup - keeping only one */}
       {popup && (
-              <Popup
-                headline={popup.headline}
-                message={popup.message}
-                onDismiss={() => setPopup(null)} 
-              />
-            )}
+        <Popup
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)} 
+        />
+      )}
       <Footer />
-      {popup && (
-                <Popup
-                  headline={popup.headline}
-                  message={popup.message}
-                  onDismiss={() => setPopup(null)}
-                />
-              )}
     </div>
   );
 };

@@ -1941,13 +1941,13 @@ app.post('/moderator-login', (req, res) => {
 //Moderator table
 
 app.post("/moderator-crns", (req, res) => {
-  const { admin_email, crn, nom_groups } = req.body;
-  if (!admin_email || !crn || !nom_groups) {
-    return res.status(400).json({ error: "admin_email, crn, and nom_groups are required" });
+  const { admin_email, crn } = req.body;
+  if (!admin_email || !crn) {
+    return res.status(400).json({ error: "admin_email and nom_groups are required" });
   }
   db.query(
-    "INSERT INTO Moderator (admin_email, crn, nom_groups) VALUES (?, ?, ?)",
-    [admin_email, crn, nom_groups],
+    "INSERT INTO Moderator (admin_email, crn) VALUES (?, ?)",
+    [admin_email, crn],
     (err, result) => {
       if (err) {
         console.log("Database error:", err);
@@ -1956,10 +1956,10 @@ app.post("/moderator-crns", (req, res) => {
         }
         return res.status(500).json({ error: err.message });
       }
-      res.status(201).json({ admin_email, crn, nom_groups });
+      res.status(201).json({ admin_email, crn });
     }
   );
-  console.log(`Added CRN ${crn} for admin ${admin_email} with ${nom_groups} groups`);
+  console.log(`Added CRN ${crn} for admin ${admin_email}`);
 });
 
 app.get("/moderator-crns", (req, res) => {

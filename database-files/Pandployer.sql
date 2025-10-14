@@ -178,7 +178,6 @@ CREATE TABLE `Moderator` (
   `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL,
-  `nom_groups` int NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `crn_UNIQUE` (`crn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
