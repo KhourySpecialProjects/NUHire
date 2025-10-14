@@ -78,7 +78,6 @@ export default function WaitingGroupPage() {
       // FIXED: Join class room after connection
       socket.emit('joinClass', { 
         classId: user.class,
-        userEmail: user.email 
       });
       console.log('📡 Emitted joinClass for class:', user.class);
     });
