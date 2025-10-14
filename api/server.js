@@ -822,24 +822,24 @@ io.on("connection", (socket) => {
   });
 
   socket.on('allowGroupAssignment', ({classId, message}) => {
-    console.log('Teacher allowing group assignment for class:', data.classId);
+    console.log('Teacher allowing group assignment for class:', classId);
     
     // Broadcast to all students in the specific class
     io.emit('allowGroupAssignment', {
-      classId: data.classId,
-      message: data.message
+      classId: classId,
+      message: message
     });
 
   });
 
   // Teacher closes group assignment
   socket.on('groupAssignmentClosed', ({classId, message}) => {
-    console.log('Teacher closing group assignment for class:', data.classId);
+    console.log('Teacher closing group assignment for class:', classId);
     
     // Broadcast to all students in the specific class
     io.emit('groupAssignmentClosed', {
-      classId: data.classId,
-      message: data.message
+      classId: classId,
+      message: message
     });
   });
 
