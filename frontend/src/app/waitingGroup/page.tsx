@@ -93,17 +93,17 @@ export default function WaitingGroupPage() {
     });
 
     // Listen for group assignment authorization from teacher
-    socket.on('allowGroupAssignmentStudent', (data) => {
-      console.log('🎉 Received allowGroupAssignment event:', data);
-      console.log('User class:', user.class, 'Event class:', data.classId);
+    socket.on('allowGroupAssignmentStudent', ({classId, message}) => {
+      console.log('🎉 Received allowGroupAssignment event:', );
+      console.log('User class:', user.class, 'Event class:', classId);
       
       // FIXED: Compare with user.class instead of user.class_id
-      if (data.classId === user.class) {
+      if (classId === user.class) {
         console.log('✅ Class match! Enabling group assignment');
         setGroupAssignmentAllowed(true);
         setPopup({
           headline: "Group Assignment Available!",
-          message: data.message
+          message: message
         });
         
         // Redirect to group assignment page after a short delay
@@ -117,14 +117,14 @@ export default function WaitingGroupPage() {
     });
 
     // Listen for any other relevant events
-    socket.on('groupAssignmentClosedStudent', (data) => {
-      console.log('🚫 Received groupAssignmentClosed event:', data);
+    socket.on('groupAssignmentClosedStudent', ({classId, message}) => {
+      console.log('🚫 Received groupAssignmentClosed event:', );
       
-      if (data.classId === user.class) {
+      if (classId === user.class) {
         setGroupAssignmentAllowed(false);
         setPopup({
           headline: "Group Assignment Closed",
-          message: data.message
+          message: message
         });
       }
     });
