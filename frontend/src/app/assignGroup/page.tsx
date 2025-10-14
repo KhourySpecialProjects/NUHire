@@ -6,12 +6,12 @@ import Image from "next/image";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
 
-export default function WaitingGroupPage() {
+export default function AssignGroupPage() { // FIXED: Changed function name
   interface User {
     f_name: string;
     l_name: string;
     email: string;
-    class_id?: number;
+    class?: number; // FIXED: Use 'class' instead of 'class_id'
     group_id?: number;
   }
 
@@ -47,6 +47,8 @@ export default function WaitingGroupPage() {
         const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await response.json();
 
+        console.log("Raw user data from API:", userData); // DEBUG
+
         if (response.ok) {
           setUser(userData);
           // If user already has a group, redirect to dashboard
@@ -72,41 +74,39 @@ export default function WaitingGroupPage() {
   // Fetch class info and group slots
   useEffect(() => {
     const fetchGroupSlots = async () => {
-      if (!user?.class_id) return;
+      // FIXED: Use user.class instead of user.class_id
+      if (!user?.class) {
+        console.log("No class found for user:", user);
+        return;
+      }
 
       try {
+        console.log("Fetching group slots for class:", user.class); // DEBUG
+
+        // FIXED: Use the existing group-slots endpoint
+        const groupSlotsResponse = await fetch(`${API_BASE_URL}/group-slots/${user.class}`);
+        if (groupSlotsResponse.ok) {
+          const groupSlotsData = await groupSlotsResponse.json();
+          console.log("Group slots data:", groupSlotsData); // DEBUG
+          setGroupSlots(groupSlotsData);
+        } else {
+          console.error("Failed to fetch group slots");
+          setPopup({
+            headline: "Error",
+            message: "Failed to load group slots. Please try again."
+          });
+        }
+
         // Fetch class information
-        const classResponse = await fetch(`${API_BASE_URL}/class-info/${user.class_id}`);
+        const classResponse = await fetch(`${API_BASE_URL}/class-info/${user.class}`);
         if (classResponse.ok) {
           const classData = await classResponse.json();
+          console.log("Class info data:", classData); // DEBUG
           setClassInfo(classData);
-
-          // Fetch students in the class to build group slots
-          const studentsResponse = await fetch(`${API_BASE_URL}/students?class=${user.class_id}`);
-          if (studentsResponse.ok) {
-            const studentsData = await studentsResponse.json();
-            
-            // Build group slots data
-            const slotsData: GroupSlot[] = [];
-            const slotsPerGroup = classData.slots_per_group || 4; // Default to 4 if not specified
-
-            for (let i = 1; i <= classData.nom_groups; i++) {
-              const groupStudents = studentsData.filter((student: any) => student.group_id === i);
-              slotsData.push({
-                group_id: i,
-                occupied_slots: groupStudents.length,
-                max_slots: slotsPerGroup,
-                students: groupStudents.map((student: any) => ({
-                  f_name: student.f_name,
-                  l_name: student.l_name,
-                  email: student.email
-                }))
-              });
-            }
-
-            setGroupSlots(slotsData);
-          }
+        } else {
+          console.error("Failed to fetch class info");
         }
+
       } catch (error) {
         console.error("Error fetching group slots:", error);
         setPopup({
@@ -116,7 +116,7 @@ export default function WaitingGroupPage() {
       }
     };
 
-    if (user?.class_id) {
+    if (user?.class) {
       fetchGroupSlots();
     }
   }, [user]);
@@ -136,7 +136,7 @@ export default function WaitingGroupPage() {
         credentials: "include",
         body: JSON.stringify({
           email: user.email,
-          class_id: user.class_id,
+          class_id: user.class, // FIXED: Use user.class
           group_id: groupId,
         }),
       });
@@ -158,7 +158,7 @@ export default function WaitingGroupPage() {
         const errorData = await response.json();
         setPopup({
           headline: "Error",
-          message: errorData.message || "Failed to join group. Please try again."
+          message: errorData.error || "Failed to join group. Please try again."
         });
       }
     } catch (error) {
@@ -193,6 +193,22 @@ export default function WaitingGroupPage() {
     );
   }
 
+  // FIXED: Check for user.class instead of user.class_id
+  if (!user.class) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">No Class Assigned</h2>
+          <p className="text-lg text-gray-700">Please contact your teacher to be assigned to a class.</p>
+          <div className="mt-4 p-4 bg-gray-100 rounded text-left text-sm">
+            <p><strong>Debug Info:</strong></p>
+            <p>User: {JSON.stringify(user)}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
       {/* Background Slideshow */}
@@ -221,95 +237,110 @@ export default function WaitingGroupPage() {
             )}
           </div>
 
+          {/* Debug Info - Remove in production */}
+          <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4 text-sm text-left">
+            <h4 className="font-semibold mb-2">🐛 Debug Info:</h4>
+            <p>User Class: {user.class || 'Not assigned'}</p>
+            <p>Group Slots Length: {groupSlots.length}</p>
+            <p>Class Info: {classInfo ? JSON.stringify(classInfo) : 'Not loaded'}</p>
+            <p>Group Slots: {JSON.stringify(groupSlots)}</p>
+          </div>
+
           {/* Groups Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {groupSlots.map((group) => (
-              <div
-                key={group.group_id}
-                className="bg-white rounded-lg shadow-lg border-4 border-northeasternBlack p-6"
-              >
-                <div className="text-center mb-4">
-                  <h2 className="text-2xl font-bold text-northeasternRed mb-2">
-                    Group {group.group_id}
-                  </h2>
-                  <div className="flex justify-center items-center space-x-2">
-                    <span className="text-navy font-semibold">
-                      {group.occupied_slots}/{group.max_slots} slots filled
-                    </span>
-                    <div className="flex space-x-1">
-                      {Array.from({ length: group.max_slots }, (_, i) => (
-                        <div
-                          key={i}
-                          className={`w-3 h-3 rounded-full ${
-                            i < group.occupied_slots 
-                              ? 'bg-northeasternRed' 
-                              : 'bg-gray-300'
-                          }`}
-                        />
-                      ))}
+            {groupSlots.length > 0 ? (
+              groupSlots.map((group) => (
+                <div
+                  key={group.group_id}
+                  className="bg-white rounded-lg shadow-lg border-4 border-northeasternBlack p-6"
+                >
+                  <div className="text-center mb-4">
+                    <h2 className="text-2xl font-bold text-northeasternRed mb-2">
+                      Group {group.group_id}
+                    </h2>
+                    <div className="flex justify-center items-center space-x-2">
+                      <span className="text-navy font-semibold">
+                        {group.occupied_slots}/{group.max_slots} slots filled
+                      </span>
+                      <div className="flex space-x-1">
+                        {Array.from({ length: group.max_slots }, (_, i) => (
+                          <div
+                            key={i}
+                            className={`w-3 h-3 rounded-full ${
+                              i < group.occupied_slots 
+                                ? 'bg-northeasternRed' 
+                                : 'bg-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Current Members */}
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-navy mb-2">Current Members:</h3>
-                  {group.students.length > 0 ? (
-                    <ul className="space-y-1">
-                      {group.students.map((student, index) => (
-                        <li key={index} className="text-sm text-gray-700 bg-gray-100 p-2 rounded">
-                          {student.f_name} {student.l_name}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">No members yet</p>
-                  )}
-                </div>
-
-                {/* Available Slots */}
-                {group.occupied_slots < group.max_slots && (
+                  {/* Current Members */}
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-green-600 mb-2">
-                      Available Slots:
-                    </h3>
-                    <div className="space-y-1">
-                      {Array.from({ 
-                        length: group.max_slots - group.occupied_slots 
-                      }, (_, i) => (
-                        <div key={i} className="text-sm text-green-600 bg-green-50 p-2 rounded border-2 border-dashed border-green-300">
-                          Open Slot #{group.occupied_slots + i + 1}
-                        </div>
-                      ))}
-                    </div>
+                    <h3 className="text-lg font-semibold text-navy mb-2">Current Members:</h3>
+                    {group.students.length > 0 ? (
+                      <ul className="space-y-1">
+                        {group.students.map((student, index) => (
+                          <li key={index} className="text-sm text-gray-700 bg-gray-100 p-2 rounded">
+                            {student.f_name} {student.l_name}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No members yet</p>
+                    )}
                   </div>
-                )}
 
-                {/* Join Button */}
-                <div className="text-center">
-                  {group.occupied_slots < group.max_slots ? (
-                    <button
-                      onClick={() => joinGroup(group.group_id)}
-                      disabled={joining === group.group_id}
-                      className={`w-full py-3 px-4 rounded-md font-bold text-white transition ${
-                        joining === group.group_id
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-northeasternRed hover:bg-navy'
-                      }`}
-                    >
-                      {joining === group.group_id ? 'Joining...' : 'Join This Group'}
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full py-3 px-4 rounded-md font-bold text-white bg-gray-400 cursor-not-allowed"
-                    >
-                      Group Full
-                    </button>
+                  {/* Available Slots */}
+                  {group.occupied_slots < group.max_slots && (
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-green-600 mb-2">
+                        Available Slots:
+                      </h3>
+                      <div className="space-y-1">
+                        {Array.from({ 
+                          length: group.max_slots - group.occupied_slots 
+                        }, (_, i) => (
+                          <div key={i} className="text-sm text-green-600 bg-green-50 p-2 rounded border-2 border-dashed border-green-300">
+                            Open Slot #{group.occupied_slots + i + 1}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
+
+                  {/* Join Button */}
+                  <div className="text-center">
+                    {group.occupied_slots < group.max_slots ? (
+                      <button
+                        onClick={() => joinGroup(group.group_id)}
+                        disabled={joining === group.group_id}
+                        className={`w-full py-3 px-4 rounded-md font-bold text-white transition ${
+                          joining === group.group_id
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-northeasternRed hover:bg-navy'
+                        }`}
+                      >
+                        {joining === group.group_id ? 'Joining...' : 'Join This Group'}
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="w-full py-3 px-4 rounded-md font-bold text-white bg-gray-400 cursor-not-allowed"
+                      >
+                        Group Full
+                      </button>
+                    )}
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center">
+                <p className="text-lg text-gray-600">No groups available. Please contact your teacher.</p>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Instructions */}
