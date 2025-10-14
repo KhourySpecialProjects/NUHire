@@ -68,6 +68,8 @@ export default function WaitingGroupPage() {
       
       // Check if this authorization is for the current user's class
       if (data.classId === user.class_id) {
+        console.log("inside groupAssignmetOpened listener", data);
+
         setGroupAssignmentAllowed(true);
         setPopup({
           headline: "Group Assignment Available!",
@@ -83,6 +85,8 @@ export default function WaitingGroupPage() {
 
     // Listen for any other relevant events
     socket.on('groupAssignmentClosed', (data) => {
+      console.log("inside groupAssignmentClosed listener", data);
+      
       if (data.classId === user.class_id) {
         setGroupAssignmentAllowed(false);
         setPopup({
