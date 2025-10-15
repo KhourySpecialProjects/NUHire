@@ -190,6 +190,7 @@ export default function AssignGroupPage() {
         });
       }
       socket.emit("studentJoinedGroup", { class_id: user.class });
+      console.log("Emitted studentJoinedGroup event:", { class_id: user.class });
     } catch (error) {
       console.error("Error joining group:", error);
       setPopup({
