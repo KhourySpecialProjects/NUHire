@@ -146,7 +146,15 @@ export default function SignupDetails() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-sand font-rubik">
-      // Add this debug section right after your form
+      <div className="fixed inset-0 z-0">
+        <Slideshow />
+      </div>
+      <div className="fixed inset-0 bg-sand/80 z-5" />
+      <div className="w-full flex justify-center p-4 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-lg fixed top-0 z-20">
+        <h1 className="text-6xl font-extrabold mb-1 text-northeasternRed">NUHire</h1>
+      </div>
+      <div className="z-10" >
+              // Add this debug section right after your form
 {/* DEBUG PANEL - Remove in production */}
 <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-sm">
   <h4 className="font-semibold mb-2">🐛 Debug Info:</h4>
@@ -179,14 +187,6 @@ export default function SignupDetails() {
     Debug: Check Database
   </button>
 </div>
-      <div className="fixed inset-0 z-0">
-        <Slideshow />
-      </div>
-      <div className="fixed inset-0 bg-sand/80 z-5" />
-      <div className="w-full flex justify-center p-4 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-lg fixed top-0 z-20">
-        <h1 className="text-6xl font-extrabold mb-1 text-northeasternRed">NUHire</h1>
-      </div>
-      <div className="z-10" >
         <h1 className="text-3xl font-bold text-navy mb-6">Complete Your Signup</h1>
 
         <form onSubmit={handleSubmit} className="w-full max-w-md bg-navy shadow-lg rounded-lg p-6 flex flex-col gap-4">
