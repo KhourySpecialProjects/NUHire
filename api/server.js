@@ -2607,7 +2607,6 @@ app.get('/class-info/:classId', (req, res) => {
   const query = `
     SELECT 
       m.crn,
-      m.nom_groups,
       COALESCE(g.max_students, 4) as slots_per_group
     FROM Moderator m
     LEFT JOIN \`Groups\` g ON m.crn = g.class_id
