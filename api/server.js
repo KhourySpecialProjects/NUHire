@@ -2838,7 +2838,6 @@ app.get('/group-assignment-statuses', (req, res) => {
     SELECT 
       m.crn,
       m.admin_email,
-      m.nom_groups,
       COALESCE(gas.assigned, FALSE) as assignment_allowed,
     FROM Moderator m
     LEFT JOIN seenAssignGroup gas ON m.crn = gas.crn
