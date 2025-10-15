@@ -565,177 +565,177 @@ const Grouping = () => {
         <div className="flex-1 flex flex-col">
           <Tabs>
 
-{/* NEW TAB: Create Groups - First tab */}
-<div title="Create Groups">
-    <h2 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Create Groups</h2>
-    <p className="text-lg text-navy mb-6 text-center">
-      Set up groups for your class with specific capacity limits
-    </p>
-    
-    {/* Class Selection */}
-    <div className="mb-6">
-      <label className="block text-navy font-semibold mb-3 text-lg">
-        Select Class
-      </label>
-      <select
-        value={createGroupsClass}
-        onChange={handleCreateGroupsClassChange}
-        className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
-      >
-        <option value="">Choose a class...</option>
-        {classes.map(classItem => (
-          <option key={classItem.id} value={classItem.id}>
-            {classItem.name}
-          </option>
-        ))}
-      </select>
-      {classes.length === 0 && (
-        <p className="text-red-500 text-sm mt-2">
-          You have no assigned classes. Please contact the administrator.
-        </p>
-      )}
-    </div>
+          <div title="Create Groups">
+            <div className="overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
+              <h2 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Create Groups</h2>
+              <p className="text-lg text-navy mb-6 text-center">
+                Set up groups for your class with specific capacity limits
+              </p>
+              
+              {/* Class Selection */}
+              <div className="mb-6">
+                <label className="block text-navy font-semibold mb-3 text-lg">
+                  Select Class
+                </label>
+                <select
+                  value={createGroupsClass}
+                  onChange={handleCreateGroupsClassChange}
+                  className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
+                >
+                  <option value="">Choose a class...</option>
+                  {classes.map(classItem => (
+                    <option key={classItem.id} value={classItem.id}>
+                      {classItem.name}
+                    </option>
+                  ))}
+                </select>
+                {classes.length === 0 && (
+                  <p className="text-red-500 text-sm mt-2">
+                    You have no assigned classes. Please contact the administrator.
+                  </p>
+                )}
+              </div>
 
-    {/* Number of Groups */}
-    <div className="mb-6">
-      <label className="block text-navy font-semibold mb-3 text-lg">
-        Number of Groups
-      </label>
-      <input
-        type="number"
-        min={1}
-        max={20}
-        value={numGroups || ""}
-        onChange={(e) => setNumGroups(Number(e.target.value))}
-        placeholder="Enter number of groups (e.g., 5)"
-        className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
-      />
-      <p className="text-sm text-gray-600 mt-1">
-        How many groups do you want to create for this class?
-      </p>
-    </div>
+              {/* Number of Groups */}
+              <div className="mb-6">
+                <label className="block text-navy font-semibold mb-3 text-lg">
+                  Number of Groups
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={numGroups || ""}
+                  onChange={(e) => setNumGroups(Number(e.target.value))}
+                  placeholder="Enter number of groups (e.g., 5)"
+                  className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
+                />
+                <p className="text-sm text-gray-600 mt-1">
+                  How many groups do you want to create for this class?
+                </p>
+              </div>
 
-    {/* Max Students Per Group */}
-    <div className="mb-8">
-      <label className="block text-navy font-semibold mb-3 text-lg">
-        Maximum Students Per Group
-      </label>
-      <input
-        type="number"
-        min={1}
-        max={10}
-        value={maxStudentsPerGroup || ""}
-        onChange={(e) => setMaxStudentsPerGroup(Number(e.target.value))}
-        placeholder="Enter max students per group (e.g., 4)"
-        className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
-      />
-      <p className="text-sm text-gray-600 mt-1">
-        Maximum number of students that can join each group
-      </p>
-    </div>
+              {/* Max Students Per Group */}
+              <div className="mb-8">
+                <label className="block text-navy font-semibold mb-3 text-lg">
+                  Maximum Students Per Group
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={maxStudentsPerGroup || ""}
+                  onChange={(e) => setMaxStudentsPerGroup(Number(e.target.value))}
+                  placeholder="Enter max students per group (e.g., 4)"
+                  className="w-full p-3 border-2 border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-northeasternRed text-lg"
+                />
+                <p className="text-sm text-gray-600 mt-1">
+                  Maximum number of students that can join each group
+                </p>
+              </div>
 
-    {/* Summary */}
-    {createGroupsClass && numGroups && maxStudentsPerGroup && (
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="font-semibold text-navy mb-2">Summary:</h3>
-        <ul className="text-sm text-navy space-y-1">
-          <li>• Class: CRN {createGroupsClass}</li>
-          <li>• {numGroups} groups will be created</li>
-          <li>• Each group can have up to {maxStudentsPerGroup} students</li>
-          <li>• Total capacity: {(numGroups as number) * (maxStudentsPerGroup as number)} students</li>
-        </ul>
-      </div>
-    )}
+              {/* Summary */}
+              {createGroupsClass && numGroups && maxStudentsPerGroup && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-semibold text-navy mb-2">Summary:</h3>
+                  <ul className="text-sm text-navy space-y-1">
+                    <li>• Class: CRN {createGroupsClass}</li>
+                    <li>• {numGroups} groups will be created</li>
+                    <li>• Each group can have up to {maxStudentsPerGroup} students</li>
+                    <li>• Total capacity: {(numGroups as number) * (maxStudentsPerGroup as number)} students</li>
+                  </ul>
+                </div>
+              )}
 
-    {/* Action Buttons */}
-    <div className="flex flex-col space-y-4">
-      {/* Create Groups Button */}
-      <div className="flex justify-center">
-        <button
-          onClick={handleCreateGroups}
-          disabled={createGroupsLoading || !createGroupsClass || !numGroups || !maxStudentsPerGroup}
-          className={`px-8 py-4 rounded-md font-bold text-lg transition-all ${
-            createGroupsLoading || !createGroupsClass || !numGroups || !maxStudentsPerGroup
-              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-              : 'bg-northeasternRed text-white hover:bg-navy hover:shadow-lg transform hover:scale-105'
-          }`}
-        >
-          {createGroupsLoading ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin"></div>
-              <span>Creating Groups...</span>
+              {/* Action Buttons */}
+              <div className="flex flex-col space-y-4">
+                {/* Create Groups Button */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleCreateGroups}
+                    disabled={createGroupsLoading || !createGroupsClass || !numGroups || !maxStudentsPerGroup}
+                    className={`px-8 py-4 rounded-md font-bold text-lg transition-all ${
+                      createGroupsLoading || !createGroupsClass || !numGroups || !maxStudentsPerGroup
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-northeasternRed text-white hover:bg-navy hover:shadow-lg transform hover:scale-105'
+                    }`}
+                  >
+                    {createGroupsLoading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                        <span>Creating Groups...</span>
+                      </div>
+                    ) : (
+                      'Create Groups'
+                    )}
+                  </button>
+                </div>
+
+                {/* Allow Group Assignment Button - Only show after groups are created */}
+                {createGroupsClass && (
+                  <div className="border-t pt-6 mt-6">
+                    <h3 className="text-xl font-bold text-navy mb-4 text-center">
+                      Student Group Assignment
+                    </h3>
+                    <p className="text-md text-gray-700 mb-4 text-center">
+                      Allow students to choose their own groups or assign them manually
+                    </p>
+                    
+                    <div className="flex flex-col space-y-3">
+                      <button
+                        onClick={handleAllowGroupAssignment}
+                        disabled={!createGroupsClass}
+                        className={`w-full py-3 px-4 rounded-md font-bold text-lg transition-all ${
+                          !createGroupsClass
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
+                        }`}
+                      >
+                        📢 Allow Students to Choose Groups
+                      </button>
+                      
+                      <button
+                        onClick={handleCloseGroupAssignment}
+                        disabled={!createGroupsClass}
+                        className={`w-full py-3 px-4 rounded-md font-bold text-lg transition-all ${
+                          !createGroupsClass
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-orange-600 text-white hover:bg-orange-700 hover:shadow-lg'
+                        }`}
+                      >
+                        🚫 Close Group Assignment
+                      </button>
+                      
+                      <button
+                        onClick={() => router.push(`/assignGroup?class=${createGroupsClass}`)}
+                        disabled={!createGroupsClass}
+                        className={`w-full py-3 px-4 rounded-md font-bold text-lg transition-all ${
+                          !createGroupsClass
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+                        }`}
+                      >
+                        👥 Manually Assign Students to Groups
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Instructions */}
+              <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+                <h3 className="font-semibold text-navy mb-2">📋 Instructions:</h3>
+                <ul className="text-sm text-navy space-y-1">
+                  <li>1. Select the class you want to create groups for</li>
+                  <li>2. Enter how many groups you want (recommended: 4-8 groups)</li>
+                  <li>3. Set the maximum students per group (recommended: 3-5 students)</li>
+                  <li>4. Click "Create Groups" to set up the group structure</li>
+                  <li>5. Use "Allow Students to Choose Groups" to let them self-assign</li>
+                  <li>6. Or use "Manually Assign Students" for teacher-controlled assignment</li>
+                </ul>
+              </div>
             </div>
-          ) : (
-            'Create Groups'
-          )}
-        </button>
-      </div>
-
-      {/* Allow Group Assignment Button - Only show after groups are created */}
-      {createGroupsClass && (
-        <div className="border-t pt-6 mt-6">
-          <h3 className="text-xl font-bold text-navy mb-4 text-center">
-            Student Group Assignment
-          </h3>
-          <p className="text-md text-gray-700 mb-4 text-center">
-            Allow students to choose their own groups or assign them manually
-          </p>
-          
-          <div className="flex flex-col space-y-3">
-            <button
-              onClick={handleAllowGroupAssignment}
-              disabled={!createGroupsClass}
-              className={`w-full py-3 px-4 rounded-md font-bold text-lg transition-all ${
-                !createGroupsClass
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                  : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
-              }`}
-            >
-              📢 Allow Students to Choose Groups
-            </button>
-            
-            <button
-              onClick={handleCloseGroupAssignment}
-              disabled={!createGroupsClass}
-              className={`w-full py-3 px-4 rounded-md font-bold text-lg transition-all ${
-                !createGroupsClass
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                  : 'bg-orange-600 text-white hover:bg-orange-700 hover:shadow-lg'
-              }`}
-            >
-              🚫 Close Group Assignment
-            </button>
-            
-            <button
-              onClick={() => router.push(`/assignGroup?class=${createGroupsClass}`)}
-              disabled={!createGroupsClass}
-              className={`w-full py-3 px-4 rounded-md font-bold text-lg transition-all ${
-                !createGroupsClass
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
-              }`}
-            >
-              👥 Manually Assign Students to Groups
-            </button>
           </div>
-        </div>
-      )}
-    </div>
-
-    {/* Instructions */}
-    <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-      <h3 className="font-semibold text-navy mb-2">📋 Instructions:</h3>
-      <ul className="text-sm text-navy space-y-1">
-        <li>1. Select the class you want to create groups for</li>
-        <li>2. Enter how many groups you want (recommended: 4-8 groups)</li>
-        <li>3. Set the maximum students per group (recommended: 3-5 students)</li>
-        <li>4. Click "Create Groups" to set up the group structure</li>
-        <li>5. Use "Allow Students to Choose Groups" to let them self-assign</li>
-        <li>6. Or use "Manually Assign Students" for teacher-controlled assignment</li>
-      </ul>
-    </div>
-</div>
-
             {/* Tab: Job Assignment */}
             <div title="Job Assignment">
               <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">

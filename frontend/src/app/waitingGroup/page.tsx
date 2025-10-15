@@ -168,9 +168,7 @@ export default function WaitingGroupPage() {
       <div className="z-10 flex flex-col items-center justify-center relative flex-grow p-8">
         <div className="max-w-2xl w-full text-center">
           {!groupAssignmentAllowed ? (
-            // Waiting State
             <>
-              {/* Header */}
               <div className="mb-8">
                 <h1 className="text-4xl font-extrabold text-northeasternRed mb-4">
                   Waiting for Teacher
@@ -178,7 +176,6 @@ export default function WaitingGroupPage() {
                 <p className="text-xl text-northeasternBlack mb-4">
                   Hello, {user.f_name} {user.l_name}!
                 </p>
-                {/* FIXED: Use user.class instead of user.class_id */}
                 {user.class && (
                   <p className="text-lg text-navy mb-6">
                     Class CRN: {user.class}
@@ -186,20 +183,8 @@ export default function WaitingGroupPage() {
                 )}
               </div>
 
-              {/* Socket Connection Status */}
-              <div className="mb-4">
-                <div className="flex items-center justify-center space-x-2 text-sm">
-                  <div className={`w-3 h-3 rounded-full ${socketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                  <span className={socketConnected ? 'text-green-700' : 'text-red-700'}>
-                    {socketConnected ? 'Connected to server' : 'Connecting to server...'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Rest of your existing UI... */}
               <div className="bg-white rounded-lg shadow-lg border-4 border-northeasternBlack p-8 mb-8">
                 <div className="flex flex-col items-center space-y-6">
-                  {/* Animated waiting icon */}
                   <div className="relative">
                     <div className="w-20 h-20 border-4 border-northeasternRed border-t-transparent rounded-full animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
