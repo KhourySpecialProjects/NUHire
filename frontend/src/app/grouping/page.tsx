@@ -314,56 +314,80 @@ const Grouping = () => {
     setCreateGroupsClass(newClass);
   };
 
-    // Allow students to choose groups
-  const handleAllowGroupAssignment = async () => {
-    if (!createGroupsClass) {
-      setPopup({ 
-        headline: "Error", 
-        message: "Please select a class first." 
-      });
-      return;
-    }
+// Allow students to choose groups
+const handleAllowGroupAssignment = async () => {
+  if (!createGroupsClass) {
+    setPopup({ 
+      headline: "Error", 
+      message: "Please select a class first." 
+    });
+    return;
+  }
 
-    try {
-      // Initialize socket connection for sending group assignment authorization
-      const socket = io(API_BASE_URL);
+  try {
+    const response = await fetch(`${API_BASE_URL}/group-assignment-status/${createGroupsClass}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        assigned: true // This will set the assigned field to 1
+      }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Group assignment enabled:', result);
       
-      socket.on('connect', () => {
-        console.log('Teacher connected to socket for group assignment authorization');
-        
-        // Emit the allowGroupAssignment event to all students in the class
-        socket.emit('allowGroupAssignment', {
-          classId: parseInt(createGroupsClass),
-          message: 'Your teacher has enabled group selection. You can now choose your group!',
-        });
-        
-        setPopup({ 
-          headline: "Success", 
-          message: `Group assignment has been enabled for class ${createGroupsClass}. Students will be redirected to group selection.` 
-        });
-        
-        // Disconnect after sending the message
-        setTimeout(() => {
-          socket.disconnect();
-        }, 1000);
+      setPopup({ 
+        headline: "Success", 
+        message: `Group assignment has been enabled for class ${createGroupsClass}. Students can now choose groups anytime they visit the page.` 
       });
 
-      socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
-        setPopup({ 
-          headline: "Error", 
-          message: "Failed to connect to server. Please try again." 
+      // OPTIONAL: Still send socket event for immediate notification to connected students
+      try {
+        const socket = io(API_BASE_URL);
+        
+        socket.on('connect', () => {
+          console.log('Teacher connected to socket for group assignment authorization');
+          
+          // Emit the allowGroupAssignment event to all students in the class
+          socket.emit('allowGroupAssignment', {
+            classId: parseInt(createGroupsClass),
+            message: 'Your teacher has enabled group selection. You can now choose your group!',
+          });
+          
+          // Disconnect after sending the message
+          setTimeout(() => {
+            socket.disconnect();
+          }, 1000);
         });
-      });
 
-    } catch (error) {
-      console.error('Error allowing group assignment:', error);
+        socket.on('connect_error', (error) => {
+          console.error('Socket connection error (non-critical):', error);
+          // Don't show error popup since database update succeeded
+        });
+      } catch (socketError) {
+        console.error('Socket error (non-critical):', socketError);
+        // Don't show error popup since database update succeeded
+      }
+
+    } else {
+      const errorData = await response.json();
       setPopup({ 
         headline: "Error", 
-        message: "Failed to enable group assignment. Please try again." 
+        message: errorData.error || "Failed to enable group assignment. Please try again." 
       });
     }
-  };
+
+  } catch (error) {
+    console.error('Error enabling group assignment:', error);
+    setPopup({ 
+      headline: "Error", 
+      message: "Failed to enable group assignment. Please try again." 
+    });
+  }
+};
 
   // Close group assignment
   const handleCloseGroupAssignment = async () => {
