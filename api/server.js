@@ -934,6 +934,7 @@ app.get("/auth/keycloak/callback",
                 const firstName = encodeURIComponent(user.f_name || '');
                 const lastName = encodeURIComponent(user.l_name || '');
                 
+                console.log("aassignmentResults:", assignmentResults);
                 // Check if assignment is allowed
                 if (assignmentResults.length > 0 && assignmentResults[0].assigned === 1) {
                   // Group assignment is enabled, redirect to assignGroup
