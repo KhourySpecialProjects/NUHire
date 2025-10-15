@@ -129,7 +129,7 @@ export default function AssignGroupPage() {
         fetchGroupSlots();
       }
     });
-  }, []);
+  }, [user?.class]);
 
   const joinGroup = async (groupId: number) => {
     if (!user) return;
