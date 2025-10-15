@@ -189,8 +189,6 @@ export default function AssignGroupPage() {
           message: errorData.error || "Failed to join group. Please try again."
         });
       }
-      socket.emit("studentJoinedGroup", { class_id: user.class });
-      console.log("Emitted studentJoinedGroup event:", { class_id: user.class });
     } catch (error) {
       console.error("Error joining group:", error);
       setPopup({

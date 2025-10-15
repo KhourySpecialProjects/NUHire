@@ -848,11 +848,6 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on('studentJoinedGroup', ({class_id}) => {
-    console.log("about to send out event studentJOinedGroup", class_id);
-    io.to(`class_${class_id}`).emit("studentJoinedGroup", { class_id: class_id });
-  })
-
   // Listens for the "disconnect" event, which is emitted when a client disconnects from the server
   // The server removes the student from the onlineStudents object and emits the "updateOnlineStudents" event to all connected clients
   socket.on("disconnect", () => {
@@ -2699,6 +2694,8 @@ app.post('/student/join-group', (req, res) => {
       });
     });
   });
+  console.log(" Emitting studentJoinedGroup event to class room");
+  io.to(`class_${class_id}`).emit("studentJoinedGroup", { class_id: class_id });
 });
 
 // GET /group-slots/:classId - FIXED: Added backticks and used correct column names
