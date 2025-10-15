@@ -97,7 +97,7 @@ export default function AssignGroupPage() { // FIXED: Changed function name
           });
         }
 
-        // Fetch class information
+        // Fetch class informationd
         const classResponse = await fetch(`${API_BASE_URL}/class-info/${user.class}`);
         if (classResponse.ok) {
           const classData = await classResponse.json();
@@ -121,7 +121,6 @@ export default function AssignGroupPage() { // FIXED: Changed function name
     }
   }, [user]);
 
-  // Join a group
   const joinGroup = async (groupId: number) => {
     if (!user) return;
 
@@ -136,7 +135,7 @@ export default function AssignGroupPage() { // FIXED: Changed function name
         credentials: "include",
         body: JSON.stringify({
           email: user.email,
-          class_id: user.class, // FIXED: Use user.class
+          class_id: user.class,
           group_id: groupId,
         }),
       });
@@ -150,9 +149,28 @@ export default function AssignGroupPage() { // FIXED: Changed function name
         // Update user state
         setUser(prev => prev ? { ...prev, group_id: groupId } : null);
         
-        // Redirect to dashboard after a short delay
-        setTimeout(() => {
-          router.push("/dashboard");
+        // UPDATED: Check user's seen status before redirecting
+        setTimeout(async () => {
+          try {
+            // Fetch updated user data to get the seen status
+            const userResponse = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
+            if (userResponse.ok) {
+              const updatedUser = await userResponse.json();
+              
+              // Apply the same logic as your server authentication callback
+              if (updatedUser.seen === 1) {
+                const fullName = encodeURIComponent(`${updatedUser.f_name || ""} ${updatedUser.l_name || ""}`.trim());
+                router.push(`/dashboard?name=${fullName}`);
+              } else {
+                router.push("/about");
+              }
+            } else {
+              router.push("/dashboard");
+            }
+          } catch (error) {
+            console.error("Error fetching updated user data:", error);
+            router.push("/dashboard");
+          }
         }, 2000);
       } else {
         const errorData = await response.json();
