@@ -2630,7 +2630,7 @@ app.get('/class-info/:classId', (req, res) => {
   });
 });
 
-// POST /student/join-group - FIXED: Added backticks around Groups
+// POST /student/join-group
 app.post('/student/join-group', (req, res) => {
   const { email, class_id, group_id } = req.body;
   
@@ -2642,7 +2642,7 @@ app.post('/student/join-group', (req, res) => {
     });
   }
 
-  // First check if the group has space - FIXED: Added backticks and used correct column names
+  // Check group capacity first
   const checkCapacityQuery = `
     SELECT 
       g.max_students,
@@ -2673,7 +2673,7 @@ app.post('/student/join-group', (req, res) => {
       });
     }
     
-    // Update the user's group assignment - FIXED: Use correct column names
+    // Update the user's group assignment
     const updateQuery = 'UPDATE Users SET group_id = ? WHERE email = ? AND class = ?';
     
     db.query(updateQuery, [group_id, email, class_id], (updateErr, updateResult) => {
@@ -2686,7 +2686,18 @@ app.post('/student/join-group', (req, res) => {
         return res.status(404).json({ error: 'Student not found in this class' });
       }
       
-      console.log(`Student ${email} successfully joined group ${group_id} in class ${class_id}`);
+      // FIXED: Emit socket event AFTER successful database update
+      console.log(`✅ Student ${email} successfully joined group ${group_id} in class ${class_id}`);
+      console.log(`📡 Emitting studentJoinedGroup event to class_${class_id}`);
+      
+      // Emit to all students in the class
+      io.to(`class_${class_id}`).emit("studentJoinedGroup", { 
+        class_id: class_id,
+        group_id: group_id,
+        student_email: email,
+        message: `A student joined group ${group_id}`
+      });
+      
       res.json({ 
         message: 'Successfully joined group',
         group_id: group_id,
@@ -2694,8 +2705,6 @@ app.post('/student/join-group', (req, res) => {
       });
     });
   });
-  console.log(" Emitting studentJoinedGroup event to class room");
-  io.to(`class_${class_id}`).emit("studentJoinedGroup", { class_id: class_id });
 });
 
 // GET /group-slots/:classId - FIXED: Added backticks and used correct column names
