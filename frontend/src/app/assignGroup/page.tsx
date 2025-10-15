@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
+import io from "socket.io-client";
 
-export default function AssignGroupPage() { // FIXED: Changed function name
+export default function AssignGroupPage() { 
   interface User {
     f_name: string;
     l_name: string;
     email: string;
-    class?: number; // FIXED: Use 'class' instead of 'class_id'
+    class?: number;
     group_id?: number;
   }
 
@@ -39,6 +40,7 @@ export default function AssignGroupPage() { // FIXED: Changed function name
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [joining, setJoining] = useState<number | null>(null);
   const router = useRouter();
+  const socket = io(API_BASE_URL);
 
   // Fetch user information
   useEffect(() => {
@@ -71,10 +73,7 @@ export default function AssignGroupPage() { // FIXED: Changed function name
     fetchUser();
   }, [router]);
 
-  // Fetch class info and group slots
-  useEffect(() => {
-    const fetchGroupSlots = async () => {
-      // FIXED: Use user.class instead of user.class_id
+  const fetchGroupSlots = async () => {
       if (!user?.class) {
         console.log("No class found for user:", user);
         return;
@@ -97,7 +96,7 @@ export default function AssignGroupPage() { // FIXED: Changed function name
           });
         }
 
-        // Fetch class informationd
+        // Fetch class information
         const classResponse = await fetch(`${API_BASE_URL}/class-info/${user.class}`);
         if (classResponse.ok) {
           const classData = await classResponse.json();
@@ -116,10 +115,21 @@ export default function AssignGroupPage() { // FIXED: Changed function name
       }
     };
 
+  // Fetch class info and group slots
+  useEffect(() => {
     if (user?.class) {
       fetchGroupSlots();
     }
   }, [user]);
+
+  useEffect(() => {
+    socket.on("studentJoinedGroup", ({class_id}) => {
+      console.log("Received studentJoinedGroup event:", { class_id });
+      if (user?.class === class_id) {
+        fetchGroupSlots();
+      }
+    });
+  }, []);
 
   const joinGroup = async (groupId: number) => {
     if (!user) return;
@@ -179,6 +189,7 @@ export default function AssignGroupPage() { // FIXED: Changed function name
           message: errorData.error || "Failed to join group. Please try again."
         });
       }
+      socket.emit("studentJoinedGroup", { class_id: user.class });
     } catch (error) {
       console.error("Error joining group:", error);
       setPopup({

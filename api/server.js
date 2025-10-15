@@ -848,6 +848,10 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on('studentJoinGroup', ({class_id}) => {
+    io.to(`class_${class_id}`).emit("studentJoinedGroup", { class_id: class_id });
+  })
+
   // Listens for the "disconnect" event, which is emitted when a client disconnects from the server
   // The server removes the student from the onlineStudents object and emits the "updateOnlineStudents" event to all connected clients
   socket.on("disconnect", () => {
