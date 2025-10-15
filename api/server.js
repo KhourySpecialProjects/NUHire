@@ -962,10 +962,6 @@ app.get("/auth/keycloak/callback",
 
 //check if the user is authenticated and return the user information
 app.get("/auth/user", (req, res) => {
-  console.log("=== /auth/user endpoint hit ===");
-  console.log("Session ID:", req.sessionID);
-  console.log("Session passport:", req.session.passport);
-  console.log("Cookies received:", req.headers.cookie);
 
   if (req.sessionID && !req.session.passport) {
     console.log("❌ Session exists but no passport data - authentication expired");
