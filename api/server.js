@@ -848,7 +848,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on('studentJoinGroup', ({class_id}) => {
+  socket.on('studentJoinedGroup', ({class_id}) => {
     console.log("about to send out event studentJOinedGroup", class_id);
     io.to(`class_${class_id}`).emit("studentJoinedGroup", { class_id: class_id });
   })
