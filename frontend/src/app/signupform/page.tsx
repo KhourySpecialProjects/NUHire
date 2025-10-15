@@ -154,39 +154,6 @@ export default function SignupDetails() {
         <h1 className="text-6xl font-extrabold mb-1 text-northeasternRed">NUHire</h1>
       </div>
       <div className="z-10" >
-              // Add this debug section right after your form
-{/* DEBUG PANEL - Remove in production */}
-<div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-sm">
-  <h4 className="font-semibold mb-2">🐛 Debug Info:</h4>
-  <p><strong>Affiliation:</strong> {affiliation}</p>
-  <p><strong>CRN:</strong> {crn}</p>
-  <p><strong>Email:</strong> {email}</p>
-  <button
-    type="button"
-    onClick={async () => {
-      try {
-        // Test CRN endpoint
-        const crnRes = await fetch(`${API_BASE_URL}/moderator-crns`, { credentials: 'include' });
-        const crnData = await crnRes.json();
-        console.log('All CRNs in database:', crnData);
-        
-        // Test specific CRN
-        if (crn) {
-          const specificCrnRes = await fetch(`${API_BASE_URL}/moderator-crns/${crn}`, { credentials: 'include' });
-          const specificCrnData = await specificCrnRes.json();
-          console.log(`CRN ${crn} data:`, specificCrnData);
-        }
-        
-        alert('Check console for database contents');
-      } catch (error) {
-        console.error('Debug fetch error:', error);
-      }
-    }}
-    className="bg-blue-500 text-white px-3 py-1 rounded text-xs mt-2"
-  >
-    Debug: Check Database
-  </button>
-</div>
         <h1 className="text-3xl font-bold text-navy mb-6">Complete Your Signup</h1>
 
         <form onSubmit={handleSubmit} className="w-full max-w-md bg-navy shadow-lg rounded-lg p-6 flex flex-col gap-4">

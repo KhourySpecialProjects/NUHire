@@ -434,7 +434,7 @@ app.get('/health', (req, res) => {
 
 const initializeDatabase = () => {
   const queries = [
-    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`, `nom_groups`) VALUES ('labit.z@northeastern.edu', 1, 1)",
+    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`) VALUES ('labit.z@northeastern.edu', 1)",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
     "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
@@ -1943,7 +1943,7 @@ app.post('/moderator-login', (req, res) => {
 app.post("/moderator-crns", (req, res) => {
   const { admin_email, crn } = req.body;
   if (!admin_email || !crn) {
-    return res.status(400).json({ error: "admin_email and nom_groups are required" });
+    return res.status(400).json({ error: "admin_email and crn are required" });
   }
   db.query(
     "INSERT INTO Moderator (admin_email, crn) VALUES (?, ?)",
