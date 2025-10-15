@@ -2551,13 +2551,28 @@ app.post('/teacher/create-groups', (req, res) => {
           // Groups were created successfully, so we'll return success even if class update fails
         }
 
-        console.log(`Successfully created ${num_groups} groups for class ${class_id}`);
-        res.json({ 
-          message: 'Groups created successfully',
-          groups_created: num_groups,
-          max_students_per_group: max_students_per_group,
-          class_id: class_id
-        });
+        // ADDED: Set group assignment status to disabled (assigned = 0) when groups are created
+        db.query(
+          'INSERT INTO seenGroupAssignment (crn, assigned) VALUES (?, 0)',
+          [class_id],
+          (assignmentErr, assignmentResult) => {
+            if (assignmentErr) {
+              console.error('Error setting group assignment status:', assignmentErr);
+              // Groups were created successfully, so we'll continue even if assignment status fails
+            } else {
+              console.log(`Group assignment status set to disabled for class ${class_id}`);
+            }
+
+            console.log(`Successfully created ${num_groups} groups for class ${class_id}`);
+            res.json({ 
+              message: 'Groups created successfully',
+              groups_created: num_groups,
+              max_students_per_group: max_students_per_group,
+              class_id: class_id,
+              assignment_status: 'disabled'
+            });
+          }
+        );
       });
     });
   });
@@ -2745,6 +2760,75 @@ app.get('/groups', (req, res) => {
     });
     
     res.json(groupsObject);
+  });
+});
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Assign group seen
+// Get group assignment status for a class
+app.get('/group-assignment-status/:crn', (req, res) => {
+  const { crn } = req.params;
+  
+  db.query(
+    'SELECT assigned FROM seenAssignGroup WHERE crn = ?',
+    [crn],
+    (err, results) => {
+      if (err) {
+        console.error('Error fetching group assignment status:', err);
+        return res.status(500).json({ error: 'Failed to fetch assignment status' });
+      }
+      else {
+        res.json({ assignment_allowed: results[0].assignment_allowed });
+      }
+    }
+  );
+});
+
+// Set group assignment status for a class
+app.post('/group-assignment-status/:crn', (req, res) => {
+  const { crn } = req.params;
+  const { assigned } = req.body;
+  
+  db.query(
+    'INSERT INTO seenAssignGroup (crn, assigned) VALUES (?, ?) ON DUPLICATE KEY UPDATE assigned = ?',
+    [crn, assigned, assigned],
+    (err, result) => {
+      if (err) {
+        console.error('Error updating group assignment status:', err);
+        return res.status(500).json({ error: 'Failed to update assignment status' });
+      }
+      
+      console.log(`Group assignment ${assigned ? 'enabled' : 'disabled'} for CRN ${crn}`);
+      res.json({ 
+        success: true, 
+        crn: parseInt(crn),
+        assigned,
+        message: `Group assignment ${assigned ? 'enabled' : 'disabled'} for CRN ${crn}`
+      });
+    }
+  );
+});
+
+// Get all group assignment statuses (for admin dashboard)
+app.get('/group-assignment-statuses', (req, res) => {
+  const query = `
+    SELECT 
+      m.crn,
+      m.admin_email,
+      m.nom_groups,
+      COALESCE(gas.assigned, FALSE) as assignment_allowed,
+    FROM Moderator m
+    LEFT JOIN seenAssignGroup gas ON m.crn = gas.crn
+    ORDER BY m.crn
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching all assignment statuses:', err);
+      return res.status(500).json({ error: 'Failed to fetch assignment statuses' });
+    }
+    
+    res.json(results);
   });
 });
 

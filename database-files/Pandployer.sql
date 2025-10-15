@@ -35,6 +35,24 @@ CREATE TABLE `Candidates` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `Groups`
+--
+
+DROP TABLE IF EXISTS `Groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Groups` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `class_id` int NOT NULL,
+  `group_number` int NOT NULL,
+  `max_students` int DEFAULT '4',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_class_group` (`class_id`,`group_number`),
+  CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `Interview_Status`
 --
 
@@ -162,8 +180,7 @@ CREATE TABLE `MakeOfferPage` (
   PRIMARY KEY (`id`),
   KEY `selected_candidate` (`selected_candidate`),
   KEY `group_id` (`group_id`),
-  CONSTRAINT `MakeOfferPage_ibfk_1` FOREIGN KEY (`selected_candidate`) REFERENCES `Candidates` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `MakeOfferPage_ibfk_2` FOREIGN KEY (`group_id`) REFERENCES `Groups` (`id`) ON DELETE CASCADE
+  CONSTRAINT `MakeOfferPage_ibfk_1` FOREIGN KEY (`selected_candidate`) REFERENCES `Candidates` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -343,8 +360,22 @@ CREATE TABLE `Resumepage2` (
   `group_id` int NOT NULL,
   `class` int NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `group_id` (`group_id`),
-  CONSTRAINT `Resumepage2_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `Groups` (`id`) ON DELETE CASCADE
+  KEY `group_id` (`group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `seenAssignGroup`
+--
+
+DROP TABLE IF EXISTS `seenAssignGroup`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `seenAssignGroup` (
+  `crn` int NOT NULL,
+  `group` int NOT NULL,
+  `assigned` tinyint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`crn`,`group`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -372,25 +403,6 @@ CREATE TABLE `Users` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
---
--- Table structure for table `Groups`
---
-
-DROP TABLE IF EXISTS `Groups`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Groups` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `class_id` int NOT NULL,
-  `group_number` int NOT NULL,
-  `max_students` int DEFAULT '4',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_class_group` (`class_id`,`group_number`),
-  CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
@@ -399,4 +411,4 @@ CREATE TABLE `Groups` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-09 13:38:11
+-- Dump completed on 2025-10-15 11:15:39

@@ -237,15 +237,6 @@ export default function AssignGroupPage() { // FIXED: Changed function name
             )}
           </div>
 
-          {/* Debug Info - Remove in production */}
-          <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4 text-sm text-left">
-            <h4 className="font-semibold mb-2">🐛 Debug Info:</h4>
-            <p>User Class: {user.class || 'Not assigned'}</p>
-            <p>Group Slots Length: {groupSlots.length}</p>
-            <p>Class Info: {classInfo ? JSON.stringify(classInfo) : 'Not loaded'}</p>
-            <p>Group Slots: {JSON.stringify(groupSlots)}</p>
-          </div>
-
           {/* Groups Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {groupSlots.length > 0 ? (
