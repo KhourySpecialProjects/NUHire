@@ -2508,14 +2508,29 @@ app.post('/teacher/create-groups', (req, res) => {
     });
   }
 
-  // First, delete existing groups for this class - FIXED: Added backticks around Groups
-  db.query('DELETE FROM `Groups` WHERE class_id = ?', [class_id], (err, result) => {
+  // First, check if groups already exist for this class
+  db.query('SELECT COUNT(*) as group_count FROM `Groups` WHERE class_id = ?', [class_id], (err, result) => {
     if (err) {
-      console.error('Error deleting existing groups:', err);
-      return res.status(500).json({ error: 'Failed to clear existing groups' });
+      console.error('Error checking existing groups:', err);
+      return res.status(500).json({ error: 'Failed to check existing groups' });
     }
 
-    // Create new groups - FIXED: Added backticks around Groups
+    const existingGroupCount = result[0].group_count;
+    console.log(`Found ${existingGroupCount} existing groups for class ${class_id}`);
+
+    if (existingGroupCount > 0) {
+      console.log(`Groups already exist for class ${class_id}. Cannot create new groups.`);
+      return res.status(400).json({ 
+        error: "Groups already exist for this class. Cannot create new groups after groups have been created.",
+        existing_groups: existingGroupCount,
+        class_id: class_id
+      });
+    }
+
+    // No existing groups found, proceed with creating groups
+    console.log(`No existing groups found for class ${class_id}. Proceeding with group creation.`);
+    
+    // Create new groups
     const groupInserts = [];
     for (let i = 1; i <= num_groups; i++) {
       groupInserts.push([class_id, i, max_students_per_group]);
@@ -2529,7 +2544,7 @@ app.post('/teacher/create-groups', (req, res) => {
         return res.status(500).json({ error: 'Failed to create groups' });
       }
 
-      // Update the Moderator table with the new number of groups - FIXED: Use Moderator table
+      // Update the Moderator table with the new number of groups
       db.query('UPDATE `Moderator` SET nom_groups = ? WHERE crn = ?', [num_groups, class_id], (updateErr, updateResult) => {
         if (updateErr) {
           console.error('Error updating class group count:', updateErr);
@@ -2540,7 +2555,8 @@ app.post('/teacher/create-groups', (req, res) => {
         res.json({ 
           message: 'Groups created successfully',
           groups_created: num_groups,
-          max_students_per_group: max_students_per_group
+          max_students_per_group: max_students_per_group,
+          class_id: class_id
         });
       });
     });
