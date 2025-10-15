@@ -373,9 +373,8 @@ DROP TABLE IF EXISTS `seenAssignGroup`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `seenAssignGroup` (
   `crn` int NOT NULL,
-  `group` int NOT NULL,
   `assigned` tinyint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`crn`,`group`)
+  PRIMARY KEY (`crn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -411,4 +410,4 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-15 11:15:39
+-- Dump completed on 2025-10-15 11:38:41

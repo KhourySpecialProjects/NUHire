@@ -920,9 +920,32 @@ app.get("/auth/keycloak/callback",
               return res.redirect(`${FRONT_URL}/about`);
             }
           } else {
-            const firstName = encodeURIComponent(user.f_name || '');
-            const lastName = encodeURIComponent(user.l_name || '');
-            return res.redirect(`${FRONT_URL}/waitingGroup`);
+            // User has no group, check if group assignment is allowed for their class
+            db.query(
+              'SELECT assigned FROM seenGroupAssignment WHERE crn = ?',
+              [dbUser.class],
+              (assignmentErr, assignmentResults) => {
+                if (assignmentErr) {
+                  console.error('Error checking group assignment status:', assignmentErr);
+                  // Default to waiting if there's an error
+                  return res.redirect(`${FRONT_URL}/waitingGroup`);
+                }
+                
+                const firstName = encodeURIComponent(user.f_name || '');
+                const lastName = encodeURIComponent(user.l_name || '');
+                
+                // Check if assignment is allowed
+                if (assignmentResults.length > 0 && assignmentResults[0].assigned === 1) {
+                  // Group assignment is enabled, redirect to assignGroup
+                  console.log(`Group assignment enabled for class ${dbUser.class}, redirecting to assignGroup`);
+                  return res.redirect(`${FRONT_URL}/assignGroup`);
+                } else {
+                  // Group assignment not enabled or no record found, redirect to waitingGroup
+                  console.log(`Group assignment not enabled for class ${dbUser.class}, redirecting to waitingGroup`);
+                  return res.redirect(`${FRONT_URL}/waitingGroup`);
+                }
+              }
+            );
           }
         }
       } else {
