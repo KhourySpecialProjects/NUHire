@@ -920,9 +920,10 @@ app.get("/auth/keycloak/callback",
               return res.redirect(`${FRONT_URL}/about`);
             }
           } else {
+            console.log("inside the group assignment check else");
             // User has no group, check if group assignment is allowed for their class
             db.query(
-              'SELECT assigned FROM seenGroupAssignment WHERE crn = ?',
+              'SELECT assigned FROM seenAssignGroup WHERE crn = ?',
               [dbUser.class],
               (assignmentErr, assignmentResults) => {
                 if (assignmentErr) {
@@ -2573,7 +2574,7 @@ app.post('/teacher/create-groups', (req, res) => {
 
         // ADDED: Set group assignment status to disabled (assigned = 0) when groups are created
         db.query(
-          'INSERT INTO seenGroupAssignment (crn, assigned) VALUES (?, 0)',
+          'INSERT INTO seenAssignGroup (crn, assigned) VALUES (?, 0)',
           [class_id],
           (assignmentErr, assignmentResult) => {
             if (assignmentErr) {
