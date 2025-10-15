@@ -167,16 +167,6 @@ export default function WaitingGroupPage() {
       {/* Main Content */}
       <div className="z-10 flex flex-col items-center justify-center relative flex-grow p-8">
         <div className="max-w-2xl w-full text-center">
-          
-          {/* DEBUG PANEL - Remove in production */}
-          <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4 text-sm text-left">
-            <h4 className="font-semibold mb-2">🐛 Debug Info:</h4>
-            <p>User Class: {user.class || 'Not assigned'}</p>
-            <p>Socket Connected: {socketConnected ? '✅ Yes' : '❌ No'}</p>
-            <p>Group Assignment Allowed: {groupAssignmentAllowed ? '✅ Yes' : '❌ No'}</p>
-            <p>User Email: {user.email}</p>
-          </div>
-
           {!groupAssignmentAllowed ? (
             // Waiting State
             <>
@@ -228,31 +218,6 @@ export default function WaitingGroupPage() {
                       Please wait while your teacher prepares the group assignment process...
                     </p>
                   </div>
-                </div>
-              </div>
-
-              {/* Information Card */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-blue-800 mb-3">
-                  What happens next?
-                </h3>
-                <div className="text-left space-y-2 text-blue-700">
-                  <p className="flex items-center">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                    Your teacher will create groups for the class
-                  </p>
-                  <p className="flex items-center">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                    Once ready, you'll receive authorization to select a group
-                  </p>
-                  <p className="flex items-center">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                    You'll be automatically redirected to group selection
-                  </p>
-                  <p className="flex items-center">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                    Choose your preferred group and teammates
-                  </p>
                 </div>
               </div>
             </>

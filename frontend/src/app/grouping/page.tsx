@@ -567,7 +567,6 @@ const Grouping = () => {
 
 {/* NEW TAB: Create Groups - First tab */}
 <div title="Create Groups">
-  <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[70vh] w-full">
     <h2 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Create Groups</h2>
     <p className="text-lg text-navy mb-6 text-center">
       Set up groups for your class with specific capacity limits
@@ -735,7 +734,6 @@ const Grouping = () => {
         <li>6. Or use "Manually Assign Students" for teacher-controlled assignment</li>
       </ul>
     </div>
-  </div>
 </div>
 
             {/* Tab: Job Assignment */}
