@@ -1,5 +1,7 @@
 FROM node:18-alpine
 
+ENV LOG_LEVEL=DEBUG
+
 WORKDIR /apicode
 
 # Copy package files and install dependencies

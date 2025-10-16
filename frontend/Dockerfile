@@ -1,5 +1,7 @@
 FROM node:22-alpine
 
+ENV LOG_LEVEL=DEBUG
+
 # Install dependencies for Next.js and some common native builds
 RUN apk add --no-cache \
     python3 make g++ libc-dev pkgconfig \
