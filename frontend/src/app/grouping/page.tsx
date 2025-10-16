@@ -251,9 +251,20 @@ const Grouping = () => {
   // Tab 2: Fetch job groups for selected job class
   useEffect(() => {
     if (selectedJobClass) {
+      console.log("🔍 Fetching job groups for class:", selectedJobClass);
+      
       fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`)
-        .then(res => res.json())
-        .then(setJobGroups);
+        .then(res => {
+          console.log("📡 Job Groups API response status:", res.status);
+          return res.json();
+        })
+        .then(data => {
+          console.log("📊 Job Groups API response:", data);
+          setJobGroups(data);
+        })
+        .catch(error => {
+          console.error("❌ Job Groups API error:", error);
+        });
     }
   }, [selectedJobClass]);
 
