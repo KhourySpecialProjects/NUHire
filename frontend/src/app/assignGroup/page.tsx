@@ -48,9 +48,6 @@ export default function AssignGroupPage() {
       try {
         const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await response.json();
-
-        console.log("Raw user data from API:", userData); // DEBUG
-
         if (response.ok) {
           setUser(userData);
           // If user already has a group, redirect to dashboard
@@ -75,7 +72,6 @@ export default function AssignGroupPage() {
 
   const fetchGroupSlots = async () => {
       if (!user?.class) {
-        console.log("No class found for user:", user);
         return;
       }
 
@@ -151,19 +147,14 @@ export default function AssignGroupPage() {
       });
 
       if (response.ok) {
+        setUser(prev => prev ? { ...prev, group_id: groupId });
         
-        // Update user state
-        setUser(prev => prev ? { ...prev, group_id: groupId } : null);
-        
-        // UPDATED: Check user's seen status before redirecting
         setTimeout(async () => {
           try {
-            // Fetch updated user data to get the seen status
             const userResponse = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
             if (userResponse.ok) {
               const updatedUser = await userResponse.json();
               
-              // Apply the same logic as your server authentication callback
               if (updatedUser.seen === 1) {
                 const fullName = encodeURIComponent(`${updatedUser.f_name || ""} ${updatedUser.l_name || ""}`.trim());
                 router.push(`/dashboard?name=${fullName}`);

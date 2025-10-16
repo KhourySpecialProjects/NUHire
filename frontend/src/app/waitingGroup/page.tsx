@@ -30,8 +30,6 @@ export default function WaitingGroupPage() {
         const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await response.json();
 
-        console.log("Raw user data from API:", userData); // DEBUG
-
         if (response.ok) {
           setUser(userData);
           // If user already has a group, redirect to dashboard
@@ -44,7 +42,6 @@ export default function WaitingGroupPage() {
           router.push("/");
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
         router.push("/");
       } finally {
         setLoading(false);
@@ -56,79 +53,55 @@ export default function WaitingGroupPage() {
 
   // Socket connection for listening to teacher's group assignment authorization
   useEffect(() => {
-    // FIXED: Check for 'class' instead of 'class_id'
     if (!user?.class) {
-      console.log("❌ No class found for user:", user);
       return;
     }
 
-    console.log("✅ Setting up socket connection for class:", user.class);
-
-    // FIXED: Create socket inside useEffect
     const socket = io(API_BASE_URL);
 
     // Handle connection
     socket.on('connect', () => {
-      console.log('✅ Connected to socket server, ID:', socket.id);
       setSocketConnected(true);
       
       // FIXED: Join class room after connection
       socket.emit('joinClass', { 
         classId: user.class,
       });
-      console.log('➡️ Emitted joinClass for class: class_user', user.class);
     });
 
     socket.on('disconnect', () => {
-      console.log('❌ Disconnected from socket server');
       setSocketConnected(false);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error);
       setSocketConnected(false);
     });
 
     // Listen for group assignment authorization from teacher
     socket.on('allowGroupAssignmentStudent', ({classId, message}) => {
-      console.log('🎉 Received allowGroupAssignment event:', );
-      console.log('User class:', user.class, 'Event class:', classId);
       
       // FIXED: Compare with user.class instead of user.class_id
       if (classId === user.class) {
-        console.log('✅ Class match! Enabling group assignment');
         setGroupAssignmentAllowed(true);
-        setPopup({
-          headline: "Group Assignment Available!",
-          message: message
-        });
         
         // Redirect to group assignment page after a short delay
         setTimeout(() => {
-          console.log('🔄 Redirecting to assignGroup');
           router.push("/assignGroup");
         }, 3000);
       } else {
-        console.log('❌ Class mismatch, ignoring event');
       }
     });
 
     // Listen for any other relevant events
     socket.on('groupAssignmentClosedStudent', ({classId, message}) => {
-      console.log('🚫 Received groupAssignmentClosed event:', );
       
       if (classId === user.class) {
         setGroupAssignmentAllowed(false);
-        setPopup({
-          headline: "Group Assignment Closed",
-          message: message
-        });
       }
     });
 
     // FIXED: Cleanup socket connection properly
     return () => {
-      console.log('🧹 Cleaning up socket connection');
       socket.disconnect();
     };
   }, [user, router]);
