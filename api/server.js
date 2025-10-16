@@ -594,7 +594,6 @@ io.on("connection", (socket) => {
   // Listen for the "studentPageChanged" event, which is emitted by the client when a student changes their page
   socket.on("studentPageChanged", ({ studentId, currentPage }) => {
     if (onlineStudents[studentId]) {
-      console.log(`Student ${studentId} changed page to ${currentPage}`);
       io.emit("studentPageChange", { studentId, currentPage });
     }
   });
