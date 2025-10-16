@@ -40,8 +40,7 @@ export default function AssignGroupPage() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [joining, setJoining] = useState<number | null>(null);
   const router = useRouter();
-  const socket = io(API_BASE_URL);
-
+  const [socketConnected, setSocketConnected] = useState(false); 
   // Fetch user information
   useEffect(() => {
     const fetchUser = async () => {
@@ -117,15 +116,42 @@ export default function AssignGroupPage() {
       fetchGroupSlots();
     }
   }, [user]);
-  
-  useEffect(() => {
+
+    useEffect(() => {
+    if (!user?.class) {
+      return;
+    }
+
+    const socket = io(API_BASE_URL);
+
+    socket.on('connect', () => {
+      setSocketConnected(true);
+      
+      socket.emit('joinClass', { 
+        classId: user.class,
+      });
+    });
+
     socket.on("studentJoinedGroup", ({class_id}) => {
       console.log("Received studentJoinedGroup event:", { class_id });
       if (user?.class === class_id) {
         fetchGroupSlots();
       }
     });
-  }, [user?.class]);
+
+    socket.on('disconnect', () => {
+      setSocketConnected(false);
+    });
+
+    socket.on('connect_error', (error) => {
+      setSocketConnected(false);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user, router]);
+
 
   const joinGroup = async (groupId: number) => {
     if (!user) return;

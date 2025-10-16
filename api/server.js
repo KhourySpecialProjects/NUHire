@@ -2691,9 +2691,7 @@ app.post('/student/join-group', (req, res) => {
       console.log(`📡 Emitting studentJoinedGroup event to class_${class_id}`);
       
       // Emit to all students in the class
-      io.to(`class_${class_id}`).emit("studentJoinedGroup", { 
-        class_id: class_id
-      });
+      io.to(`class_${class_id}`).emit("studentJoinedGroup", { class_id});
       
       res.json({ 
         message: 'Successfully joined group',
