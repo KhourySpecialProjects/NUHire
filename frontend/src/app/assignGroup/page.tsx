@@ -151,10 +151,6 @@ export default function AssignGroupPage() {
       });
 
       if (response.ok) {
-        setPopup({
-          headline: "Success!",
-          message: `You have successfully joined Group ${groupId}!`
-        });
         
         // Update user state
         setUser(prev => prev ? { ...prev, group_id: groupId } : null);
