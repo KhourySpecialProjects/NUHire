@@ -64,6 +64,7 @@ export default function StudentCSVPage() {
           error: 'Group number cannot be empty'
         });
       } else {
+        console.log('Validating group number:', groupNumberStr);
         const groupNumber = parseInt(groupNumberStr);
         console.log('Parsed group number:', groupNumber);
         if (isNaN(groupNumber) || groupNumber <= 0) {
