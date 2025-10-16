@@ -235,8 +235,8 @@ export default function StudentCSVPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <NavbarAdmin />
       <div className="max-w-4xl mx-auto">
-        <NavbarAdmin />
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Upload Student CSV</h1>
           
@@ -294,8 +294,8 @@ export default function StudentCSVPage() {
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h3 className="text-lg font-semibold text-blue-900 mb-2">CSV Format Requirements:</h3>
             <ul className="text-blue-800 space-y-1">
-              <li>• First column: Group Number (positive integer)</li>
-              <li>• Second column: Email Address (valid email format)</li>
+              <li>• First column: Group Number (1 and above)</li>
+              <li>• Second column: Email Address (has to be a Northeastern email)</li>
               <li>• No header row needed</li>
               <li>• Example: 1, student@example.com</li>
             </ul>
