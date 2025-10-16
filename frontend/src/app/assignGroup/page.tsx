@@ -147,7 +147,7 @@ export default function AssignGroupPage() {
       });
 
       if (response.ok) {
-        setUser(prev => prev ? { ...prev, group_id: groupId });
+        setUser(prev => prev ? { ...prev, group_id: groupId }: null);
         
         setTimeout(async () => {
           try {
