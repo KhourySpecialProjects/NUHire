@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import NavbarAdmin from '../components/navbar-admin';
 
 interface CSVRow {
   groupNumber: number;
@@ -26,7 +27,7 @@ export default function StudentCSVPage() {
   const router = useRouter();
 
   // Email validation regex
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+\.[^\s@]+@northeastern.edu$/;
 
   const validateCSVData = (data: string[][]): { validRows: CSVRow[], errors: ValidationError[] } => {
     const validRows: CSVRow[] = [];
@@ -64,6 +65,7 @@ export default function StudentCSVPage() {
         });
       } else {
         const groupNumber = parseInt(groupNumberStr);
+        console.log('Parsed group number:', groupNumber);
         if (isNaN(groupNumber) || groupNumber <= 0) {
           errors.push({
             row: rowNumber,
@@ -233,6 +235,7 @@ export default function StudentCSVPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+        <NavbarAdmin />
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Upload Student CSV</h1>
           
