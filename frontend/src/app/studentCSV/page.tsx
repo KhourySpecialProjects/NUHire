@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import NavbarAdmin from '../components/navbar-admin';
 
 interface CSVRow {
-  groupNumber: number;
   email: string;
   rowIndex: number;
 }
@@ -33,72 +32,51 @@ export default function StudentCSVPage() {
     const validRows: CSVRow[] = [];
     const errors: ValidationError[] = [];
 
-    data.forEach((row, index) => {
-      const rowNumber = index + 1;
+    // Find the email column index
+    const headers = data[0]?.map(h => h.trim().toLowerCase());
+    const emailColumnIndex = headers?.findIndex(h => h === 'email');
+
+    if (emailColumnIndex === -1 || emailColumnIndex === undefined) {
+      errors.push({
+        row: 0,
+        column: 'Header',
+        value: '',
+        error: 'Email column not found in CSV headers'
+      });
+      return { validRows, errors };
+    }
+
+    // Start from index 1 to skip header row
+    data.slice(1).forEach((row, index) => {
+      const rowNumber = index + 2; // +2 because we sliced at 1 and index is 0-based
       
       // Skip empty rows
       if (row.length === 0 || (row.length === 1 && row[0].trim() === '')) {
         return;
       }
 
-      // Check if row has at least 2 columns
-      if (row.length < 2) {
+      const emailStr = row[emailColumnIndex]?.trim().toLowerCase();
+
+      if (!emailStr) {
         errors.push({
           row: rowNumber,
-          column: 'Row',
-          value: row.join(','),
-          error: 'Row must have at least 2 columns (Group Number, Email)'
+          column: 'Email',
+          value: emailStr || '',
+          error: 'Email address cannot be empty'
         });
-        return;
-      }
-
-      const groupNumberStr = row[0]?.trim();
-      const emailStr = row[1]?.trim();
-
-      // Validate group number (first column)
-      if (!groupNumberStr) {
+      } else if (!emailRegex.test(emailStr)) {
         errors.push({
           row: rowNumber,
-          column: 'Group Number',
-          value: groupNumberStr || '',
-          error: 'Group number cannot be empty'
+          column: 'Email',
+          value: emailStr,
+          error: 'Invalid email address format'
         });
       } else {
-        console.log('Validating group number:', groupNumberStr);
-        const groupNumber = parseInt(groupNumberStr);
-        console.log('Parsed group number:', groupNumber);
-        if (isNaN(groupNumber) || groupNumber <= 0) {
-          errors.push({
-            row: rowNumber,
-            column: 'Group Number',
-            value: groupNumberStr,
-            error: 'Group number must be a positive integer'
-          });
-        } else {
-          // Valid group number, now validate email
-          if (!emailStr) {
-            errors.push({
-              row: rowNumber,
-              column: 'Email',
-              value: emailStr || '',
-              error: 'Email address cannot be empty'
-            });
-          } else if (!emailRegex.test(emailStr)) {
-            errors.push({
-              row: rowNumber,
-              column: 'Email',
-              value: emailStr,
-              error: 'Invalid email address format'
-            });
-          } else {
-            // Both group number and email are valid
-            validRows.push({
-              groupNumber: groupNumber,
-              email: emailStr,
-              rowIndex: rowNumber
-            });
-          }
-        }
+        // Email is valid
+        validRows.push({
+          email: emailStr,
+          rowIndex: rowNumber
+        });
       }
     });
 
@@ -202,8 +180,6 @@ export default function StudentCSVPage() {
       // For now, we'll just simulate a successful upload
       console.log('Uploading CSV data:', csvData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
       
       setUploadSuccess(true);
       setIsUploading(false);
@@ -234,7 +210,7 @@ export default function StudentCSVPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
       <NavbarAdmin />
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
@@ -343,7 +319,6 @@ export default function StudentCSVPage() {
                     {csvData.map((row, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-2 text-sm text-gray-900">{row.rowIndex}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{row.groupNumber}</td>
                         <td className="px-4 py-2 text-sm text-gray-900">{row.email}</td>
                       </tr>
                     ))}
@@ -357,7 +332,7 @@ export default function StudentCSVPage() {
           {uploadSuccess && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-800 font-semibold">
-                ✅ CSV data uploaded successfully! Redirecting to dashboard...
+                ✅ CSV data uploaded successfully!
               </p>
             </div>
           )}
