@@ -2692,10 +2692,7 @@ app.post('/student/join-group', (req, res) => {
       
       // Emit to all students in the class
       io.to(`class_${class_id}`).emit("studentJoinedGroup", { 
-        class_id: class_id,
-        group_id: group_id,
-        student_email: email,
-        message: `A student joined group ${group_id}`
+        class_id: class_id
       });
       
       res.json({ 

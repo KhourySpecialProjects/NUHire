@@ -117,7 +117,7 @@ export default function AssignGroupPage() {
       fetchGroupSlots();
     }
   }, [user]);
-
+  
   useEffect(() => {
     socket.on("studentJoinedGroup", ({class_id}) => {
       console.log("Received studentJoinedGroup event:", { class_id });
