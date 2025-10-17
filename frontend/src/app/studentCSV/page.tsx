@@ -120,7 +120,7 @@ export default function StudentCSVPage() {
         errors.push({ row: rowNumber, error: `Invalid email format: ${email}` });
       } else {
         // Give each student their own unique group (index + 1)
-        students.push({ email, group_id: index + 1 });
+        students.push({ email, group_id: 1 });
       }
     });
     return { students, errors };
@@ -161,10 +161,15 @@ export default function StudentCSVPage() {
   };
 
   const updateStudentGroup = (email: string, groupId: number) => {
+    console.log('Updating:', email, 'to group:', groupId); // Add this for debugging
     setCsvStudents(prev => 
-      prev.map(student => 
-        student.email === email ? { ...student, group_id: groupId } : student
-      )
+      prev.map(student => {
+        if (student.email === email) {
+          console.log('Found match, updating:', student.email); // Add this for debugging
+          return { ...student, group_id: groupId };
+        }
+        return student;
+      })
     );
   };
 
@@ -326,8 +331,8 @@ export default function StudentCSVPage() {
               </h3>
               <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
                 <div className="space-y-2 p-4">
-                  {csvStudents.map((student, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                  {csvStudents.map((student) => (
+                    <div key={student.email} className="flex items-center justify-between bg-gray-50 p-3 rounded">
                       <span className="text-sm font-medium">{student.email}</span>
                       <div className="flex items-center space-x-2">
                         <label className="text-sm text-gray-600">Group:</label>
