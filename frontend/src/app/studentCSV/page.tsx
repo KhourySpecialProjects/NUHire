@@ -182,40 +182,54 @@ export default function StudentCSVPage() {
 
   // New submit function
   const handleSubmit = async () => {
+    console.log('🚀 handleSubmit called');
+    console.log('selectedClass:', selectedClass);
+    console.log('csvStudents length:', csvStudents.length);
+    
     if (!selectedClass || csvStudents.length === 0) {
       alert('Please select a class and upload student data first');
       return;
     }
 
+    const payload = {
+      class_id: selectedClass,
+      assignments: csvStudents.map(student => ({
+        email: student.email,
+        group_id: student.group_id
+      }))
+    };
+    
+    console.log('📦 Payload being sent:', JSON.stringify(payload, null, 2));
+
     setIsSubmitting(true);
 
     try {
+      console.log('🌐 Making fetch request to:', `${API_BASE_URL}/importCSV`);
+      
       const response = await fetch(`${API_BASE_URL}/importCSV`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          class_id: selectedClass,
-          assignments: csvStudents.map(student => ({
-            email: student.email,
-            group_id: student.group_id
-          }))
-        }),
+        body: JSON.stringify(payload),
       });
+
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Submit successful:', result);
+        console.log('✅ Submit successful:', result);
         setSubmitSuccess(true);
         alert('Group assignments submitted successfully!');
       } else {
         const errorData = await response.json();
+        console.error('❌ Response error:', errorData);
         alert(`Failed to submit assignments: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error submitting assignments:', error);
+      console.error('🔥 Fetch error:', error);
       alert('Failed to submit assignments. Please try again.');
     } finally {
       setIsSubmitting(false);
