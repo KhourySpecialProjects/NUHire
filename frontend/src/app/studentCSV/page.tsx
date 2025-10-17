@@ -29,6 +29,11 @@ interface Student {
   group_id?: number;
 }
 
+interface User {
+  email: string;
+  // add other user properties as needed
+}
+
 export default function StudentCSVPage() {
   const [csvData, setCsvData] = useState<CSVRow[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
@@ -40,34 +45,74 @@ export default function StudentCSVPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
   const [showAssignment, setShowAssignment] = useState(false);
+  const [user, setUser] = useState<User | null>(null); // Add user state
+  const [loading, setLoading] = useState(true); // Add loading state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Email validation regex
   const emailRegex = /^[^\s@]+\.[^\s@]+@northeastern.edu$/;
 
-  // Fetch classes on component mount
+  // Fetch user first, then fetch classes
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/user`, { 
+          credentials: 'include' 
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else {
+          // Redirect to login if user is not authenticated
+          router.push('/');
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        router.push('/');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [router]);
+
+  // Fetch classes when user is loaded
   useEffect(() => {
     const fetchClasses = async () => {
+      if (!user?.email) return;
+
       try {
-        const response = await fetch(`${API_BASE_URL}/classes`, { credentials: 'include' });
+        const response = await fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`, {
+          credentials: 'include'
+        });
+        
         if (response.ok) {
           const classData = await response.json();
+          console.log('Classes fetched:', classData);
           setClasses(classData);
+        } else {
+          console.error('Failed to fetch classes');
         }
       } catch (error) {
         console.error('Error fetching classes:', error);
       }
     };
+
     fetchClasses();
-  }, []);
+  }, [user]);
 
   // Fetch students when class is selected
   const handleClassChange = async (classId: string) => {
     setSelectedClass(classId);
     if (classId) {
       try {
-        const response = await fetch(`${API_BASE_URL}/students?class=${classId}`, { credentials: 'include' });
+        const response = await fetch(`${API_BASE_URL}/students?class=${classId}`, { 
+          credentials: 'include' 
+        });
+        
         if (response.ok) {
           const studentData = await response.json();
           setStudents(studentData);
@@ -77,6 +122,40 @@ export default function StudentCSVPage() {
       }
     }
   };
+
+  // Show loading state while fetching user
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+        <NavbarAdmin />
+        <div className="max-w-6xl mx-auto p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no user
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+        <NavbarAdmin />
+        <div className="max-w-6xl mx-auto p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
+              <p className="text-gray-600">You must be logged in to access this page.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const validateCSVData = (data: string[][]): { validRows: CSVRow[], errors: ValidationError[] } => {
     const validRows: CSVRow[] = [];
@@ -348,6 +427,13 @@ export default function StudentCSVPage() {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Group Assignment Manager</h1>
           
+          {/* User Info */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Logged in as:</strong> {user.email}
+            </p>
+          </div>
+          
           {/* Class Selection */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -367,6 +453,7 @@ export default function StudentCSVPage() {
             </select>
           </div>
 
+          {/* Rest of your existing JSX remains the same... */}
           {/* Current Students */}
           {students.length > 0 && (
             <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
