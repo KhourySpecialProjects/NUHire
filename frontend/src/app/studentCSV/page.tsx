@@ -100,7 +100,8 @@ export default function StudentCSVPage() {
     }
 
     // Find email column
-    const headers = data[0].map(h => h.toLowerCase());
+    const headers = data[0].map(h => h.toLowerCase().trim());
+    console.log('CSV Headers:', headers);
     const emailIndex = headers.findIndex(h => h.includes('email'));
 
     if (emailIndex === -1) {
