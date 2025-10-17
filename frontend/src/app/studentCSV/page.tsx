@@ -119,10 +119,10 @@ export default function StudentCSVPage() {
       } else if (!emailRegex.test(email)) {
         errors.push({ row: rowNumber, error: `Invalid email format: ${email}` });
       } else {
-        students.push({ email, group_id: 1 });
+        // Give each student their own unique group (index + 1)
+        students.push({ email, group_id: index + 1 });
       }
     });
-
     return { students, errors };
   };
 
