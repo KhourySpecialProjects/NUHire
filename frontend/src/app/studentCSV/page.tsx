@@ -33,6 +33,8 @@ export default function StudentCSVPage() {
   const [dragActive, setDragActive] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Add submit loading state
+  const [submitSuccess, setSubmitSuccess] = useState(false); // Add submit success state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -132,6 +134,11 @@ export default function StudentCSVPage() {
       return;
     }
 
+    // Clear existing data when new file is uploaded
+    setCsvStudents([]);
+    setValidationErrors([]);
+    setSubmitSuccess(false);
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const csvText = e.target?.result as string;
@@ -161,16 +168,58 @@ export default function StudentCSVPage() {
   };
 
   const updateStudentGroup = (email: string, groupId: number) => {
-    console.log('Updating:', email, 'to group:', groupId); // Add this for debugging
+    console.log('Updating:', email, 'to group:', groupId);
     setCsvStudents(prev => 
       prev.map(student => {
         if (student.email === email) {
-          console.log('Found match, updating:', student.email); // Add this for debugging
+          console.log('Found match, updating:', student.email);
           return { ...student, group_id: groupId };
         }
         return student;
       })
     );
+  };
+
+  // New submit function
+  const handleSubmit = async () => {
+    if (!selectedClass || csvStudents.length === 0) {
+      alert('Please select a class and upload student data first');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/submit-group-assignments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          class_id: selectedClass,
+          assignments: csvStudents.map(student => ({
+            email: student.email,
+            group_id: student.group_id
+          }))
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Submit successful:', result);
+        setSubmitSuccess(true);
+        alert('Group assignments submitted successfully!');
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to submit assignments: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting assignments:', error);
+      alert('Failed to submit assignments. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const downloadCSV = () => {
@@ -195,6 +244,7 @@ export default function StudentCSVPage() {
   const clearData = () => {
     setCsvStudents([]);
     setValidationErrors([]);
+    setSubmitSuccess(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -323,6 +373,15 @@ export default function StudentCSVPage() {
             </div>
           )}
 
+          {/* Submit Success Message */}
+          {submitSuccess && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 font-semibold">
+                ✅ Group assignments submitted successfully!
+              </p>
+            </div>
+          )}
+
           {/* Group Assignment Interface */}
           {csvStudents.length > 0 && (
             <div className="mb-6">
@@ -355,6 +414,25 @@ export default function StudentCSVPage() {
           {csvStudents.length > 0 && (
             <div className="flex space-x-4">
               <button
+                onClick={handleSubmit}
+                disabled={!selectedClass || isSubmitting || submitSuccess}
+                className={`px-6 py-3 rounded-lg font-semibold ${
+                  !selectedClass || isSubmitting || submitSuccess
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </div>
+                ) : (
+                  'Submit Group Assignments'
+                )}
+              </button>
+              
+              <button
                 onClick={downloadCSV}
                 disabled={!selectedClass}
                 className={`px-6 py-3 rounded-lg font-semibold ${
@@ -363,8 +441,9 @@ export default function StudentCSVPage() {
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Download Group Assignments
+                Download CSV
               </button>
+              
               <button
                 onClick={clearData}
                 className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600"
