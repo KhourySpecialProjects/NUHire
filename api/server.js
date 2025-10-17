@@ -2857,6 +2857,122 @@ app.get('/group-assignment-statuses', (req, res) => {
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//CSV IMPORT
+app.post("/importCSV", (req, res) => {
+  console.log("=== POST /importCSV endpoint hit ===");
+  console.log("Request body:", req.body);
+  
+  const { class_id, assignments } = req.body;
+
+  // Validate required fields
+  if (!class_id || !assignments || !Array.isArray(assignments)) {
+    console.log("❌ Validation failed: Missing class_id or assignments array");
+    return res.status(400).json({ 
+      error: "class_id and assignments array are required" 
+    });
+  }
+
+  if (assignments.length === 0) {
+    console.log("❌ Validation failed: Empty assignments array");
+    return res.status(400).json({ 
+      error: "assignments array cannot be empty" 
+    });
+  }
+
+  console.log(`✅ Validation passed. Processing ${assignments.length} assignments for class ${class_id}`);
+
+  // Prepare bulk update queries
+  const updatePromises = assignments.map(assignment => {
+    const { email, group_id } = assignment;
+    
+    if (!email || !group_id) {
+      console.log(`⚠️ Skipping invalid assignment: email=${email}, group_id=${group_id}`);
+      return Promise.resolve({ skipped: true, email, reason: "Missing email or group_id" });
+    }
+
+    return new Promise((resolve, reject) => {
+      // Update existing user or insert new user with group assignment
+      const query = `
+        INSERT INTO Users (email, class, group_id, affiliation) 
+        VALUES (?, ?, ?, 'student')
+        ON DUPLICATE KEY UPDATE 
+          class = VALUES(class),
+          group_id = VALUES(group_id)
+      `;
+      
+      db.query(query, [email, class_id, group_id], (err, result) => {
+        if (err) {
+          console.error(`❌ Database error for ${email}:`, err);
+          reject({ email, error: err.message });
+        } else {
+          console.log(`✅ Successfully processed ${email} -> Group ${group_id}`);
+          resolve({ 
+            email, 
+            group_id, 
+            action: result.insertId ? 'inserted' : 'updated',
+            affectedRows: result.affectedRows 
+          });
+        }
+      });
+    });
+  });
+
+  // Execute all updates
+  Promise.allSettled(updatePromises)
+    .then(results => {
+      const successful = [];
+      const failed = [];
+      const skipped = [];
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          if (result.value.skipped) {
+            skipped.push(result.value);
+          } else {
+            successful.push(result.value);
+          }
+        } else {
+          failed.push(result.reason);
+        }
+      });
+
+      console.log(`📊 Import Results: ${successful.length} successful, ${failed.length} failed, ${skipped.length} skipped`);
+
+      // Emit socket event to notify class about updates
+      if (successful.length > 0) {
+        io.to(`class_${class_id}`).emit("csvGroupsImported", {
+          class_id,
+          successful_count: successful.length,
+          total_processed: assignments.length,
+          message: `${successful.length} group assignments imported successfully`
+        });
+      }
+
+      // Return comprehensive response
+      res.json({
+        message: "CSV import completed",
+        class_id,
+        total_assignments: assignments.length,
+        successful: successful.length,
+        failed: failed.length,
+        skipped: skipped.length,
+        results: {
+          successful,
+          failed,
+          skipped
+        }
+      });
+    })
+    .catch(error => {
+      console.error("❌ Unexpected error during CSV import:", error);
+      res.status(500).json({ 
+        error: "Failed to process CSV import",
+        details: error.message 
+      });
+    });
+});
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various
 
 // ✅ Serve Uploaded Files
