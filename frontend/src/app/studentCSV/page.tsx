@@ -190,7 +190,7 @@ export default function StudentCSVPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/submit-group-assignments`, {
+      const response = await fetch(`${API_BASE_URL}/importCSV`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
