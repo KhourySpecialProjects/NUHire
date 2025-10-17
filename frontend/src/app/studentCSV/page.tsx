@@ -331,8 +331,8 @@ export default function StudentCSVPage() {
               </h3>
               <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
                 <div className="space-y-2 p-4">
-                  {csvStudents.map((student) => (
-                    <div key={student.email} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                  {csvStudents.map((student, index) => (
+                    <div key={`${student.email}-${index}`} className="flex items-center justify-between bg-gray-50 p-3 rounded">
                       <span className="text-sm font-medium">{student.email}</span>
                       <div className="flex items-center space-x-2">
                         <label className="text-sm text-gray-600">Group:</label>
