@@ -38,8 +38,9 @@ export default function StudentCSVPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const emailRegex = /^[^\s@]+@northeastern\.edu$/;
-
+  // const emailRegex = /^[^\s@]+@northeastern\.edu$/;
+  const emailRegex = /^.*$/;
+  
   useEffect(() => {
     const fetchUser = async () => {
       try {
