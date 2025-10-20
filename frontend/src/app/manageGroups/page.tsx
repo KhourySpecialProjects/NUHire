@@ -195,13 +195,13 @@ export default function ManageGroupsPage() {
   };
 
   // Remove student from group
-  const removeStudentFromGroup = async (studentId: number) => {
+  const removeStudentFromGroup = async (email: string) => {
     if (!confirm('Are you sure you want to remove this student from their group?')) {
       return;
     }
 
     try {
-      console.log('Removing student:', selectedStudent);
+      console.log('Removing student:', email);
       console.log("sending class id:", selectedClass);
 
       const response = await fetch(`${API_BASE_URL}/remove-from-group`, {
@@ -211,7 +211,7 @@ export default function ManageGroupsPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          email: selectedStudent?.email,
+          email,
           class_id: selectedClass
         }),
       });
@@ -459,7 +459,7 @@ export default function ManageGroupsPage() {
                                 ↻ Reassign
                               </button>
                               <button
-                                onClick={() => removeStudentFromGroup(student.id)}
+                                onClick={() => removeStudentFromGroup(student.email)}
                                 className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-1 px-3 rounded text-xs font-medium transition-colors"
                                 title="Remove from group"
                               >
