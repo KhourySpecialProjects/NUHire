@@ -177,9 +177,9 @@ export default function ManageGroupsPage() {
   };
 
   // Reassign student to different group
-  const reassignStudent = async (studentId: number, newGroup: number) => {
+  const reassignStudent = async (email: string, newGroup: number) => {
     try {
-      console.log('reassigning student:', selectedStudent);
+      console.log('reassigning email:', email);
       console.log("sending class id:", selectedClass);
       console.log("new group id:", newGroup);
       const response = await fetch(`${API_BASE_URL}/reassign-student`, {
@@ -576,17 +576,11 @@ export default function ManageGroupsPage() {
                       Group {group.group_id} ({group.students.length} student{group.students.length !== 1 ? 's' : ''})
                     </option>
                   ))}
-                
-                {/* Option to create a new group - UPDATED */}
-                <option value={Math.max(...groups.filter(g => g.group_id !== -1).map(g => g.group_id), 0) + 1}>
-                  Create New Group {Math.max(...groups.filter(g => g.group_id !== -1).map(g => g.group_id), 0) + 1}
-                </option>
               </select>
               
               {/* Show preview of selected group - UPDATED */}
               <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                {newGroupId <= Math.max(...groups.filter(g => g.group_id !== -1).map(g => g.group_id), 0) ? (
-                  <div>
+                <div>
                     <p className="font-medium">Moving to Group {newGroupId}:</p>
                     {groups.find(g => g.group_id === newGroupId)?.students.length === 0 ? (
                       <p className="text-gray-500 italic">Empty group</p>
@@ -603,17 +597,11 @@ export default function ManageGroupsPage() {
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div>
-                    <p className="font-medium text-green-700">Creating new Group {newGroupId}</p>
-                    <p className="text-gray-500">This will be a new empty group</p>
-                  </div>
-                )}
               </div>
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={() => reassignStudent(selectedStudent.id, newGroupId)}
+                onClick={() => reassignStudent(selectedStudent.email, newGroupId)}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
               >
                 {newGroupId <= Math.max(...groups.map(g => g.group_id), 0) ? 'Reassign' : 'Create & Assign'}
