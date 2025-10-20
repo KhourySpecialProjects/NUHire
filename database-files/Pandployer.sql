@@ -387,8 +387,8 @@ DROP TABLE IF EXISTS `Users`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Users` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `f_name` varchar(50) NOT NULL,
-  `l_name` varchar(50) NOT NULL,
+  `f_name` varchar(50) DEFAULT NULL,
+  `l_name` varchar(50) DEFAULT NULL,
   `email` varchar(100) NOT NULL,
   `affiliation` enum('student','admin') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -410,4 +410,4 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-15 11:38:41
+-- Dump completed on 2025-10-17 15:07:15
