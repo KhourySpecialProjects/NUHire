@@ -528,22 +528,60 @@ export default function ManageGroupsPage() {
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Group Number:
+                Select New Group:
               </label>
-              <input
-                type="number"
-                min="1"
+              <select
                 value={newGroupId}
-                onChange={(e) => setNewGroupId(parseInt(e.target.value) || 1)}
+                onChange={(e) => setNewGroupId(parseInt(e.target.value))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+              >
+                {/* Show all existing groups */}
+                {groups.map((group) => (
+                  <option key={group.group_id} value={group.group_id}>
+                    Group {group.group_id} ({group.students.length} student{group.students.length !== 1 ? 's' : ''})
+                  </option>
+                ))}
+                
+                {/* Option to create a new group */}
+                <option value={Math.max(...groups.map(g => g.group_id), 0) + 1}>
+                  Create New Group {Math.max(...groups.map(g => g.group_id), 0) + 1}
+                </option>
+              </select>
+              
+              {/* Show preview of selected group */}
+              <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                {newGroupId <= Math.max(...groups.map(g => g.group_id), 0) ? (
+                  <div>
+                    <p className="font-medium">Moving to Group {newGroupId}:</p>
+                    {groups.find(g => g.group_id === newGroupId)?.students.length === 0 ? (
+                      <p className="text-gray-500 italic">Empty group</p>
+                    ) : (
+                      <div className="mt-1">
+                        {groups.find(g => g.group_id === newGroupId)?.students.map((student, index) => (
+                          <p key={student.id} className="text-gray-600">
+                            • {student.f_name && student.l_name 
+                              ? `${student.f_name} ${student.l_name}`
+                              : student.f_name || student.l_name || 'No Name'
+                            }
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-medium text-green-700">Creating new Group {newGroupId}</p>
+                    <p className="text-gray-500">This will be a new empty group</p>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex space-x-3">
               <button
                 onClick={() => reassignStudent(selectedStudent.id, newGroupId)}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
               >
-                Reassign
+                {newGroupId <= Math.max(...groups.map(g => g.group_id), 0) ? 'Reassign' : 'Create & Assign'}
               </button>
               <button
                 onClick={() => {
