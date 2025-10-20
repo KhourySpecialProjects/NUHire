@@ -118,29 +118,51 @@ export default function ManageGroupsPage() {
     fetchStudents();
   }, [selectedClass]);
 
-  // Organize students into groups
   const organizeStudentsIntoGroups = (studentList: Student[]) => {
-    const groupMap = new Map<number, Student[]>();
+    const groupMap = new Map<number | null, Student[]>();
     
     studentList.forEach(student => {
-      if (!groupMap.has(student.group_id)) {
-        groupMap.set(student.group_id, []);
+      const groupKey = student.group_id;
+      if (!groupMap.has(groupKey)) {
+        groupMap.set(groupKey, []);
       }
-      groupMap.get(student.group_id)!.push(student);
+      groupMap.get(groupKey)!.push(student);
     });
 
-    const groupsArray: Group[] = Array.from(groupMap.entries())
-      .map(([group_id, students]) => ({
-        group_id,
-        students: students.sort((a, b) => {
-          // Handle null/undefined first names
+    const groupsArray: Group[] = [];
+    
+    Array.from(groupMap.entries())
+      .filter(([group_id]) => group_id !== null)
+      .forEach(([group_id, students]) => {
+        groupsArray.push({
+          group_id: group_id as number,
+          students: students.sort((a, b) => {
+            const aName = a.f_name || '';
+            const bName = b.f_name || '';
+            return aName.localeCompare(bName);
+          }),
+          isStarted: false
+        });
+      });
+    
+    const ungroupedStudents = groupMap.get(null) || [];
+    if (ungroupedStudents.length > 0) {
+      groupsArray.push({
+        group_id: -1,
+        students: ungroupedStudents.sort((a, b) => {
           const aName = a.f_name || '';
           const bName = b.f_name || '';
           return aName.localeCompare(bName);
         }),
-        isStarted: false // TODO: Check actual status from database
-      }))
-      .sort((a, b) => a.group_id - b.group_id);
+        isStarted: false
+      });
+    }
+    
+    groupsArray.sort((a, b) => {
+      if (a.group_id === -1) return 1; 
+      if (b.group_id === -1) return -1;
+      return a.group_id - b.group_id;
+    });
 
     setGroups(groupsArray);
   };
@@ -407,57 +429,56 @@ export default function ManageGroupsPage() {
                 </h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {groups.map((group) => (
-                  <div key={group.group_id} className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                    {/* Group Header */}
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Group {group.group_id}
-                        </h3>
-                        {group.isStarted && (
-                          <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                            ✅ Started
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {group.students.length} student{group.students.length !== 1 ? 's' : ''}
-                      </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+              {groups.map((group) => (
+                <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {group.group_id === -1 ? 'No Group' : `Group ${group.group_id}`}
+                      </h3>
+                      {group.isStarted && group.group_id !== -1 && (
+                        <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                          ✅ Started
+                        </span>
+                      )}
                     </div>
+                    <span className="text-sm text-gray-500">
+                      {group.students.length} student{group.students.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
 
-                    {/* Students List */}
-                    <div className="space-y-2 mb-4">
-                      {group.students.length === 0 ? (
-                        <p className="text-gray-500 text-sm italic">No students in this group</p>
-                      ) : (
-                        group.students.map((student) => (
-                          <div key={student.id} className="bg-white p-3 rounded border border-gray-200">
-                            {/* Student Info */}
-                            <div className="mb-3">
-                              <p className="font-medium text-gray-900">
-                                {student.f_name && student.l_name 
-                                  ? `${student.f_name} ${student.l_name}`
-                                  : student.f_name || student.l_name || 'No Name'
-                                }
-                              </p>
-                              <p className="text-sm text-gray-600">{student.email}</p>
-                            </div>
+                  <div className="space-y-2 mb-4">
+                    {group.students.length === 0 ? (
+                      <p className="text-gray-500 text-sm italic">No students in this group</p>
+                    ) : (
+                      group.students.map((student) => (
+                        <div key={student.id} className="bg-gray-50 p-3 rounded border border-gray-200">
+                          {/* Student Info */}
+                          <div className="mb-3">
+                            <p className="font-medium text-gray-900">
+                              {student.f_name && student.l_name 
+                                ? `${student.f_name} ${student.l_name}`
+                                : student.f_name || student.l_name || 'No Name'
+                              }
+                            </p>
+                            <p className="text-sm text-gray-600">{student.email}</p>
+                          </div>
+                          
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                setSelectedStudent(student);
+                                setNewGroupId(group.group_id === -1 ? 1 : group.group_id);
+                                setReassignModalOpen(true);
+                              }}
+                              className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-1 px-3 rounded text-xs font-medium transition-colors"
+                              title="Reassign student"
+                            >
+                              ↻ Reassign
+                            </button>
                             
-                            {/* Action Buttons */}
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => {
-                                  setSelectedStudent(student);
-                                  setNewGroupId(group.group_id);
-                                  setReassignModalOpen(true);
-                                }}
-                                className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-1 px-3 rounded text-xs font-medium transition-colors"
-                                title="Reassign student"
-                              >
-                                ↻ Reassign
-                              </button>
+                            {student.group_id !== null && (
                               <button
                                 onClick={() => removeStudentFromGroup(student.email)}
                                 className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-1 px-3 rounded text-xs font-medium transition-colors"
@@ -465,13 +486,14 @@ export default function ManageGroupsPage() {
                               >
                                 × Remove
                               </button>
-                            </div>
+                            )}
                           </div>
-                        ))
-                      )}
-                    </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
 
-                    {/* Group Actions */}
+                  {group.group_id !== -1 && (
                     <div className="flex space-x-2">
                       <button
                         onClick={() => startGroup(group.group_id)}
@@ -494,9 +516,10 @@ export default function ManageGroupsPage() {
                         )}
                       </button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              ))}
+            </div>
             </div>
           )}
 
@@ -541,17 +564,24 @@ export default function ManageGroupsPage() {
                 onChange={(e) => setNewGroupId(parseInt(e.target.value))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                {/* Show all existing groups */}
-                {groups.map((group) => (
-                  <option key={group.group_id} value={group.group_id}>
-                    Group {group.group_id} ({group.students.length} student{group.students.length !== 1 ? 's' : ''})
-                  </option>
-                ))}
+                {/* Show all existing groups - UPDATED */}
+                {groups
+                  .filter(group => group.group_id !== -1) // Exclude "No Group" from options
+                  .map((group) => (
+                    <option key={group.group_id} value={group.group_id}>
+                      Group {group.group_id} ({group.students.length} student{group.students.length !== 1 ? 's' : ''})
+                    </option>
+                  ))}
+                
+                {/* Option to create a new group - UPDATED */}
+                <option value={Math.max(...groups.filter(g => g.group_id !== -1).map(g => g.group_id), 0) + 1}>
+                  Create New Group {Math.max(...groups.filter(g => g.group_id !== -1).map(g => g.group_id), 0) + 1}
+                </option>
               </select>
               
-              {/* Show preview of selected group */}
+              {/* Show preview of selected group - UPDATED */}
               <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                {newGroupId <= Math.max(...groups.map(g => g.group_id), 0) ? (
+                {newGroupId <= Math.max(...groups.filter(g => g.group_id !== -1).map(g => g.group_id), 0) ? (
                   <div>
                     <p className="font-medium">Moving to Group {newGroupId}:</p>
                     {groups.find(g => g.group_id === newGroupId)?.students.length === 0 ? (
