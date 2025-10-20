@@ -3002,6 +3002,99 @@ app.post("/importCSV", (req, res) => {
     });
 });
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//manage Groups
+app.get("/students-by-class/:classId", (req, res) => {
+  const { classId } = req.params;
+  
+  console.log('Fetching students for class:', classId);
+  
+  const query = `SELECT * FROM Users WHERE class = ?`;
+      
+  db.query(query, [classId], (err, results) => {
+    if (err) {
+      console.error('Error fetching students by class:', err);
+      return res.status(500).json({ error: 'Failed to fetch students' });
+    }
+    
+    console.log(`Found ${results.length} students for class ${classId}`);
+    res.json(results);
+  });
+});
+
+app.patch("/reassign-student", (req, res) => {
+  const { email, new_group_id, class_id } = req.body;
+  
+  console.log('Reassigning student:', { email, new_group_id, class_id });
+  
+  if (!email || !new_group_id || !class_id) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: email, new_group_id, class_id' 
+    });
+  }
+
+  const updateQuery = 'UPDATE Users SET group_id = ? WHERE email = ? AND class = ?';
+  
+  db.query(updateQuery, [new_group_id, email, class_id], (err, result) => {
+    if (err) {
+      console.error('Error reassigning student to new group:', err);
+      return res.status(500).json({ error: 'Failed to reassign student' });
+    }
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Student not found in this class' });
+    }
+    
+    console.log(`✅ Student ${email} successfully reassigned to group ${new_group_id} in class ${class_id}`);
+
+    io.emit("studentReassigned", { class_id, email, new_group_id });
+
+    res.json({ 
+      message: 'Student reassigned successfully',
+      email,
+      new_group_id,
+      class_id
+    });
+  });
+});
+
+app.delete("/remove-from-group", (req, res) => {
+  const { email, class_id } = req.body;
+  
+  console.log('Removing student from group:', { email, class_id });
+  
+  if (!email || !class_id) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: email, class_id' 
+    });
+  }
+
+  const updateQuery = 'UPDATE Users SET group_id = NULL WHERE email = ? AND class = ?';
+  
+  db.query(updateQuery, [email, class_id], (err, result) => {
+    if (err) {
+      console.error('Error removing student from group:', err);
+      return res.status(500).json({ error: 'Failed to remove student from group' });
+    }
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Student not found in this class' });
+    }
+    
+    console.log(`✅ Student ${email} successfully removed from group in class ${class_id}`);
+
+    io.emit("studentRemovedFromGroup", { class_id, email });
+
+    res.json({ 
+      message: 'Student removed from group successfully',
+      email,
+      class_id
+    });
+  });
+});
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various
 
