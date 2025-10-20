@@ -177,9 +177,9 @@ export default function ManageGroupsPage() {
   };
 
   // Reassign student to different group
-  const reassignStudent = async (email: string, newGroup: number) => {
+  const reassignStudent = async (studEmail: string, newGroup: number) => {
     try {
-      console.log('reassigning email:', email);
+      console.log('reassigning email:', studEmail);
       console.log("sending class id:", selectedClass);
       console.log("new group id:", newGroup);
       const response = await fetch(`${API_BASE_URL}/reassign-student`, {
@@ -189,7 +189,7 @@ export default function ManageGroupsPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          email: email,
+          email: studEmail,
           new_group_id: newGroup,
           class_id: selectedClass
         }),
