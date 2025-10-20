@@ -157,7 +157,7 @@ export default function ManageGroupsPage() {
       console.log("sending class id:", selectedClass);
       console.log("new group id:", newGroup);
       const response = await fetch(`${API_BASE_URL}/reassign-student`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -205,7 +205,7 @@ export default function ManageGroupsPage() {
       console.log("sending class id:", selectedClass);
 
       const response = await fetch(`${API_BASE_URL}/remove-from-group`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
