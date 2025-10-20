@@ -132,7 +132,12 @@ export default function ManageGroupsPage() {
     const groupsArray: Group[] = Array.from(groupMap.entries())
       .map(([group_id, students]) => ({
         group_id,
-        students: students.sort((a, b) => a.f_name.localeCompare(b.f_name)),
+        students: students.sort((a, b) => {
+          // Handle null/undefined first names
+          const aName = a.f_name || '';
+          const bName = b.f_name || '';
+          return aName.localeCompare(bName);
+        }),
         isStarted: false // TODO: Check actual status from database
       }))
       .sort((a, b) => a.group_id - b.group_id);
@@ -368,13 +373,6 @@ export default function ManageGroupsPage() {
             )}
           </div>
           
-          {/* User Info */}
-          <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Logged in as:</strong> {user.email}
-            </p>
-          </div>
-          
           {/* Class Selection */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -433,7 +431,10 @@ export default function ManageGroupsPage() {
                             <div className="flex justify-between items-start">
                               <div>
                                 <p className="font-medium text-gray-900">
-                                  {student.f_name} {student.l_name}
+                                  {student.f_name && student.l_name 
+                                    ? `${student.f_name} ${student.l_name}`
+                                    : student.f_name || student.l_name || 'No Name'
+                                  }
                                 </p>
                                 <p className="text-sm text-gray-600">{student.email}</p>
                               </div>
@@ -516,7 +517,10 @@ export default function ManageGroupsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
             <h3 className="text-lg font-semibold mb-4">
-              Reassign {selectedStudent.f_name} {selectedStudent.l_name}
+              Reassign {selectedStudent.f_name && selectedStudent.l_name 
+                ? `${selectedStudent.f_name} ${selectedStudent.l_name}`
+                : selectedStudent.email
+              }
             </h3>
             <p className="text-gray-600 mb-4">
               Current group: {selectedStudent.group_id}
