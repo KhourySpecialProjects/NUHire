@@ -912,10 +912,7 @@ app.get("/auth/keycloak/callback",
         } else {
           if (dbUser.group_id) {
             // Student has a group, check if the group has been started
-            const checkGroupStartedQuery = `
-              SELECT started FROM Groups 
-              WHERE class_id = ? AND id = ?
-            `;
+            const checkGroupStartedQuery = 'SELECT started FROM \`Groups\` WHERE class_id = ? AND id = ?';
             
             db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
               if (startErr) {
