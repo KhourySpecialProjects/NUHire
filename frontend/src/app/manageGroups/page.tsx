@@ -342,175 +342,171 @@ export default function ManageGroupsPage() {
     );
   }
 
-return (
+  return (
     <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
       <NavbarAdmin />
-      
-      {/* Remove the max-w-7xl mx-auto p-4 wrapper */}
-      <div className="flex-1 p-6">
-        {/* Remove the bg-white rounded-lg shadow-lg wrapper */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">👥 Manage Groups</h1>
-          
-          {/* Start All Groups Button */}
-          {selectedClass && groups.length > 0 && (
-            <button
-              onClick={startAllGroups}
-              disabled={isStartingAll || groups.every(g => g.isStarted)}
-              className={`px-6 py-3 rounded-lg font-semibold ${
-                isStartingAll || groups.every(g => g.isStarted)
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-600 text-white hover:bg-green-700'
-              }`}
-            >
-              {isStartingAll ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Starting All...
-                </div>
-              ) : (
-                '🚀 Start All Groups'
-              )}
-            </button>
-          )}
-        </div>
-        
-        {/* Class Selection */}
-        <div className="mb-6 max-w-md">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Class to Manage:
-          </label>
-          <select
-            value={selectedClass}
-            onChange={(e) => handleClassChange(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          >
-            <option value="">Choose a class...</option>
-            {classes.map((cls) => (
-              <option key={cls.crn} value={cls.crn}>
-                {cls.class_name} (CRN: {cls.crn})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Groups Dashboard */}
-        {selectedClass && groups.length > 0 && (
-          <div>
-            <div className="mb-6 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Class Groups ({groups.length} groups, {students.length} students total)
-              </h2>
-            </div>
+      <div className="w-3/4 mx-auto p-4">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">👥 Manage Groups</h1>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-              {groups.map((group) => (
-                <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-                  {/* Group Header */}
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Group {group.group_id}
-                      </h3>
-                      {group.isStarted && (
-                        <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                          ✅ Started
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {group.students.length} student{group.students.length !== 1 ? 's' : ''}
-                    </span>
+            {/* Start All Groups Button */}
+            {selectedClass && groups.length > 0 && (
+              <button
+                onClick={startAllGroups}
+                disabled={isStartingAll || groups.every(g => g.isStarted)}
+                className={`px-6 py-3 rounded-lg font-semibold ${
+                  isStartingAll || groups.every(g => g.isStarted)
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {isStartingAll ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Starting All...
                   </div>
+                ) : (
+                  '🚀 Start All Groups'
+                )}
+              </button>
+            )}
+          </div>
+          
+          {/* Class Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Class to Manage:
+            </label>
+            <select
+              value={selectedClass}
+              onChange={(e) => handleClassChange(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Choose a class...</option>
+              {classes.map((cls) => (
+                <option key={cls.crn} value={cls.crn}>
+                  {cls.class_name} (CRN: {cls.crn})
+                </option>
+              ))}
+            </select>
+          </div>
 
-                  {/* Students List */}
-                  <div className="space-y-2 mb-4">
-                    {group.students.length === 0 ? (
-                      <p className="text-gray-500 text-sm italic">No students in this group</p>
-                    ) : (
-                      group.students.map((student) => (
-                        <div key={student.id} className="bg-gray-50 p-3 rounded border border-gray-200">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {student.f_name && student.l_name 
-                                  ? `${student.f_name} ${student.l_name}`
-                                  : student.f_name || student.l_name || 'No Name'
-                                }
-                              </p>
-                              <p className="text-sm text-gray-600">{student.email}</p>
-                            </div>
-                            <div className="flex space-x-1">
-                              <button
-                                onClick={() => {
-                                  setSelectedStudent(student);
-                                  setNewGroupId(group.group_id);
-                                  setReassignModalOpen(true);
-                                }}
-                                className="text-blue-600 hover:text-blue-800 text-xs"
-                                title="Reassign student"
-                              >
-                                ↻
-                              </button>
-                              <button
-                                onClick={() => removeStudentFromGroup(student.id)}
-                                className="text-red-600 hover:text-red-800 text-xs"
-                                title="Remove from group"
-                              >
-                                ×
-                              </button>
+          {/* Groups Dashboard */}
+          {selectedClass && groups.length > 0 && (
+            <div>
+              <div className="mb-4 flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Class Groups ({groups.length} groups, {students.length} students total)
+                </h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {groups.map((group) => (
+                  <div key={group.group_id} className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                    {/* Group Header */}
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Group {group.group_id}
+                        </h3>
+                        {group.isStarted && (
+                          <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                            ✅ Started
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {group.students.length} student{group.students.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    {/* Students List */}
+                    <div className="space-y-2 mb-4">
+                      {group.students.length === 0 ? (
+                        <p className="text-gray-500 text-sm italic">No students in this group</p>
+                      ) : (
+                        group.students.map((student) => (
+                          <div key={student.id} className="bg-white p-3 rounded border border-gray-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {student.f_name} {student.l_name}
+                                </p>
+                                <p className="text-sm text-gray-600">{student.email}</p>
+                              </div>
+                              <div className="flex space-x-1">
+                                <button
+                                  onClick={() => {
+                                    setSelectedStudent(student);
+                                    setNewGroupId(group.group_id);
+                                    setReassignModalOpen(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 text-xs"
+                                  title="Reassign student"
+                                >
+                                  ↻
+                                </button>
+                                <button
+                                  onClick={() => removeStudentFromGroup(student.id)}
+                                  className="text-red-600 hover:text-red-800 text-xs"
+                                  title="Remove from group"
+                                >
+                                  ×
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Group Actions */}
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => startGroup(group.group_id)}
-                      disabled={group.isStarted || startingGroups.has(group.group_id)}
-                      className={`flex-1 py-2 px-3 rounded text-sm font-medium ${
-                        group.isStarted || startingGroups.has(group.group_id)
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {startingGroups.has(group.group_id) ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                          Starting...
-                        </div>
-                      ) : group.isStarted ? (
-                        '✅ Started'
-                      ) : (
-                        '🚀 Start Group'
+                        ))
                       )}
-                    </button>
+                    </div>
+
+                    {/* Group Actions */}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => startGroup(group.group_id)}
+                        disabled={group.isStarted || startingGroups.has(group.group_id)}
+                        className={`flex-1 py-2 px-3 rounded text-sm font-medium ${
+                          group.isStarted || startingGroups.has(group.group_id)
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                      >
+                        {startingGroups.has(group.group_id) ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                            Starting...
+                          </div>
+                        ) : group.isStarted ? (
+                          '✅ Started'
+                        ) : (
+                          '🚀 Start Group'
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* No Groups Message */}
-        {selectedClass && groups.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No groups found for this class.</p>
-            <p className="text-gray-400 text-sm mt-2">
-              Students need to be imported via CSV first.
-            </p>
-          </div>
-        )}
+          {/* No Groups Message */}
+          {selectedClass && groups.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-500 text-lg">No groups found for this class.</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Students need to be imported via CSV first.
+              </p>
+            </div>
+          )}
 
-        {/* No Class Selected */}
-        {!selectedClass && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Select a class to manage groups.</p>
-          </div>
-        )}
+          {/* No Class Selected */}
+          {!selectedClass && (
+            <div className="text-center py-8">
+              <p className="text-gray-500 text-lg">Select a class to manage groups.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Reassign Student Modal */}
