@@ -3016,9 +3016,6 @@ app.patch("/remove-from-group", (req, res) => {
     }
     
     console.log(`✅ Student ${email} successfully removed from group in class ${class_id}`);
-
-    io.to(`class_${class_id}`).emit("studentRemovedFromGroup");
-
     res.json({ 
       message: 'Student removed from group successfully',
       email,
@@ -3036,7 +3033,7 @@ app.patch("/start-all-groups") , (req, res) => {
     });
   }
 
-  const updateQuery = 'UPDATE Groups SET started = 1 WHERE class_id = ?';
+  const updateQuery = 'UPDATE \`Groups\` SET started = 1 WHERE class_id = ?';
 
   db.query(updateQuery, [class_id], (err, result) => {
     if (err) {
@@ -3088,11 +3085,7 @@ app.get("/group-status/:classId/:groupId", (req, res) => {
   
   console.log('Fetching group status for class:', classId, 'group:', groupId);
   
-  const query = `
-    SELECT started 
-    FROM \`Groups\` 
-    WHERE class_id = ? AND group_number = ?
-  `;
+  const query = 'SELECT started FROM \`Groups\` WHERE class_id = ? AND group_number = ?';
       
   db.query(query, [classId, groupId], (err, results) => {
     if (err) {
