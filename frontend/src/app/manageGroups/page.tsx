@@ -153,6 +153,9 @@ export default function ManageGroupsPage() {
   // Reassign student to different group
   const reassignStudent = async (studentId: number, newGroup: number) => {
     try {
+      console.log('reassigning student:', selectedStudent);
+      console.log("sending class id:", selectedClass);
+      console.log("new group id:", newGroup);
       const response = await fetch(`${API_BASE_URL}/reassign-student`, {
         method: 'POST',
         headers: {
@@ -198,6 +201,9 @@ export default function ManageGroupsPage() {
     }
 
     try {
+      console.log('Removing student:', selectedStudent);
+      console.log("sending class id:", selectedClass);
+
       const response = await fetch(`${API_BASE_URL}/remove-from-group`, {
         method: 'POST',
         headers: {
