@@ -3064,7 +3064,7 @@ app.patch("/start-group", (req, res) => {
     });
   }
   
-  const updateQuery = 'UPDATE Groups SET `started` = 1 WHERE class_id = ? AND id = ?';  
+  const updateQuery = 'UPDATE \`Groups\` SET started = 1 WHERE class_id = ? AND id = ?';  
   db.query(updateQuery, [class_id, group_id], (err, result) => {
     if (err) {
       console.error('Error starting group:', err);
