@@ -189,7 +189,7 @@ export default function ManageGroupsPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          email: selectedStudent,
+          email: email,
           new_group_id: newGroup,
           class_id: selectedClass
         }),
