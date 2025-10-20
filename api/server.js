@@ -1198,7 +1198,20 @@ app.post("/update-job", async (req, res) => {
     return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
-  console.log("Updating job for group:", req.body);
+  // ADDED: Validate that job_group_id is a valid integer
+  const groupIdInt = parseInt(job_group_id);
+  if (isNaN(groupIdInt) || groupIdInt <= 0) {
+    console.log("❌ Invalid job_group_id:", job_group_id);
+    return res.status(400).json({ error: "job_group_id must be a valid positive integer." });
+  }
+
+  const classIdInt = parseInt(class_id);
+  if (isNaN(classIdInt) || classIdInt <= 0) {
+    console.log("❌ Invalid class_id:", class_id);
+    return res.status(400).json({ error: "class_id must be a valid positive integer." });
+  }
+
+  console.log("Updating job for group:", { job_group_id: groupIdInt, class_id: classIdInt, job });
 
   try {
     // Start a transaction for atomic operations
@@ -1429,24 +1442,24 @@ app.get("/groups", async (req, res) => {
   const { class: classId } = req.query;
   
   try {
-    // First, get the number of groups from the Moderator table
-    const [moderatorResult] = await db.promise().query(
+    const [groupsResult] = await db.promise().query(
       "SELECT DISTINCT group_number FROM `Groups` WHERE class_id = ? ORDER BY group_number", 
       [classId]
     );
     
-    if (moderatorResult.length === 0) {
-      return res.status(404).json({ error: "Class not found" });
+    if (groupsResult.length === 0) {
+      // If no groups found in Groups table, return empty object
+      console.log(`No groups found for class ${classId}`);
+      return res.json({});
     }
     
-    const nomGroups = moderatorResult[0].nom_groups;
-    console.log(`Class ${classId} should have ${nomGroups} groups`);
+    console.log(`Class ${classId} has ${groupsResult.length} groups`);
     
-    // Create the groups object based on nom_groups
+    // Create the groups object based on existing groups
     const groupsData = {};
-    for (let i = 1; i <= nomGroups; i++) {
-      groupsData[i] = []; // Initialize empty array for each group
-    }
+    groupsResult.forEach(group => {
+      groupsData[group.group_number] = []; // Initialize empty array for each group
+    });
     
     console.log("Generated groups data:", groupsData);
     res.json(groupsData);
