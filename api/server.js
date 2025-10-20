@@ -3083,7 +3083,7 @@ app.patch("/reassign-student", (req, res) => {
   });
 });
 
-app.delete("/remove-from-group", (req, res) => {
+app.patch("/remove-from-group", (req, res) => {
   const { email, class_id } = req.body;
   
   console.log('Removing student from group:', { email, class_id });
