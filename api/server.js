@@ -911,13 +911,37 @@ app.get("/auth/keycloak/callback",
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
           if (dbUser.group_id) {
-            // User has a group, proceed with normal flow
-            if (dbUser.seen === 1) {
-              return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
-            }
-            else{
-              return res.redirect(`${FRONT_URL}/about`);
-            }
+            // Student has a group, check if the group has been started
+            const checkGroupStartedQuery = `
+              SELECT started FROM Groups 
+              WHERE class_id = ? AND id = ?
+            `;
+            
+            db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
+              if (startErr) {
+                console.error('Error checking group start status:', startErr);
+                // Default to waiting if there's an error
+                return res.redirect(`${FRONT_URL}/waitingGroup`);
+              }
+              
+              console.log("Group start check results:", startResults);
+              
+              // Check if group has been started
+              if (startResults.length > 0 && startResults[0].started === 1) {
+                // Group has been started, proceed with normal flow
+                console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has been started`);
+                
+                if (dbUser.seen === 1) {
+                  return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+                } else {
+                  return res.redirect(`${FRONT_URL}/about`);
+                }
+              } else {
+                // Group hasn't been started yet, redirect to waiting
+                console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has NOT been started yet`);
+                return res.redirect(`${FRONT_URL}/waitingGroup`);
+              }
+            });
           } else {
             console.log("inside the group assignment check else");
             // User has no group, check if group assignment is allowed for their class
@@ -934,7 +958,7 @@ app.get("/auth/keycloak/callback",
                 const firstName = encodeURIComponent(user.f_name || '');
                 const lastName = encodeURIComponent(user.l_name || '');
                 
-                console.log("aassignmentResults:", assignmentResults);
+                console.log("assignmentResults:", assignmentResults);
                 // Check if assignment is allowed
                 if (assignmentResults.length > 0 && assignmentResults[0].assigned === 1) {
                   // Group assignment is enabled, redirect to assignGroup
@@ -3084,12 +3108,68 @@ app.delete("/remove-from-group", (req, res) => {
     
     console.log(`✅ Student ${email} successfully removed from group in class ${class_id}`);
 
-    io.emit("studentRemovedFromGroup", { class_id, email });
+    io.to(`class_${class_id}`).emit("studentRemovedFromGroup");
 
     res.json({ 
       message: 'Student removed from group successfully',
       email,
       class_id
+    });
+  });
+});
+
+app.patch("/start-all-groups") , (req, res) => {
+  const { class_id } = req.body;
+
+  if (!class_id) {
+    return res.status(400).json({ 
+      error: 'Missing required field: class_id' 
+    });
+  }
+
+  const updateQuery = 'UPDATE Groups SET started = 1 WHERE class_id = ?';
+
+  db.query(updateQuery, [class_id], (err, result) => {
+    if (err) {
+      console.error('Error starting all groups:', err);
+      return res.status(500).json({ error: 'Failed to start all groups' });
+    }
+
+    console.log(`✅ All groups for class ${class_id} successfully started`);
+
+    io.to(`class_${class_id}`).emit("allGroupsStarted", { class_id });
+
+    res.json({ 
+      message: 'All groups started successfully',
+      class_id
+    });
+  });
+};
+
+app.patch("/start-group", (req, res) => { 
+  const { class_id, group_id } = req.body;
+
+  if (!class_id || !group_id) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: class_id, group_id' 
+    });
+  }
+  
+  const updateQuery = 'UPDATE Groups SET started = 1 WHERE class_id = ? AND group_number = ?';  
+  db.query(updateQuery, [class_id, group_id], (err, result) => {
+    if (err) {
+      console.error('Error starting group:', err);
+      return res.status(500).json({ error: 'Failed to start group' });
+    }
+    
+    console.log(`✅ Group ${group_id} for class ${class_id} successfully started`);
+    
+    io.to(`class_${class_id}`).emit("groupStarted", { class_id, group_id });
+    
+    res.json({ 
+      message: 'Group started successfully',
+      class_id,
+      group_id
     });
   });
 });

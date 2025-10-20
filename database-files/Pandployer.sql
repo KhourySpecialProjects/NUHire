@@ -44,8 +44,7 @@ DROP TABLE IF EXISTS `Groups`;
 CREATE TABLE `Groups` (
   `id` int NOT NULL AUTO_INCREMENT,
   `class_id` int NOT NULL,
-  `group_number` int NOT NULL,
-  `max_students` int DEFAULT '4',
+  `started` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_class_group` (`class_id`,`group_number`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE

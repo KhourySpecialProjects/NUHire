@@ -19,7 +19,7 @@ export default function WaitingGroupPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-  const [groupAssignmentAllowed, setGroupAssignmentAllowed] = useState(false);
+  const [start, setStart] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false); // Added for debugging
   const router = useRouter();
 
@@ -82,7 +82,7 @@ export default function WaitingGroupPage() {
       
       // FIXED: Compare with user.class instead of user.class_id
       if (classId === user.class) {
-        setGroupAssignmentAllowed(true);
+        setStart(true);
         
         // Redirect to group assignment page after a short delay
         setTimeout(() => {
@@ -96,7 +96,7 @@ export default function WaitingGroupPage() {
     socket.on('groupAssignmentClosedStudent', ({classId, message}) => {
       
       if (classId === user.class) {
-        setGroupAssignmentAllowed(false);
+        setStart(false);
       }
     });
 
@@ -140,7 +140,7 @@ export default function WaitingGroupPage() {
       {/* Main Content */}
       <div className="z-10 flex flex-col items-center justify-center relative flex-grow p-8">
         <div className="max-w-2xl w-full text-center">
-          {!groupAssignmentAllowed ? (
+          {!start ? (
             <>
               <div className="mb-8">
                 <h1 className="text-4xl font-extrabold text-northeasternRed mb-4">
@@ -167,13 +167,13 @@ export default function WaitingGroupPage() {
                   
                   <div className="text-center">
                     <h2 className="text-2xl font-bold text-navy mb-4">
-                      Waiting for Group Assignment Authorization
+                      Waiting for Teacher to allow Start
                     </h2>
                     <p className="text-lg text-gray-700 mb-4">
-                      Your teacher needs to enable group selection before you can choose your group.
+                      Your teacher needs to enable your group to begin.
                     </p>
                     <p className="text-md text-gray-600">
-                      Please wait while your teacher prepares the group assignment process...
+                      Please wait while your teacher prepares...
                     </p>
                   </div>
                 </div>
@@ -188,14 +188,11 @@ export default function WaitingGroupPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-green-700 mb-4">
-                  Group Assignment Authorized!
-                </h2>
                 <p className="text-lg text-gray-700 mb-4">
-                  Your teacher has enabled group selection.
+                  Your teacher has enabled the activity!
                 </p>
                 <p className="text-md text-gray-600 mb-6">
-                  Redirecting you to group selection page...
+                  Redirecting you to the dashboard...
                 </p>
                 <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
