@@ -160,7 +160,7 @@ export default function ManageGroupsPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          student_id: studentId,
+          email: selectedStudent,
           new_group_id: newGroup,
           class_id: selectedClass
         }),
@@ -205,7 +205,7 @@ export default function ManageGroupsPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          student_id: studentId,
+          email: selectedStudent?.email,
           class_id: selectedClass
         }),
       });
@@ -541,11 +541,6 @@ export default function ManageGroupsPage() {
                     Group {group.group_id} ({group.students.length} student{group.students.length !== 1 ? 's' : ''})
                   </option>
                 ))}
-                
-                {/* Option to create a new group */}
-                <option value={Math.max(...groups.map(g => g.group_id), 0) + 1}>
-                  Create New Group {Math.max(...groups.map(g => g.group_id), 0) + 1}
-                </option>
               </select>
               
               {/* Show preview of selected group */}
