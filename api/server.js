@@ -1090,6 +1090,22 @@ app.post("/users", (req, res) => {
       console.log("User already exists:", results[0]);
       
       if (Affiliation === 'student') {
+        if (results[0].f_name === '' && results[0].l_name === '') {
+          console.log("Updating existing student record with provided names");
+          db.query(
+            "UPDATE Users SET f_name = ?, l_name = ? WHERE email = ? AND affiliation = ?",
+            [First_name, Last_name, Email, Affiliation],
+            (updateErr, updateResult) => {
+              if (updateErr) {
+                console.error("❌ Failed to update student record - Database error:", updateErr);
+                return res.status(500).json({ error: updateErr.message });
+              }
+              console.log("✅ Student record updated successfully");
+              return res.status(200).json({ message: "User registered successfully" });
+            }
+          );
+          return;
+        }
         console.log("✅ Existing student login successful");
         return res.status(200).json({ message: "User registered successfully" });
       }
@@ -1189,8 +1205,6 @@ app.post("/update-currentpage", (req, res) => {
 });
 
 // Updates a group of Users' stored job description and resets their progress.
-// Also deletes all notes for affected students.
-// Updates a group of Users' stored job description and resets their progress.
 app.post("/update-job", async (req, res) => {
   const { job_group_id, class_id, job } = req.body;
 
@@ -1198,7 +1212,6 @@ app.post("/update-job", async (req, res) => {
     return res.status(400).json({ error: "Group ID, class ID, and job are required." });
   }
 
-  // ADDED: Validate that job_group_id is a valid integer
   const groupIdInt = parseInt(job_group_id);
   if (isNaN(groupIdInt) || groupIdInt <= 0) {
     console.log("❌ Invalid job_group_id:", job_group_id);
