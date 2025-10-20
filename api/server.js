@@ -1090,7 +1090,8 @@ app.post("/users", (req, res) => {
       console.log("User already exists:", results[0]);
       
       if (Affiliation === 'student') {
-        if (results[0].f_name === '' && results[0].l_name === '') {
+        // Check if names are empty or need updating
+        if (!results[0].f_name || !results[0].l_name || results[0].f_name === '' || results[0].l_name === '') {
           console.log("Updating existing student record with provided names");
           db.query(
             "UPDATE Users SET f_name = ?, l_name = ? WHERE email = ? AND affiliation = ?",
@@ -1100,70 +1101,81 @@ app.post("/users", (req, res) => {
                 console.error("❌ Failed to update student record - Database error:", updateErr);
                 return res.status(500).json({ error: updateErr.message });
               }
-              console.log("✅ Student record updated successfully");
-              return res.status(200).json({ message: "User registered successfully" });
+              console.log("✅ Student record updated successfully with names");
+              return res.status(200).json({ 
+                message: "User registered successfully", 
+                action: "updated_names",
+                f_name: First_name,
+                l_name: Last_name
+              });
             }
           );
-          return;
+        } else {
+          console.log("✅ Existing student login successful - names already set");
+          return res.status(200).json({ 
+            message: "User registered successfully", 
+            action: "login_existing",
+            f_name: results[0].f_name,
+            l_name: results[0].l_name
+          });
         }
-        console.log("✅ Existing student login successful");
-        return res.status(200).json({ message: "User registered successfully" });
+        return; // Important: prevent further execution
       }
+      
       if (Affiliation === 'admin') {
         console.log("❌ Admin already registered");
         return res.status(400).json({ message: "Teacher already registered" });
       }
-    }
-
-    console.log("User does not exist, creating new user");
-
-    // Create user with class assignment
-    let sql, params;
-    if (Affiliation === 'admin') {
-      console.log("Creating new admin user");
-      sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
-      params = [First_name, Last_name, Email, Affiliation];
-      
-      console.log("Admin SQL query:", sql);
-      console.log("Admin SQL params:", params);
-      
-    } else if (Affiliation === 'student') {
-      // FIXED: Include class assignment for students
-      console.log("Creating new student user with class assignment");
-      sql = "UPDATE Users SET f_name = ?, l_name = ? WHERE email = ? AND affiliation = ?";
-      params = [First_name, Last_name, Email, Affiliation];
-      
-      console.log("Student SQL query:", sql);
-      console.log("Student SQL params:", params);
     } else {
-      console.log("❌ Invalid affiliation:", Affiliation);
-      return res.status(400).json({ message: "Invalid affiliation" });
-    }
-    
-    console.log("Executing user creation query...");
-    db.query(sql, params, (err, result) => {
-      if (err) {
-        console.error("❌ Failed to create user - Database error:", err);
-        console.error("Error code:", err.code);
-        console.error("Error message:", err.message);
-        return res.status(500).json({ error: err.message });
+      console.log("User does not exist, creating new user");
+
+      // Create user with class assignment
+      let sql, params;
+      if (Affiliation === 'admin') {
+        console.log("Creating new admin user");
+        sql = "INSERT INTO Users (f_name, l_name, email, affiliation) VALUES (?, ?, ?, ?)";
+        params = [First_name, Last_name, Email, Affiliation];
+        
+        console.log("Admin SQL query:", sql);
+        console.log("Admin SQL params:", params);
+        
+      } else if (Affiliation === 'student') {
+        console.log("❌ Student not found in database - they should be imported via CSV first");
+        return res.status(404).json({ 
+          message: "Student not found. Please contact your instructor to be added to the class.",
+          action: "student_not_found"
+        });
+      } else {
+        console.log("❌ Invalid affiliation:", Affiliation);
+        return res.status(400).json({ message: "Invalid affiliation" });
       }
       
-      console.log("✅ User created successfully");
-      console.log("Insert result:", result);
-      console.log("New user ID:", result.insertId);
-      
-      const responseData = {
-        id: result.insertId, 
-        First_name, 
-        Last_name, 
-        Email, 
-        Affiliation,
-      };
-      
-      console.log("Sending successful response:", responseData);
-      res.status(201).json(responseData);
-    });
+      console.log("Executing user creation query...");
+      db.query(sql, params, (err, result) => {
+        if (err) {
+          console.error("❌ Failed to create user - Database error:", err);
+          console.error("Error code:", err.code);
+          console.error("Error message:", err.message);
+          return res.status(500).json({ error: err.message });
+        }
+        
+        console.log("✅ User created successfully");
+        console.log("Insert result:", result);
+        console.log("New user ID:", result.insertId);
+        
+        const responseData = {
+          id: result.insertId, 
+          First_name, 
+          Last_name, 
+          Email, 
+          Affiliation,
+          action: "created"
+        };
+        
+        console.log("Sending successful response:", responseData);
+        res.status(201).json(responseData);
+      });
+    }
   });
 });
 
