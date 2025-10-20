@@ -44,6 +44,10 @@ export default function ManageGroupsPage() {
   const [newGroupId, setNewGroupId] = useState<number>(1);
   const router = useRouter();
 
+  useEffect(() => {
+    console.log("Students changed", students);
+  }, [students]);
+
   // Fetch user authentication
   useEffect(() => {
     const fetchUser = async () => {
