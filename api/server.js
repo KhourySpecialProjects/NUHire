@@ -1066,25 +1066,18 @@ app.get("/users/:id", (req, res) => {
 
 // post route for creating a new user, which checks if the user already exists in the database and inserts a new user record if not
 app.post("/users", (req, res) => {
-  const { First_name, Last_name, Email, Affiliation, Class } = req.body; 
+  const { First_name, Last_name, Email, Affiliation } = req.body; 
 
   console.log("=== POST /users endpoint hit ===");
-  console.log("Request body:", { First_name, Last_name, Email, Affiliation, Class });
+  console.log("Request body:", { First_name, Last_name, Email, Affiliation });
 
   if (!First_name || !Last_name || !Email || !Affiliation) {
     console.log("❌ Validation failed: Missing required fields");
     return res.status(400).json({ message: "First name, last name, email, and affiliation are required" });
   }
 
-  // ADDED: Require class for students
-  if (Affiliation === 'student' && !Class) {
-    console.log("❌ Validation failed: Class required for students");
-    return res.status(400).json({ message: "Class is required for students" });
-  }
-
   console.log("✅ Validation passed, checking if user exists in database");
 
-  // Check if user already exists
   db.query("SELECT * FROM Users WHERE email = ?", [Email], (err, results) => {
     if (err) {
       console.error("❌ Database error during user lookup:", err);
@@ -1121,8 +1114,8 @@ app.post("/users", (req, res) => {
     } else if (Affiliation === 'student') {
       // FIXED: Include class assignment for students
       console.log("Creating new student user with class assignment");
-      sql = "INSERT INTO Users (f_name, l_name, email, affiliation, class) VALUES (?, ?, ?, ?, ?)";
-      params = [First_name, Last_name, Email, Affiliation, Class];
+      sql = "UPDATE Users SET f_name = ?, l_name = ? WHERE email = ? AND affiliation = ?";
+      params = [First_name, Last_name, Email, Affiliation];
       
       console.log("Student SQL query:", sql);
       console.log("Student SQL params:", params);
@@ -1150,7 +1143,6 @@ app.post("/users", (req, res) => {
         Last_name, 
         Email, 
         Affiliation,
-        Class: Affiliation === 'student' ? Class : undefined
       };
       
       console.log("Sending successful response:", responseData);

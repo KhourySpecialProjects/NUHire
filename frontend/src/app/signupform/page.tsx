@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Slideshow from "../components/slideshow";
 import Image from "next/image";
-import { useProgressManager } from "../components/progress";
 
 // Define API base URL with fallback
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
@@ -13,7 +12,6 @@ export default function SignupDetails() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [affiliation, setAffiliation] = useState('none');
-  const [crn, setCrn] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
@@ -55,28 +53,16 @@ export default function SignupDetails() {
       return;
     }
 
-    // Additional validation for students - require CRN
-    if (affiliation === 'student' && !crn) {
-      setError('Please enter your class CRN');
-      return;
-    }
-
     if (affiliation === 'student') {
       try {
-        // Validate the CRN exists
-        const res = await fetch(
-          `${API_BASE_URL}/moderator-crns/${crn}`, // Use CRN instead of courseNumber
-          { method: 'GET', credentials: 'include' }
-        )
         const emailRes = await fetch(
           `${API_BASE_URL}/moderator-classes/${email}`,
           { method: 'GET', credentials: 'include' }
         )
-        if (!res.ok || !emailRes.ok) {
+        if (!emailRes.ok) {
           setError('Invalid CRN or cannot get backend data.');
           return;
         }
-        const {id, admin_email, crn: validCrn, nom_groups} = await res.json();
         const emailData = await emailRes.json();
         console.log(emailData);
         if (emailData.length !== 0) {
@@ -116,8 +102,6 @@ export default function SignupDetails() {
       Last_name: lastName, 
       Email: email, 
       Affiliation: affiliation,
-      // Include class (CRN) for students
-      ...(affiliation === 'student' && { Class: crn })
     };
 
     try {
@@ -190,23 +174,6 @@ export default function SignupDetails() {
             <option value="student">Student</option>
             <option value="admin">Faculty</option>
           </select>
-
-          {/* CRN Input - Only show for students */}
-          {affiliation === 'student' && (
-            <div className="w-full">
-              <input 
-                type="text" 
-                placeholder="Enter your class CRN *" 
-                className="w-full px-4 py-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={crn} 
-                onChange={(e) => setCrn(e.target.value)}
-                required
-              />
-              <p className="text-xs text-gray-300 mt-1">
-                Enter the Course Reference Number (CRN) for your class
-              </p>
-            </div>
-          )}
 
           <button 
             type="submit" 
