@@ -271,7 +271,7 @@ export default function ManageGroupsPage() {
 
     try {
       const response = await fetch(`${API_BASE_URL}/start-group`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -316,7 +316,7 @@ export default function ManageGroupsPage() {
 
     try {
       const response = await fetch(`${API_BASE_URL}/start-all-groups`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
