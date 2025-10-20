@@ -939,36 +939,7 @@ app.get("/auth/keycloak/callback",
                 return res.redirect(`${FRONT_URL}/waitingGroup`);
               }
             });
-          } else {
-            console.log("inside the group assignment check else");
-            // User has no group, check if group assignment is allowed for their class
-            db.query(
-              'SELECT assigned FROM seenAssignGroup WHERE crn = ?',
-              [dbUser.class],
-              (assignmentErr, assignmentResults) => {
-                if (assignmentErr) {
-                  console.error('Error checking group assignment status:', assignmentErr);
-                  // Default to waiting if there's an error
-                  return res.redirect(`${FRONT_URL}/waitingGroup`);
-                }
-                
-                const firstName = encodeURIComponent(user.f_name || '');
-                const lastName = encodeURIComponent(user.l_name || '');
-                
-                console.log("assignmentResults:", assignmentResults);
-                // Check if assignment is allowed
-                if (assignmentResults.length > 0 && assignmentResults[0].assigned === 1) {
-                  // Group assignment is enabled, redirect to assignGroup
-                  console.log(`Group assignment enabled for class ${dbUser.class}, redirecting to assignGroup`);
-                  return res.redirect(`${FRONT_URL}/assignGroup`);
-                } else {
-                  // Group assignment not enabled or no record found, redirect to waitingGroup
-                  console.log(`Group assignment not enabled for class ${dbUser.class}, redirecting to waitingGroup`);
-                  return res.redirect(`${FRONT_URL}/waitingGroup`);
-                }
-              }
-            );
-          }
+          } 
         }
       } else {
         console.log("User not found in database, redirecting to signup form");
@@ -2745,74 +2716,6 @@ app.get('/groups', (req, res) => {
     });
     
     res.json(groupsObject);
-  });
-});
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Assign group seen
-// Get group assignment status for a class
-app.get('/group-assignment-status/:crn', (req, res) => {
-  const { crn } = req.params;
-  
-  db.query(
-    'SELECT assigned FROM seenAssignGroup WHERE crn = ?',
-    [crn],
-    (err, results) => {
-      if (err) {
-        console.error('Error fetching group assignment status:', err);
-        return res.status(500).json({ error: 'Failed to fetch assignment status' });
-      }
-      else {
-        res.json({ assignment_allowed: results[0].assignment_allowed });
-      }
-    }
-  );
-});
-
-// Set group assignment status for a class
-app.post('/group-assignment-status/:crn', (req, res) => {
-  const { crn } = req.params;
-  const { assigned } = req.body;
-  
-  db.query(
-    'INSERT INTO seenAssignGroup (crn, assigned) VALUES (?, ?) ON DUPLICATE KEY UPDATE assigned = ?',
-    [crn, assigned, assigned],
-    (err, result) => {
-      if (err) {
-        console.error('Error updating group assignment status:', err);
-        return res.status(500).json({ error: 'Failed to update assignment status' });
-      }
-      
-      console.log(`Group assignment ${assigned ? 'enabled' : 'disabled'} for CRN ${crn}`);
-      res.json({ 
-        success: true, 
-        crn: parseInt(crn),
-        assigned,
-        message: `Group assignment ${assigned ? 'enabled' : 'disabled'} for CRN ${crn}`
-      });
-    }
-  );
-});
-
-// Get all group assignment statuses (for admin dashboard)
-app.get('/group-assignment-statuses', (req, res) => {
-  const query = `
-    SELECT 
-      m.crn,
-      m.admin_email,
-      COALESCE(gas.assigned, FALSE) as assignment_allowed,
-    FROM Moderator m
-    LEFT JOIN seenAssignGroup gas ON m.crn = gas.crn
-    ORDER BY m.crn
-  `;
-  
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error fetching all assignment statuses:', err);
-      return res.status(500).json({ error: 'Failed to fetch assignment statuses' });
-    }
-    
-    res.json(results);
   });
 });
 
