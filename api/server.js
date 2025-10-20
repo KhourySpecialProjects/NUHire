@@ -2475,97 +2475,6 @@ app.put("/offers/:offer_id", (req, res) => {
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Seen instuctions already 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Seen instructions already 
-app.post("/user-see-dash", (req, res) => {
-  console.log("=== POST /user-see-dash endpoint hit ===");
-  console.log("Request body:", req.body);
-  console.log("Request headers:", req.headers);
-  console.log("Session ID:", req.sessionID);
-  console.log("Authenticated user:", req.user);
-  
-  const { user_email } = req.body;
-
-  if (!user_email) {
-    console.log("❌ Validation failed: Missing user_email");
-    return res.status(400).json({ error: "Email is required." });
-  }
-
-  console.log("✅ Validation passed, updating seen flag for email:", user_email);
-
-  db.query("UPDATE Users SET `seen` = 1 WHERE email = ?", [user_email], (err, result) => {
-    if (err) {
-      console.error("❌ Database error in user-see-dash POST:", err);
-      console.error("Error code:", err.code);
-      console.error("Error message:", err.message);
-      return res.status(500).json({ error: "Failed to update seen." });
-    }
-    
-    console.log("✅ Database update successful");
-    console.log("Update result:", result);
-    console.log("Affected rows:", result.affectedRows);
-    console.log("Changed rows:", result.changedRows);
-    
-    if (result.affectedRows === 0) {
-      console.log("⚠️ Warning: No rows affected - user email may not exist:", user_email);
-    } else {
-      console.log(`✅ Successfully updated seen flag for user: ${user_email}`);
-    }
-    
-    const responseData = { message: "seen updated successfully!" };
-    console.log("Sending response:", responseData);
-    res.json(responseData);
-  });
-});
-
-app.post("/user-get-see-dash", (req, res) => {
-  console.log("=== POST /user-get-see-dash endpoint hit ===");
-  console.log("Request body:", req.body);
-  console.log("Request headers:", req.headers);
-  console.log("Session ID:", req.sessionID);
-  console.log("Authenticated user:", req.user);
-  
-  const { user_email } = req.body;
-
-  if (!user_email) {
-    console.log("❌ Validation failed: Missing user_email");
-    return res.status(400).json({ error: "Email is required." });
-  }
-
-  console.log("✅ Validation passed, fetching seen flag for email:", user_email);
-
-  db.query("SELECT `seen` FROM Users WHERE email = ?", [user_email], (err, result) => {
-    if (err) {
-      console.error("❌ Database error in user-get-see-dash:", err);
-      console.error("Error code:", err.code);
-      console.error("Error message:", err.message);
-      return res.status(500).json({ error: "Failed to obtain seen." });
-    }
-    
-    console.log("✅ Database query successful");
-    console.log("Query result:", result);
-    console.log("Result length:", result.length);
-    
-    if (result.length === 0) {
-      console.log("⚠️ Warning: No user found with email:", user_email);
-      return res.status(404).json({ error: "User not found." });
-    }
-    
-    const seenValue = result[0].seen;
-    console.log(`✅ Successfully retrieved seen flag for user ${user_email}: ${seenValue}`);
-    
-    const responseData = { 
-      message: "seen obtained successfully!",
-      seen: seenValue,
-      user_email: user_email
-    };
-    console.log("Sending response:", responseData);
-    res.json(responseData);
-  });
-});
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Groups API routes
 
 // POST /teacher/create-groups
@@ -3137,7 +3046,7 @@ app.patch("/start-all-groups") , (req, res) => {
 
     console.log(`✅ All groups for class ${class_id} successfully started`);
 
-    io.to(`class_${class_id}`).emit("allGroupsStarted", { class_id });
+    io.to(`class_${class_id}`).emit("groupStarted");
 
     res.json({ 
       message: 'All groups started successfully',
@@ -3164,7 +3073,7 @@ app.patch("/start-group", (req, res) => {
     
     console.log(`✅ Group ${group_id} for class ${class_id} successfully started`);
     
-    io.to(`class_${class_id}`).emit("groupStarted", { class_id, group_id });
+    io.to(`class_${class_id}`).emit("groupStarted", { group_id });
     
     res.json({ 
       message: 'Group started successfully',
@@ -3174,6 +3083,50 @@ app.patch("/start-group", (req, res) => {
   });
 });
 
+app.get("/group-status/:classId/:groupId", (req, res) => {  
+  const { classId, groupId } = req.params;
+  
+  console.log('Fetching group status for class:', classId, 'group:', groupId);
+  
+  const query = `
+    SELECT started 
+    FROM \`Groups\` 
+    WHERE class_id = ? AND group_number = ?
+  `;
+      
+  db.query(query, [classId, groupId], (err, results) => {
+    if (err) {
+      console.error('Error fetching group status:', err);
+      return res.status(500).json({ error: 'Failed to fetch group status' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+    
+    console.log(`Group status for class ${classId}, group ${groupId}:`, results[0]);
+    res.json({ started: results[0].started });
+  });
+});
+
+app.get("/groups-seen", (req, res) => {
+  const { email} = req.query;
+  
+  const query = `SELECT seen FROM Users WHERE email = ?`;
+
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      console.error('Error fetching groups seen status:', err);
+      return res.status(500).json({ error: 'Failed to fetch groups seen status' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ seen: results[0].seen });
+  });
+});
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various

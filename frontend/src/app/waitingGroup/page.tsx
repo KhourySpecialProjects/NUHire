@@ -6,6 +6,7 @@ import Image from "next/image";
 import { io } from "socket.io-client";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
+import { group } from "console";
 
 export default function WaitingGroupPage() {
   interface User {
@@ -32,14 +33,6 @@ export default function WaitingGroupPage() {
 
         if (response.ok) {
           setUser(userData);
-          // If user already has a group, redirect to dashboard
-          if (userData.group_id) {
-            router.push("/dashboard");
-            return;
-          }
-        } else {
-          setUser(null);
-          router.push("/");
         }
       } catch (error) {
         router.push("/");
@@ -50,6 +43,41 @@ export default function WaitingGroupPage() {
 
     fetchUser();
   }, [router]);
+
+  useEffect(() => {
+    const groupStatusResponse = async () => {
+      if (!user?.class || !user?.group_id) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/group-status?class_id=${user.class}&group_id=${user.group_id}`,
+          { method: "GET", credentials: "include" }
+        );
+        const statusData = await response.json();
+        
+        if (response.ok && statusData.started) {
+          const seenResponse = await fetch(`${API_BASE_URL}/groups-seen`,
+            { method: "GET", credentials: "include", body: JSON.stringify({
+              email: user.email,
+            })
+          });
+          if (seenResponse.ok && statusData.started) {
+            router.push("/dashboard");
+          }
+          else {
+            router.push("/about");
+          }
+        }
+
+      } catch (error) {
+        console.error("Error fetching group status:", error);
+      }
+    };
+
+    groupStatusResponse();
+  }, [user, router]);
 
   // Socket connection for listening to teacher's group assignment authorization
   useEffect(() => {
@@ -77,27 +105,14 @@ export default function WaitingGroupPage() {
       setSocketConnected(false);
     });
 
-    // Listen for group assignment authorization from teacher
-    socket.on('allowGroupAssignmentStudent', ({classId, message}) => {
-      
-      // FIXED: Compare with user.class instead of user.class_id
-      if (classId === user.class) {
-        setStart(true);
-        
-        // Redirect to group assignment page after a short delay
-        setTimeout(() => {
-          router.push("/assignGroup");
-        }, 3000);
-      } else {
+    socket.on('startGroup', ({ groupId }) => {
+      if (groupId === user.group_id) {
+        router.push("/dashboard");
       }
     });
 
-    // Listen for any other relevant events
-    socket.on('groupAssignmentClosedStudent', ({classId, message}) => {
+    socket.on('startGroup', () => {
       
-      if (classId === user.class) {
-        setStart(false);
-      }
     });
 
     // FIXED: Cleanup socket connection properly
