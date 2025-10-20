@@ -428,33 +428,37 @@ export default function ManageGroupsPage() {
                       ) : (
                         group.students.map((student) => (
                           <div key={student.id} className="bg-white p-3 rounded border border-gray-200">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {student.f_name} {student.l_name}
-                                </p>
-                                <p className="text-sm text-gray-600">{student.email}</p>
-                              </div>
-                              <div className="flex space-x-1">
-                                <button
-                                  onClick={() => {
-                                    setSelectedStudent(student);
-                                    setNewGroupId(group.group_id);
-                                    setReassignModalOpen(true);
-                                  }}
-                                  className="text-blue-600 hover:text-blue-800 text-xs"
-                                  title="Reassign student"
-                                >
-                                  ↻
-                                </button>
-                                <button
-                                  onClick={() => removeStudentFromGroup(student.id)}
-                                  className="text-red-600 hover:text-red-800 text-xs"
-                                  title="Remove from group"
-                                >
-                                  ×
-                                </button>
-                              </div>
+                            {/* Student Info */}
+                            <div className="mb-3">
+                              <p className="font-medium text-gray-900">
+                                {student.f_name && student.l_name 
+                                  ? `${student.f_name} ${student.l_name}`
+                                  : student.f_name || student.l_name || 'No Name'
+                                }
+                              </p>
+                              <p className="text-sm text-gray-600">{student.email}</p>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedStudent(student);
+                                  setNewGroupId(group.group_id);
+                                  setReassignModalOpen(true);
+                                }}
+                                className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-1 px-3 rounded text-xs font-medium transition-colors"
+                                title="Reassign student"
+                              >
+                                ↻ Reassign
+                              </button>
+                              <button
+                                onClick={() => removeStudentFromGroup(student.id)}
+                                className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-1 px-3 rounded text-xs font-medium transition-colors"
+                                title="Remove from group"
+                              >
+                                × Remove
+                              </button>
                             </div>
                           </div>
                         ))
