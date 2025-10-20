@@ -1431,7 +1431,7 @@ app.get("/groups", async (req, res) => {
   try {
     // First, get the number of groups from the Moderator table
     const [moderatorResult] = await db.promise().query(
-      "SELECT nom_groups FROM Moderator WHERE crn = ?", 
+      "SELECT DISTINCT group_number FROM `Groups` WHERE class_id = ? ORDER BY group_number", 
       [classId]
     );
     
