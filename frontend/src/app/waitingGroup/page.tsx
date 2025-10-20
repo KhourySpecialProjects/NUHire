@@ -44,41 +44,37 @@ export default function WaitingGroupPage() {
     fetchUser();
   }, [router]);
 
-  useEffect(() => {
-    const groupStatusResponse = async () => {
-      if (!user?.class || !user?.group_id) {
-        return;
-      }
+  const groupStatusResponse = async () => {
+    if (!user?.class || !user?.group_id) {
+      return;
+    }
       
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/group-status?class_id=${user.class}&group_id=${user.group_id}`,
-          { method: "GET", credentials: "include" }
-        );
-        const statusData = await response.json();
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/group-status?class_id=${user.class}&group_id=${user.group_id}`,
+        { method: "GET", credentials: "include" }
+      );
+      const statusData = await response.json();
         
-        if (response.ok && statusData.started) {
-          const seenResponse = await fetch(`${API_BASE_URL}/groups-seen`,
-            { method: "GET", credentials: "include", body: JSON.stringify({
-              email: user.email,
-            })
-          });
-          if (seenResponse.ok && statusData.started) {
-            router.push("/dashboard");
-          }
-          else {
-            router.push("/about");
-          }
+      if (response.ok && statusData.started) {
+        const seenResponse = await fetch(`${API_BASE_URL}/groups-seen`,
+          { method: "GET", credentials: "include", body: JSON.stringify({
+            email: user.email,
+          })
+        });
+        if (seenResponse.ok && statusData.started) {
+          router.push("/dashboard");
         }
-
-      } catch (error) {
-        console.error("Error fetching group status:", error);
+        else {
+          router.push("/about");
+        }
       }
-    };
 
-    groupStatusResponse();
-  }, [user, router]);
-
+    } catch (error) {
+      console.error("Error fetching group status:", error);
+    }
+  };
+  
   // Socket connection for listening to teacher's group assignment authorization
   useEffect(() => {
     if (!user?.class) {
@@ -91,7 +87,6 @@ export default function WaitingGroupPage() {
     socket.on('connect', () => {
       setSocketConnected(true);
       
-      // FIXED: Join class room after connection
       socket.emit('joinClass', { 
         classId: user.class,
       });
@@ -105,14 +100,14 @@ export default function WaitingGroupPage() {
       setSocketConnected(false);
     });
 
-    socket.on('startGroup', ({ groupId }) => {
+    socket.on('groupStarted', ({ groupId }) => {
       if (groupId === user.group_id) {
-        router.push("/dashboard");
+        groupStatusResponse();
       }
     });
 
-    socket.on('startGroup', () => {
-      
+    socket.on('groupStarted', () => {
+      groupStatusResponse();
     });
 
     // FIXED: Cleanup socket connection properly

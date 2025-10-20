@@ -2978,8 +2978,6 @@ app.patch("/reassign-student", (req, res) => {
     
     console.log(`✅ Student ${email} successfully reassigned to group ${new_group_id} in class ${class_id}`);
 
-    io.emit("studentReassigned", { class_id, email, new_group_id });
-
     res.json({ 
       message: 'Student reassigned successfully',
       email,
