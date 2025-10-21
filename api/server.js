@@ -2941,7 +2941,7 @@ app.patch("/start-all-groups") , (req, res) => {
 
     console.log(`✅ All groups for class ${class_id} successfully started`);
 
-    io.to(`class_${class_id}`).emit("groupStarted");
+    io.to(`class_${class_id}`).emit("groupStartedClass");
 
     res.json({ 
       message: 'All groups started successfully',
@@ -2968,7 +2968,7 @@ app.patch("/start-group", (req, res) => {
     
     console.log(`✅ Group ${group_id} for class ${class_id} successfully started`);
     
-    io.to(`class_${class_id}`).emit("groupStarted", { group_id });
+    io.to(`class_${class_id}`).emit("groupStartedGroup", { group_id });
     
     res.json({ 
       message: 'Group started successfully',

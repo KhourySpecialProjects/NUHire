@@ -90,6 +90,9 @@ export default function WaitingGroupPage() {
       socket.emit('joinClass', { 
         classId: user.class,
       });
+
+      const roomId = `group_${user.group_id}_class_${user.class}`;
+      socket.emit("joinGroup", roomId);
     });
 
     socket.on('disconnect', () => {
@@ -100,13 +103,13 @@ export default function WaitingGroupPage() {
       setSocketConnected(false);
     });
 
-    socket.on('groupStarted', ({ groupId }) => {
+    socket.on('groupStartedGroup', ({ groupId }) => {
       if (groupId === user.group_id) {
         groupStatusResponse();
       }
     });
 
-    socket.on('groupStarted', () => {
+    socket.on('groupStartedClass', () => {
       groupStatusResponse();
     });
 
