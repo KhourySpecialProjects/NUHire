@@ -2984,7 +2984,7 @@ app.get("/group-status/:classId/:groupId", (req, res) => {
   
   console.log('Fetching group status for class:', classId, 'group:', groupId);
   
-  const query = 'SELECT started FROM \`Groups\` WHERE class_id = ? AND group_number = ?';
+  const query = 'SELECT started FROM \`Groups\` WHERE class_id = ? AND id = ?';
       
   db.query(query, [classId, groupId], (err, results) => {
     if (err) {
