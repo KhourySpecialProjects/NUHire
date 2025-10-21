@@ -107,10 +107,12 @@ export default function WaitingGroupPage() {
       if (groupId === user.group_id) {
         groupStatusResponse();
       }
+      console.log(`📡 Received groupStartedGroup event for group ${groupId}`);
     });
 
     socket.on('groupStartedClass', () => {
       groupStatusResponse();
+      console.log(`📡 Received groupStartedClass event`);
     });
 
     // FIXED: Cleanup socket connection properly
