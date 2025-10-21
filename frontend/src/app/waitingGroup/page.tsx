@@ -46,35 +46,61 @@ export default function WaitingGroupPage() {
 
   const groupStatusResponse = async () => {
     if (!user?.class || !user?.group_id) {
+      console.log("Missing class or group_id:", { class: user?.class, group_id: user?.group_id });
       return;
     }
+    
     console.log("Checking group status...");
     try {
       const response = await fetch(
         `${API_BASE_URL}/group-status/${user.class}/${user.group_id}`,
         { method: "GET", credentials: "include" }
       );
+      
+      console.log("Group status response:", response.status);
+      
+      if (!response.ok) {
+        console.error("Group status request failed:", response.status, response.statusText);
+        return;
+      }
+      
       const statusData = await response.json();
+      console.log("Group status data:", statusData);
         
-      if (response.ok && statusData.started) {
-        const seenResponse = await fetch(`${API_BASE_URL}/groups-seen`,
-          { method: "GET", credentials: "include", body: JSON.stringify({
-            email: user.email,
-          })
-        });
-        if (seenResponse.ok && statusData.started) {
-          router.push("/dashboard");
-        }
-        else {
+      if (statusData.started) {
+        console.log("Group is started, checking seen status...");
+        
+        const seenResponse = await fetch(
+          `${API_BASE_URL}/groups-seen?email=${encodeURIComponent(user.email)}`,
+          { method: "GET", credentials: "include" }
+        );
+        
+        console.log("Seen response:", seenResponse.status);
+        
+        if (seenResponse.ok) {
+          const seenData = await seenResponse.json();
+          console.log("Seen data:", seenData);
+          
+          if (seenData.seen === 1) {
+            console.log("User has seen intro, going to dashboard");
+            router.push("/dashboard");
+          } else {
+            console.log("User has not seen intro, going to about");
+            router.push("/about");
+          }
+        } else {
+          console.log("Seen request failed, defaulting to about page");
           router.push("/about");
         }
+      } else {
+        console.log("Group not started yet");
       }
 
     } catch (error) {
       console.error("Error fetching group status:", error);
     }
   };
-  
+    
   // Socket connection for listening to teacher's group assignment authorization
   useEffect(() => {
     if (!user?.class) {
