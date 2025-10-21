@@ -48,10 +48,10 @@ export default function WaitingGroupPage() {
     if (!user?.class || !user?.group_id) {
       return;
     }
-      
+    console.log("Checking group status...");
     try {
       const response = await fetch(
-        `${API_BASE_URL}/group-status?class_id=${user.class}&group_id=${user.group_id}`,
+        `${API_BASE_URL}/group-status/${user.class}/${user.group_id}`,
         { method: "GET", credentials: "include" }
       );
       const statusData = await response.json();
