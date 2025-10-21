@@ -103,11 +103,11 @@ export default function WaitingGroupPage() {
       setSocketConnected(false);
     });
 
-    socket.on('groupStartedGroup', ({ groupId }) => {
-      if (groupId === user.group_id) {
+    socket.on('groupStartedGroup', ({ group_id }) => {
+      if (group_id === user.group_id) {
         groupStatusResponse();
       }
-      console.log(`📡 Received groupStartedGroup event for group ${groupId}`);
+      console.log(`📡 Received groupStartedGroup event for group ${group_id}`);
     });
 
     socket.on('groupStartedClass', () => {
