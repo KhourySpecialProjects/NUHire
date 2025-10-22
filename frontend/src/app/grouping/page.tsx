@@ -265,12 +265,7 @@ const Grouping = () => {
     setGroupId("");
     setGroupIdJob("");
   };
-  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newGroup = e.target.value;
-    setSelectedGroup(newGroup);
-    if (newGroup && Object.keys(groups).includes(newGroup)) setGroupId(newGroup);
-    else if (newGroup) setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
-  };
+
   const handleStudentSelection = (event: { target: { value: any; }; }) => {
     const selectedEmail = event.target.value;
     const selectedStudent = students.find(student => student.email === selectedEmail);
@@ -278,6 +273,7 @@ const Grouping = () => {
       setSelectedStudents([...selectedStudents, selectedStudent]);
     }
   };
+
   const handleRemoveStudent = (email: string) => {
     setSelectedStudents(selectedStudents.filter(student => student.email !== email));
   };
@@ -286,12 +282,13 @@ const Grouping = () => {
   const handleJobClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedJobClass(e.target.value);
   };
+
   const handleJobGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log("++++++++ Job group change event:", e);
     const newGroup = e.target.value;
-    console.log("Selected group value:", newGroup, typeof newGroup);
+    console.log("Selected group value:", newGroup);
     setSelectedJobGroup(newGroup);
-    if (newGroup && Object.keys(jobGroups).includes(newGroup)) {
+    
+    if (newGroup && jobGroups.includes(newGroup)) {
       console.log("Setting group ID to:", newGroup);
       setGroupIdJob(newGroup);
     } else if (newGroup) {
@@ -299,6 +296,17 @@ const Grouping = () => {
       setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
     }
   };
+
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newGroup = e.target.value;
+    setSelectedGroup(newGroup);
+    if (newGroup && groups.includes(newGroup)) {
+      setGroupId(newGroup);
+    } else if (newGroup) {
+      setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
+    }
+  };
+  
   const handleJobSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedTitle = event.target.value;
     const selectedJob = jobs.find(job => job.title === selectedTitle);
@@ -433,9 +441,9 @@ const Grouping = () => {
                     className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a group</option>
-                    {jobGroups && Object.keys(jobGroups).map((groupId, index) => (
+                    {Array.isArray(jobGroups) && jobGroups.map((groupId) => (
                       <option key={groupId} value={groupId}>
-                        Group {index + 1}
+                        Group {groupId}
                       </option>
                     ))}
                   </select>

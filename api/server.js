@@ -1450,26 +1450,22 @@ app.get("/groups", async (req, res) => {
   
   try {
     const [groupsResult] = await db.promise().query(
-      "SELECT DISTINCT id FROM `GroupsInfo` WHERE class_id = ? ORDER BY id", 
+      "SELECT DISTINCT group_number FROM `GroupsInfo` WHERE class_id = ? ORDER BY group_number", 
       [classId]
     );
     
     if (groupsResult.length === 0) {
-      // If no groups found in Groups table, return empty object
       console.log(`No groups found for class ${classId}`);
-      return res.json({});
+      return res.json([]);
     }
     
     console.log(`Class ${classId} has ${groupsResult.length} groups`);
     console.log("Groups fetched from database:", groupsResult);
-    // Create the groups object based on existing groups
-    const groupsData = {};
-    groupsResult.forEach(group => {
-      groupsData[group.group_number] = []; // Initialize empty array for each group
-    });
-    
-    console.log("Generated groups data:", groupsData);
-    res.json(groupsData);
+
+    const groupIds = groupsResult.map(group => group.group_number);
+
+    console.log("Returning group IDs:", groupIds);
+    res.json(groupIds);
   } catch (error) {
     console.error("Error fetching groups:", error);
     res.status(500).json({ error: "Failed to fetch groups" });
