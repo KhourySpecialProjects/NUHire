@@ -2476,16 +2476,16 @@ app.post("/create-groups", (req, res) => {
     for (let i = 1; i <= num_groups; i++) {
       const insertPromise = new Promise((resolve, reject) => {
         const query = `
-          INSERT INTO GroupsInfo (class_id, group_number, started) 
+          INSERT INTO GroupsInfo (class_id, id, started) 
           VALUES (?, ?, 0)
         `;
         
         db.query(query, [class_id, i], (insertErr, insertResult) => {
           if (insertErr) {
-            reject({ group_number: i, error: insertErr.message });
+            reject({ id: i, error: insertErr.message });
           } else {
             resolve({ 
-              group_number: i, 
+              id: i, 
               id: insertResult.insertId
             });
           }
@@ -2566,9 +2566,8 @@ app.post('/student/join-group', (req, res) => {
       g.max_students,
       COUNT(u.email) as current_students
     FROM \`GroupsInfo\` g
-    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
-    WHERE g.class_id = ? AND g.group_number = ?
-    GROUP BY g.max_students
+    LEFT JOIN Users u ON u.group_id = g.id AND u.class = g.class_id
+    WHERE g.class_id = ? AND g.id = ?
   `;
   
   db.query(checkCapacityQuery, [class_id, group_id], (err, capacityResult) => {
@@ -2617,93 +2616,6 @@ app.post('/student/join-group', (req, res) => {
         class_id: class_id
       });
     });
-  });
-});
-
-// GET /group-slots/:classId - FIXED: Added backticks and used correct column names
-app.get('/group-slots/:classId', (req, res) => {
-  const { classId } = req.params;
-  
-  console.log('Fetching group slots for class:', classId);
-  
-  const query = `
-    SELECT 
-      g.group_number,
-      g.max_students,
-      COUNT(u.email) as occupied_slots,
-      JSON_ARRAYAGG(
-        CASE 
-          WHEN u.email IS NOT NULL 
-          THEN JSON_OBJECT(
-            'f_name', u.f_name, 
-            'l_name', u.l_name, 
-            'email', u.email
-          )
-          ELSE NULL 
-        END
-      ) as students
-    FROM \`GroupsInfo\` g
-    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
-    WHERE g.class_id = ?
-    GROUP BY g.group_number, g.max_students
-    ORDER BY g.group_number
-  `;
-  
-  db.query(query, [classId], (err, result) => {
-    if (err) {
-      console.error('Error fetching group slots:', err);
-      return res.status(500).json({ error: 'Failed to fetch group slots' });
-    }
-    
-    // Process the result to clean up the students array
-    const processedResult = result.map(group => ({
-      group_id: group.group_number,
-      max_slots: group.max_students,
-      occupied_slots: group.occupied_slots,
-      students: group.students ? group.students.filter(student => student !== null) : []
-    }));
-    
-    console.log('Group slots result:', processedResult);
-    res.json(processedResult);
-  });
-});
-
-// GET /groups (update existing) - FIXED: Added backticks and used correct column names
-app.get('/groups', (req, res) => {
-  const { class: classId } = req.query;
-  
-  if (!classId) {
-    return res.status(400).json({ error: 'Class ID is required' });
-  }
-  
-  const query = `
-    SELECT 
-      g.group_number,
-      g.max_students,
-      COUNT(u.email) as student_count
-    FROM \`GroupsInfo\` g
-    LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
-    WHERE g.class_id = ?
-    GROUP BY g.group_number, g.max_students
-    ORDER BY g.group_number
-  `;
-  
-  db.query(query, [classId], (err, result) => {
-    if (err) {
-      console.error('Error fetching groups:', err);
-      return res.status(500).json({ error: 'Failed to fetch groups' });
-    }
-    
-    // Convert to the format your frontend expects
-    const groupsObject = {};
-    result.forEach(group => {
-      groupsObject[group.group_number] = {
-        max_students: group.max_students,
-        student_count: group.student_count
-      };
-    });
-    
-    res.json(groupsObject);
   });
 });
 
