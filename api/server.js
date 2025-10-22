@@ -910,7 +910,7 @@ app.get("/auth/keycloak/callback",
         if (dbUser.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
         } else {
-          if (dbUser.group_id) {
+          if (dbUser.First_name === "" || dbUser.Last_name === "") {
             // Student has a group, check if the group has been started
             const checkGroupStartedQuery = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND id = ?';
             
