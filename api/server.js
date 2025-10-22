@@ -919,6 +919,7 @@ app.get("/auth/keycloak/callback",
           console.log("inside really big check")
           const firstName = encodeURIComponent(user.f_name || '');
           const lastName = encodeURIComponent(user.l_name || '');
+          console.log("first and last inside big check:", { firstName, lastName });
           return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
         }
         
