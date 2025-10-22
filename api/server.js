@@ -912,7 +912,7 @@ app.get("/auth/keycloak/callback",
         } else {
           if (dbUser.group_id) {
             // Student has a group, check if the group has been started
-            const checkGroupStartedQuery = 'SELECT started FROM \`Groups\` WHERE class_id = ? AND id = ?';
+            const checkGroupStartedQuery = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND id = ?';
             
             db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
               if (startErr) {
@@ -1460,7 +1460,7 @@ app.get("/groups", async (req, res) => {
   
   try {
     const [groupsResult] = await db.promise().query(
-      "SELECT DISTINCT group_number FROM `Groups` WHERE class_id = ? ORDER BY group_number", 
+      "SELECT DISTINCT group_number FROM `GroupsInfo` WHERE class_id = ? ORDER BY group_number", 
       [classId]
     );
     
@@ -2205,7 +2205,7 @@ app.post("/teacher/update-groups", (req, res) => {
   console.log('Updating groups for CRN:', crn, 'to', nom_groups, 'groups');
 
   // First, check if groups already exist for this CRN
-  db.query('SELECT COUNT(*) as group_count FROM `Groups` WHERE class_id = ?', [crn], (err, result) => {
+  db.query('SELECT COUNT(*) as group_count FROM `GroupsInfo` WHERE class_id = ?', [crn], (err, result) => {
     if (err) {
       console.error('Error checking existing groups:', err);
       return res.status(500).json({ error: 'Failed to check existing groups' });
@@ -2460,7 +2460,7 @@ app.post('/teacher/create-groups', (req, res) => {
   }
 
   // First, check if groups already exist for this class
-  db.query('SELECT COUNT(*) as group_count FROM `Groups` WHERE class_id = ?', [class_id], (err, result) => {
+  db.query('SELECT COUNT(*) as group_count FROM `GroupsInfo` WHERE class_id = ?', [class_id], (err, result) => {
     if (err) {
       console.error('Error checking existing groups:', err);
       return res.status(500).json({ error: 'Failed to check existing groups' });
@@ -2487,7 +2487,7 @@ app.post('/teacher/create-groups', (req, res) => {
       groupInserts.push([class_id, i, max_students_per_group]);
     }
 
-    const insertQuery = 'INSERT INTO `Groups` (class_id, group_number, max_students) VALUES ?';
+    const insertQuery = 'INSERT INTO `GroupsInfo` (class_id, group_number, max_students) VALUES ?';
     
     db.query(insertQuery, [groupInserts], (err, result) => {
       if (err) {
@@ -2540,7 +2540,7 @@ app.get('/class-info/:classId', (req, res) => {
       m.crn,
       COALESCE(g.max_students, 4) as slots_per_group
     FROM Moderator m
-    LEFT JOIN \`Groups\` g ON m.crn = g.class_id
+    LEFT JOIN \`GroupsInfo\` g ON m.crn = g.class_id
     WHERE m.crn = ?
     LIMIT 1
   `;
@@ -2577,7 +2577,7 @@ app.post('/student/join-group', (req, res) => {
     SELECT 
       g.max_students,
       COUNT(u.email) as current_students
-    FROM \`Groups\` g
+    FROM \`GroupsInfo\` g
     LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
     WHERE g.class_id = ? AND g.group_number = ?
     GROUP BY g.max_students
@@ -2654,7 +2654,7 @@ app.get('/group-slots/:classId', (req, res) => {
           ELSE NULL 
         END
       ) as students
-    FROM \`Groups\` g
+    FROM \`GroupsInfo\` g
     LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
     WHERE g.class_id = ?
     GROUP BY g.group_number, g.max_students
@@ -2693,7 +2693,7 @@ app.get('/groups', (req, res) => {
       g.group_number,
       g.max_students,
       COUNT(u.email) as student_count
-    FROM \`Groups\` g
+    FROM \`GroupsInfo\` g
     LEFT JOIN Users u ON u.group_id = g.group_number AND u.class = g.class_id
     WHERE g.class_id = ?
     GROUP BY g.group_number, g.max_students
@@ -2931,7 +2931,7 @@ app.patch("/start-all-groups") , (req, res) => {
     });
   }
 
-  const updateQuery = 'UPDATE \`Groups\` SET started = 1 WHERE class_id = ?';
+  const updateQuery = 'UPDATE \`GroupsInfo\` SET started = 1 WHERE class_id = ?';
 
   db.query(updateQuery, [class_id], (err, result) => {
     if (err) {
@@ -2960,7 +2960,7 @@ app.patch("/start-group", (req, res) => {
     });
   }
   
-  const updateQuery = 'UPDATE \`Groups\` SET started = 1 WHERE class_id = ? AND id = ?';  
+  const updateQuery = 'UPDATE \`GroupsInfo\` SET started = 1 WHERE class_id = ? AND id = ?';  
   db.query(updateQuery, [class_id, group_id], (err, result) => {
     if (err) {
       console.error('Error starting group:', err);
@@ -2984,7 +2984,7 @@ app.get("/group-status/:classId/:groupId", (req, res) => {
   
   console.log('Fetching group status for class:', classId, 'group:', groupId);
   
-  const query = 'SELECT started FROM \`Groups\` WHERE class_id = ? AND id = ?';
+  const query = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND id = ?';
       
   db.query(query, [classId, groupId], (err, results) => {
     if (err) {

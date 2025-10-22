@@ -35,19 +35,19 @@ CREATE TABLE `Candidates` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `Groups`
+-- Table structure for table `GroupsInfo`
 --
 
-DROP TABLE IF EXISTS `Groups`;
+DROP TABLE IF EXISTS `GroupsInfo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Groups` (
+CREATE TABLE `GroupsInfo` (
   `id` int NOT NULL AUTO_INCREMENT,
   `class_id` int NOT NULL,
   `started` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_class_group` (`class_id`,`started`),
-  CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
+  CONSTRAINT `groupsinfo_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -395,4 +395,4 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-20 16:00:43
+-- Dump completed on 2025-10-22  9:24:00
