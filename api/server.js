@@ -1450,7 +1450,7 @@ app.get("/groups", async (req, res) => {
   
   try {
     const [groupsResult] = await db.promise().query(
-      "SELECT DISTINCT group_number FROM `GroupsInfo` WHERE class_id = ? ORDER BY id", 
+      "SELECT DISTINCT id FROM `GroupsInfo` WHERE class_id = ? ORDER BY id", 
       [classId]
     );
     
