@@ -367,8 +367,12 @@ function configurePassport() {
       }
 
       if (results.length > 0) {
+        console.log("✅ User found in database:", results[0]);
         return done(null, results[0]);
       } else {
+        console.log("ℹ️ User not found, proceeding as first-time user");
+        console.log("First Name from profile:", firstName);
+        console.log("Last Name from profile:", lastName);
         return done(null, { email, f_name: firstName, l_name: lastName }); // let app handle first-time user
       }
     });
