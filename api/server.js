@@ -888,6 +888,7 @@ app.get("/auth/keycloak/callback",
     console.log("req.user after auth:", req.user);
     console.log("req.session after auth:", req.session);
     console.log("Session ID:", req.sessionID);
+    
     const user = req.user;
     if (!user || !user.email) {
       console.error("No user or email found after authentication");
@@ -895,7 +896,7 @@ app.get("/auth/keycloak/callback",
     }
 
     const email = user.email;
-    console.log("email before query");
+    console.log("Email before query:", email);
     
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
       if (err) {
@@ -906,45 +907,50 @@ app.get("/auth/keycloak/callback",
       if (results.length > 0) {
         const dbUser = results[0];
         const fullName = encodeURIComponent(`${dbUser.f_name || ""} ${dbUser.l_name || ""}`.trim());
+        console.log("User found in database:", dbUser);
 
+        // Admin users
         if (dbUser.affiliation === "admin") {
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
-        } else {
-          if (dbUser.f_name === "" || dbUser.l_name === "" || !dbUser.f_name || !dbUser.l_name) {
-            // Student has a group, check if the group has been started
-            const checkGroupStartedQuery = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND id = ?';
+        }
+        
+        // Users with incomplete profile
+        if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === "" || dbUser.f_name === "" || !dbUser.group_id) {
+          const firstName = encodeURIComponent(user.First_name || '');
+          const lastName = encodeURIComponent(user.Last_name || '');
+          return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
+        }
+        
+        // Users with group_id
+        if (dbUser.group_id) {
+          const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND id = ?';
+          db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
+            if (startErr) {
+              console.error('Error checking group start status:', startErr);
+              return res.redirect(`${FRONT_URL}/waitingGroup`);
+            }
             
-            db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
-              if (startErr) {
-                console.error('Error checking group start status:', startErr);
-                // Default to waiting if there's an error
-                return res.redirect(`${FRONT_URL}/waitingGroup`);
-              }
+            console.log("Group start check results:", startResults);
+            
+            if (startResults.length > 0 && startResults[0].started === 1) {
+              console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has been started`);
               
-              console.log("Group start check results:", startResults);
-              
-              // Check if group has been started
-              if (startResults.length > 0 && startResults[0].started === 1) {
-                // Group has been started, proceed with normal flow
-                console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has been started`);
-                
-                if (dbUser.seen === 1) {
-                  return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
-                } else {
-                  return res.redirect(`${FRONT_URL}/about`);
-                }
+              if (dbUser.seen === 1) {
+                return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
               } else {
-                // Group hasn't been started yet, redirect to waiting
-                console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has NOT been started yet`);
-                return res.redirect(`${FRONT_URL}/waitingGroup`);
+                return res.redirect(`${FRONT_URL}/about`);
               }
-            });
-          } 
+            } else {
+              console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has NOT been started yet`);
+              return res.redirect(`${FRONT_URL}/waitingGroup`);
+            }
+          });
         }
       } else {
+        // New user not in database
         console.log("User not found in database, redirecting to signup form");
-        const firstName = encodeURIComponent(user.f_name || '');
-        const lastName = encodeURIComponent(user.l_name || '');
+        const firstName = encodeURIComponent(user.First_name || '');
+        const lastName = encodeURIComponent(user.Last_name || '');
         return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
       }
     });
