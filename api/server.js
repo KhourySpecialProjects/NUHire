@@ -888,6 +888,7 @@ app.get("/auth/keycloak/callback",
     console.log("req.user after auth:", req.user);
     console.log("req.session after auth:", req.session);
     console.log("Session ID:", req.sessionID);
+    
     const user = req.user;
     if (!user || !user.email) {
       console.error("No user or email found after authentication");
@@ -895,57 +896,88 @@ app.get("/auth/keycloak/callback",
     }
 
     const email = user.email;
-    console.log("email before query");
+    console.log("Checking database for email:", email);
     
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
       if (err) {
         console.error("Database error:", err);
-        return res.redirect("/");
+        return res.redirect(`${FRONT_URL}/?error=database_error`);
       }
 
       if (results.length > 0) {
+        // User exists in database
         const dbUser = results[0];
-        const fullName = encodeURIComponent(`${dbUser.First_name || ""} ${dbUser.Last_name || ""}`.trim());
+        console.log("Found user in database:", dbUser);
+        
+        // FIXED: Use correct column names
+        const fullName = encodeURIComponent(`${dbUser.f_name || ""} ${dbUser.l_name || ""}`.trim());
 
         if (dbUser.affiliation === "admin") {
+          console.log("Admin user logging in");
           return res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
-        } else {
-          if (dbUser.First_name === "" || dbUser.Last_name === "") {
-            // Student has a group, check if the group has been started
-            const checkGroupStartedQuery = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND id = ?';
+        } 
+        
+        if (dbUser.affiliation === "student") {
+          console.log("Student user logging in");
+          
+          // Check if student has been assigned to a class and group
+          if (!dbUser.class || !dbUser.group_id) {
+            console.log("Student not assigned to class/group yet");
+            return res.redirect(`${FRONT_URL}/?error=not_assigned`);
+          }
+          
+          // Check if it's first time (names not filled)
+          if (!dbUser.f_name || !dbUser.l_name || dbUser.f_name === "" || dbUser.l_name === "") {
+            console.log("First time student login - redirecting to signup form");
+            const firstName = encodeURIComponent(user.f_name || '');
+            const lastName = encodeURIComponent(user.l_name || '');
+            return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
+          }
+          
+          // Student has names filled, check if group has been started
+          console.log(`Checking if group ${dbUser.group_id} in class ${dbUser.class} has been started`);
+          
+          // FIXED: Use correct query with group_number instead of id
+          const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_number = ?';
+          
+          db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
+            if (startErr) {
+              console.error('Error checking group start status:', startErr);
+              // Default to waiting if there's an error
+              return res.redirect(`${FRONT_URL}/waitingGroup`);
+            }
             
-            db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
-              if (startErr) {
-                console.error('Error checking group start status:', startErr);
-                // Default to waiting if there's an error
-                return res.redirect(`${FRONT_URL}/waitingGroup`);
-              }
+            console.log("Group start check results:", startResults);
+            
+            // Check if group has been started
+            if (startResults.length > 0 && startResults[0].started === 1) {
+              // Group has been started, proceed based on seen status
+              console.log(`✅ Group ${dbUser.group_id} in class ${dbUser.class} has been started`);
               
-              console.log("Group start check results:", startResults);
-              
-              // Check if group has been started
-              if (startResults.length > 0 && startResults[0].started === 1) {
-                // Group has been started, proceed with normal flow
-                console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has been started`);
-                
-                if (dbUser.seen === 1) {
-                  return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
-                } else {
-                  return res.redirect(`${FRONT_URL}/about`);
-                }
+              if (dbUser.seen === 1) {
+                console.log("User has seen intro, going to dashboard");
+                return res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
               } else {
-                // Group hasn't been started yet, redirect to waiting
-                console.log(`Group ${dbUser.group_id} in class ${dbUser.class} has NOT been started yet`);
-                return res.redirect(`${FRONT_URL}/waitingGroup`);
+                console.log("User has not seen intro, going to about page");
+                return res.redirect(`${FRONT_URL}/about`);
               }
-            });
-          } 
+            } else {
+              // Group hasn't been started yet, redirect to waiting
+              console.log(`❌ Group ${dbUser.group_id} in class ${dbUser.class} has NOT been started yet`);
+              return res.redirect(`${FRONT_URL}/waitingGroup`);
+            }
+          });
+        } else {
+          // Unknown affiliation
+          console.error("Unknown user affiliation:", dbUser.affiliation);
+          return res.redirect(`${FRONT_URL}/?error=invalid_user`);
         }
       } else {
-        console.log("User not found in database, redirecting to signup form");
+        // User not found in database - they need to be added by teacher first
+        console.log("User not found in database - student needs to be imported by teacher first");
         const firstName = encodeURIComponent(user.f_name || '');
         const lastName = encodeURIComponent(user.l_name || '');
-        return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
+        return res.redirect(`${FRONT_URL}/?error=not_imported&email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
       }
     });
   }
