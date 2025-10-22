@@ -287,6 +287,8 @@ const Grouping = () => {
     const newGroup = e.target.value;
     console.log("Selected group value:", newGroup);
     setSelectedJobGroup(newGroup);
+
+    console.log("Available job groups:", jobGroups);
     
     if (newGroup && jobGroups.includes(newGroup)) {
       console.log("Setting group ID to:", newGroup);
