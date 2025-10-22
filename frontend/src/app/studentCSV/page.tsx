@@ -182,60 +182,81 @@ export default function StudentCSVPage() {
   };
 
   // New submit function
-  const handleSubmit = async () => {
-    console.log('🚀 handleSubmit called');
-    console.log('selectedClass:', selectedClass);
-    console.log('csvStudents length:', csvStudents.length);
-    
-    if (!selectedClass || csvStudents.length === 0) {
-      alert('Please select a class and upload student data first');
-      return;
-    }
+const handleSubmit = async () => {
+  if (!selectedClass || csvStudents.length === 0) {
+    alert('Please select a class and upload student data first');
+    return;
+  }
 
-    const payload = {
-      class_id: selectedClass,
-      assignments: csvStudents.map(student => ({
-        email: student.email,
-        group_id: student.group_id
-      }))
-    };
-    
-    console.log('📦 Payload being sent:', JSON.stringify(payload, null, 2));
-
-    setIsSubmitting(true);
-
-    try {
-      console.log('🌐 Making fetch request to:', `${API_BASE_URL}/importCSV`);
-      
-      const response = await fetch(`${API_BASE_URL}/importCSV`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response ok:', response.ok);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Submit successful:', result);
-        setSubmitSuccess(true);
-        alert('Group assignments submitted successfully!');
-      } else {
-        const errorData = await response.json();
-        console.error('❌ Response error:', errorData);
-        alert(`Failed to submit assignments: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('🔥 Fetch error:', error);
-      alert('Failed to submit assignments. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  const payload = {
+    class_id: selectedClass,
+    assignments: csvStudents.map(student => ({
+      email: student.email,
+      group_id: student.group_id
+    }))
   };
+
+  const uniqueGroupIds = [...new Set(csvStudents.map(student => student.group_id))];
+  const numGroups = Math.max(...uniqueGroupIds); 
+  
+  setIsSubmitting(true);
+
+  try {
+    const createPayload = {
+      class_id: selectedClass,
+      num_groups: numGroups
+    };
+
+    console.log('Creating groups with payload:', createPayload);
+    
+    const createRes = await fetch(`${API_BASE_URL}/create-groups`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(createPayload),
+    });
+
+    if (!createRes.ok) {
+      const createError = await createRes.json();
+      console.error('Failed to create groups:', createError);
+      if (!createError.error?.includes('already exist')) {
+        throw new Error(`Failed to create groups: ${createError.error}`);
+      } else {
+        console.log('Groups already exist, proceeding with assignment');
+      }
+    } else {
+      const createResult = await createRes.json();
+      console.log(`✅ Created ${createResult.groups_created} groups for class ${selectedClass}`);
+    }
+
+    console.log('Assigning students to groups...');
+    const response = await fetch(`${API_BASE_URL}/importCSV`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      setSubmitSuccess(true);
+      alert(`Groups created and assignments submitted successfully! Created groups 1-${numGroups} for ${csvStudents.length} students.`);
+    } else {
+      const errorData = await response.json();
+      console.error('❌ Response error:', errorData);
+      alert(`Failed to submit assignments: ${errorData.error || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error('🔥 Fetch error:', error);
+    alert(`Failed to submit: ${error || 'Please try again.'}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const downloadCSV = () => {
     if (!selectedClass || csvStudents.length === 0) {

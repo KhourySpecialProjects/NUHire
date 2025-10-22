@@ -2445,21 +2445,17 @@ app.put("/offers/:offer_id", (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Groups API routes
 
-// POST /teacher/create-groups
-app.post('/teacher/create-groups', (req, res) => {
-  const { class_id, num_groups, max_students_per_group } = req.body;
+app.post("/create-groups", (req, res) => {
+  const { class_id, num_groups } = req.body;
   
-  console.log('Creating groups for class:', class_id);
-  console.log('Number of groups:', num_groups);
-  console.log('Max students per group:', max_students_per_group);
+  console.log('Creating groups for class:', { class_id, num_groups });
   
-  if (!class_id || !num_groups || !max_students_per_group) {
+  if (!class_id || !num_groups) {
     return res.status(400).json({ 
-      error: 'Missing required fields: class_id, num_groups, max_students_per_group' 
+      error: 'Missing required fields: class_id, num_groups' 
     });
   }
 
-  // First, check if groups already exist for this class
   db.query('SELECT COUNT(*) as group_count FROM `GroupsInfo` WHERE class_id = ?', [class_id], (err, result) => {
     if (err) {
       console.error('Error checking existing groups:', err);
@@ -2467,65 +2463,57 @@ app.post('/teacher/create-groups', (req, res) => {
     }
 
     const existingGroupCount = result[0].group_count;
-    console.log(`Found ${existingGroupCount} existing groups for class ${class_id}`);
-
+    
     if (existingGroupCount > 0) {
-      console.log(`Groups already exist for class ${class_id}. Cannot create new groups.`);
+      console.log(`Groups already exist for class ${class_id}`);
       return res.status(400).json({ 
-        error: "Groups already exist for this class. Cannot create new groups after groups have been created.",
-        existing_groups: existingGroupCount,
-        class_id: class_id
+        error: 'Groups already exist for this class',
+        existing_groups: existingGroupCount
       });
     }
 
-    // No existing groups found, proceed with creating groups
-    console.log(`No existing groups found for class ${class_id}. Proceeding with group creation.`);
-    
-    // Create new groups
-    const groupInserts = [];
+    const insertPromises = [];
     for (let i = 1; i <= num_groups; i++) {
-      groupInserts.push([class_id, i, max_students_per_group]);
-    }
-
-    const insertQuery = 'INSERT INTO `GroupsInfo` (class_id, group_number, max_students) VALUES ?';
-    
-    db.query(insertQuery, [groupInserts], (err, result) => {
-      if (err) {
-        console.error('Error creating groups:', err);
-        return res.status(500).json({ error: 'Failed to create groups' });
-      }
-
-      // Update the Moderator table with the new number of groups
-      db.query('UPDATE `Moderator` SET nom_groups = ? WHERE crn = ?', [num_groups, class_id], (updateErr, updateResult) => {
-        if (updateErr) {
-          console.error('Error updating class group count:', updateErr);
-          // Groups were created successfully, so we'll return success even if class update fails
-        }
-
-        // ADDED: Set group assignment status to disabled (assigned = 0) when groups are created
-        db.query(
-          'INSERT INTO seenAssignGroup (crn, assigned) VALUES (?, 0)',
-          [class_id],
-          (assignmentErr, assignmentResult) => {
-            if (assignmentErr) {
-              console.error('Error setting group assignment status:', assignmentErr);
-              // Groups were created successfully, so we'll continue even if assignment status fails
-            } else {
-              console.log(`Group assignment status set to disabled for class ${class_id}`);
-            }
-
-            console.log(`Successfully created ${num_groups} groups for class ${class_id}`);
-            res.json({ 
-              message: 'Groups created successfully',
-              groups_created: num_groups,
-              max_students_per_group: max_students_per_group,
-              class_id: class_id,
-              assignment_status: 'disabled'
+      const insertPromise = new Promise((resolve, reject) => {
+        const query = `
+          INSERT INTO GroupsInfo (class_id, group_number, started) 
+          VALUES (?, ?, 0)
+        `;
+        
+        db.query(query, [class_id, i], (insertErr, insertResult) => {
+          if (insertErr) {
+            reject({ group_number: i, error: insertErr.message });
+          } else {
+            resolve({ 
+              group_number: i, 
+              id: insertResult.insertId
             });
           }
-        );
+        });
       });
-    });
+      
+      insertPromises.push(insertPromise);
+    }
+
+    Promise.allSettled(insertPromises)
+      .then(results => {
+        const successful = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+        const failed = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+        console.log(`✅ Created ${successful.length} groups for class ${class_id}`);
+
+        if (failed.length > 0) {
+          console.error(`❌ Failed to create ${failed.length} groups:`, failed);
+        }
+
+        res.json({
+          message: 'Groups created successfully',
+          class_id: parseInt(class_id),
+          groups_created: successful.length,
+          groups_failed: failed.length,
+          groups: successful
+        });
+      });
   });
 });
 
