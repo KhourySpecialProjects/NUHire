@@ -46,7 +46,7 @@ const Grouping = () => {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
-  const [groups, setGroups] = useState<String[]>([]);
+  const [groups, setGroups] = useState<string[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("");
   const [group_id, setGroupId] = useState("");
@@ -289,7 +289,7 @@ const Grouping = () => {
     setSelectedJobGroup(newGroup);
 
     console.log("Available job groups:", jobGroups);
-    
+
     if (newGroup && jobGroups.includes(newGroup)) {
       console.log("Setting group ID to:", newGroup);
       setGroupIdJob(newGroup);
