@@ -915,7 +915,7 @@ app.get("/auth/keycloak/callback",
         }
         
         // Users with incomplete profile
-        if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === "" || dbUser.f_name === "" || !dbUser.group_id) {
+        if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === "" || dbUser.f_name === "" || !dbUser.group_id || dbUser.l_name === null || dbUser.f_name === null) {
           const firstName = encodeURIComponent(user.First_name || '');
           const lastName = encodeURIComponent(user.Last_name || '');
           return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
