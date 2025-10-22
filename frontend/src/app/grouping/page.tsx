@@ -290,6 +290,8 @@ const Grouping = () => {
 
     console.log("Available job groups:", jobGroups);
 
+    console.log("Type of newGroup:", typeof newGroup);
+
     if (newGroup && jobGroups.includes(newGroup)) {
       console.log("Setting group ID to:", newGroup);
       setGroupIdJob(newGroup);
