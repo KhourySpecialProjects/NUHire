@@ -950,8 +950,8 @@ app.get("/auth/keycloak/callback",
         // New user not in database
         console.log("User not found in database, redirecting to signup form");
         console.log("User info from Keycloak:", user);
-        const firstName = encodeURIComponent(user.First_Name || '');
-        const lastName = encodeURIComponent(user.Last_Name || '');
+        const firstName = encodeURIComponent(user.f_name || '');
+        const lastName = encodeURIComponent(user.l_name || '');
         console.log("Redirecting to signup form with:", { email, firstName, lastName });
         return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
       }
