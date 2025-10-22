@@ -526,7 +526,7 @@ const Grouping = () => {
                   >
                     <option value="">Select a group</option>
                     {Array.isArray(groups) && groups.map((groupId) => (
-                      <option >
+                      <option key={groupId} value={groupId}>  
                         Group {groupId}
                       </option>
                     ))}
