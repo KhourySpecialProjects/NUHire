@@ -871,12 +871,6 @@ app.get("/auth/keycloak", (req, res, next) => {
 // The server handles the authentication response and checks if the user exists in the database
 app.get("/auth/keycloak/callback",
   (req, res, next) => {
-    console.log("=== OAuth Callback Debug ===");
-    console.log("State parameter:", req.query.state);
-    console.log("Code parameter:", req.query.code);
-    console.log("Error:", req.query.error);
-    console.log("Error description:", req.query.error_description);
-    console.log("All query params:", req.query);
     next();
   },
   passport.authenticate("keycloak", { 
@@ -886,9 +880,7 @@ app.get("/auth/keycloak/callback",
   (req, res) => {
     console.log("=== Authentication successful ===");
     console.log("req.user after auth:", req.user);
-    console.log("req.session after auth:", req.session);
-    console.log("Session ID:", req.sessionID);
-    
+    console.log("req.session after auth:", req.body, req);
     const user = req.user;
     if (!user || !user.email) {
       console.error("No user or email found after authentication");
@@ -896,6 +888,8 @@ app.get("/auth/keycloak/callback",
     }
 
     const email = user.email;
+    const firstName = user.f_name;
+    const lastName = user.l_name;
     console.log("Email before query:", email);
     
     db.query("SELECT * FROM Users WHERE email = ?", [email], (err, results) => {
@@ -918,8 +912,6 @@ app.get("/auth/keycloak/callback",
         if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === "" || dbUser.f_name === "" || !dbUser.group_id || dbUser.l_name === null || dbUser.f_name === null) {
           console.log("inside really big check")
           console.log("User info from Keycloak:", user);
-          const firstName = encodeURIComponent(user.f_name || '');
-          const lastName = encodeURIComponent(user.l_name || '');
           console.log("first and last inside big check:", { firstName, lastName });
           return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
         }
@@ -953,8 +945,6 @@ app.get("/auth/keycloak/callback",
         // New user not in database
         console.log("User not found in database, redirecting to signup form");
         console.log("User info from Keycloak:", user);
-        const firstName = encodeURIComponent(user.f_name || '');
-        const lastName = encodeURIComponent(user.l_name || '');
         console.log("Redirecting to signup form with:", { email, firstName, lastName });
         return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
       }
