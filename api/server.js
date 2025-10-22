@@ -1462,7 +1462,7 @@ app.get("/groups", async (req, res) => {
     console.log(`Class ${classId} has ${groupsResult.length} groups`);
     console.log("Groups fetched from database:", groupsResult);
 
-    const groupIds = groupsResult.map(group => group.group_number);
+    const groupIds = groupsResult.map(group => group.id);
 
     console.log("Returning group IDs:", groupIds);
     res.json(groupIds);
