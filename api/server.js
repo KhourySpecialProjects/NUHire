@@ -917,6 +917,7 @@ app.get("/auth/keycloak/callback",
         // Users with incomplete profile
         if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === "" || dbUser.f_name === "" || !dbUser.group_id || dbUser.l_name === null || dbUser.f_name === null) {
           console.log("inside really big check")
+          console.log("User info from Keycloak:", user);
           const firstName = encodeURIComponent(user.f_name || '');
           const lastName = encodeURIComponent(user.l_name || '');
           console.log("first and last inside big check:", { firstName, lastName });
