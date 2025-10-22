@@ -521,13 +521,13 @@ const Grouping = () => {
                     className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a group</option>
-                    {groups && Object.keys(groups).map((groupId, index) => (
-                      <option key={groupId} value={groupId}>
-                        Group {index + 1}
+                    {Array.isArray(groups) && groups.map((groupId) => (
+                      <option >
+                        Group {groupId}
                       </option>
                     ))}
                   </select>
-                  {groups && Object.keys(groups).length === 0 && (
+                  {groups && groups.length === 0 && (
                     <p className="text-red-500 text-sm mt-1">
                       No groups available in this class.
                     </p>
