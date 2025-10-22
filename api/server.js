@@ -949,8 +949,8 @@ app.get("/auth/keycloak/callback",
       } else {
         // New user not in database
         console.log("User not found in database, redirecting to signup form");
-        const firstName = encodeURIComponent(user.First_name || '');
-        const lastName = encodeURIComponent(user.Last_name || '');
+        const firstName = encodeURIComponent(user.First_Name || '');
+        const lastName = encodeURIComponent(user.Last_Name || '');
         return res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`); 
       }
     });
