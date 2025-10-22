@@ -1461,7 +1461,7 @@ app.get("/groups", async (req, res) => {
     }
     
     console.log(`Class ${classId} has ${groupsResult.length} groups`);
-    
+    console.log("Groups fetched from database:", groupsResult);
     // Create the groups object based on existing groups
     const groupsData = {};
     groupsResult.forEach(group => {
