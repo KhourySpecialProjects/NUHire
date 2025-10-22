@@ -167,6 +167,10 @@ const Grouping = () => {
     }
   }, [user]);
 
+  useEffect(( ) => {
+    console.log(groups);
+  }, [groups]);
+
   // Tab 1: Fetch groups and students for selected class
   useEffect(() => {
     if (selectedClass) {
