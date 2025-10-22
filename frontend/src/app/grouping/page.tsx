@@ -46,7 +46,7 @@ const Grouping = () => {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
-  const [groups, setGroups] = useState<{ [key: string]: any }>({});
+  const [groups, setGroups] = useState<String[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("");
   const [group_id, setGroupId] = useState("");
@@ -55,7 +55,7 @@ const Grouping = () => {
   interface Job { title: string; [key: string]: any; }
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<Job[]>([]);
-  const [jobGroups, setJobGroups] = useState<{ [key: string]: any }>({});
+  const [jobGroups, setJobGroups] = useState<string[]>([]);
   const [selectedJobClass, setSelectedJobClass] = useState("");
   const [selectedJobGroup, setSelectedJobGroup] = useState("");
   const [job_group_id, setGroupIdJob] = useState("");
@@ -306,7 +306,7 @@ const Grouping = () => {
       setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
     }
   };
-  
+
   const handleJobSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedTitle = event.target.value;
     const selectedJob = jobs.find(job => job.title === selectedTitle);
@@ -378,9 +378,9 @@ const Grouping = () => {
       setPopup({ headline: "Success", message: "Job assigned to group successfully!" });
       setSelectedJobs([]);
       setGroupIdJob("");
-      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`)
         .then(res => res.json())
-        .then(setGroups);
+        .then(setJobGroups);
     } else {
       setPopup({ headline: "Error", message: "Failed to assign job to group." });
     }
@@ -447,7 +447,7 @@ const Grouping = () => {
                       </option>
                     ))}
                   </select>
-                  {jobGroups && Object.keys(jobGroups).length === 0 && (
+                  {jobGroups && jobGroups.length === 0 && (
                     <p className="text-red-500 text-sm mt-1">
                       No groups available in this class.
                     </p>
