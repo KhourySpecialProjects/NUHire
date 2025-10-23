@@ -45,6 +45,11 @@ export default function ManageGroupsPage() {
   const router = useRouter();
   const [availableGroups, setAvailableGroups] = useState<number[]>([]);
 
+
+  useEffect(() => {
+    console.log("Available groups updated:", availableGroups);
+  }, [availableGroups]);
+  
   // Fetch user authentication
   useEffect(() => {
     const fetchUser = async () => {
