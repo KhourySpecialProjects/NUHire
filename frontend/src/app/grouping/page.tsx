@@ -379,11 +379,10 @@ const Grouping = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-sand font-rubik">
+    <div className="flex h-screen bg-sand font-rubik">
       <NavbarAdmin />
       <div className="flex-1 p-4 flex gap-4 overflow-hidden">
           <Tabs>
-            {/* Tab: Job Assignment */}
             <div title="Job Assignment">
               <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
                 <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
