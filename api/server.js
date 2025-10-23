@@ -2808,7 +2808,7 @@ app.patch("/remove-from-group", (req, res) => {
   });
 });
 
-app.patch("/start-all-groups") , (req, res) => {
+app.patch("/start-all-groups", (req, res) => {
   const { class_id } = req.body;
 
   if (!class_id) {
@@ -2835,7 +2835,7 @@ app.patch("/start-all-groups") , (req, res) => {
       class_id
     });
   });
-};
+});
 
 app.patch("/start-group", (req, res) => { 
   const { class_id, group_id } = req.body;
