@@ -98,34 +98,6 @@ export default function ManageGroupsPage() {
   }, [user]);
 
   useEffect(() => {
-    const fetchStudentsAndOrganize = async () => {
-      if (!selectedClass) {
-        setStudents([]);
-        setGroups([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/students-by-class/${selectedClass}`, {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const studentData = await response.json();
-          setStudents(studentData);
-          if (availableGroups.length > 0) {
-            await organizeStudentsIntoGroups(studentData);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching students:', error);
-      }
-    };
-
-    fetchStudentsAndOrganize();
-  }, [selectedClass, availableGroups]);
-
-  useEffect(() => {
     const fetchAvailableGroups = async () => {
       if (!selectedClass) {
         setAvailableGroups([]);
@@ -156,7 +128,7 @@ export default function ManageGroupsPage() {
   }, [selectedClass]);
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchStudentsAndOrganize = async () => {
       if (!selectedClass) {
         setStudents([]);
         setGroups([]);
@@ -171,8 +143,9 @@ export default function ManageGroupsPage() {
         if (response.ok) {
           const studentData = await response.json();
           setStudents(studentData);
+          
           if (availableGroups.length > 0) {
-            organizeStudentsIntoGroups(studentData);
+            await organizeStudentsIntoGroups(studentData);
           }
         }
       } catch (error) {
@@ -180,18 +153,18 @@ export default function ManageGroupsPage() {
       }
     };
 
-    fetchStudents();
-  }, [selectedClass, availableGroups]); 
+    fetchStudentsAndOrganize();
+  }, [selectedClass, availableGroups]);
 
   useEffect(() => {
-    const organizeAsync = async () => {
-      if (availableGroups.length > 0 && students.length >= 0) {
+    const organizeWhenGroupsChange = async () => {
+      if (availableGroups.length > 0 && students.length > 0) {
         await organizeStudentsIntoGroups(students);
       }
     };
     
-    organizeAsync();
-  }, [availableGroups]);
+    organizeWhenGroupsChange();
+  }, [availableGroups]); 
 
   const organizeStudentsIntoGroups = async (studentList: Student[]) => {
     const groupMap = new Map<number | null, Student[]>();
