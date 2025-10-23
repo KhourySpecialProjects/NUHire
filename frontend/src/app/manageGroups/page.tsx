@@ -507,90 +507,98 @@ export default function ManageGroupsPage() {
                 </h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                {groups.map((group) => (
-                  <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col h-full">
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Group {group.group_id}
-                        </h3>
+              {/* UPDATED: Centered grid with max 4 columns and wider cards */}
+              <div className="flex justify-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl">
+                  {groups.map((group) => (
+                    <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[300px] w-full">
+                      {/* Header */}
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center">
+                          <h3 className="text-xl font-semibold text-gray-900">
+                            Group {group.group_id}
+                          </h3>
+                        </div>
+                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                          {group.students.length} student{group.students.length !== 1 ? 's' : ''}
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {group.students.length} student{group.students.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
 
-                    <div className="flex-1 flex flex-col justify-center mb-4">
-                      {group.students.length === 0 ? (
-                        <div className="flex-1 flex items-center justify-center">
-                          <p className="text-gray-400 text-sm italic text-center">No students in this group</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {group.students.map((student) => (
-                            <div key={student.id} className="bg-gray-50 p-3 rounded border border-gray-200">
-                              <div className="mb-3">
-                                <p className="font-medium text-gray-900">
-                                  {student.f_name && student.l_name 
-                                    ? `${student.f_name} ${student.l_name}`
-                                    : student.f_name || student.l_name || 'No Name'
-                                  }
-                                </p>
-                                <p className="text-sm text-gray-600">{student.email}</p>
-                              </div>
-                              
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => {
-                                    setSelectedStudent(student);
-                                    setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
-                                    setReassignModalOpen(true);
-                                  }}
-                                  className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-1 px-3 rounded text-xs font-medium transition-colors"
-                                  title="Reassign student"
-                                >
-                                  ↻ Reassign
-                                </button>
-                                
-                                <button
-                                  onClick={() => removeStudentFromGroup(student.email)}
-                                  className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-1 px-3 rounded text-xs font-medium transition-colors"
-                                  title="Remove from group"
-                                >
-                                  × Remove
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-auto">
-                      <button
-                        onClick={() => startGroup(group.group_id)}
-                        disabled={group.isStarted || startingGroups.has(group.group_id)}
-                        className={`w-full py-2 px-3 rounded text-sm font-medium ${
-                          group.isStarted || startingGroups.has(group.group_id)
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                      >
-                        {startingGroups.has(group.group_id) ? (
-                          <div className="flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                            Starting...
+                      {/* Students section - Flexible height */}
+                      <div className="flex-1 flex flex-col justify-center mb-4">
+                        {group.students.length === 0 ? (
+                          <div className="flex-1 flex items-center justify-center min-h-[120px]">
+                            <p className="text-gray-400 text-base italic text-center">No students in this group</p>
                           </div>
-                        ) : group.isStarted ? (
-                          '✅ Started'
                         ) : (
-                          '🚀 Start Group'
+                          <div className="space-y-3">
+                            {group.students.map((student) => (
+                              <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div className="mb-3">
+                                  <p className="font-medium text-gray-900 text-base">
+                                    {student.f_name && student.l_name 
+                                      ? `${student.f_name} ${student.l_name}`
+                                      : student.f_name || student.l_name || 'No Name'
+                                    }
+                                  </p>
+                                  <p className="text-sm text-gray-600 truncate" title={student.email}>
+                                    {student.email}
+                                  </p>
+                                </div>
+                                
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedStudent(student);
+                                      setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
+                                      setReassignModalOpen(true);
+                                    }}
+                                    className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                    title="Reassign student"
+                                  >
+                                    ↻ Reassign
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => removeStudentFromGroup(student.email)}
+                                    className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                    title="Remove from group"
+                                  >
+                                    × Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                      </button>
+                      </div>
+
+                      {/* Start button - Fixed at bottom */}
+                      <div className="mt-auto pt-4 border-t border-gray-100">
+                        <button
+                          onClick={() => startGroup(group.group_id)}
+                          disabled={group.isStarted || startingGroups.has(group.group_id)}
+                          className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors ${
+                            group.isStarted || startingGroups.has(group.group_id)
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                        >
+                          {startingGroups.has(group.group_id) ? (
+                            <div className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Starting...
+                            </div>
+                          ) : group.isStarted ? (
+                            '✅ Started'
+                          ) : (
+                            '🚀 Start Group'
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
