@@ -2928,6 +2928,40 @@ app.get("/groups-seen", (req, res) => {
   });
 });
 
+// Add this new endpoint to your server.js
+app.post("/create-single-group", (req, res) => {
+  const { class_id, group_id } = req.body;
+  
+  if (!class_id || !group_id) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: class_id, group_id' 
+    });
+  }
+
+  const query = `
+    INSERT INTO GroupsInfo (class_id, group_id, started) 
+    VALUES (?, ?, 0)
+  `;
+  
+  db.query(query, [class_id, group_id], (err, result) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ error: 'Group already exists' });
+      }
+      console.error('Error creating group:', err);
+      return res.status(500).json({ error: 'Failed to create group' });
+    }
+    
+    console.log(`✅ Group ${group_id} created for class ${class_id}`);
+    
+    res.json({ 
+      message: 'Group created successfully',
+      class_id: parseInt(class_id),
+      group_id: parseInt(group_id)
+    });
+  });
+});
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Various
 

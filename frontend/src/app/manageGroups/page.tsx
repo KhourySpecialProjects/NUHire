@@ -44,6 +44,8 @@ export default function ManageGroupsPage() {
   const [newGroupId, setNewGroupId] = useState<number>(1);
   const router = useRouter();
   const [availableGroups, setAvailableGroups] = useState<number[]>([]);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [newGroupNumber, setNewGroupNumber] = useState<number>(1);
 
 
   useEffect(() => {
@@ -225,6 +227,47 @@ export default function ManageGroupsPage() {
     });
 
     setGroups(groupsArray);
+  };
+
+  const createNewGroup = async () => {
+    if (!selectedClass) return;
+
+    setIsCreatingGroup(true);
+
+    try {
+      const maxGroupNumber = Math.max(...availableGroups, 0);
+      const nextGroupNumber = maxGroupNumber + 1;
+
+      const response = await fetch(`${API_BASE_URL}/create-single-group`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          class_id: selectedClass,
+          group_id: nextGroupNumber
+        }),
+      });
+
+      if (response.ok) {
+        setAvailableGroups(prev => [...prev, nextGroupNumber].sort((a, b) => a - b));
+        
+        if (students.length > 0) {
+          await organizeStudentsIntoGroups(students);
+        }
+        
+        alert(`Group ${nextGroupNumber} created successfully!`);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to create group: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating group:', error);
+      alert('Failed to create group. Please try again.');
+    } finally {
+      setIsCreatingGroup(false);
+    }
   };
 
   // Handle class selection
@@ -460,25 +503,50 @@ export default function ManageGroupsPage() {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">👥 Manage Groups</h1>
-            {selectedClass && groups.length > 0 && (
-              <button
-                onClick={startAllGroups}
-                disabled={isStartingAll}
-                className={`px-6 py-3 rounded-lg font-semibold ${
-                  isStartingAll
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {isStartingAll ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Starting All...
-                  </div>
-                ) : (
-                  '🚀 Start All Groups'
+            {selectedClass && (
+              <div className="flex space-x-3">
+                {/* Create New Group Button */}
+                <button
+                  onClick={createNewGroup}
+                  disabled={isCreatingGroup}
+                  className={`px-4 py-2 rounded-lg font-medium ${
+                    isCreatingGroup
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-purple-600 text-white hover:bg-purple-700'
+                  }`}
+                >
+                  {isCreatingGroup ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creating...
+                    </div>
+                  ) : (
+                    '➕ New Group'
+                  )}
+                </button>
+                
+                {/* Start All Groups Button */}
+                {groups.length > 0 && (
+                  <button
+                    onClick={startAllGroups}
+                    disabled={isStartingAll || groups.every(g => g.isStarted)}
+                    className={`px-6 py-3 rounded-lg font-semibold ${
+                      isStartingAll || groups.every(g => g.isStarted)
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    {isStartingAll ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Starting All...
+                      </div>
+                    ) : (
+                      '🚀 Start All Groups'
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             )}
           </div>
           <div className="mb-6">
@@ -630,7 +698,15 @@ export default function ManageGroupsPage() {
               }
             </h3>
             <p className="text-gray-600 mb-4">
-              Current group: {selectedStudent.group_id || 'No Group'}
+              Current group: Group {selectedStudent.group_id}
+              {(() => {
+                const currentGroup = groups.find(g => g.group_id === selectedStudent.group_id);
+                return currentGroup?.isStarted ? (
+                  <span className="ml-2 text-green-600 text-sm">✅ Started</span>
+                ) : (
+                  <span className="ml-2 text-gray-500 text-sm">⏳ Not Started</span>
+                );
+              })()}
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -644,9 +720,11 @@ export default function ManageGroupsPage() {
                 {availableGroups.map((groupId) => {
                   const existingGroup = groups.find(g => g.group_id === groupId);
                   const studentCount = existingGroup ? existingGroup.students.length : 0;
+                  const isStarted = existingGroup ? existingGroup.isStarted : false;
                   return (
                     <option key={groupId} value={groupId}>
                       Group {groupId} ({studentCount} student{studentCount !== 1 ? 's' : ''})
+                      {isStarted ? ' ✅' : ' ⏳'}
                     </option>
                   );
                 })}
