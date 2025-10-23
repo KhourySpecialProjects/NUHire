@@ -382,8 +382,6 @@ const Grouping = () => {
     <div className="flex flex-col h-screen bg-sand font-rubik">
       <NavbarAdmin />
       <div className="flex-1 p-4 flex gap-4 overflow-hidden">
-        {/* Left side - Main tabs */}
-        <div className="flex-1 flex flex-col">
           <Tabs>
             {/* Tab: Job Assignment */}
             <div title="Job Assignment">
@@ -546,116 +544,6 @@ const Grouping = () => {
             </div>
 
           </Tabs>
-        </div>
-
-        {/* Right side - Fixed Groups in Class panel */}
-        <div className="w-1/2 border-l-4 border-northeasternBlack pl-4 flex flex-col h-full">
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="bg-northeasternWhite rounded-lg p-4 flex-1 flex flex-col min-h-0">
-              <h2 className="text-2xl font-bold text-center text-northeasternRed mb-4 flex-shrink-0">
-                {groupsTabClass ? `Groups in Class ${groupsTabClass}` : 'Groups'}
-              </h2>
-              
-              <div className="mb-4 flex-shrink-0">
-                <label className="block text-navy font-semibold mb-2">
-                  Select a class to view groups
-                </label>
-                <select
-                  value={groupsTabClass}
-                  onChange={handleGroupsTabClassChange}
-                  className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a class</option>
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex-1 overflow-y-auto min-h-0">
-                {!groupsTabClass ? (
-                  <div className="flex flex-col items-center justify-center h-48 text-center">
-                    <p className="text-northeasternBlack font-medium">Please select a class to view groups</p>
-                    <p className="text-gray-500 text-sm mt-1">Groups will appear here after selecting a class</p>
-                  </div>
-                ) : groupsTabStudents.length > 0 ? (
-                  (() => {
-                    const studentsByGroup: { [key: string]: any[] } = {};
-                    
-                    groupsTabStudents.forEach((student: any) => {
-                      if (student.group_id) {
-                        const groupId = student.group_id.toString();
-                        if (!studentsByGroup[groupId]) {
-                          studentsByGroup[groupId] = [];
-                        }
-                        studentsByGroup[groupId].push(student);
-                      }
-                    });
-
-                    return Object.keys(studentsByGroup).length > 0 ? (
-                      <div className="space-y-2">
-                        {Object.entries(studentsByGroup).map(([group_id, students]) => (
-                          <div key={group_id} className="bg-springWater border border-wood p-3 rounded-md shadow">
-                            <h3 className="text-xl font-semibold text-navy mb-2">Group {group_id}</h3>
-                            <div className="space-y-1">
-                              {students.map((student: any, index: number) => (
-                                <div key={index} className="flex items-center justify-between p-2 bg-white rounded">
-                                  <div className="flex items-center space-x-2 flex-1">
-                                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${student.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                    <span className="font-medium text-sm">
-                                      {student.f_name && student.l_name 
-                                        ? `${student.f_name} ${student.l_name}` 
-                                        : student.email.split('@')[0]
-                                      } ({student.email})
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <div className="flex items-center space-x-1 text-xs">
-                                      <span className={`px-2 py-1 rounded whitespace-nowrap ${student.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                                        {student.current_page || 'No page'}
-                                      </span>
-                                      <span className="text-gray-600 whitespace-nowrap">
-                                        No job assigned
-                                      </span>
-                                    </div>
-                                    {/* Delete Button */}
-                                    <button
-                                      onClick={() => handleDeleteStudent(
-                                        student.email, 
-                                        student.f_name && student.l_name 
-                                          ? `${student.f_name} ${student.l_name}` 
-                                          : student.email.split('@')[0],
-                                        groupsTabClass
-                                      )}
-                                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                                      title="Remove student from class"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-48 text-center">
-                        <p className="text-northeasternBlack">No students with group assignments found for this class.</p>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-48 text-center">
-                    <p className="text-northeasternBlack">No students found for this class.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
       
       {/* Delete Confirmation Popup */}
