@@ -46,7 +46,6 @@ CREATE TABLE `GroupsInfo` (
   `class_id` int NOT NULL,
   `started` tinyint NOT NULL DEFAULT '0',
   `group_id` int DEFAULT NULL,
-  `GroupsInfocol` varchar(45) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_class_group` (`class_id`,`id`),
   CONSTRAINT `groupsinfo_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
@@ -397,4 +396,4 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-23  9:28:15
+-- Dump completed on 2025-10-23  9:35:54

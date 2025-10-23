@@ -907,7 +907,7 @@ app.get("/auth/keycloak/callback",
         
         // Users with group_id
         if (dbUser.group_id) {
-          const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND id = ?';
+          const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
           db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults) => {
             if (startErr) {
               console.error('Error checking group start status:', startErr);
@@ -1450,7 +1450,7 @@ app.get("/groups", async (req, res) => {
   
   try {
     const [groupsResult] = await db.promise().query(
-      "SELECT DISTINCT id FROM `GroupsInfo` WHERE class_id = ? ORDER BY id", 
+      "SELECT DISTINCT group_id FROM `GroupsInfo` WHERE class_id = ? ORDER BY group_id", 
       [classId]
     );
     
@@ -2462,7 +2462,7 @@ app.post("/create-groups", (req, res) => {
     for (let i = 1; i <= num_groups; i++) {
       const insertPromise = new Promise((resolve, reject) => {
         const query = `
-          INSERT INTO GroupsInfo (class_id, id, started) 
+          INSERT INTO GroupsInfo (class_id, group_id, started) 
           VALUES (?, ?, 0)
         `;
         
@@ -2552,8 +2552,8 @@ app.post('/student/join-group', (req, res) => {
       g.max_students,
       COUNT(u.email) as current_students
     FROM \`GroupsInfo\` g
-    LEFT JOIN Users u ON u.group_id = g.id AND u.class = g.class_id
-    WHERE g.class_id = ? AND g.id = ?
+    LEFT JOIN Users u ON u.group_id = g.group_id AND u.class = g.class_id
+    WHERE g.class_id = ? AND g.group_id = ?
   `;
   
   db.query(checkCapacityQuery, [class_id, group_id], (err, capacityResult) => {
@@ -2846,7 +2846,7 @@ app.patch("/start-group", (req, res) => {
     });
   }
   
-  const updateQuery = 'UPDATE \`GroupsInfo\` SET started = 1 WHERE class_id = ? AND id = ?';  
+  const updateQuery = 'UPDATE \`GroupsInfo\` SET started = 1 WHERE class_id = ? AND group_id = ?';  
   db.query(updateQuery, [class_id, group_id], (err, result) => {
     if (err) {
       console.error('Error starting group:', err);
@@ -2870,7 +2870,7 @@ app.get("/group-status/:classId/:groupId", (req, res) => {
   
   console.log('Fetching group status for class:', classId, 'group:', groupId);
   
-  const query = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND id = ?';
+  const query = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND group_id = ?';
       
   db.query(query, [classId, groupId], (err, results) => {
     if (err) {
