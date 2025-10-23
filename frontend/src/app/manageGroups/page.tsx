@@ -149,32 +149,73 @@ export default function ManageGroupsPage() {
     fetchAvailableGroups();
   }, [selectedClass]);
 
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (!selectedClass) {
+        setStudents([]);
+        setGroups([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/students-by-class/${selectedClass}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const studentData = await response.json();
+          setStudents(studentData);
+          if (availableGroups.length > 0) {
+            organizeStudentsIntoGroups(studentData);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      }
+    };
+
+    fetchStudents();
+  }, [selectedClass, availableGroups]); 
+
+  useEffect(() => {
+    if (availableGroups.length > 0 && students.length >= 0) {
+      organizeStudentsIntoGroups(students);
+    }
+  }, [availableGroups]); 
+
   const organizeStudentsIntoGroups = (studentList: Student[]) => {
     const groupMap = new Map<number | null, Student[]>();
     
+    availableGroups.forEach(groupId => {
+      groupMap.set(groupId, []);
+    });
+    
     studentList.forEach(student => {
       const groupKey = student.group_id;
-      if (!groupMap.has(groupKey)) {
-        groupMap.set(groupKey, []);
+      if (groupKey !== null && availableGroups.includes(groupKey)) {
+        groupMap.get(groupKey)!.push(student);
+      } else if (groupKey === null) {
+        if (!groupMap.has(null)) {
+          groupMap.set(null, []);
+        }
+        groupMap.get(null)!.push(student);
       }
-      groupMap.get(groupKey)!.push(student);
     });
 
     const groupsArray: Group[] = [];
     
-    Array.from(groupMap.entries())
-      .filter(([group_id]) => group_id !== null)
-      .forEach(([group_id, students]) => {
-        groupsArray.push({
-          group_id: group_id as number,
-          students: students.sort((a, b) => {
-            const aName = a.f_name || '';
-            const bName = b.f_name || '';
-            return aName.localeCompare(bName);
-          }),
-          isStarted: false
-        });
+    availableGroups.forEach(groupId => {
+      const students = groupMap.get(groupId) || [];
+      groupsArray.push({
+        group_id: groupId,
+        students: students.sort((a, b) => {
+          const aName = a.f_name || '';
+          const bName = b.f_name || '';
+          return aName.localeCompare(bName);
+        }),
+        isStarted: false
       });
+    });
     
     const ungroupedStudents = groupMap.get(null) || [];
     if (ungroupedStudents.length > 0) {
@@ -408,28 +449,120 @@ export default function ManageGroupsPage() {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">👥 Manage Groups</h1>
-            
-            {/* Start All Groups Button */}
-            {selectedClass && groups.length > 0 && (
-              <button
-                onClick={startAllGroups}
-                disabled={isStartingAll || groups.every(g => g.isStarted)}
-                className={`px-6 py-3 rounded-lg font-semibold ${
-                  isStartingAll || groups.every(g => g.isStarted)
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {isStartingAll ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Starting All...
+              {selectedClass && groups.length > 0 && (
+                <div>
+                  <div className="mb-4 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Class Groups ({groups.length} groups, {students.length} students total)
+                    </h2>
                   </div>
-                ) : (
-                  '🚀 Start All Groups'
-                )}
-              </button>
-            )}
+                  
+                  {/* UPDATED: More flexible grid with auto-fit */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4">
+                    {groups.map((group) => (
+                      <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                        {/* UPDATED: More compact header */}
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                              <h3 className="text-base font-semibold text-gray-900">
+                                {group.group_id === -1 ? 'No Group' : `Group ${group.group_id}`}
+                              </h3>
+                              {group.isStarted && group.group_id !== -1 && (
+                                <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                                  ✅
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {group.students.length}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* UPDATED: More compact student list */}
+                        <div className="p-3">
+                          {group.students.length === 0 ? (
+                            <div className="text-center py-4">
+                              <p className="text-gray-400 text-sm italic">Empty group</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2 mb-3">
+                              {group.students.map((student) => (
+                                <div key={student.id} className="bg-gray-50 rounded border border-gray-200">
+                                  {/* UPDATED: More compact student info */}
+                                  <div className="p-2">
+                                    <div className="mb-2">
+                                      <p className="font-medium text-sm text-gray-900 leading-tight">
+                                        {student.f_name && student.l_name 
+                                          ? `${student.f_name} ${student.l_name}`
+                                          : student.f_name || student.l_name || 'No Name'
+                                        }
+                                      </p>
+                                      <p className="text-xs text-gray-600 truncate" title={student.email}>
+                                        {student.email}
+                                      </p>
+                                    </div>
+                                    
+                                    {/* UPDATED: Smaller buttons */}
+                                    <div className="flex space-x-1">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedStudent(student);
+                                          setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
+                                          setReassignModalOpen(true);
+                                        }}
+                                        className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-1 px-2 rounded text-xs font-medium transition-colors"
+                                        title="Reassign student"
+                                      >
+                                        ↻
+                                      </button>
+                                      
+                                      {student.group_id !== null && (
+                                        <button
+                                          onClick={() => removeStudentFromGroup(student.email)}
+                                          className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-1 px-2 rounded text-xs font-medium transition-colors"
+                                          title="Remove from group"
+                                        >
+                                          ×
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* UPDATED: Compact start button */}
+                          {group.group_id !== -1 && (
+                            <button
+                              onClick={() => startGroup(group.group_id)}
+                              disabled={group.isStarted || startingGroups.has(group.group_id)}
+                              className={`w-full py-2 px-3 rounded text-xs font-medium ${
+                                group.isStarted || startingGroups.has(group.group_id)
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                            >
+                              {startingGroups.has(group.group_id) ? (
+                                <div className="flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                  Starting...
+                                </div>
+                              ) : group.isStarted ? (
+                                '✅ Started'
+                              ) : (
+                                '🚀 Start'
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
           
           {/* Class Selection */}
