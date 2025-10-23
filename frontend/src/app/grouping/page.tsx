@@ -196,8 +196,9 @@ const Grouping = () => {
           return res.json();
         })
         .then(data => {
-          console.log("📊 Job Groups API response:", data);
-          setJobGroups(data);
+          const stringJobGroups = Array.isArray(data) ? data.map(String) : [];
+          console.log("📊 Converted job groups:", stringJobGroups);
+          setJobGroups(stringJobGroups);
         })
         .catch(error => {
           console.error("❌ Job Groups API error:", error);
@@ -285,19 +286,12 @@ const Grouping = () => {
 
   const handleJobGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGroup = e.target.value;
-    console.log("Selected group value:", newGroup);
+
     setSelectedJobGroup(newGroup);
 
-    console.log("Available job groups:", jobGroups);
-
-    console.log("Type of newGroup:", typeof newGroup);
-    console.log("this is the check", jobGroups.includes(newGroup));
-    console.log("Type of jobGroups elements:", jobGroups.map(g => typeof g));
     if (newGroup && jobGroups.includes(newGroup)) {
-      console.log("Setting group ID to:", newGroup);
       setGroupIdJob(newGroup);
     } else if (newGroup) {
-      console.log("Invalid group selection");
       setPopup({ headline: "Invalid Selection", message: "Invalid group selection." });
     }
   };
