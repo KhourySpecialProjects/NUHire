@@ -176,7 +176,8 @@ const Grouping = () => {
       fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
         .then(res => res.json())
         .then(data => {
-          setGroups(data);
+          const stringJobGroups = Array.isArray(data) ? data.map(String) : [];
+          setGroups(stringJobGroups);
         });
       fetch(`${API_BASE_URL}/students?class=${selectedClass}`)
         .then(res => res.json())
@@ -196,7 +197,6 @@ const Grouping = () => {
         })
         .then(data => {
           const stringJobGroups = Array.isArray(data) ? data.map(String) : [];
-          console.log("📊 Converted job groups:", stringJobGroups);
           setJobGroups(stringJobGroups);
         })
         .catch(error => {
@@ -285,9 +285,7 @@ const Grouping = () => {
 
   const handleJobGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGroup = e.target.value;
-
     setSelectedJobGroup(newGroup);
-
     if (newGroup && jobGroups.includes(newGroup)) {
       setGroupIdJob(newGroup);
     } else if (newGroup) {
