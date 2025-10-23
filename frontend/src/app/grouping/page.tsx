@@ -291,7 +291,8 @@ const Grouping = () => {
     console.log("Available job groups:", jobGroups);
 
     console.log("Type of newGroup:", typeof newGroup);
-
+    console.log("this is the check", jobGroups.includes(newGroup));
+    console.log("Type of jobGroups elements:", jobGroups.map(g => typeof g));
     if (newGroup && jobGroups.includes(newGroup)) {
       console.log("Setting group ID to:", newGroup);
       setGroupIdJob(newGroup);
