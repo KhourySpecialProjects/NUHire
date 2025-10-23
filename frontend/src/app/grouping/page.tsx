@@ -166,10 +166,6 @@ const Grouping = () => {
     }
   }, [user]);
 
-  useEffect(( ) => {
-    console.log(groups);
-  }, [groups]);
-
   // Tab 1: Fetch groups and students for selected class
   useEffect(() => {
     if (selectedClass) {
@@ -187,12 +183,9 @@ const Grouping = () => {
 
   // Tab 2: Fetch job groups for selected job class
   useEffect(() => {
-    if (selectedJobClass) {
-      console.log("🔍 Fetching job groups for class:", selectedJobClass);
-      
+    if (selectedJobClass) {      
       fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`)
         .then(res => {
-          console.log("📡 Job Groups API response status:", res.status);
           return res.json();
         })
         .then(data => {
@@ -207,18 +200,11 @@ const Grouping = () => {
 
  useEffect(() => {
   if (groupsTabClass) {
-    console.log("=== TAB 3 DEBUG ===");
-    console.log("Selected class:", groupsTabClass);
-    
     fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
       .then(res => {
-        console.log("Groups API response status:", res.status);
         return res.json();
       })
       .then(data => {
-        console.log("Groups API raw response:", data);
-        console.log("Groups data type:", typeof data);
-        console.log("Groups data keys:", Object.keys(data));
         setGroupsTabGroups(data);
       })
       .catch(err => {
@@ -227,13 +213,9 @@ const Grouping = () => {
       
     fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
       .then(res => {
-        console.log("Students API response status:", res.status);
         return res.json();
       })
       .then(data2 => {
-        console.log("Students API raw response:", data2);
-        console.log("Students data type:", typeof data2);
-        console.log("Students array length:", Array.isArray(data2) ? data2.length : 'Not an array');
         setGroupsTabStudents(data2);
       })
       .catch(err => {
@@ -360,7 +342,6 @@ const Grouping = () => {
       setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
       return;
     }
-    console.log(job_group_id);
     const response = await fetch(`${API_BASE_URL}/update-job`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

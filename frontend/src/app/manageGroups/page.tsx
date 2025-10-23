@@ -43,10 +43,7 @@ export default function ManageGroupsPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [newGroupId, setNewGroupId] = useState<number>(1);
   const router = useRouter();
-
-  useEffect(() => {
-    console.log("Students changed", students);
-  }, [students]);
+  const [availableGroups, setAvailableGroups] = useState<number[]>([]);
 
   // Fetch user authentication
   useEffect(() => {
@@ -120,6 +117,36 @@ export default function ManageGroupsPage() {
     };
 
     fetchStudents();
+  }, [selectedClass]);
+
+  useEffect(() => {
+    const fetchAvailableGroups = async () => {
+      if (!selectedClass) {
+        setAvailableGroups([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const groupData = await response.json();
+          console.log("Available groups from GroupsInfo:", groupData);
+          // Convert to numbers and sort
+          const groupNumbers = Array.isArray(groupData) 
+            ? groupData.map(Number).sort((a, b) => a - b)
+            : [];
+          setAvailableGroups(groupNumbers);
+        }
+      } catch (error) {
+        console.error('Error fetching available groups:', error);
+        setAvailableGroups([]);
+      }
+    };
+
+    fetchAvailableGroups();
   }, [selectedClass]);
 
   const organizeStudentsIntoGroups = (studentList: Student[]) => {
@@ -473,7 +500,7 @@ export default function ManageGroupsPage() {
                             <button
                               onClick={() => {
                                 setSelectedStudent(student);
-                                setNewGroupId(group.group_id === -1 ? 1 : group.group_id);
+                                setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
                                 setReassignModalOpen(true);
                               }}
                               className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-1 px-3 rounded text-xs font-medium transition-colors"
@@ -546,7 +573,6 @@ export default function ManageGroupsPage() {
         </div>
       </div>
 
-      {/* Reassign Student Modal */}
       {reassignModalOpen && selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -557,7 +583,7 @@ export default function ManageGroupsPage() {
               }
             </h3>
             <p className="text-gray-600 mb-4">
-              Current group: {selectedStudent.group_id}
+              Current group: {selectedStudent.group_id || 'No Group'}
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -568,25 +594,28 @@ export default function ManageGroupsPage() {
                 onChange={(e) => setNewGroupId(parseInt(e.target.value))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                {/* Show all existing groups - UPDATED */}
-                {groups
-                  .filter(group => group.group_id !== -1) // Exclude "No Group" from options
-                  .map((group) => (
-                    <option key={group.group_id} value={group.group_id}>
-                      Group {group.group_id} ({group.students.length} student{group.students.length !== 1 ? 's' : ''})
+                {availableGroups.map((groupId) => {
+                  const existingGroup = groups.find(g => g.group_id === groupId);
+                  const studentCount = existingGroup ? existingGroup.students.length : 0;
+                  return (
+                    <option key={groupId} value={groupId}>
+                      Group {groupId} ({studentCount} student{studentCount !== 1 ? 's' : ''})
                     </option>
-                  ))}
+                  );
+                })}
               </select>
               
-              {/* Show preview of selected group - UPDATED */}
               <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                 <div>
-                    <p className="font-medium">Moving to Group {newGroupId}:</p>
-                    {groups.find(g => g.group_id === newGroupId)?.students.length === 0 ? (
-                      <p className="text-gray-500 italic">Empty group</p>
-                    ) : (
+                  <p className="font-medium">Moving to Group {newGroupId}:</p>
+                  {(() => {
+                    const targetGroup = groups.find(g => g.group_id === newGroupId);
+                    if (!targetGroup || targetGroup.students.length === 0) {
+                      return <p className="text-gray-500 italic">Empty group</p>;
+                    }
+                    return (
                       <div className="mt-1">
-                        {groups.find(g => g.group_id === newGroupId)?.students.map((student, index) => (
+                        {targetGroup.students.map((student) => (
                           <p key={student.id} className="text-gray-600">
                             • {student.f_name && student.l_name 
                               ? `${student.f_name} ${student.l_name}`
@@ -595,8 +624,9 @@ export default function ManageGroupsPage() {
                           </p>
                         ))}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
             <div className="flex space-x-3">
@@ -604,7 +634,7 @@ export default function ManageGroupsPage() {
                 onClick={() => reassignStudent(selectedStudent.email, newGroupId)}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
               >
-                {newGroupId <= Math.max(...groups.map(g => g.group_id), 0) ? 'Reassign' : 'Create & Assign'}
+                Reassign
               </button>
               <button
                 onClick={() => {
