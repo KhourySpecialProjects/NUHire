@@ -242,7 +242,7 @@ const OffersManagement = () => {
           setAssignedClassIds(data.map((item: any) => String(item.crn)));
           setClasses(data.map((item: any) => ({
             id: item.crn,
-            name: `CRN ${item.crn} - (${item.nom_groups} groups)`
+            name: `CRN ${item.crn}`
           })));
         });
     }
