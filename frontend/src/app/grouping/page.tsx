@@ -379,21 +379,25 @@ const Grouping = () => {
   }
 
   return (
-    <div className="flex h-screen bg-sand font-rubik">
+    <div className="flex flex-col h-screen bg-sand font-rubik">
       <NavbarAdmin />
-      <div className="flex-1 p-4 flex gap-4 overflow-hidden">
-          <Tabs>
-            <div title="Job Assignment">
-              <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
-                <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
-                <div className="mb-4">
+      <div className="flex-1 p-4 overflow-hidden">
+        <Tabs>
+          {/* Tab: Job Assignment */}
+          <div title="Job Assignment">
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[80vh]">
+              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Job Assignment</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {/* Class Selection */}
+                <div>
                   <label className="block text-navy font-semibold mb-2">
-                    Assign Groups to Jobs
+                    Select Class
                   </label>
                   <select
                     value={selectedJobClass}
                     onChange={handleJobClassChange}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a class</option>
                     {classes.map(c => (
@@ -408,11 +412,16 @@ const Grouping = () => {
                     </p>
                   )}
                 </div>
-                <div className="mb-4">
+
+                {/* Group Selection */}
+                <div>
+                  <label className="block text-navy font-semibold mb-2">
+                    Select Group
+                  </label>
                   <select
                     value={selectedJobGroup}
                     onChange={handleJobGroupChange}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a group</option>
                     {Array.isArray(jobGroups) && jobGroups.map((groupId) => (
@@ -427,10 +436,15 @@ const Grouping = () => {
                     </p>
                   )}
                 </div>
-                <div className="mb-4">
+
+                {/* Job Selection */}
+                <div>
+                  <label className="block text-navy font-semibold mb-2">
+                    Select Job
+                  </label>
                   <select
                     onChange={handleJobSelection}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a job</option>
                     {jobs.map((job, index) => (
@@ -440,40 +454,63 @@ const Grouping = () => {
                     ))}
                   </select>
                 </div>
-                <div className="mb-4 space-y-2 flex-1 overflow-y-auto">
-                  {selectedJobs.map(job => (
-                    <div key={job.title} className="flex items-center justify-between p-2 bg-springWater rounded-md">
-                      <span className="text-navy">{job.title}</span>
-                      <button
-                        onClick={() => handleRemoveJob(job.title)}
-                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
+              </div>
+
+              {/* Selected Jobs Display */}
+              <div className="mb-6">
+                <label className="block text-navy font-semibold mb-3">
+                  Selected Jobs
+                </label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {selectedJobs.length === 0 ? (
+                    <p className="text-gray-500 italic p-4 text-center border-2 border-dashed border-gray-300 rounded-lg">
+                      No jobs selected
+                    </p>
+                  ) : (
+                    selectedJobs.map(job => (
+                      <div key={job.title} className="flex items-center justify-between p-3 bg-springWater rounded-md border border-wood">
+                        <span className="text-navy font-medium">{job.title}</span>
+                        <button
+                          onClick={() => handleRemoveJob(job.title)}
+                          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-center">
                 <button
                   onClick={handleAssignJob}
-                  className="w-full mt-2 bg-northeasternWhite border border-wood text-navy font-bold py-2 rounded-md hover:bg-northeasternRed hover:text-white transition"
+                  className="bg-northeasternRed text-white px-8 py-3 rounded-lg font-bold hover:bg-navy transition-colors text-lg"
                 >
-                  Assign Job
+                  Assign Job to Group
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Tab: Class & Student Assignment */}
-            <div title="Class & Student Assignment">
-              <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-4 flex flex-col overflow-y-auto max-h-[70vh] w-full">
-                <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
-                <div className="mb-4">
+          {/* Tab: Class & Student Assignment */}
+          <div title="Class & Student Assignment">
+            {/* FIXED: Remove width constraints and make full width */}
+            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[80vh]">
+              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
+              
+              {/* FIXED: Create a responsive grid layout for the form */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {/* Class Selection */}
+                <div>
                   <label className="block text-navy font-semibold mb-2">
                     Your Assigned Classes
                   </label>
                   <select
                     value={selectedClass}
                     onChange={handleClassChange}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a class</option>
                     {classes.map(classItem => (
@@ -488,11 +525,16 @@ const Grouping = () => {
                     </p>
                   )}
                 </div>
-                <div className="mb-4">
+
+                {/* Group Selection */}
+                <div>
+                  <label className="block text-navy font-semibold mb-2">
+                    Select Group
+                  </label>
                   <select
                     value={selectedGroup}
                     onChange={handleGroupChange}
-                    className="w-full p-2 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a group</option>
                     {Array.isArray(groups) && groups.map((groupId) => (
@@ -507,45 +549,69 @@ const Grouping = () => {
                     </p>
                   )}
                 </div>
-                <select
-                  onChange={handleStudentSelection}
-                  className="w-full mb-2 p-2 border border-wood bg-springWater rounded-md"
-                >
-                  <option value="">Select a student</option>
-                  {students.map(student => (
-                    <option key={student.email} value={student.email}>
-                      {student.f_name} {student.l_name} ({student.email})
-                    </option>
-                  ))}
-                </select>
-                <div className="mb-2 space-y-2 flex-1 overflow-y-auto">
-                  {selectedStudents.map(student => (
-                    <div key={student.email} className="flex items-center justify-between p-2 bg-springWater rounded-md">
-                      <span className="text-navy">{student.f_name} {student.l_name} ({student.email})</span>
-                      <button
-                        onClick={() => handleRemoveStudent(student.email)}
-                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-center pt-4">
-                  <button
-                    onClick={handleAssignGroup}
-                    className="bg-northeasternRed text-white px-4 py-2 rounded font-bold hover:bg-navy transition"
+
+                {/* Student Selection */}
+                <div>
+                  <label className="block text-navy font-semibold mb-2">
+                    Select Students
+                  </label>
+                  <select
+                    onChange={handleStudentSelection}
+                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    Assign Group
-                  </button>
+                    <option value="">Select a student</option>
+                    {students.map(student => (
+                      <option key={student.email} value={student.email}>
+                        {student.f_name} {student.l_name} ({student.email})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            </div>
 
-          </Tabs>
+              {/* Selected Students Display */}
+              <div className="mb-6">
+                <label className="block text-navy font-semibold mb-3">
+                  Selected Students
+                </label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {selectedStudents.length === 0 ? (
+                    <p className="text-gray-500 italic p-4 text-center border-2 border-dashed border-gray-300 rounded-lg">
+                      No students selected
+                    </p>
+                  ) : (
+                    selectedStudents.map(student => (
+                      <div key={student.email} className="flex items-center justify-between p-3 bg-springWater rounded-md border border-wood">
+                        <span className="text-navy font-medium">
+                          {student.f_name} {student.l_name} ({student.email})
+                        </span>
+                        <button
+                          onClick={() => handleRemoveStudent(student.email)}
+                          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={handleAssignGroup}
+                  className="bg-northeasternRed text-white px-8 py-3 rounded-lg font-bold hover:bg-navy transition-colors text-lg"
+                >
+                  Assign Students to Group
+                </button>
+              </div>
+            </div>
+          </div>
+        </Tabs>
       </div>
       
-      {/* Delete Confirmation Popup */}
+      {/* Keep your existing popups unchanged */}
       {deleteConfirmation.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
