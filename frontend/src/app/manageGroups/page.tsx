@@ -502,10 +502,9 @@ export default function ManageGroupsPage() {
       <div className="w-3/4 mx-auto p-4">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">👥 Manage Groups</h1>
+            <h1 className="text-3xl font-bold text-gray-900">📚 Manage Groups 📚</h1>
             {selectedClass && (
               <div className="flex space-x-3">
-                {/* Create New Group Button - UPDATED STYLING */}
                 <button
                   onClick={createNewGroup}
                   disabled={isCreatingGroup}
