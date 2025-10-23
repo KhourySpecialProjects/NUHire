@@ -97,9 +97,8 @@ export default function ManageGroupsPage() {
     fetchClasses();
   }, [user]);
 
-  // Fetch students when class is selected
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchStudentsAndOrganize = async () => {
       if (!selectedClass) {
         setStudents([]);
         setGroups([]);
@@ -114,15 +113,17 @@ export default function ManageGroupsPage() {
         if (response.ok) {
           const studentData = await response.json();
           setStudents(studentData);
-          organizeStudentsIntoGroups(studentData);
+          if (availableGroups.length > 0) {
+            await organizeStudentsIntoGroups(studentData);
+          }
         }
       } catch (error) {
         console.error('Error fetching students:', error);
       }
     };
 
-    fetchStudents();
-  }, [selectedClass]);
+    fetchStudentsAndOrganize();
+  }, [selectedClass, availableGroups]);
 
   useEffect(() => {
     const fetchAvailableGroups = async () => {
@@ -183,12 +184,16 @@ export default function ManageGroupsPage() {
   }, [selectedClass, availableGroups]); 
 
   useEffect(() => {
-    if (availableGroups.length > 0 && students.length >= 0) {
-      organizeStudentsIntoGroups(students);
-    }
-  }, [availableGroups]); 
+    const organizeAsync = async () => {
+      if (availableGroups.length > 0 && students.length >= 0) {
+        await organizeStudentsIntoGroups(students);
+      }
+    };
+    
+    organizeAsync();
+  }, [availableGroups]);
 
-  const organizeStudentsIntoGroups = (studentList: Student[]) => {
+  const organizeStudentsIntoGroups = async (studentList: Student[]) => {
     const groupMap = new Map<number | null, Student[]>();
     
     availableGroups.forEach(groupId => {
@@ -209,8 +214,13 @@ export default function ManageGroupsPage() {
 
     const groupsArray: Group[] = [];
     
+    // Fetch start statuses for all available groups
+    const startStatuses = selectedClass ? await fetchGroupStartStatuses(selectedClass, availableGroups) : [];
+    
     availableGroups.forEach(groupId => {
       const students = groupMap.get(groupId) || [];
+      const statusInfo = startStatuses.find(s => s.groupId === groupId);
+      
       groupsArray.push({
         group_id: groupId,
         students: students.sort((a, b) => {
@@ -218,7 +228,7 @@ export default function ManageGroupsPage() {
           const bName = b.f_name || '';
           return aName.localeCompare(bName);
         }),
-        isStarted: false
+        isStarted: statusInfo ? statusInfo.started : false // Use actual status from database
       });
     });
     
@@ -338,7 +348,31 @@ export default function ManageGroupsPage() {
     }
   };
 
-  // Start individual group
+  const fetchGroupStartStatuses = async (classId: string, groupIds: number[]) => {
+    const statusPromises = groupIds.map(async (groupId) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/group/started/${classId}/${groupId}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          return { groupId, started: data.started };
+        } else {
+          console.error(`Failed to fetch status for group ${groupId}`);
+          return { groupId, started: false };
+        }
+      } catch (error) {
+        console.error(`Error fetching status for group ${groupId}:`, error);
+        return { groupId, started: false };
+      }
+    });
+
+    const statuses = await Promise.all(statusPromises);
+    return statuses;
+  };
+  
+  // Update the startGroup function
   const startGroup = async (groupId: number) => {
     setStartingGroups(prev => new Set(prev).add(groupId));
 
@@ -356,7 +390,6 @@ export default function ManageGroupsPage() {
       });
 
       if (response.ok) {
-        // Update group status locally
         setGroups(prev => prev.map(group => 
           group.group_id === groupId 
             ? { ...group, isStarted: true }

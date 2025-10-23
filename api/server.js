@@ -2865,6 +2865,28 @@ app.patch("/start-group", (req, res) => {
   });
 });
 
+app.get("/group/started/:classId/:groupId", (req, res) => {  
+  const { classId, groupId } = req.params;
+  
+  console.log('Checking if group is started for class:', classId, 'group:', groupId);
+  
+  const query = 'SELECT started FROM \`GroupsInfo\` WHERE class_id = ? AND group_id = ?';
+      
+  db.query(query, [classId, groupId], (err, results) => {
+    if (err) {
+      console.error('Error checking if group is started:', err);
+      return res.status(500).json({ error: 'Failed to check group status' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+    
+    console.log(`Group started status for class ${classId}, group ${groupId}:`, results[0]);
+    res.json({ started: results[0].started });
+  });
+});
+
 app.get("/group-status/:classId/:groupId", (req, res) => {  
   const { classId, groupId } = req.params;
   
