@@ -512,7 +512,7 @@ export default function ManageGroupsPage() {
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     isCreatingGroup
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-northeasternRed text-northeasternBlack hover:bg-northeasternBlack hover:text-northeasternRed'
+                      : 'bg-red-300 text-northeasternBlack hover:bg-northeasternBlack hover:text-red-300'
                   }`}
                 >
                   {isCreatingGroup ? (
@@ -530,10 +530,10 @@ export default function ManageGroupsPage() {
                   <button
                     onClick={startAllGroups}
                     disabled={isStartingAll || groups.every(g => g.isStarted)}
-                    className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                       isStartingAll || groups.every(g => g.isStarted)
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-northeasternRed text-northeasternBlack hover:bg-northeasternBlack hover:text-northeasternRed'
+                        : 'bg-red-300 text-northeasternBlack hover:bg-northeasternBlack hover:text-red-300'
                     }`}
                   >
                     {isStartingAll ? (
@@ -716,19 +716,7 @@ export default function ManageGroupsPage() {
                 value={newGroupId}
                 onChange={(e) => setNewGroupId(parseInt(e.target.value))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                {availableGroups.map((groupId) => {
-                  const existingGroup = groups.find(g => g.group_id === groupId);
-                  const studentCount = existingGroup ? existingGroup.students.length : 0;
-                  const isStarted = existingGroup ? existingGroup.isStarted : false;
-                  return (
-                    <option key={groupId} value={groupId}>
-                      Group {groupId} ({studentCount} student{studentCount !== 1 ? 's' : ''})
-                      {isStarted ? ' ✅' : ' ⏳'}
-                    </option>
-                  );
-                })}
-              </select>
+              />
               
               <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                 <div>
