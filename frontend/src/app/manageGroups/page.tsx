@@ -511,8 +511,8 @@ export default function ManageGroupsPage() {
                   disabled={isCreatingGroup}
                   className={`px-4 py-2 rounded-lg font-medium ${
                     isCreatingGroup
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-purple-600 text-white hover:bg-purple-700'
+                      ? 'bg-northeasternRed text-gray-500 cursor-not-allowed'
+                      : 'bg-black-600 text-white hover:bg-black-700'
                   }`}
                 >
                   {isCreatingGroup ? (
@@ -532,8 +532,8 @@ export default function ManageGroupsPage() {
                     disabled={isStartingAll || groups.every(g => g.isStarted)}
                     className={`px-6 py-3 rounded-lg font-semibold ${
                       isStartingAll || groups.every(g => g.isStarted)
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
+                        ? 'bg-northeasternRed text-gray-500 cursor-not-allowed'
+                        : 'bg-black-600 text-white hover:bg-black-700'
                     }`}
                   >
                     {isStartingAll ? (
