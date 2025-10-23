@@ -540,7 +540,7 @@ export default function ManageGroupsPage() {
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center">
                       <h3 className="text-lg font-semibold text-gray-900">
-                        {group.group_id === -1 ? 'No Group' : `Group ${group.group_id}`}
+                        {`Group ${group.group_id}`}
                       </h3>
                       {group.isStarted && group.group_id !== -1 && (
                         <span className="ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
