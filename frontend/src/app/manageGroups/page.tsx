@@ -505,19 +505,19 @@ export default function ManageGroupsPage() {
             <h1 className="text-3xl font-bold text-gray-900">👥 Manage Groups</h1>
             {selectedClass && (
               <div className="flex space-x-3">
-                {/* Create New Group Button */}
+                {/* Create New Group Button - UPDATED STYLING */}
                 <button
                   onClick={createNewGroup}
                   disabled={isCreatingGroup}
-                  className={`px-4 py-2 rounded-lg font-medium ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     isCreatingGroup
-                      ? 'bg-northeasternRed text-gray-500 cursor-not-allowed'
-                      : 'bg-black-600 text-white hover:bg-black-700'
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-northeasternRed text-northeasternBlack hover:bg-northeasternBlack hover:text-northeasternRed'
                   }`}
                 >
                   {isCreatingGroup ? (
                     <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
                       Creating...
                     </div>
                   ) : (
@@ -525,20 +525,20 @@ export default function ManageGroupsPage() {
                   )}
                 </button>
                 
-                {/* Start All Groups Button */}
+                {/* Start All Groups Button - UPDATED STYLING */}
                 {groups.length > 0 && (
                   <button
                     onClick={startAllGroups}
                     disabled={isStartingAll || groups.every(g => g.isStarted)}
-                    className={`px-6 py-3 rounded-lg font-semibold ${
+                    className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
                       isStartingAll || groups.every(g => g.isStarted)
-                        ? 'bg-northeasternRed text-gray-500 cursor-not-allowed'
-                        : 'bg-black-600 text-white hover:bg-black-700'
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-northeasternRed text-northeasternBlack hover:bg-northeasternBlack hover:text-northeasternRed'
                     }`}
                   >
                     {isStartingAll ? (
                       <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
                         Starting All...
                       </div>
                     ) : (
@@ -584,7 +584,7 @@ export default function ManageGroupsPage() {
                       <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center">
                           <h3 className="text-xl font-semibold text-gray-900">
-                            Group {group.group_id}
+                            {group.group_id !== -1 ? `Group ${group.group_id}` : 'No Group'}
                           </h3>
                         </div>
                         <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
