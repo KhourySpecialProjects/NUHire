@@ -463,9 +463,9 @@ export default function ManageGroupsPage() {
             {selectedClass && groups.length > 0 && (
               <button
                 onClick={startAllGroups}
-                disabled={isStartingAll || groups.every(g => g.isStarted)}
+                disabled={isStartingAll}
                 className={`px-6 py-3 rounded-lg font-semibold ${
-                  isStartingAll || groups.every(g => g.isStarted)
+                  isStartingAll
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
                 }`}
@@ -510,7 +510,6 @@ export default function ManageGroupsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {groups.map((group) => (
                   <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col h-full">
-                    {/* Header - Fixed at top */}
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center">
                         <h3 className="text-lg font-semibold text-gray-900">
@@ -522,7 +521,6 @@ export default function ManageGroupsPage() {
                       </span>
                     </div>
 
-                    {/* Students section - Flexible height */}
                     <div className="flex-1 flex flex-col justify-center mb-4">
                       {group.students.length === 0 ? (
                         <div className="flex-1 flex items-center justify-center">
@@ -569,7 +567,6 @@ export default function ManageGroupsPage() {
                       )}
                     </div>
 
-                    {/* Start button - Fixed at bottom */}
                     <div className="mt-auto">
                       <button
                         onClick={() => startGroup(group.group_id)}
