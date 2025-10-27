@@ -104,6 +104,8 @@ export default function SignupDetails() {
       Affiliation: affiliation,
     };
 
+    console.log('Submitting user:', user);
+
     try {
       const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
