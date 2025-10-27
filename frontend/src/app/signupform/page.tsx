@@ -56,7 +56,7 @@ export default function SignupDetails() {
     if (affiliation === 'student') {
       try {
         const emailRes = await fetch(
-          `${API_BASE_URL}/moderator-classes/${email}`,
+          `${API_BASE_URL}/moderator-classes/classes/${email}`,
           { method: 'GET', credentials: 'include' }
         )
         if (!emailRes.ok) {
@@ -78,7 +78,7 @@ export default function SignupDetails() {
     if (affiliation === 'admin') {
       try {
         const res = await fetch(
-          `${API_BASE_URL}/moderator-classes/${email}`,
+          `${API_BASE_URL}/moderator-classes/classes/${email}`,
           { method: 'GET', credentials: 'include' }
         )
         if (!res.ok) {
