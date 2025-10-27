@@ -70,7 +70,7 @@ export default function StudentCSVPage() {
       if (!user?.email) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`, {
+        const response = await fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`, {
           credentials: 'include'
         });
         
@@ -209,7 +209,7 @@ const handleSubmit = async () => {
 
     console.log('Creating groups with payload:', createPayload);
     
-    const createRes = await fetch(`${API_BASE_URL}/create-groups`, {
+    const createRes = await fetch(`${API_BASE_URL}/groups/create-groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -232,7 +232,7 @@ const handleSubmit = async () => {
     }
 
     console.log('Assigning students to groups...');
-    const response = await fetch(`${API_BASE_URL}/importCSV`, {
+    const response = await fetch(`${API_BASE_URL}/importCSV/import`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
