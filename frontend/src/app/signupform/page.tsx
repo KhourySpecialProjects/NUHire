@@ -116,8 +116,8 @@ export default function SignupDetails() {
 
       if (response.ok) {
         setMessage('User added successfully!');
+        console.log('User added successfully:', user, 'redirecting to Keycloak...');
         setTimeout(() => {
-          // Redirect to Keycloak login flow again to set session
           window.location.href = `${API_BASE_URL}/auth/keycloak`;
         }, 1500);
       } else {
