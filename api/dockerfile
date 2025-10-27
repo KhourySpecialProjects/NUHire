@@ -17,4 +17,4 @@ EXPOSE 5001
 RUN npm run build
 
 # Start the application
-CMD ["node", "start"]
+CMD ["npm", "start"]
