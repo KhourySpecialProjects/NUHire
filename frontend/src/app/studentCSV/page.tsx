@@ -70,7 +70,7 @@ export default function StudentCSVPage() {
       if (!user?.email) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`, {
+        const response = await fetch(`${API_BASE_URL}/moderator-classes/classes-full/${user.email}`, {
           credentials: 'include'
         });
         
