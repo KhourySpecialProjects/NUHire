@@ -40,6 +40,9 @@ export function configurePassport(db: Connection): void {
 
         try {
           const userEmail = profile.email;
+          const parts = profile.name.split(" ");
+          const fname = parts[0];
+          const lname = parts[1];
           
           if (!userEmail) {
             throw new Error('No email found in Keycloak profile');
@@ -62,8 +65,8 @@ export function configurePassport(db: Connection): void {
               'INSERT INTO Users (email, f_name, l_name, affiliation) VALUES (?, ?, ?, ?)',
               [
                 userEmail,
-                profile.given_name || profile.firstName || '',
-                profile.family_name || profile.lastName, 'student'
+                fname, lname,
+                'student'
               ]
             );
 
