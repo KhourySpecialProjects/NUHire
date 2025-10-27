@@ -55,6 +55,7 @@ export function configurePassport(db: Connection): void {
           const users = rows as any[];
           let dbUser;
 
+
           if (users.length === 0) {
             console.log('Creating new user from Keycloak profile');
             await db.promise().execute(
@@ -62,7 +63,7 @@ export function configurePassport(db: Connection): void {
               [
                 userEmail,
                 profile.given_name || profile.firstName || '',
-                profile.family_name || profile.lastName
+                profile.family_name || profile.lastName, 'student'
               ]
             );
 
