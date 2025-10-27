@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { Connection } from 'mysql2';
 import { Server as SocketIOServer } from 'socket.io';
-import { JobController } from '../controllers/job.controller';
+import { JobController } from '../controller/job.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
 export default (db: Connection, io: SocketIOServer, onlineStudents: Record<string, string>): Router => {

@@ -120,37 +120,6 @@ export class AuthController {
     });
   };
 
-  testCookies = (req: AuthRequest, res: Response): void => {
-    console.log('Session ID:', req.sessionID);
-    console.log('Cookies:', req.headers.cookie);
-    req.session.test = 'cookie-test';
-    res.json({
-      sessionID: req.sessionID,
-      cookiesReceived: req.headers.cookie,
-      sessionTest: req.session.test
-    });
-  };
-
-  getTime = async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const keycloakResponse = await fetch(`${process.env.KEYCLOAK_URL}/realms/NUHire-Realm`);
-      const keycloakTime = keycloakResponse.headers.get('date');
-
-      res.json({
-        serverTime: new Date().toISOString(),
-        timestamp: Date.now(),
-        keycloakServerTime: keycloakTime,
-        timeDifference: keycloakTime ? (new Date(keycloakTime).getTime() - new Date().getTime()) / 1000 : 'unknown'
-      });
-    } catch (error: any) {
-      res.json({
-        serverTime: new Date().toISOString(),
-        timestamp: Date.now(),
-        keycloakError: error.message
-      });
-    }
-  };
-
   moderatorLogin = (req: AuthRequest, res: Response): void => {
     const { username, password } = req.body;
 

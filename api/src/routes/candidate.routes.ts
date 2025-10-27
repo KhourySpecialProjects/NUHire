@@ -1,7 +1,7 @@
 // src/routes/candidate.routes.ts
 import { Router } from 'express';
 import { Connection } from 'mysql2';
-import { CandidateController } from '../controllers/candidate.controller';
+import { CandidateController } from '../controller/candidate.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
 export default (db: Connection): Router => {

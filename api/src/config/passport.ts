@@ -24,7 +24,7 @@ export function configurePassport(db: Connection): void {
         callbackURL: 'https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback',
         scope: ['openid', 'profile', 'email']
       },
-      async (accessToken, refreshToken, params, profile, done) => {
+      async (profile, done) => {
         console.log('=== Passport Callback SUCCESS ===');
         console.log('Profile:', JSON.stringify(profile, null, 2));
 

@@ -1,6 +1,6 @@
 // src/routes/upload.routes.ts
 import { Router } from 'express';
-import { UploadController } from '../controllers/upload.controller';
+import { UploadController } from '../controller/upload.controller';
 import { upload } from '../middleware/upload.middleware';
 
 export default (): Router => {

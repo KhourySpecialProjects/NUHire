@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Connection } from 'mysql2';
-import { OfferController } from '../controllers/offer.controller';
+import { OfferController } from '../controller/offer.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
 export default (db: Connection): Router => {

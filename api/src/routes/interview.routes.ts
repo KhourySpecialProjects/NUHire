@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { Connection } from 'mysql2';
 import { Server as SocketIOServer } from 'socket.io';
-import { InterviewController } from '../controllers/interview.controller';
+import { InterviewController } from '../controller/interview.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
 export default (db: Connection, io: SocketIOServer): Router => {

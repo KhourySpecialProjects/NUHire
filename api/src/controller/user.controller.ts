@@ -1,10 +1,6 @@
-// ============================================
-// src/controllers/user.controller.ts
-// ============================================
-
 import { Response } from 'express';
 import { AuthRequest, User } from '../models/types';
-import { Connection } from 'mysql2';
+import { Connection, RowDataPacket } from 'mysql2';
 
 export class UserController {
   constructor(private db: Connection) {}
@@ -29,19 +25,21 @@ export class UserController {
     try {
       const { id } = req.params;
 
-      this.db.query('SELECT * FROM Users WHERE id = ?', [id], (err, results: User[]) => {
+      this.db.query('SELECT * FROM Users WHERE id = ?', [id], (err, results) => {
         if (err) {
           console.error('Error fetching user:', err);
           res.status(500).json({ error: err.message });
           return;
         }
 
-        if (results.length === 0) {
+        const users = results as RowDataPacket[] as User[];
+        
+        if (users.length === 0) {
           res.status(404).json({ message: 'User not found' });
           return;
         }
 
-        res.json(results[0]);
+        res.json(users[0]);
       });
     } catch (error) {
       console.error('Unexpected error in getUserById:', error);
@@ -64,20 +62,21 @@ export class UserController {
 
       console.log('✅ Validation passed, checking if user exists in database');
 
-      this.db.query('SELECT * FROM Users WHERE email = ?', [Email], (err, results: User[]) => {
+      this.db.query('SELECT * FROM Users WHERE email = ?', [Email], (err, results) => {
         if (err) {
           console.error('❌ Database error during user lookup:', err);
           res.status(500).json({ error: err.message });
           return;
         }
 
-        console.log(`Database query result: Found ${results.length} users with email ${Email}`);
+        const users = results as RowDataPacket[] as User[];
+        console.log(`Database query result: Found ${users.length} users with email ${Email}`);
 
-        if (results.length > 0) {
-          console.log('User already exists:', results[0]);
+        if (users.length > 0) {
+          console.log('User already exists:', users[0]);
 
           if (Affiliation === 'student') {
-            if (!results[0].f_name || !results[0].l_name || results[0].f_name === '' || results[0].l_name === '') {
+            if (!users[0].f_name || !users[0].l_name || users[0].f_name === '' || users[0].l_name === '') {
               console.log('Updating existing student record with provided names');
               this.db.query(
                 'UPDATE Users SET f_name = ?, l_name = ? WHERE email = ? AND affiliation = ?',
@@ -102,8 +101,8 @@ export class UserController {
               res.status(200).json({
                 message: 'User registered successfully',
                 action: 'login_existing',
-                f_name: results[0].f_name,
-                l_name: results[0].l_name
+                f_name: users[0].f_name,
+                l_name: users[0].l_name
               });
             }
             return;
@@ -138,16 +137,17 @@ export class UserController {
           }
 
           console.log('Executing user creation query...');
-          this.db.query(sql, params, (err, result: any) => {
+          this.db.query(sql, params, (err, result) => {
             if (err) {
               console.error('❌ Failed to create user:', err);
               res.status(500).json({ error: err.message });
               return;
             }
 
+            const insertResult = result as RowDataPacket;
             console.log('✅ User created successfully');
             res.status(201).json({
-              id: result.insertId,
+              id: insertResult.insertId,
               First_name,
               Last_name,
               Email,
@@ -236,14 +236,15 @@ export class UserController {
         return;
       }
 
-      this.db.query('UPDATE Users SET `class` = ? WHERE email = ?', [classId, email], (err, result: any) => {
+      this.db.query('UPDATE Users SET `class` = ? WHERE email = ?', [classId, email], (err, result) => {
         if (err) {
           console.error('Database error:', err);
           res.status(500).json({ error: 'Failed to update class.' });
           return;
         }
 
-        if (result.affectedRows === 0) {
+        const updateResult = result as RowDataPacket;
+        if (updateResult.affectedRows === 0) {
           res.status(404).json({ error: 'User not found.' });
           return;
         }

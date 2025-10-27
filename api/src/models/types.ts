@@ -12,7 +12,7 @@ export interface User {
   affiliation: 'student' | 'admin';
   group_id?: number;
   class?: number;
-  current_page?: string;
+  current_page?: 'dashboard' | 'resumepage' | 'resumepage2' | 'jobdes' | 'interviewpage' | 'makeofferpage';
   seen?: number;
 }
 

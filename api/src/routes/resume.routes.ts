@@ -1,7 +1,7 @@
 // src/routes/resume.routes.ts
 import { Router } from 'express';
 import { Connection } from 'mysql2';
-import { ResumeController } from '../controllers/resume.controller';
+import { ResumeController } from '../controller/resume.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
 export default (db: Connection): Router => {
