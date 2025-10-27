@@ -59,7 +59,7 @@ export class AuthController {
           });
 
           const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
-
+          console.log("This sis the gotten user", dbUser)
           // Admin check
           if (dbUser.affiliation === 'admin') {
             console.log('🔀 Redirecting admin to advisor dashboard');
@@ -78,11 +78,11 @@ export class AuthController {
           if (!dbUser.group_id) {
             if (dbUser.affiliation === 'student') {
               console.log('🔀 Student has no group, redirecting to group assignment');
-              res.redirect(`${FRONT_URL}/assignGroup`);
+              res.redirect(`${FRONT_URL}/waitingGroup`);
               return;
             } else {
               console.log('🔀 Non-student with no group, redirecting to dashboard');
-              res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+              res.redirect(`${FRONT_URL}/?name=${fullName}`);
               return;
             }
           }
