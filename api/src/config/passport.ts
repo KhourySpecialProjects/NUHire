@@ -1,7 +1,7 @@
 // src/config/passport.ts
 
 import passport from 'passport';
-import { Strategy as KeycloakStrategy } from '@exlinc/keycloak-passport';
+import * as KeycloakPassport from '@exlinc/keycloak-passport';
 import { Connection } from 'mysql2';
 
 export function configurePassport(db: Connection): void {
@@ -11,7 +11,7 @@ export function configurePassport(db: Connection): void {
 
   passport.use(
     'keycloak',
-    new KeycloakStrategy(
+    new KeycloakPassport.Strategy(
       {
         host: KEYCLOAK_URL,
         issuer: containerIssuer,
