@@ -17,26 +17,21 @@ interface KeycloakProfile {
 }
 
 export function configurePassport(db: Connection): void {
-  const browserIssuer = 'https://nuhire-keycloak-rhow.onrender.com/realms/NUHire-Realm';
   const KEYCLOAK_URL = process.env.KEYCLOAK_URL!;
-  const containerIssuer = `${KEYCLOAK_URL}/realms/NUHire-Realm`;
+  const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM!;
 
   passport.use(
     'keycloak',
     new KeycloakStrategy(
       {
-        host: KEYCLOAK_URL,
-        issuer: containerIssuer,
-        userInfoURL: `${containerIssuer}/protocol/openid-connect/userinfo`,
-        authorizationURL: `${browserIssuer}/protocol/openid-connect/auth`,
-        tokenURL: `${containerIssuer}/protocol/openid-connect/token`,
-        realm: process.env.KEYCLOAK_REALM!,
+        authServerURL: KEYCLOAK_URL,
+        realm: KEYCLOAK_REALM,
         clientID: process.env.KEYCLOAK_CLIENT_ID!,
         clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
         callbackURL: 'https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback',
-        scope: ['openid', 'profile', 'email']
+        scope: 'openid profile email'
       },
-      async (profile: KeycloakProfile, done: (error: any, user?: any) => void) => {
+      async (accessToken: string, refreshToken: string, profile: KeycloakProfile, done: (error: any, user?: any) => void) => {
         console.log('=== Passport Callback SUCCESS ===');
         console.log('Profile:', JSON.stringify(profile, null, 2));
 
