@@ -109,8 +109,8 @@ export class UserController {
           }
 
           if (Affiliation === 'admin') {
-            console.log('❌ Admin already registered');
-            res.status(400).json({ message: 'Teacher already registered' });
+            console.log('Admin already registered');
+            res.status(200).json({ message: 'Teacher already registered' });
             return;
           }
         } else {
