@@ -256,4 +256,34 @@ export class UserController {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+  updateUserSeen = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
+      }
+
+      const { email } = req.body;
+
+      if (!email) {
+        res.status(400).json({ error: 'Email is required.' });
+        return;
+      }
+
+      this.db.query('UPDATE Users SET `seen` = 1 WHERE email = ?', [email], (err, result) => {
+        if (err) {
+          console.error('Database error:', err);
+          res.status(500).json({ error: 'Failed to update seen.' });
+          return;
+        }
+
+        res.json({ message: 'Seen updated successfully!' });
+      }
+      );
+    } catch (error) {
+      console.error('Unexpected error in updateUserSeen:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
 }

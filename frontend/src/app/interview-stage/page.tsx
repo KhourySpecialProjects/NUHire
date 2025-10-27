@@ -85,7 +85,7 @@ export default function Interview() {
 
   const fetchFinished = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/interview-status/finished-count`, {
+      const response = await axios.get(`${API_BASE_URL}/interview/status/finished-count`, {
         params: { group_id: user?.group_id, class_id: user?.class }
       });      
       setGroupSubmissions(response.data.finishedCount);
@@ -244,7 +244,7 @@ export default function Interview() {
       // Update current page in database
       const updateCurrentPage = async () => {
         try {
-          await axios.post(`${API_BASE_URL}/update-currentpage`, {
+          await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
             page: 'interviewpage', 
             user_email: user.email
           });
@@ -268,7 +268,6 @@ export default function Interview() {
 // Fetch candidates data when user is loaded
 useEffect(() => {
   if (!user?.group_id) return;
-  
   
   const fetchCandidates = async () => {
     try {
@@ -473,7 +472,7 @@ useEffect(() => {
       resetRatings();
     } else {
       try {
-        await axios.post(`${API_BASE_URL}/interview-status/finished`, {
+        await axios.post(`${API_BASE_URL}/interview/status/finished`, {
           student_id: user?.id,
           finished: 1,
           group_id: user?.group_id,

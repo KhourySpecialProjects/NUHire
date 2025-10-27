@@ -179,7 +179,7 @@ const Dashboard = () => {
 
       const updateCurrentPage = async () => {
         try {
-          const response = await fetch(`${API_BASE_URL}/update-currentpage`, {
+          const response = await fetch(`${API_BASE_URL}/users/pdate-currentpage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ page: 'dashboard', user_email: user.email }),

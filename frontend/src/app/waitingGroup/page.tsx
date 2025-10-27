@@ -53,7 +53,7 @@ export default function WaitingGroupPage() {
     console.log("Checking group status...");
     try {
       const response = await fetch(
-        `${API_BASE_URL}/group-status/${user.class}/${user.group_id}`,
+        `${API_BASE_URL}/group/status/${user.class}/${user.group_id}`,
         { method: "GET", credentials: "include" }
       );
       
@@ -71,7 +71,7 @@ export default function WaitingGroupPage() {
         console.log("Group is started, checking seen status...");
         
         const seenResponse = await fetch(
-          `${API_BASE_URL}/groups-seen?email=${encodeURIComponent(user.email)}`,
+          `${API_BASE_URL}/groups/seen?email=${encodeURIComponent(user.email)}`,
           { method: "GET", credentials: "include" }
         );
         

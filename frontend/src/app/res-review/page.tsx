@@ -119,7 +119,7 @@ export default function ResumesPage() {
 
       const updateCurrentPage = async () => {
         try {
-          await fetch(`${API_BASE_URL}/update-currentpage`, {
+          await fetch(`${API_BASE_URL}/users/update-currentpage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -130,13 +130,12 @@ export class App {
     this.app.use('/offers', offerRoutes(this.db));
     this.app.use('/progress', progressRoutes(this.db, this.io));
     this.app.use('/candidates', candidateRoutes(this.db));
-    this.app.use('/canidates', candidateRoutes(this.db)); // Keep old spelling for backward compatibility
+    this.app.use('/canidates', candidateRoutes(this.db)); 
     this.app.use('/upload', uploadRoutes());
     this.app.use('/csv', csvRoutes(this.db, this.io));
     this.app.use('/importCSV', csvRoutes(this.db, this.io));
     this.app.use('/delete', deleteRoutes(this.db, this.io, this.onlineStudents));
     
-    // Add specific routes that were standalone
     this.app.use('/student', groupRoutes(this.db, this.io));
     this.app.use('/students-by-class', groupRoutes(this.db, this.io));
     this.app.use('/group-size', interviewRoutes(this.db, this.io));

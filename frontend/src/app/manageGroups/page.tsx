@@ -83,7 +83,7 @@ export default function ManageGroupsPage() {
       if (!user?.email) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`, {
+        const response = await fetch(`${API_BASE_URL}/moderator-classes/classes-full/${user.email}`, {
           credentials: 'include'
         });
         
@@ -238,7 +238,7 @@ export default function ManageGroupsPage() {
       const maxGroupNumber = Math.max(...availableGroups, 0);
       const nextGroupNumber = maxGroupNumber + 1;
 
-      const response = await fetch(`${API_BASE_URL}/create-single-group`, {
+      const response = await fetch(`${API_BASE_URL}/groups/create-single-group`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +281,7 @@ export default function ManageGroupsPage() {
       console.log('reassigning email:', studEmail);
       console.log("sending class id:", selectedClass);
       console.log("new group id:", newGroup);
-      const response = await fetch(`${API_BASE_URL}/reassign-student`, {
+      const response = await fetch(`${API_BASE_URL}/groups/reassign-student`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -329,7 +329,7 @@ export default function ManageGroupsPage() {
       console.log('Removing student:', email);
       console.log("sending class id:", selectedClass);
 
-      const response = await fetch(`${API_BASE_URL}/remove-from-group`, {
+      const response = await fetch(`${API_BASE_URL}/groups/remove-from-group`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -393,7 +393,7 @@ export default function ManageGroupsPage() {
     setStartingGroups(prev => new Set(prev).add(groupId));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/start-group`, {
+      const response = await fetch(`${API_BASE_URL}/groups/start-group`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -437,7 +437,7 @@ export default function ManageGroupsPage() {
     setIsStartingAll(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/start-all-groups`, {
+      const response = await fetch(`${API_BASE_URL}/groups/start-all-groups`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

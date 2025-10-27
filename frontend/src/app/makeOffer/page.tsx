@@ -154,7 +154,7 @@ export default function MakeOffer() {
     const fetchPopupVotes = async () => {
       try {
         const promises = candidates.map(candidate => 
-          fetch(`${API_BASE_URL}/interview-popup/${candidate.resume_id}/${user.group_id}/${user.class}`)
+          fetch(`${API_BASE_URL}/interview/popup/${candidate.resume_id}/${user.group_id}/${user.class}`)
             .then(res => res.json())
         );
         
@@ -209,7 +209,7 @@ export default function MakeOffer() {
       // Update current page in database
       const updateCurrentPage = async () => {
         try {
-          await axios.post(`${API_BASE_URL}/update-currentpage`, {
+          await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
             page: "makeofferpage",
             user_email: user.email,
           });
@@ -262,7 +262,7 @@ export default function MakeOffer() {
         const fetchedCandidates = await Promise.all(
           interviews.map(async (interview, index) => {
             const id = interview.candidate_id;
-            const url = `${API_BASE_URL}/canidates/resume/${id}`;
+            const url = `${API_BASE_URL}/candidates/resume/${id}`;
           
             try {
               const res = await fetch(url);

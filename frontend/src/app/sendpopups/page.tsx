@@ -199,7 +199,7 @@ const SendPopups = () => {
         if (user?.email && user.affiliation === "admin") {
           try {
             // First get the assigned class IDs
-            const response = await fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`);
+            const response = await fetch(`${API_BASE_URL}/moderator-classes/classes-full/${user.email}`);
             if (!response.ok) {
               throw new Error(`Error: ${response.status}`);
             }

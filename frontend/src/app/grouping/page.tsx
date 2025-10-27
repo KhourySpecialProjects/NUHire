@@ -154,7 +154,7 @@ const Grouping = () => {
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
-      fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`)
+      fetch(`${API_BASE_URL}/moderator-classes/classes-full/${user.email}`)
         .then(res => res.json())
         .then((data) => {
           setAssignedClassIds(data.map((item: any) => String(item.crn)));
@@ -175,7 +175,7 @@ const Grouping = () => {
           const stringJobGroups = Array.isArray(data) ? data.map(String) : [];
           setGroups(stringJobGroups);
         });
-      fetch(`${API_BASE_URL}/students?class=${selectedClass}`)
+      fetch(`${API_BASE_URL}/students-by-class/${selectedClass}`)
         .then(res => res.json())
         .then(setStudents);
     }
@@ -311,7 +311,7 @@ const Grouping = () => {
       setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
       return;
     }
-    const response = await fetch(`${API_BASE_URL}/update-group`, {
+    const response = await fetch(`${API_BASE_URL}/groups/update-group`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -342,7 +342,7 @@ const Grouping = () => {
       setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
       return;
     }
-    const response = await fetch(`${API_BASE_URL}/update-job`, {
+    const response = await fetch(`${API_BASE_URL}/jobs/update-job`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
