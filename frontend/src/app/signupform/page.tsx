@@ -118,7 +118,7 @@ export default function SignupDetails() {
         setMessage('User added successfully!');
         console.log('User added successfully:', user, 'redirecting to Keycloak...');
         setTimeout(() => {
-          window.location.href = `${API_BASE_URL}`;
+          window.location.href = `${API_BASE_URL}/auth/keycloak`;
         }, 1500);
       } else {
         const errorData = await response.json();

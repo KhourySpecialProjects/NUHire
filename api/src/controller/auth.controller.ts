@@ -16,10 +16,11 @@ export class AuthController {
 
   handleKeycloakCallback = [
     (req: AuthRequest, res: Response, next: NextFunction) => {
+      console.log('🔄 Starting Keycloak callback processing...');
       next();
     },
     passport.authenticate('keycloak', {
-      failureRedirect: '/',
+      failureRedirect: `${process.env.REACT_APP_FRONT_URL}/?error=auth_failed`,
       failureFlash: false
     }),
     (req: AuthRequest, res: Response) => {
@@ -39,49 +40,80 @@ export class AuthController {
       const firstName = user.f_name;
       const lastName = user.l_name;
 
+      console.log(`🔍 Looking up user in database: ${email}`);
+
       this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
         if (err) {
           console.error('Database error:', err);
-          res.redirect('/');
+          res.redirect(`${FRONT_URL}/?error=db_error`);
           return;
         }
 
         if (results.length > 0) {
           const dbUser = results[0];
+          console.log('👤 Found user:', { 
+            email: dbUser.email, 
+            affiliation: dbUser.affiliation, 
+            hasGroup: !!dbUser.group_id,
+            hasNames: !!(dbUser.f_name && dbUser.l_name)
+          });
+
           const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
 
+          // Admin check
           if (dbUser.affiliation === 'admin') {
+            console.log('🔀 Redirecting admin to advisor dashboard');
             res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
             return;
           }
 
-          if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null || !dbUser.group_id) {
+          // Check if user needs to complete signup (missing names only)
+          if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null) {
+            console.log('🔀 User needs to complete signup form - missing names');
             res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
             return;
           }
 
-          if (dbUser.group_id) {
-            const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
-            this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
-              if (startErr) {
-                console.error('Error checking group start status:', startErr);
-                res.redirect(`${FRONT_URL}/waitingGroup`);
-                return;
-              }
-
-              if (startResults.length > 0 && startResults[0].started === 1) {
-                if (dbUser.seen === 1) {
-                  res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
-                } else {
-                  res.redirect(`${FRONT_URL}/about`);
-                }
-              } else {
-                res.redirect(`${FRONT_URL}/waitingGroup`);
-              }
-            });
+          // User has names but no group - send to group assignment or waiting
+          if (!dbUser.group_id) {
+            if (dbUser.affiliation === 'student') {
+              console.log('🔀 Student has no group, redirecting to group assignment');
+              res.redirect(`${FRONT_URL}/assignGroup`);
+              return;
+            } else {
+              console.log('🔀 Non-student with no group, redirecting to dashboard');
+              res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+              return;
+            }
           }
+
+          // User has group - check if group is started
+          console.log(`🔍 Checking group status for group ${dbUser.group_id}, class ${dbUser.class}`);
+          const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
+          
+          this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
+            if (startErr) {
+              console.error('Error checking group start status:', startErr);
+              res.redirect(`${FRONT_URL}/waitingGroup`);
+              return;
+            }
+
+            if (startResults.length > 0 && startResults[0].started === 1) {
+              console.log('✅ Group is started');
+              if (dbUser.seen === 1) {
+                console.log('🔀 User has seen intro, going to dashboard');
+                res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+              } else {
+                console.log('🔀 User needs to see intro, going to about');
+                res.redirect(`${FRONT_URL}/about`);
+              }
+            } else {
+              console.log('⏳ Group not started, going to waiting room');
+              res.redirect(`${FRONT_URL}/waitingGroup`);
+            }
+          });
         } else {
-          console.log('User not found in database, redirecting to signup form');
+          console.log('🆕 User not found in database, redirecting to signup form');
           res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
         }
       });
