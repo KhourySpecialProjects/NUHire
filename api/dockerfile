@@ -8,14 +8,13 @@ WORKDIR /apicode
 COPY package*.json ./
 RUN npm install
 
-# Install ts-node globally or make sure it's in dependencies
-RUN npm install -g ts-node typescript
-
 # Copy remaining application files
 COPY . .
 
 # Expose backend port
 EXPOSE 5001
 
-# Start the application with ts-node
-CMD ["npx", "ts-node", "src/server.ts"]
+RUN npm run build
+
+# Start the application
+CMD ["node", "start"]
