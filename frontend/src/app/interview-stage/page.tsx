@@ -98,7 +98,7 @@ export default function Interview() {
 
   const fetchGroupSize = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/group-size/${user?.group_id}`);
+      const response = await axios.get(`${API_BASE_URL}/interview/${user?.group_id}`);
       setGroupSize(response.data.count);
       console.log("Group size fetched:", response.data.count);
     } catch (err) {
@@ -273,7 +273,7 @@ useEffect(() => {
     try {
       // Get all resumes for the group and filter by class
       const resumeResponse = await axios.get(
-        `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
+        `${API_BASE_URL}/resumes/${user.group_id}?class=${user.class}`, 
         { timeout: 8000 }
       );
       
@@ -296,7 +296,7 @@ useEffect(() => {
       }
       
       const candidatePromises = checkedResumes.map(resume => 
-        axios.get(`${API_BASE_URL}/canidates/resume/${resume.resume_number}`, { 
+        axios.get(`${API_BASE_URL}/candidates/resume/${resume.resume_number}`, { 
           timeout: 8000 
         })
         .then(response => {

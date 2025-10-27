@@ -118,32 +118,16 @@ export class App {
     this.app.use('/resume', resumeRoutes(this.db));
     this.app.use('/resume_pdf', resumePdfRoutes(this.db));
     this.app.use('/interview', interviewRoutes(this.db, this.io));
-    this.app.use('/interview-vids', interviewRoutes(this.db, this.io));
     this.app.use('/jobs', jobRoutes(this.db, this.io, this.onlineStudents));
-    this.app.use('/jobdes', jobRoutes(this.db, this.io, this.onlineStudents));
     this.app.use('/groups', groupRoutes(this.db, this.io));
     this.app.use('/moderator', moderatorRoutes(this.db));
-    this.app.use('/moderator-crns', moderatorRoutes(this.db));
-    this.app.use('/moderator-classes', moderatorRoutes(this.db));
-    this.app.use('/teacher', moderatorRoutes(this.db));
     this.app.use('/notes', noteRoutes(this.db));
     this.app.use('/offers', offerRoutes(this.db));
     this.app.use('/progress', progressRoutes(this.db, this.io));
     this.app.use('/candidates', candidateRoutes(this.db));
-    this.app.use('/canidates', candidateRoutes(this.db)); 
     this.app.use('/upload', uploadRoutes());
     this.app.use('/csv', csvRoutes(this.db, this.io));
-    this.app.use('/importCSV', csvRoutes(this.db, this.io));
     this.app.use('/delete', deleteRoutes(this.db, this.io, this.onlineStudents));
-    
-    this.app.use('/student', groupRoutes(this.db, this.io));
-    this.app.use('/students-by-class', groupRoutes(this.db, this.io));
-    this.app.use('/group-size', interviewRoutes(this.db, this.io));
-    this.app.use('/group', groupRoutes(this.db, this.io));
-    this.app.use('/class-info', groupRoutes(this.db, this.io));
-    this.app.use('/job-assignment', jobRoutes(this.db, this.io, this.onlineStudents));
-    this.app.use('/candidates-by-groups', candidateRoutes(this.db));
-    this.app.use('/candidates-by-class', candidateRoutes(this.db));
   }
 
   public listen(port: number): void {

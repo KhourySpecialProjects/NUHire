@@ -83,7 +83,7 @@ export default function ManageGroupsPage() {
       if (!user?.email) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/moderator-classes/classes-full/${user.email}`, {
+        const response = await fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`, {
           credentials: 'include'
         });
         
@@ -138,7 +138,7 @@ export default function ManageGroupsPage() {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/students-by-class/${selectedClass}`, {
+        const response = await fetch(`${API_BASE_URL}/groups/${selectedClass}`, {
           credentials: 'include'
         });
         
@@ -296,7 +296,7 @@ export default function ManageGroupsPage() {
 
       if (response.ok) {
         // Refresh students data
-        const studentResponse = await fetch(`${API_BASE_URL}/students-by-class/${selectedClass}`, {
+        const studentResponse = await fetch(`${API_BASE_URL}/groups/${selectedClass}`, {
           credentials: 'include'
         });
         
@@ -343,7 +343,7 @@ export default function ManageGroupsPage() {
 
       if (response.ok) {
         // Refresh students data
-        const studentResponse = await fetch(`${API_BASE_URL}/students-by-class/${selectedClass}`, {
+        const studentResponse = await fetch(`${API_BASE_URL}/groups/${selectedClass}`, {
           credentials: 'include'
         });
         
@@ -367,7 +367,7 @@ export default function ManageGroupsPage() {
   const fetchGroupStartStatuses = async (classId: string, groupIds: number[]) => {
     const statusPromises = groupIds.map(async (groupId) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/group/started/${classId}/${groupId}`, {
+        const response = await fetch(`${API_BASE_URL}/groups/started/${classId}/${groupId}`, {
           credentials: 'include'
         });
         

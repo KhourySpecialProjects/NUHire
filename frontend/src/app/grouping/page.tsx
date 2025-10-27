@@ -66,7 +66,7 @@ const Grouping = () => {
   // Function to refresh groups tab students
   const refreshGroupsTabStudents = () => {
     if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
         .then(res => res.json())
         .then(setGroupsTabStudents)
         .catch(err => {
@@ -87,7 +87,7 @@ const Grouping = () => {
 
   const confirmDeleteStudent = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/del-student`, {
+      const response = await fetch(`${API_BASE_URL}/moderator/del-student`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +154,7 @@ const Grouping = () => {
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
-      fetch(`${API_BASE_URL}/moderator-classes/classes-full/${user.email}`)
+      fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`)
         .then(res => res.json())
         .then((data) => {
           setAssignedClassIds(data.map((item: any) => String(item.crn)));
@@ -175,7 +175,7 @@ const Grouping = () => {
           const stringJobGroups = Array.isArray(data) ? data.map(String) : [];
           setGroups(stringJobGroups);
         });
-      fetch(`${API_BASE_URL}/students-by-class/${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups-by-class/${selectedClass}`)
         .then(res => res.json())
         .then(setStudents);
     }
@@ -211,7 +211,7 @@ const Grouping = () => {
         console.error("Groups API error:", err);
       });
       
-    fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
+    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
       .then(res => {
         return res.json();
       })

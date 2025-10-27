@@ -236,7 +236,7 @@ const OffersManagement = () => {
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
-      fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`)
+      fetch(`${API_BASE_URL}/moderator/${user.email}`)
         .then(res => res.json())
         .then((data) => {
           setAssignedClassIds(data.map((item: any) => String(item.crn)));

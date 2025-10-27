@@ -74,7 +74,7 @@ export default function ResReviewGroup() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        const response = await fetch(`${API_BASE_URL}/group-size/${user.group_id}`);
+        const response = await fetch(`${API_BASE_URL}/interview/${user.group_id}`);
         if (response.ok) {
           const data = await response.json();
           setGroupSize(data.count);

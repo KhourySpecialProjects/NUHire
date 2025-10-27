@@ -78,7 +78,7 @@ export default function AssignGroupPage() {
         console.log("Fetching group slots for class:", user.class); // DEBUG
 
         // FIXED: Use the existing group-slots endpoint
-        const groupSlotsResponse = await fetch(`${API_BASE_URL}/students-by-class/${user.class}`);
+        const groupSlotsResponse = await fetch(`${API_BASE_URL}/groups/${user.class}`);
         if (groupSlotsResponse.ok) {
           const groupSlotsData = await groupSlotsResponse.json();
           console.log("Group slots data:", groupSlotsData); // DEBUG
@@ -92,7 +92,7 @@ export default function AssignGroupPage() {
         }
 
         // Fetch class information
-        const classResponse = await fetch(`${API_BASE_URL}/class-info/${user.class}`);
+        const classResponse = await fetch(`${API_BASE_URL}/groups/class-info/${user.class}`);
         if (classResponse.ok) {
           const classData = await classResponse.json();
           console.log("Class info data:", classData); // DEBUG
@@ -159,7 +159,7 @@ export default function AssignGroupPage() {
     setJoining(groupId);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/student/join-group`, {
+      const response = await fetch(`${API_BASE_URL}/groups/join-group`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

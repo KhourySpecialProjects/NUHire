@@ -113,7 +113,7 @@ const Dashboard = () => {
 
     try {
       setJobLoading(true);
-      const response = await fetch(`${API_BASE_URL}/job-assignment/${user.group_id}/${user.class}`);
+      const response = await fetch(`${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`);
       
       if (response.ok) {
         const data = await response.json();

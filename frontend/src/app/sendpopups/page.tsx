@@ -157,10 +157,10 @@ const SendPopups = () => {
       let url;
       if (selectedGroup) {
         // Fetch candidates being interviewed by selected group
-        url = `${API_BASE_URL}/candidates-by-groups/${selectedClass}/${selectedGroup}`;
+        url = `${API_BASE_URL}/candidates/by-groups/${selectedClass}/${selectedGroup}`;
       } else {
         // Fallback to all candidates in class (for non-preset popups)
-        url = `${API_BASE_URL}/candidates-by-class/${selectedClass}`;
+        url = `${API_BASE_URL}/candidates/by-class/${selectedClass}`;
       }
       
       console.log("Fetching candidates from:", url);
@@ -199,7 +199,7 @@ const SendPopups = () => {
         if (user?.email && user.affiliation === "admin") {
           try {
             // First get the assigned class IDs
-            const response = await fetch(`${API_BASE_URL}/moderator-classes/classes-full/${user.email}`);
+            const response = await fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`);
             if (!response.ok) {
               throw new Error(`Error: ${response.status}`);
             }
@@ -229,7 +229,7 @@ const SendPopups = () => {
           
           try {
               // Fetch students instead of groups, then group them by group_id
-              const response = await fetch(`${API_BASE_URL}/students?class=${selectedClass}`);
+              const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`);
               const studentsData = await response.json();
               
               // Group students by their group_id

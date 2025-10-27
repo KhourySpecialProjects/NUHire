@@ -128,7 +128,7 @@ export default function JobDescriptionPage() {
         // First, get the job assignment for this group/class
         console.log(`Fetching job assignment for group ${user.group_id} in class ${user.class}`);
         const jobAssignmentResponse = await fetch(
-          `${API_BASE_URL}/jobdes/assignment/${user.group_id}/${user.class}`,
+          `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`,
           { credentials: "include" }
         );
 
@@ -143,7 +143,7 @@ export default function JobDescriptionPage() {
         console.log("Found job assignment:", jobTitle);
 
         // Then fetch the PDF file using the job title
-        const response = await fetch(`${API_BASE_URL}/jobdes/title?title=${encodeURIComponent(jobTitle)}`, {
+        const response = await fetch(`${API_BASE_URL}/jobs/title?title=${encodeURIComponent(jobTitle)}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });

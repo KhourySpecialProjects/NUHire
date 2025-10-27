@@ -241,7 +241,7 @@ export default function MakeOffer() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        const response = await axios.get(`${API_BASE_URL}/group-size/${user.group_id}`);
+        const response = await axios.get(`${API_BASE_URL}/interview/${user.group_id}`);
         setGroupSize(response.data.count);
       } catch (err) {
         console.error("Failed to fetch group size:", err);
