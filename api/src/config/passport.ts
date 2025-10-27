@@ -29,41 +29,55 @@ export function configurePassport(db: Connection): void {
         clientID: process.env.KEYCLOAK_CLIENT_ID!,
         clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
         callbackURL: 'https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback',
-        scope: 'openid profile email'
+        scope: 'openid profile email',
+        authorizationURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/auth`,
+        tokenURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/token`,
+        userInfoURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/userinfo`
       },
       async (accessToken: string, refreshToken: string, profile: KeycloakProfile, done: (error: any, user?: any) => void) => {
         console.log('=== Passport Callback SUCCESS ===');
         console.log('Profile:', JSON.stringify(profile, null, 2));
 
         try {
-          // Extract user data from the profile
-          const user = {
-            id: profile.id || profile.username,
-            username: profile.username,
-            email: profile.email,
-            first_name: profile.given_name || profile.firstName,
-            last_name: profile.family_name || profile.lastName,
-            keycloak_id: profile.keycloakId || profile.id
-          };
-
-          console.log('Processed user:', user);
-
-          // Check if user exists in database
-          const [rows] = await db.promise().execute(
-            'SELECT * FROM Users WHERE keycloak_id = ?',
-            [user.keycloak_id]
-          );
-
-          if ((rows as any[]).length === 0) {
-            // Create new user
-            await db.promise().execute(
-              'INSERT INTO Users (keycloak_id, username, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
-              [user.keycloak_id, user.username, user.email, user.first_name, user.last_name]
-            );
-            console.log('New user created');
+          const userEmail = profile.email;
+          
+          if (!userEmail) {
+            throw new Error('No email found in Keycloak profile');
           }
 
-          return done(null, user);
+          console.log('Looking up user by email:', userEmail);
+
+          const [rows] = await db.promise().execute(
+            'SELECT * FROM Users WHERE email = ?',
+            [userEmail]
+          );
+
+          const users = rows as any[];
+          let dbUser;
+
+          if (users.length === 0) {
+            console.log('Creating new user from Keycloak profile');
+            await db.promise().execute(
+              'INSERT INTO Users (email, f_name, l_name, affiliation) VALUES (?, ?, ?, ?)',
+              [
+                userEmail,
+                profile.given_name || profile.firstName || '',
+                profile.family_name || profile.lastName
+              ]
+            );
+
+            const [newUserRows] = await db.promise().execute(
+              'SELECT * FROM Users WHERE email = ?',
+              [userEmail]
+            );
+            dbUser = (newUserRows as any[])[0];
+            console.log('New user created:', dbUser);
+          } else {
+            dbUser = users[0];
+            console.log('Existing user found:', dbUser);
+          }
+
+          return done(null, dbUser);
         } catch (error) {
           console.error('Error in passport callback:', error);
           return done(error, null);
@@ -79,7 +93,7 @@ export function configurePassport(db: Connection): void {
   passport.deserializeUser(async (id: string, done) => {
     try {
       const [rows] = await db.promise().execute(
-        'SELECT * FROM Users WHERE keycloak_id = ?',
+        'SELECT * FROM Users WHERE id = ?',
         [id]
       );
       
