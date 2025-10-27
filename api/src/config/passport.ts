@@ -2,8 +2,7 @@
 
 import passport from 'passport';
 import { Connection } from 'mysql2';
-
-const KeycloakStrategy = require('@exlinc/keycloak-passport').Strategy;
+import KeycloakStrategy from 'passport-keycloak-oauth2-oidc';
 
 interface KeycloakProfile {
   id?: string;
