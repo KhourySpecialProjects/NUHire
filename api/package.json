@@ -33,7 +33,9 @@
     "passport-oauth2": "^1.8.0",
     "passport-openidconnect": "^0.1.2",
     "socket": "^0.14.103",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
