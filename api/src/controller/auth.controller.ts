@@ -74,19 +74,6 @@ export class AuthController {
             return;
           }
 
-          // User has names but no group - send to group assignment or waiting
-          if (!dbUser.group_id) {
-            if (dbUser.affiliation === 'student') {
-              console.log('🔀 Student has no group, redirecting to group assignment');
-              res.redirect(`${FRONT_URL}/waitingGroup`);
-              return;
-            } else {
-              console.log('🔀 Non-student with no group, redirecting to dashboard');
-              res.redirect(`${FRONT_URL}/?name=${fullName}`);
-              return;
-            }
-          }
-
           // User has group - check if group is started
           console.log(`🔍 Checking group status for group ${dbUser.group_id}, class ${dbUser.class}`);
           const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
