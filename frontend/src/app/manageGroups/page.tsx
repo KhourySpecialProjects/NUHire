@@ -138,7 +138,7 @@ export default function ManageGroupsPage() {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/groups/${selectedClass}`, {
+        const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
           credentials: 'include'
         });
         
@@ -296,7 +296,7 @@ export default function ManageGroupsPage() {
 
       if (response.ok) {
         // Refresh students data
-        const studentResponse = await fetch(`${API_BASE_URL}/groups/${selectedClass}`, {
+        const studentResponse = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
           credentials: 'include'
         });
         
@@ -343,7 +343,7 @@ export default function ManageGroupsPage() {
 
       if (response.ok) {
         // Refresh students data
-        const studentResponse = await fetch(`${API_BASE_URL}/groups/${selectedClass}`, {
+        const studentResponse = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
           credentials: 'include'
         });
         
