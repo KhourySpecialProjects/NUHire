@@ -376,7 +376,7 @@ CREATE TABLE `Users` (
   `f_name` varchar(50) DEFAULT NULL,
   `l_name` varchar(50) DEFAULT NULL,
   `email` varchar(100) NOT NULL,
-  `affiliation` enum('student','admin') NOT NULL,
+  `affiliation` enum('student','admin','none') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `group_id` int DEFAULT NULL,
   `class` int DEFAULT NULL,
@@ -396,4 +396,4 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-23  9:35:54
+-- Dump completed on 2025-10-28 10:39:58
