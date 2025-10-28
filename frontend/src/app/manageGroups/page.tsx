@@ -49,8 +49,8 @@ export default function ManageGroupsPage() {
 
 
   useEffect(() => {
-    console.log("Available groups updated:", availableGroups);
-  }, [availableGroups]);
+    console.log("Groups updated:", groups);
+  }, [groups]);
   
   // Fetch user authentication
   useEffect(() => {
