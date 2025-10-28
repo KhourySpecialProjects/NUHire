@@ -66,7 +66,7 @@ export function configurePassport(db: Connection): void {
               [
                 userEmail,
                 fname, lname,
-                'student'
+                'none'
               ]
             );
 
