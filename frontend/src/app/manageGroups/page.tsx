@@ -138,7 +138,7 @@ export default function ManageGroupsPage() {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
+        const response = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
           credentials: 'include'
         });
         
