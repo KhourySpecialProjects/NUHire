@@ -68,7 +68,7 @@ export class AuthController {
           }
 
           // Check if user needs to complete signup (missing names only)
-          if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null) {
+          if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null || dbUser.affiliation === 'none') {
             console.log('🔀 User needs to complete signup form - missing names');
             res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
             return;
