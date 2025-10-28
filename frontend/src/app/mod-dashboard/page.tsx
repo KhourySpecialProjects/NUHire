@@ -27,6 +27,7 @@ const ModDashboard = () => {
   useEffect(() => {
     const fetchCRNs = async () => {
       try {
+        console.log("Fetching CRNs from API line 30");
         const response = await fetch(`${API_BASE_URL}/moderator/crns`);
         if (response.ok) {
           const data = await response.json();
@@ -51,6 +52,7 @@ const ModDashboard = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      console.log("Submitting form on line 54:", form);
       const res = await fetch(`${API_BASE_URL}/moderator/crns`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
