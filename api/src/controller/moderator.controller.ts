@@ -34,6 +34,7 @@ export class ModeratorController {
   };
 
   getAllModeratorCRNs = (req: AuthRequest, res: Response): void => {
+    console.log('Fetching all moderator CRNs');
     this.db.query('SELECT * FROM Moderator', (err, results) => {
       if (err) {
         res.status(500).json({ error: err.message });
