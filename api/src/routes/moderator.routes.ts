@@ -8,9 +8,9 @@ export default (db: Connection): Router => {
   const router = Router();
   const moderatorController = new ModeratorController(db);
 
-  router.post('/crns', requireAuth, moderatorController.addModeratorCRN);
-  router.get('/crns', requireAuth, moderatorController.getAllModeratorCRNs);
-  router.delete('/crns/:crn', requireAuth, moderatorController.deleteModeratorCRN);
+  router.post('/crns', moderatorController.addModeratorCRN);
+  router.get('/crns', moderatorController.getAllModeratorCRNs);
+  router.delete('/crns/:crn', moderatorController.deleteModeratorCRN);
   router.get('/crns/:crn', requireAuth, moderatorController.getModeratorCRN);
   router.get('/classes/:email', requireAuth, moderatorController.getModeratorClasses);
   router.get('/classes-full/:email', requireAuth, moderatorController.getModeratorClassesFull);
