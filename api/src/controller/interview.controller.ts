@@ -129,10 +129,10 @@ export class InterviewController {
   };
 
   getGroupSize = (req: AuthRequest, res: Response): void => {
-    const { group_id } = req.params;
+    const { group_id, class_id } = req.params;
     this.db.query(
-      "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND affiliation = 'student'",
-      [group_id],
+      "SELECT COUNT(*) AS count FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+      [group_id, class_id],
       (err, results: any[]) => {
         if (err) {
           res.status(500).json({ error: err.message });
