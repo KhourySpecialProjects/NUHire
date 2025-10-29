@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
 import AdminReactionPopup from "../components/adminReactionPopup";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import Popup from "../components/popup";
-import { use } from "passport";
 
 interface User {
   id: number;
