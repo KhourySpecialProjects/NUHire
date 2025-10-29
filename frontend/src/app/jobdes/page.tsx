@@ -100,7 +100,7 @@ export default function JobDescriptionPage() {
 
       const updateCurrentPage = async () => {
         try {
-          const response = await fetch(`${API_BASE_URL}/user/update-currentpage`, {
+          const response = await fetch(`${API_BASE_URL}/users/update-currentpage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ page: 'jobdes', user_email: user.email }),
