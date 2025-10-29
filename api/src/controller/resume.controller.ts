@@ -167,7 +167,7 @@ export class ResumeController {
 
         if (err.code === 'ER_DUP_ENTRY') {
           res.status(409).json({
-            error: 'A resume with this title already exists. Please choose a different title.'
+            error: 'A resume with this file already exists. Please choose a different file.'
           });
           return;
         }
