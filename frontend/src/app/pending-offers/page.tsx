@@ -41,7 +41,7 @@ const OffersManagement = () => {
   // Function to fetch candidate names
   const fetchCandidates = async (classId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/candidates-by-class/${classId}`);
+      const response = await fetch(`${API_BASE_URL}/candidates-by-class/${classId}, { credentials: "include" }`);
       if (response.ok) {
         const candidatesData = await response.json();
         const formattedCandidates = candidatesData.map((candidate: any) => ({
@@ -78,7 +78,7 @@ const OffersManagement = () => {
       
       // Fetch both offers and candidates
       const [offersResponse, candidatesData] = await Promise.all([
-        fetch(`${API_BASE_URL}/offers/class/${targetClassId}`),
+        fetch(`${API_BASE_URL}/offers/class/${targetClassId}, { credentials: "include" }`),
         fetchCandidates(targetClassId)
       ]);
       
@@ -188,7 +188,8 @@ const OffersManagement = () => {
         },
         body: JSON.stringify({
           status: accepted ? 'accepted' : 'rejected'
-        })
+        }),
+        credentials: "include"
       });
 
       if (!response.ok) {
@@ -236,7 +237,7 @@ const OffersManagement = () => {
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
-      fetch(`${API_BASE_URL}/moderator/${user.email}`)
+      fetch(`${API_BASE_URL}/moderator/${user.email}, { credentials: "include" }`)
         .then(res => res.json())
         .then((data) => {
           setAssignedClassIds(data.map((item: any) => String(item.crn)));
