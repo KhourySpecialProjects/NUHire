@@ -140,7 +140,8 @@ export default function MakeOffer() {
   };
 
   useEffect(() => {
-  }, [ableToMakeOffer]);
+    console.log("Vote counts updated:", voteCounts);
+  }, [voteCounts]);
 
   useEffect(() => {
     if (user?.group_id && user?.class) {
