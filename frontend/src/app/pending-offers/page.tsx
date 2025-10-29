@@ -41,7 +41,7 @@ const OffersManagement = () => {
   // Function to fetch candidate names
   const fetchCandidates = async (classId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/candidates-by-class/${classId}, { credentials: "include" }`);
+      const response = await fetch(`${API_BASE_URL}/candidates/by-class/${classId}, { credentials: "include" }`);
       if (response.ok) {
         const candidatesData = await response.json();
         const formattedCandidates = candidatesData.map((candidate: any) => ({
@@ -78,7 +78,7 @@ const OffersManagement = () => {
       
       // Fetch both offers and candidates
       const [offersResponse, candidatesData] = await Promise.all([
-        fetch(`${API_BASE_URL}/offers/class/${targetClassId}, { credentials: "include" }`),
+        fetch(`${API_BASE_URL}/offers/class/${targetClassId}`, { credentials: "include" }),
         fetchCandidates(targetClassId)
       ]);
       
