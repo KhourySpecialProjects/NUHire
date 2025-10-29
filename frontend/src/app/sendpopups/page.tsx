@@ -13,7 +13,6 @@ const SendPopups = () => {
   interface User {
     affiliation: string;
     email: string;
-    class: number;
   }
 
   interface Group {
@@ -231,7 +230,8 @@ const SendPopups = () => {
           
           try {
               // Fetch students instead of groups, then group them by group_id
-              const response = await fetch(`${API_BASE_URL}/groups/students-by-class/${user?.class}`, { credentials: "include" });
+              console.log("Fetching students for class:", selectedClass);
+              const response = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, { credentials: "include" });
               const studentsData = await response.json();
               console.log(studentsData);
               // Group students by their group_id
