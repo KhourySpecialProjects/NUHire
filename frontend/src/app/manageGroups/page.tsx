@@ -296,7 +296,7 @@ export default function ManageGroupsPage() {
 
       if (response.ok) {
         // Refresh students data
-        const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class`, {
+        const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
           credentials: 'include'
         });
         
