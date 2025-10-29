@@ -229,7 +229,7 @@ const SendPopups = () => {
           
           try {
               // Fetch students instead of groups, then group them by group_id
-              const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}, { credentials: "include" }`);
+              const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" });
               const studentsData = await response.json();
               
               // Group students by their group_id
