@@ -6,6 +6,7 @@ import NavbarAdmin from "../components/navbar-admin";
 import AdminReactionPopup from "../components/adminReactionPopup";
 import { io, Socket } from "socket.io-client";
 import Popup from "../components/popup";
+import { use } from "passport";
 
 interface User {
   id: number;
@@ -54,6 +55,14 @@ const Upload = () => {
   { classId: number; groupId: number; candidateId: number }[]
   >([]);  
   const socket = io(API_BASE_URL);
+
+  useEffect(() => {
+    console.log("resumes changed:", resumes);
+  }, [resumes]);
+  useEffect(() => {
+    console.log("jobs changed:", jobs);
+  }, [jobs]);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -159,6 +168,7 @@ const Upload = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/delete/job/${fileName}`, {
         method: "DELETE",
+        credentials: "include"
       });
   
       if (!response.ok) {
