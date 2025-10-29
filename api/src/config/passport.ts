@@ -81,6 +81,8 @@ export function configurePassport(db: Connection): void {
             console.log('Existing user found:', dbUser);
           }
 
+          dbUser.keycloakProfile = profile;
+
           return done(null, dbUser);
         } catch (error) {
           console.error('Error in passport callback:', error);

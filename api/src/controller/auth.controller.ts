@@ -37,10 +37,12 @@ export class AuthController {
       }
 
       const email = user.email;
-      const firstName = user.f_name;
-      const lastName = user.l_name;
+      const prof = user.keycloakProfile;
+      const parts = prof.name.split(" ");
+      const firstName = parts[0];
+      const lastName = parts[1];
 
-      console.log(`🔍 Looking up user in database: ${email}`);
+      console.log(`This is the profile info from Keycloak: ${email}, ${firstName}, ${lastName}`);
 
       this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
         if (err) {
@@ -51,12 +53,6 @@ export class AuthController {
 
         if (results.length > 0) {
           const dbUser = results[0];
-          console.log('👤 Found user:', { 
-            email: dbUser.email, 
-            affiliation: dbUser.affiliation, 
-            hasGroup: !!dbUser.group_id,
-            hasNames: !!(dbUser.f_name && dbUser.l_name)
-          });
 
           const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
           console.log("This sis the gotten user", dbUser)

@@ -14,6 +14,7 @@ export interface User {
   class?: number;
   current_page?: 'dashboard' | 'resumepage' | 'resumepage2' | 'jobdes' | 'interviewpage' | 'makeofferpage';
   seen?: number;
+  keycloakProfile?: any;
 }
 
 export interface AuthRequest extends Request {
