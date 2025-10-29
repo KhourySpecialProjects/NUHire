@@ -235,7 +235,7 @@ const SendPopups = () => {
               // Group students by their group_id
               const groupedData: Record<string, any[]> = {};
               
-              studentsData.forEach((student: any) => {
+              studentsData.map((student: any) => {
                   if (student.group_id) {
                       const groupId = student.group_id.toString();
                       if (!groupedData[groupId]) {
