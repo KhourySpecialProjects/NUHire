@@ -104,6 +104,7 @@ export default function JobDescriptionPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ page: 'jobdes', user_email: user.email }),
+            credentials: "include"
           });
         } catch (error) {
           console.error("Error updating current page:", error);
@@ -128,8 +129,7 @@ export default function JobDescriptionPage() {
         // First, get the job assignment for this group/class
         console.log(`Fetching job assignment for group ${user.group_id} in class ${user.class}`);
         const jobAssignmentResponse = await fetch(
-          `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`,
-          { credentials: "include" }
+          `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`, {credentials: "include"},
         );
 
         if (!jobAssignmentResponse.ok) {
@@ -146,6 +146,7 @@ export default function JobDescriptionPage() {
         const response = await fetch(`${API_BASE_URL}/jobs/title?title=${encodeURIComponent(jobTitle)}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
+          credentials: "include"
         });
 
         if (!response.ok) {

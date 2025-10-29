@@ -86,7 +86,8 @@ export default function Interview() {
   const fetchFinished = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/interview/status/finished-count`, {
-        params: { group_id: user?.group_id, class_id: user?.class }
+        params: { group_id: user?.group_id, class_id: user?.class },
+        withCredentials: true,
       });      
       setGroupSubmissions(response.data.finishedCount);
       console.log("Group submissions fetched:", groupSubmissions);
@@ -98,7 +99,9 @@ export default function Interview() {
 
   const fetchGroupSize = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/interview/${user?.group_id}`);
+      const response = await axios.get(`${API_BASE_URL}/interview/${user?.group_id}`, {
+        withCredentials: true,
+      });
       setGroupSize(response.data.count);
       console.log("Group size fetched:", response.data.count);
     } catch (err) {
@@ -209,7 +212,7 @@ export default function Interview() {
         question3: qualityOfAnswer,
         question4: personality,
         candidate_id
-      });
+      }, { withCredentials: true });
       if (response.status !== 200) {
         console.error("Failed to submit response:", response.statusText);
       } else {
@@ -247,7 +250,8 @@ export default function Interview() {
           await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
             page: 'interviewpage', 
             user_email: user.email
-          });
+          }
+          , { withCredentials: true });
         } catch (error) {
           console.error("Error updating current page:", error);
         }
@@ -274,7 +278,7 @@ useEffect(() => {
       // Get all resumes for the group and filter by class
       const resumeResponse = await axios.get(
         `${API_BASE_URL}/resumes/${user.group_id}?class=${user.class}`, 
-        { timeout: 8000 }
+        { withCredentials: true, timeout: 8000 }
       );
       
       const allResumes: Resume[] = resumeResponse.data;
@@ -297,7 +301,8 @@ useEffect(() => {
       
       const candidatePromises = checkedResumes.map(resume => 
         axios.get(`${API_BASE_URL}/candidates/resume/${resume.resume_number}`, { 
-          timeout: 8000 
+          timeout: 8000, 
+         withCredentials: true,
         })
         .then(response => {
           console.log(`Raw response for resume ${resume.resume_number}:`, response.data);
@@ -477,6 +482,8 @@ useEffect(() => {
           finished: 1,
           group_id: user?.group_id,
           class: user?.class
+        }, {
+          withCredentials: true,
         });
         setFinished(true);
       } catch (err) {

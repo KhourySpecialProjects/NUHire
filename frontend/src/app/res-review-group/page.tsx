@@ -74,7 +74,7 @@ export default function ResReviewGroup() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        const response = await fetch(`${API_BASE_URL}/interview/${user.group_id}`);
+        const response = await fetch(`${API_BASE_URL}/interview/${user.group_id}`, {  credentials: "include"});
         if (response.ok) {
           const data = await response.json();
           setGroupSize(data.count);
@@ -210,6 +210,7 @@ export default function ResReviewGroup() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ page: 'resumepage2', user_email: user.email }),
+            credentials: "include"
           });
         } catch (error) {
           console.error("Error updating current page:", error);
@@ -235,7 +236,7 @@ export default function ResReviewGroup() {
 
   const fetchResumes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf`);
+      const response = await fetch(`${API_BASE_URL}/resume_pdf`, {  credentials: "include"});
       const data: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await response.json();
 
       console.log("Raw resume data from API:", data);
@@ -275,7 +276,7 @@ export default function ResReviewGroup() {
         if (!user || !user.class) return;
 
         // Update the endpoint to include class filtering
-        const response = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`);
+        const response = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, {  credentials: "include"});
         const data: ResumeData[] = await response.json();
 
         const voteData: { [key: number]: VoteData } = {};

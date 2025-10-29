@@ -126,6 +126,7 @@ export default function ResumesPage() {
               page: "resumepage",
               user_email: user.email,
             }),
+            credentials: "include"
           });
         } catch (error) {
           console.error("Error updating current page:", error);
@@ -174,7 +175,7 @@ export default function ResumesPage() {
 
   const fetchResumes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf`);
+      const response = await fetch(`${API_BASE_URL}/resume_pdf`, {  credentials: "include"});
       const data = await response.json();
       setResumesList(data);
     } catch (error) {
@@ -233,6 +234,7 @@ export default function ResumesPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(voteData),
+        credentials: "include"
       });
 
       console.log("Response status:", response.status, response.statusText);

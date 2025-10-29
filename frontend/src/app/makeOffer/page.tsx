@@ -96,7 +96,7 @@ export default function MakeOffer() {
     
     try {
       const response = await fetch(
-        `${API_BASE_URL}/offers/group/${user.group_id}/class/${user.class}`
+        `${API_BASE_URL}/offers/group/${user.group_id}/class/${user.class}`, {credentials: "include"}
       );
       
       if (response.ok) {
@@ -154,7 +154,7 @@ export default function MakeOffer() {
     const fetchPopupVotes = async () => {
       try {
         const promises = candidates.map(candidate => 
-          fetch(`${API_BASE_URL}/interview/popup/${candidate.resume_id}/${user.group_id}/${user.class}`)
+          fetch(`${API_BASE_URL}/interview/popup/${candidate.resume_id}/${user.group_id}/${user.class}`, {credentials: "include"})
             .then(res => res.json())
         );
         
@@ -212,7 +212,7 @@ export default function MakeOffer() {
           await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
             page: "makeofferpage",
             user_email: user.email,
-          });
+          }, { withCredentials: true });
         } catch (error) {
           console.error("Error updating current page:", error);
         }
@@ -228,7 +228,7 @@ export default function MakeOffer() {
     const fetchInterviews = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/interview/group/${user.group_id}?class=${user.class}`
+          `${API_BASE_URL}/interview/group/${user.group_id}?class=${user.class}` , {credentials: "include"}
         );
         const data = await response.json();
 
@@ -241,7 +241,7 @@ export default function MakeOffer() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        const response = await axios.get(`${API_BASE_URL}/interview/${user.group_id}`);
+        const response = await axios.get(`${API_BASE_URL}/interview/${user.group_id}`, { withCredentials: true});
         setGroupSize(response.data.count);
       } catch (err) {
         console.error("Failed to fetch group size:", err);
@@ -349,7 +349,7 @@ export default function MakeOffer() {
         const fetchedResumes = await Promise.all(
           candidates.map(async (candidate) => {
             const id = candidate.resume_id;
-            const res = await fetch(`${API_BASE_URL}/resume_pdf/id/${id}`);
+            const res = await fetch(`${API_BASE_URL}/resume_pdf/id/${id}`, {credentials: "include"});
 
             if (!res.ok) {
               throw new Error(
@@ -677,7 +677,8 @@ export default function MakeOffer() {
           class_id: user!.class,
           candidate_id: candidateId,
           status: `pending`,
-        })
+        }),
+        credentials: "include",
       });
 
       const result = await response.json();
