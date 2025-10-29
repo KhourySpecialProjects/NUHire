@@ -846,40 +846,32 @@ export default function MakeOffer() {
 
                 <div className="mt-2 space-y-1 text-navy text-sm">
                 <p>
-                    <span className="font-medium">Overall:</span> {
-                    (() => {
-                        const totalVotes = (votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                  <span className="font-medium">Overall:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 <p>
-                    <span className="font-medium">Professional Presence:</span> {
-                    (() => {
-                        const totalVotes = (votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                   <span className="font-medium">Professional Pressence:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 <p>
-                    <span className="font-medium">Quality of Answer:</span> {
-                    (() => {
-                        const totalVotes = (votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                  <span className="font-medium">Quality of Answer:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 <p>
-                    <span className="font-medium">Personality:</span> {
-                    (() => {
-                        const totalVotes = (votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                  <span className="font-medium">Personality:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 </div>
 
