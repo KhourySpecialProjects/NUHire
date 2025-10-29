@@ -114,9 +114,9 @@ const Upload = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/jobs`);
+      const response = await fetch(`${API_BASE_URL}/jobs`, { credentials: "include" });
       const data = await response.json();
-      setJobs(data);
+      setJobs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching jobs:", error);
     }
@@ -124,10 +124,9 @@ const Upload = () => {
 
   const fetchResumes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf`);
+      const response = await fetch(`${API_BASE_URL}/resume_pdf`, { credentials: "include" });
       const data = await response.json();
-      setResumes(data);
-    } catch (error) {
+      setResumes(Array.isArray(data) ? data : []);    } catch (error) {
       console.error("Error fetching resumes:", error);
     }
   };
