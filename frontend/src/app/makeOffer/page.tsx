@@ -246,6 +246,7 @@ export default function MakeOffer() {
         if (response.ok) {
           const data = await response.json();
           setGroupSize(data.count);
+          console.log("Fetched group size:", data.count);
         }
       } catch (err) {
         console.error("Failed to fetch group size:", err);
