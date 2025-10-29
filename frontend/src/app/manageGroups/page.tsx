@@ -715,7 +715,13 @@ export default function ManageGroupsPage() {
                 value={newGroupId}
                 onChange={(e) => setNewGroupId(parseInt(e.target.value))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+              >
+                {availableGroups.map((groupId) => (
+                  <option key={groupId} value={groupId}>
+                    Group {groupId}
+                  </option>
+                ))}
+              </select>
               
               <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                 <div>
