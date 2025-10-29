@@ -242,6 +242,7 @@ export default function MakeOffer() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
+        console.log("insize size", user)
         const response = await fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" });
         if (response.ok) {
           const data = await response.json();
