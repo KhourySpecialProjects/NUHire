@@ -138,6 +138,7 @@ export class InterviewController {
           res.status(500).json({ error: err.message });
           return;
         }
+        console.log("results from group api", results)
         res.json({ group_id, count: results[0].count });
       }
     );
