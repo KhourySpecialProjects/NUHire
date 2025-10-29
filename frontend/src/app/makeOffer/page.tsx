@@ -241,7 +241,7 @@ export default function MakeOffer() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        const response = await axios.get(`${API_BASE_URL}/interview/${user.group_id}`, { withCredentials: true});
+        const response = await axios.get(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { withCredentials: true});
         setGroupSize(response.data.count);
       } catch (err) {
         console.error("Failed to fetch group size:", err);
@@ -265,7 +265,7 @@ export default function MakeOffer() {
             const url = `${API_BASE_URL}/candidates/resume/${id}`;
           
             try {
-              const res = await fetch(url);
+              const res = await fetch(url, {credentials: "include"});
 
               if (!res.ok) {
                 console.error(`  ❌ Invalid response for candidate ${id}:`, {
