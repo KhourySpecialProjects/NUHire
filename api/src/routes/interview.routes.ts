@@ -17,7 +17,7 @@ export default (db: Connection, io: SocketIOServer): Router => {
   router.delete('/:student_id', requireAuth, interviewController.deleteInterview);
   router.get('/popup/:resId/:groupId/:classId', requireAuth, interviewController.getInterviewPopup);
   router.get('/vids', requireAuth, interviewController.getAllInterviewVids);
-  router.get('/group-size/:group_id/:class', requireAuth, interviewController.getGroupSize);
+  router.get('/group-size/:group_id/:classId', requireAuth, interviewController.getGroupSize);
 
   return router;
 };
