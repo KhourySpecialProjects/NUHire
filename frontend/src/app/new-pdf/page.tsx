@@ -126,7 +126,8 @@ const Upload = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/resume_pdf`, { credentials: "include" });
       const data = await response.json();
-      setResumes(Array.isArray(data) ? data : []);    } catch (error) {
+      setResumes(Array.isArray(data) ? data : []);   
+    } catch (error) {
       console.error("Error fetching resumes:", error);
     }
   };
@@ -137,6 +138,7 @@ const Upload = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/delete/resume/${fileName}`, {
         method: "DELETE",
+        credentials: "include"
       });
   
       if (!response.ok) {
@@ -202,7 +204,8 @@ const Upload = () => {
 
       const response = await fetch(`${API_BASE_URL}/upload/job`, { 
         method: "POST", 
-        body: formData 
+        body: formData,
+        credentials: "include"
       });
 
       if (!response.ok) throw new Error("Job description upload failed");
@@ -212,6 +215,7 @@ const Upload = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: jobTitle, filePath }),
+        credentials: "include"
       });
 
       fetchJobs();
@@ -249,7 +253,8 @@ const Upload = () => {
 
       const response = await fetch(`${API_BASE_URL}/upload/resume`, { 
         method: "POST", 
-        body: formData 
+        body: formData,
+        credentials: "include"
       });
 
       if (!response.ok) throw new Error("Resume upload failed");
@@ -265,6 +270,7 @@ const Upload = () => {
           l_name: resLastName,
           vid: resYouTubeVideo
         }),
+        credentials: "include"
       });
 
       if (!dbResponse.ok) {
