@@ -13,6 +13,7 @@ const SendPopups = () => {
   interface User {
     affiliation: string;
     email: string;
+    class: number;
   }
 
   interface Group {
@@ -37,7 +38,7 @@ const SendPopups = () => {
   }
     
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-    const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
+    const [user, setUser] = useState<{ affiliation: string; email?: string; class:number } | null>(null);
     const [loading, setLoading] = useState(true);
     const [groups, setGroups] = useState<Record<string, any>>({});
     const [selectedGroup, setSelectedGroup] = useState<string>(""); // Changed from selectedGroups array to single group
@@ -128,6 +129,7 @@ const SendPopups = () => {
         try {
           const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
           const userData = await response.json();
+          console.log("Fetched user data:", userData);
 
           if (response.ok) {
             setUser(userData);
@@ -229,7 +231,7 @@ const SendPopups = () => {
           
           try {
               // Fetch students instead of groups, then group them by group_id
-              const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" });
+              const response = await fetch(`${API_BASE_URL}/groups/students-by-class/${user?.class}`, { credentials: "include" });
               const studentsData = await response.json();
               console.log(studentsData);
               // Group students by their group_id
