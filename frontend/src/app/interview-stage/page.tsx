@@ -99,7 +99,7 @@ export default function Interview() {
 
   const fetchGroupSize = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/group-size/${user?.group_id}/${user?.class}`, {
+      const response = await axios.get(`${API_BASE_URL}/interview/group-size/${user?.group_id}/${user?.class}`, {
         withCredentials: true,
       });
       setGroupSize(response.data.count);
@@ -277,7 +277,7 @@ useEffect(() => {
     try {
       // Get all resumes for the group and filter by class
       const resumeResponse = await axios.get(
-        `${API_BASE_URL}/resume/${user.group_id}?class=${user.class}`, 
+        `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
         { withCredentials: true, timeout: 8000 }
       );
       
