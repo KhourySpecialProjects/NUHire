@@ -66,7 +66,7 @@ const Grouping = () => {
   // Function to refresh groups tab students
   const refreshGroupsTabStudents = () => {
     if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(setGroupsTabStudents)
         .catch(err => {
@@ -93,6 +93,8 @@ const Grouping = () => {
         body: JSON.stringify({
           email: deleteConfirmation.studentEmail
         }),
+        credentials: "include"
+
       });
 
       if (response.ok) {
@@ -154,7 +156,7 @@ const Grouping = () => {
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
-      fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`)
+      fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`, { credentials: "include" })
         .then(res => res.json())
         .then((data) => {
           setAssignedClassIds(data.map((item: any) => String(item.crn)));
@@ -169,13 +171,13 @@ const Grouping = () => {
   // Tab 1: Fetch groups and students for selected class
   useEffect(() => {
     if (selectedClass) {
-      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(data => {
           const stringJobGroups = Array.isArray(data) ? data.map(String) : [];
           setGroups(stringJobGroups);
         });
-      fetch(`${API_BASE_URL}/groups-by-class/${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups-by-class/${selectedClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(setStudents);
     }
@@ -184,7 +186,7 @@ const Grouping = () => {
   // Tab 2: Fetch job groups for selected job class
   useEffect(() => {
     if (selectedJobClass) {      
-      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`, { credentials: "include" })
         .then(res => {
           return res.json();
         })
@@ -200,7 +202,7 @@ const Grouping = () => {
 
  useEffect(() => {
   if (groupsTabClass) {
-    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
+    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`, { credentials: "include" })
       .then(res => {
         return res.json();
       })
@@ -211,7 +213,7 @@ const Grouping = () => {
         console.error("Groups API error:", err);
       });
       
-    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
+    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`, { credentials: "include" })
       .then(res => {
         return res.json();
       })
@@ -229,7 +231,7 @@ const Grouping = () => {
 
   // Fetch jobs
   useEffect(() => {
-    fetch(`${API_BASE_URL}/jobs`)
+    fetch(`${API_BASE_URL}/jobs`, { credentials: "include" })
       .then(res => res.json())
       .then(setJobs);
   }, []);
@@ -319,12 +321,13 @@ const Grouping = () => {
         class_id: selectedClass,
         students: selectedStudents.map(student => student.email)
       }),
+      credentials: "include"
     });
     if (response.ok) {
       setPopup({ headline: "Success", message: "Students assigned to group successfully!" });
       setSelectedStudents([]);
       setGroupId("");
-      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(setGroups);
     } else {
@@ -350,12 +353,13 @@ const Grouping = () => {
         class_id: selectedJobClass,
         job: selectedJobs.map(job => job.title)
       }),
+      credentials: "include"
     });
     if (response.ok) {
       setPopup({ headline: "Success", message: "Job assigned to group successfully!" });
       setSelectedJobs([]);
       setGroupIdJob("");
-      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(setJobGroups);
     } else {
