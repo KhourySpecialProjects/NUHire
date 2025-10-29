@@ -157,15 +157,15 @@ const SendPopups = () => {
       let url;
       if (selectedGroup) {
         // Fetch candidates being interviewed by selected group
-        url = `${API_BASE_URL}/candidates/by-groups/${selectedClass}/${selectedGroup}, credentials: "include"`;
+        url = `${API_BASE_URL}/candidates/by-groups/${selectedClass}/${selectedGroup}`;
       } else {
         // Fallback to all candidates in class (for non-preset popups)
-        url = `${API_BASE_URL}/candidates/by-class/${selectedClass}, credentials: "include"`;
+        url = `${API_BASE_URL}/candidates/by-class/${selectedClass}`;
       }
       
       console.log("Fetching candidates from:", url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
       if (response.ok) {
         const candidatesData = await response.json();
         
@@ -212,7 +212,7 @@ const SendPopups = () => {
             setAssignedClassIds(classIds);
             setClasses(data.map((item: ModeratorClass) => ({
               id: item.crn,
-              name: `CRN ${item.crn} - (${item.nom_groups} groups)`
+              name: `CRN ${item.crn}`
             })));
             console.log("Classes set:", classes);
           } catch (error) {
