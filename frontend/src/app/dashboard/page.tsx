@@ -113,7 +113,7 @@ const Dashboard = () => {
 
     try {
       setJobLoading(true);
-      const response = await fetch(`${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`);
+      const response = await fetch(`${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`, {  credentials: "include"});
       
       if (response.ok) {
         const data = await response.json();
@@ -183,6 +183,7 @@ const Dashboard = () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ page: 'dashboard', user_email: user.email }),
+            credentials: "include"
           });
         } catch (error) {
           console.error("Error updating current page:", error);
