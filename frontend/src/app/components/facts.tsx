@@ -21,20 +21,28 @@ const Facts: React.FC = () => {
     const fetchUserAndFacts = async () => {
       try {
         // Fetch user first
+        console.log("Fetching user info...");
         const userRes = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await userRes.json();
+        console.log("User fetch response status:", userRes.status);
+        console.log("User data:", userData);
         setUser(userData);
 
         // Only fetch facts if user has group_id and class_id
         if (userRes.ok && userData.group_id && userData.class_id) {
-          const factsRes = await fetch(
-            `${API_BASE_URL}/facts/get/${userData.group_id}/${userData.class_id}`,
-            { credentials: "include", method: "GET" }
-          );
+          const factsUrl = `${API_BASE_URL}/facts/get/${userData.group_id}/${userData.class_id}`;
+          console.log("Fetching facts from:", factsUrl);
+          const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
+          console.log("Facts fetch response status:", factsRes.status);
           if (factsRes.ok) {
             const factsData = await factsRes.json();
+            console.log("Facts data:", factsData);
             setFacts(factsData);
+          } else {
+            console.warn("Facts fetch failed:", factsRes.status, await factsRes.text());
           }
+        } else {
+          console.warn("User does not have group_id and class_id, or user fetch failed.");
         }
       } catch (error) {
         console.error("Error fetching user or facts:", error);
@@ -63,6 +71,9 @@ const Facts: React.FC = () => {
           </li>
         ))}
       </ul>
+      {facts.length === 0 && (
+        <div className="text-center text-gray-400 mt-4">No facts available for your group/class.</div>
+      )}
     </div>
   );
 };
