@@ -30,7 +30,7 @@ interface User {
   email: string;
 }
 
-export default function ManageGroupsPage() {
+export function ManageGroupsTab() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);

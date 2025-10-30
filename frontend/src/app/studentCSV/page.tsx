@@ -25,7 +25,7 @@ interface User {
   email: string;
 }
 
-export default function StudentCSVPage() {
+export function StudentCSVTab() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [csvStudents, setCsvStudents] = useState<CSVStudent[]>([]);
