@@ -7,6 +7,7 @@ import Image from "next/image";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
 import {useSocket} from "../components/socketContext";
+import Facts from "../components/facts";
 
 export default function WaitingGroupPage() {
   interface User {
@@ -230,6 +231,7 @@ export default function WaitingGroupPage() {
                   </div>
                 </div>
               </div>
+              <Facts />
             </>
           ) : (
             // Authorization Received State

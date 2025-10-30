@@ -27,6 +27,7 @@ import candidateRoutes from './routes/candidate.routes';
 import uploadRoutes from './routes/upload.routes';
 import csvRoutes from './routes/csv.routes';
 import deleteRoutes from './routes/delete.routes';
+import factsRoutes from './routes/facts.routes';
 
 export class App {
   public app: Application;
@@ -127,6 +128,7 @@ export class App {
     this.app.use('/candidates', candidateRoutes(this.db));
     this.app.use('/upload', uploadRoutes());
     this.app.use('/csv', csvRoutes(this.db, this.io));
+    this.app.use('/facts', factsRoutes(this.db, this.io));
     this.app.use('/delete', deleteRoutes(this.db, this.io, this.onlineStudents));
   }
 
