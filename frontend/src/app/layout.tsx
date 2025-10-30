@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NUHIRE - Northeastern University's Hiring Exercise",
+  title: "NUHire",
   description: "Step into the employer's shoes!",
 };
 
