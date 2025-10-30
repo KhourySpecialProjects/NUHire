@@ -486,3 +486,7 @@ const handleSubmit = async () => {
     </div>
   );
 }
+
+export default function StudentCSVPage() {
+  return <StudentCSVTab/>;
+}

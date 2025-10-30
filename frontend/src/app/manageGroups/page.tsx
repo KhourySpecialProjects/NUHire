@@ -770,3 +770,7 @@ export function ManageGroupsTab() {
     </div>
   );
 }
+
+export default function ManageGroupsPage() {
+  return <ManageGroupsTab/>;
+}

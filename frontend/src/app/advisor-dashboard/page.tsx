@@ -91,7 +91,7 @@ const Dashboard = () => {
               className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
             >
               <span className="text-4xl mb-2">👥</span>
-              <span>Create and View Groups</span>
+              <span>Groups and Job Assignment</span>
             </Link>
             <Link
               href="/sendpopups"
@@ -113,20 +113,6 @@ const Dashboard = () => {
             >
               <span className="text-4xl mb-2">📤</span>
               <span>Upload Job and Resumes</span>
-            </Link>
-            <Link
-              href="/studentCSV"
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
-            >
-              <span className="text-4xl mb-2">📄</span>
-              <span>Student Upload</span>
-            </Link>
-            <Link
-              href="/manageGroups"
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
-            >
-              <span className="text-4xl mb-2">📚</span>
-              <span>Manage Groups</span>
             </Link>
           </div>
       </main>
