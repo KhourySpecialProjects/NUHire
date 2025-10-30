@@ -482,8 +482,8 @@ export function ManageGroupsTab() {
   // Access denied state
   if (!user) {
     return (
-      <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-        <div className="max-w-7xl mx-auto p-4">
+      <div className="flex flex-col h-screen overflow-auto bg-northeasternWhite font-rubik">
+        <div className="w-full p-4">
           <div className="bg-white rounded-lg shadow-lg p-6 text-center">
             <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
             <p className="text-gray-600">You must be logged in to access this page.</p>
