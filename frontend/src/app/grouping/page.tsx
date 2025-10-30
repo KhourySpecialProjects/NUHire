@@ -6,8 +6,8 @@ import NavbarAdmin from "../components/navbar-admin";
 import { io } from "socket.io-client";
 import Tabs from "../components/tabs";
 import Popup from "../components/popup";
-import { StudentCSVTab } from "../studentCSV/page";
-import { ManageGroupsTab } from "../manageGroups/page";
+import { StudentCSVTab } from "../components/StudentCSVTab";
+import { ManageGroupsTab } from "../components/ManageGroupsTab";
 
 const Grouping = () => {
   interface Student {
@@ -277,8 +277,8 @@ const Grouping = () => {
       <NavbarAdmin />
       <div className="flex-1 p-4 overflow-hidden">
         <Tabs>
-          <div title="CSV Group Assignment">
-            <StudentCSVTab />
+          <div title="Manage Groups">
+            <ManageGroupsTab />
           </div>
 
           <div title="CSV Group Assignment">
