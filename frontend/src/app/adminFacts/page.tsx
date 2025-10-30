@@ -75,11 +75,14 @@ export default function AdminFactsPage() {
       return;
     }
     try {
+      // Send as { one, two, three }
+      const payload = { one: facts[0], two: facts[1], three: facts[2] };
+      console.log("Posting facts payload:", payload);
       const res = await fetch(`${API_BASE_URL}/facts/create/${selectedGroup}/${selectedClass}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ facts }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         setPopup({ headline: "Success", message: "Facts added successfully!" });
