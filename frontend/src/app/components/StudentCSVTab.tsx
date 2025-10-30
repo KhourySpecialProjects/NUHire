@@ -314,7 +314,7 @@ const handleSubmit = async () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+    <div className="flex flex-col h-screen overflow-auto bg-northeasternWhite font-rubik">
       <div className="max-w-3xl mx-auto bg-northeasternWhite border-northeasternBlack border-4 justify-center rounded-md items-center p-6 mt-6">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">CSV Group Assignment</h1>
