@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Popup from './popup';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -44,8 +45,7 @@ export function ManageGroupsTab() {
   const router = useRouter();
   const [availableGroups, setAvailableGroups] = useState<number[]>([]);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [newGroupNumber, setNewGroupNumber] = useState<number>(1);
-
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
 
   useEffect(() => {
     console.log("Groups updated:", groups);
@@ -256,14 +256,14 @@ export function ManageGroupsTab() {
           await organizeStudentsIntoGroups(students);
         }
         
-        alert(`Group ${nextGroupNumber} created successfully!`);
+        setPopup({ headline: 'Success', message: `Group ${nextGroupNumber} created successfully!` });
       } else {
         const errorData = await response.json();
-        alert(`Failed to create group: ${errorData.error || 'Unknown error'}`);
+        setPopup({ headline: 'Error', message: `Failed to create group: ${errorData.error || 'Unknown error'}` });
       }
     } catch (error) {
       console.error('Error creating group:', error);
-      alert('Failed to create group. Please try again.');
+      setPopup({ headline: 'Error', message: 'Failed to create group. Please try again.' });
     } finally {
       setIsCreatingGroup(false);
     }
@@ -307,14 +307,14 @@ export function ManageGroupsTab() {
         
         setReassignModalOpen(false);
         setSelectedStudent(null);
-        alert('Student reassigned successfully!');
+        setPopup({ headline: 'Success', message: 'Student reassigned successfully!' });
       } else {
         const errorData = await response.json();
-        alert(`Failed to reassign student: ${errorData.error || 'Unknown error'}`);
+        setPopup({ headline: 'Error', message: `Failed to reassign student: ${errorData.error || 'Unknown error'}` });
       }
     } catch (error) {
       console.error('Error reassigning student:', error);
-      alert('Failed to reassign student. Please try again.');
+      setPopup({ headline: 'Error', message: 'Failed to reassign student. Please try again.' });
     }
   };
 
@@ -352,14 +352,14 @@ export function ManageGroupsTab() {
           organizeStudentsIntoGroups(studentData);
         }
         
-        alert('Student removed from group successfully!');
+        setPopup({ headline: 'Success', message: 'Student removed from group successfully!' });
       } else {
         const errorData = await response.json();
-        alert(`Failed to remove student: ${errorData.error || 'Unknown error'}`);
+        setPopup({ headline: 'Error', message: `Failed to remove student: ${errorData.error || 'Unknown error'}` });
       }
     } catch (error) {
       console.error('Error removing student:', error);
-      alert('Failed to remove student. Please try again.');
+      setPopup({ headline: 'Error', message: 'Failed to remove student. Please try again.' });
     }
   };
 
@@ -410,14 +410,14 @@ export function ManageGroupsTab() {
             ? { ...group, isStarted: true }
             : group
         ));
-        alert(`Group ${groupId} started successfully!`);
+        setPopup({ headline: 'Success', message: `Group ${groupId} started successfully!` });
       } else {
         const errorData = await response.json();
-        alert(`Failed to start group: ${errorData.error || 'Unknown error'}`);
+        setPopup({ headline: 'Error', message: `Failed to start group: ${errorData.error || 'Unknown error'}` });
       }
     } catch (error) {
       console.error('Error starting group:', error);
-      alert('Failed to start group. Please try again.');
+      setPopup({ headline: 'Error', message: 'Failed to start group. Please try again.' });
     } finally {
       setStartingGroups(prev => {
         const newSet = new Set(prev);
@@ -450,14 +450,14 @@ export function ManageGroupsTab() {
       if (response.ok) {
         // Update all groups status locally
         setGroups(prev => prev.map(group => ({ ...group, isStarted: true })));
-        alert('All groups started successfully!');
+        setPopup({ headline: 'Success', message: 'All groups started successfully!' });
       } else {
         const errorData = await response.json();
-        alert(`Failed to start all groups: ${errorData.error || 'Unknown error'}`);
+        setPopup({ headline: 'Error', message: `Failed to start all groups: ${errorData.error || 'Unknown error'}` });
       }
     } catch (error) {
       console.error('Error starting all groups:', error);
-      alert('Failed to start all groups. Please try again.');
+      setPopup({ headline: 'Error', message: 'Failed to start all groups. Please try again.' });
     } finally {
       setIsStartingAll(false);
     }
@@ -749,8 +749,15 @@ return (
             </button>
           </div>
         </div>
-      </div>
+      </div> 
     )}
+    {popup && (
+        <Popup
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)}
+        />
+      )}
   </div>
   );
 }

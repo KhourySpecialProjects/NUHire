@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Popup from './popup';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -36,6 +37,7 @@ export function StudentCSVTab() {
   const [submitSuccess, setSubmitSuccess] = useState(false); // Add submit success state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
 
   // const emailRegex = /^[^\s@]+@northeastern\.edu$/;
   const emailRegex = /^.*$/;
@@ -183,7 +185,7 @@ export function StudentCSVTab() {
   // New submit function
 const handleSubmit = async () => {
   if (!selectedClass || csvStudents.length === 0) {
-    alert('Please select a class and upload student data first');
+    ('Please select a class and upload student data first');
     return;
   }
 
@@ -243,15 +245,15 @@ const handleSubmit = async () => {
     if (response.ok) {
       const result = await response.json();
       setSubmitSuccess(true);
-      alert(`Groups created and assignments submitted successfully! Created groups 1-${numGroups} for ${csvStudents.length} students.`);
+      setPopup({ headline: 'Success', message: '✅ Group assignments submitted successfully!' });
     } else {
       const errorData = await response.json();
       console.error('❌ Response error:', errorData);
-      alert(`Failed to submit assignments: ${errorData.error || 'Unknown error'}`);
+      setPopup({ headline: 'Error', message: `Failed to submit group assignments: ${errorData.error || 'Unknown error'}` });
     }
   } catch (error) {
     console.error('🔥 Fetch error:', error);
-    alert(`Failed to submit: ${error || 'Please try again.'}`);
+    setPopup({ headline: 'Error', message: 'An error occurred while submitting group assignments. Please try again.' });
   } finally {
     setIsSubmitting(false);
   }
@@ -259,7 +261,7 @@ const handleSubmit = async () => {
 
   const downloadCSV = () => {
     if (!selectedClass || csvStudents.length === 0) {
-      alert('Please select a class and upload student data first');
+      setPopup({ headline: 'Error', message: 'Please select a class and upload student data first' });
       return;
     }
 
@@ -477,6 +479,13 @@ return (
           )}
         </div>
       </div>
+          {popup && (
+        <Popup
+          headline={popup.headline}
+          message={popup.message}
+          onDismiss={() => setPopup(null)}
+        />
+      )}
     </div>
   );
 }
