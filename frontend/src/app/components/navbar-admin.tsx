@@ -28,7 +28,7 @@ const NavbarAdmin = () => {
   const adminLinks = [
     { label: "Dashboard", path: "/advisor-dashboard" },
     { label: "Profile", path: "/userProfile" },
-    { label: "Create and View Groups", path: "/grouping" },
+    { label: "Manage Groups and Jobs", path: "/grouping" },
     { label: "Send Popups", path: "/sendpopups" },
     { label: "Candidate Offers", path: "/candidate-offers" },
     { label: "Upload Jobs and Resumes", path: "/new-pdf" },
