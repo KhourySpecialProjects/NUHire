@@ -313,7 +313,7 @@ const handleSubmit = async () => {
     );
   }
 
-  return (
+return (
   <div className="bg-northeasternWhite font-rubik">
     <div className="w-full p-4">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full">
