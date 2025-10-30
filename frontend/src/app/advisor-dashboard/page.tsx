@@ -1,10 +1,10 @@
 'use client'; //Declares that this page is a client component
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com"; // API base URL from environment variables
 import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
 import { useRouter } from "next/navigation"; // Importing useRouter for navigation
 import Link from "next/link"; // Importing Link for client-side navigation
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
-import { io } from "socket.io-client"; // Importing Socket.IO for real-time communication
 import Slideshow from "../components/slideshow"; // Importing slideshow component for background
 import { useSocket } from "../components/socketContext"; // Importing custom hook to use socket context
 

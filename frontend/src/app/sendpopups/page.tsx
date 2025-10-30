@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";

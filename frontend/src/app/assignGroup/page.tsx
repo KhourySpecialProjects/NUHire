@@ -1,11 +1,11 @@
 'use client';
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
-import io from "socket.io-client";
 import { useSocket } from "../components/socketContext";
 
 export default function AssignGroupPage() { 

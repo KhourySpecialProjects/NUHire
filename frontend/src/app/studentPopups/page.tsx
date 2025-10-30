@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSocket } from "../components/socketContext";

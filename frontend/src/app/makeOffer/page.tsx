@@ -1,4 +1,5 @@
 "use client"; // Declares that this page is a client component
+export const dynamic = "force-dynamic";
 import React, { useState, useEffect, use } from "react";// Importing React and hooks for state and effect management
 import { useSocket } from "../components/socketContext";
 import Navbar from "../components/navbar"; // Importing the navbar component

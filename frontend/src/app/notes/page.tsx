@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/navbar';
 import { useRouter } from 'next/navigation';
