@@ -56,7 +56,7 @@ export default function SignupDetails() {
     if (affiliation === 'student') {
       try {
         const emailRes = await fetch(
-          `${API_BASE_URL}/moderator-classes/${email}`,
+          `${API_BASE_URL}/moderator/classes/${email}`,
           { method: 'GET', credentials: 'include' }
         )
         if (!emailRes.ok) {
@@ -78,7 +78,7 @@ export default function SignupDetails() {
     if (affiliation === 'admin') {
       try {
         const res = await fetch(
-          `${API_BASE_URL}/moderator-classes/${email}`,
+          `${API_BASE_URL}/moderator/classes/${email}`,
           { method: 'GET', credentials: 'include' }
         )
         if (!res.ok) {
@@ -104,6 +104,8 @@ export default function SignupDetails() {
       Affiliation: affiliation,
     };
 
+    console.log('Submitting user:', user);
+
     try {
       const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
@@ -114,8 +116,8 @@ export default function SignupDetails() {
 
       if (response.ok) {
         setMessage('User added successfully!');
+        console.log('User added successfully:', user, 'redirecting to Keycloak...');
         setTimeout(() => {
-          // Redirect to Keycloak login flow again to set session
           window.location.href = `${API_BASE_URL}/auth/keycloak`;
         }, 1500);
       } else {

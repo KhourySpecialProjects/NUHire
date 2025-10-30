@@ -2,10 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +20,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-mysql-session": "^3.0.3",
-    "express-session": "^1.18.1",
+    "express-session": "^1.18.2",
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.2",
@@ -31,11 +33,18 @@
     "passport-oauth2": "^1.8.0",
     "passport-openidconnect": "^0.1.2",
     "socket": "^0.14.103",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
+    "@types/express-mysql-session": "^3.0.7",
+    "@types/express-session": "^1.18.2",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.13.10",
+    "@types/passport": "^1.0.17",
+    "@types/passport-local": "^1.0.38",
     "@types/socket.io": "^3.0.2"
   }
 }

@@ -28,7 +28,7 @@ const NavbarAdmin = () => {
   const adminLinks = [
     { label: "Dashboard", path: "/advisor-dashboard" },
     { label: "Profile", path: "/userProfile" },
-    { label: "Create and View Groups", path: "/grouping" },
+    { label: "Manage Groups and Jobs", path: "/grouping" },
     { label: "Send Popups", path: "/sendpopups" },
     { label: "Candidate Offers", path: "/candidate-offers" },
     { label: "Upload Jobs and Resumes", path: "/new-pdf" },
@@ -68,8 +68,8 @@ const NavbarAdmin = () => {
       </div>
       <div
         ref={dropdownRef}
-        className={`fixed top-0 left-0 z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-40 border-r-4 border-northeasternRed`}
-        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0', height: '440px', top: '0' }}
+        className={`fixed top-0 left-0 z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-auto min-w-max border-r-4 border-northeasternRed`}
+        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0', height: '400px', top: '0' }}
       >
         <div className="flex flex-col gap-2 pt-6 px-4">
           <div className="flex items-center justify-between mb-2">

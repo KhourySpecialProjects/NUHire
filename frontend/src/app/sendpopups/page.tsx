@@ -1,15 +1,16 @@
 "use client";
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
-import { io } from "socket.io-client";
 import Popup from "../components/popup";
 import AdminReactionPopup from "../components/adminReactionPopup";
-
-const socket = io(API_BASE_URL); 
+import { useSocket } from "../components/socketContext";
 
 const SendPopups = () => {
+  const socket = useSocket(); 
+
   interface User {
     affiliation: string;
     email: string;
@@ -37,7 +38,7 @@ const SendPopups = () => {
   }
     
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-    const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
+    const [user, setUser] = useState<{ affiliation: string; email?: string; class:number } | null>(null);
     const [loading, setLoading] = useState(true);
     const [groups, setGroups] = useState<Record<string, any>>({});
     const [selectedGroup, setSelectedGroup] = useState<string>(""); // Changed from selectedGroups array to single group
@@ -128,6 +129,7 @@ const SendPopups = () => {
         try {
           const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
           const userData = await response.json();
+          console.log("Fetched user data:", userData);
 
           if (response.ok) {
             setUser(userData);
@@ -157,15 +159,15 @@ const SendPopups = () => {
       let url;
       if (selectedGroup) {
         // Fetch candidates being interviewed by selected group
-        url = `${API_BASE_URL}/candidates-by-groups/${selectedClass}/${selectedGroup}`;
+        url = `${API_BASE_URL}/candidates/by-groups/${selectedClass}/${selectedGroup}`;
       } else {
         // Fallback to all candidates in class (for non-preset popups)
-        url = `${API_BASE_URL}/candidates-by-class/${selectedClass}`;
+        url = `${API_BASE_URL}/candidates/by-class/${selectedClass}`;
       }
       
       console.log("Fetching candidates from:", url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
       if (response.ok) {
         const candidatesData = await response.json();
         
@@ -199,7 +201,7 @@ const SendPopups = () => {
         if (user?.email && user.affiliation === "admin") {
           try {
             // First get the assigned class IDs
-            const response = await fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`);
+            const response = await fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`, { credentials: "include" });
             if (!response.ok) {
               throw new Error(`Error: ${response.status}`);
             }
@@ -212,7 +214,7 @@ const SendPopups = () => {
             setAssignedClassIds(classIds);
             setClasses(data.map((item: ModeratorClass) => ({
               id: item.crn,
-              name: `CRN ${item.crn} - (${item.nom_groups} groups)`
+              name: `CRN ${item.crn}`
             })));
             console.log("Classes set:", classes);
           } catch (error) {
@@ -229,13 +231,14 @@ const SendPopups = () => {
           
           try {
               // Fetch students instead of groups, then group them by group_id
-              const response = await fetch(`${API_BASE_URL}/students?class=${selectedClass}`);
+              console.log("Fetching students for class:", selectedClass);
+              const response = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, { credentials: "include" });
               const studentsData = await response.json();
-              
+              console.log(studentsData);
               // Group students by their group_id
               const groupedData: Record<string, any[]> = {};
               
-              studentsData.forEach((student: any) => {
+              studentsData.map((student: any) => {
                   if (student.group_id) {
                       const groupId = student.group_id.toString();
                       if (!groupedData[groupId]) {
@@ -315,31 +318,18 @@ const SendPopups = () => {
     }
   };
 
-  const respondToOffer = (
-    classId: number,
-    groupId: number,
-    candidateId: number,
-    accepted: boolean
-  ) => {
-    socket.emit("makeOfferResponse", {
-      classId,
-      groupId,
-      candidateId,
-      accepted,
-    });
-    setPendingOffers((prev) =>
-      prev.filter((o) => o.classId != classId || o.groupId !== groupId || o.candidateId !== candidateId)
-    );
-  };
-
   const sendPopups = async () => {
-  if (!headline || !message || !selectedGroup) {
-    setPopup({ headline: "Error", message: "Please fill in all fields and select a group." });
-    return;
-  }
+    if (!headline || !message || !selectedGroup) {
+      setPopup({ headline: "Error", message: "Please fill in all fields and select a group." });
+      return;
+    }
 
-  // Add validation for preset candidate selection
-  const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
+    if (!socket) {
+      setPopup({ headline: "Error", message: "Socket not connected. Please refresh the page." });
+      return;
+    }
+
+    const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
     if (selectedPresetData) {
       if (!selectedCandidate) {
         setPopup({ headline: "Error", message: "Please select a candidate for this preset popup." });
@@ -370,10 +360,10 @@ const SendPopups = () => {
           return;
         }
 
-        console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData)
+        console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData);
         
         if (selectedPresetData.vote) {
-          console.log("emitting updateRatingsWithPreset")
+          console.log("emitting updateRatingsWithPreset");
           socket.emit("updateRatingsWithPresetBackend", {
             classId: selectedClass,
             groupId: selectedGroup,
@@ -393,7 +383,7 @@ const SendPopups = () => {
           message,
           class: selectedClass, 
           candidateId: selectedCandidate,
-          candidateName: candidateName, // Send the candidate name instead of just ID
+          candidateName: candidateName,
         });
 
         setPopup({ 
@@ -566,17 +556,6 @@ const SendPopups = () => {
             key={`offer-${classId}-${groupId}-${candidateId}`}
             className="mt-6 p-4 bg-springWater rounded-md shadow-md max-w-md mx-auto"
           >
-            <AdminReactionPopup
-              headline={`Group ${groupId} from Class ${classId} wants to offer Candidate ${candidateId}`}
-              message="Do you approve?"
-              onAccept={() => 
-                respondToOffer(classId, groupId, candidateId, true)
-              }
-              onReject={() => 
-                respondToOffer(classId, groupId, candidateId, false)
-              }
-        
-            />
           </div>
         ))}
 

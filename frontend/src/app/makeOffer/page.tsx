@@ -1,6 +1,7 @@
 "use client"; // Declares that this page is a client component
+export const dynamic = "force-dynamic";
 import React, { useState, useEffect, use } from "react";// Importing React and hooks for state and effect management
-import { io, Socket } from "socket.io-client"; // Importing socket.io for real-time communication
+import { useSocket } from "../components/socketContext";
 import Navbar from "../components/navbar"; // Importing the navbar component
 import { usePathname, useRouter } from "next/navigation"; // Importing useRouter and usePathname for navigation
 import { useProgress } from "../components/useProgress"; // Custom hook for progress tracking
@@ -13,8 +14,6 @@ import { useProgressManager } from "../components/progress";
 
 // Define the API base URL from environment variables
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-const SOCKET_URL = `${API_BASE_URL}`;
-let socket: Socket | null = null;
 
 // Define the VoteData interface to match the expected vote data structure
 type VoteData = {
@@ -50,6 +49,7 @@ interface Offer {
 // Main component for the MakeOffer page
 export default function MakeOffer() {
   useProgress();
+  const socket = useSocket();
   const router = useRouter();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(
@@ -96,7 +96,7 @@ export default function MakeOffer() {
     
     try {
       const response = await fetch(
-        `${API_BASE_URL}/offers/group/${user.group_id}/class/${user.class}`
+        `${API_BASE_URL}/offers/group/${user.group_id}/class/${user.class}`, {credentials: "include"}
       );
       
       if (response.ok) {
@@ -140,7 +140,8 @@ export default function MakeOffer() {
   };
 
   useEffect(() => {
-  }, [ableToMakeOffer]);
+    console.log("Vote counts updated:", voteCounts);
+  }, [voteCounts]);
 
   useEffect(() => {
     if (user?.group_id && user?.class) {
@@ -154,7 +155,7 @@ export default function MakeOffer() {
     const fetchPopupVotes = async () => {
       try {
         const promises = candidates.map(candidate => 
-          fetch(`${API_BASE_URL}/interview-popup/${candidate.resume_id}/${user.group_id}/${user.class}`)
+          fetch(`${API_BASE_URL}/interview/popup/${candidate.resume_id}/${user.group_id}/${user.class}`, {credentials: "include"})
             .then(res => res.json())
         );
         
@@ -209,10 +210,10 @@ export default function MakeOffer() {
       // Update current page in database
       const updateCurrentPage = async () => {
         try {
-          await axios.post(`${API_BASE_URL}/update-currentpage`, {
+          await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
             page: "makeofferpage",
             user_email: user.email,
-          });
+          }, { withCredentials: true });
         } catch (error) {
           console.error("Error updating current page:", error);
         }
@@ -228,7 +229,7 @@ export default function MakeOffer() {
     const fetchInterviews = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/interview/group/${user.group_id}?class=${user.class}`
+          `${API_BASE_URL}/interview/group/${user.group_id}?class=${user.class}` , {credentials: "include"}
         );
         const data = await response.json();
 
@@ -241,8 +242,13 @@ export default function MakeOffer() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        const response = await axios.get(`${API_BASE_URL}/group-size/${user.group_id}`);
-        setGroupSize(response.data.count);
+        console.log("insize size", user)
+        const response = await fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" });
+        if (response.ok) {
+          const data = await response.json();
+          setGroupSize(data.count);
+          console.log("Fetched group size:", data.count);
+        }
       } catch (err) {
         console.error("Failed to fetch group size:", err);
       }
@@ -262,10 +268,10 @@ export default function MakeOffer() {
         const fetchedCandidates = await Promise.all(
           interviews.map(async (interview, index) => {
             const id = interview.candidate_id;
-            const url = `${API_BASE_URL}/canidates/resume/${id}`;
+            const url = `${API_BASE_URL}/candidates/resume/${id}`;
           
             try {
-              const res = await fetch(url);
+              const res = await fetch(url, {credentials: "include"});
 
               if (!res.ok) {
                 console.error(`  ❌ Invalid response for candidate ${id}:`, {
@@ -349,7 +355,7 @@ export default function MakeOffer() {
         const fetchedResumes = await Promise.all(
           candidates.map(async (candidate) => {
             const id = candidate.resume_id;
-            const res = await fetch(`${API_BASE_URL}/resume_pdf/id/${id}`);
+            const res = await fetch(`${API_BASE_URL}/resume_pdf/id/${id}`, {credentials: "include"});
 
             if (!res.ok) {
               throw new Error(
@@ -458,120 +464,154 @@ export default function MakeOffer() {
 
   // Setup socket.io
   useEffect(() => {
-    if (!user || socket) return;
+    if (!socket || !user) return;
 
-    socket = io(SOCKET_URL, {
-      reconnectionAttempts: 5,
-      timeout: 5000,
-    });
+    setIsConnected(socket.connected); // Set initial connection state
 
-    socket.on("connect", () => {
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+
+    // Emit join group
+    if (socket.connected) {
+      socket.emit("joinGroup", roomId);
+    }
+
+    // Define handlers
+    const handleConnect = () => {
       setIsConnected(true);
-      socket?.emit("joinGroup", `group_${user.group_id}_class_${user.class}`);
-    });
+      socket.emit("joinGroup", roomId);
+    };
 
-    socket.on("disconnect", () => {
+    const handleDisconnect = () => {
       setIsConnected(false);
-    });
+    };
 
-    socket.on("groupMemberOffer", () => {
+    const handleGroupMemberOffer = () => {
       setPopup({
         headline: "Offer submitted",
         message: "Awaiting approval from your advisor…",
       });
       setOfferPending(true);
+    };
+
+  const handleConfirmOffer = (candidateId: number) => {
+      if (!socket || !user || !candidateId) return;
+      
+      // Check if there's already an offer
+      if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
+        let message = "";
+        if (existingOffer.status === 'pending') {
+          message = "You already have a pending offer awaiting advisor approval.";
+        } else if (existingOffer.status === 'accepted') {
+          message = "You already have an accepted offer. You cannot make another offer.";
+        }
+        
+        setPopup({
+          headline: "Offer Already Exists",
+          message: message
+        });
+        return;
+      }
+      
+    // First update local state immediately
+    setOfferConfirmations(prev => {
+      const currentConfirmations = prev[candidateId] || [];
+      if (!currentConfirmations.includes(user.id)) {
+        return {
+          ...prev,
+          [candidateId]: [...currentConfirmations, user.id]
+        };
+      }
+      return prev;
     });
 
-    socket.on("confirmOffer", ({ candidateId, studentId, groupId, classId }) => {
-    // Only process if it's for our group and class
-    if (groupId === user.group_id && classId === user.class) {
-      setOfferConfirmations(prev => {
-        const currentConfirmations = prev[candidateId] || [];
-        if (!currentConfirmations.includes(studentId)) {
-          return {
-            ...prev,
-            [candidateId]: [...currentConfirmations, studentId]
-          };
-        }
-        return prev;
-      });
-    }
-  });
+    // Then emit to other users in the room
+    socket.emit("confirmOffer", {
+      groupId: user.group_id,
+      classId: user.class,
+      candidateId,
+      studentId: user.id,
+      roomId: `group_${user.group_id}_class_${user.class}`
+    });
+  };
 
-    // Listens to Advisor's response
-    socket.on(
-      "makeOfferResponse",
-      ({
-        classId,
-        groupId,
-        candidateId,
-        accepted,
-      }: {
-        classId: number;
-        groupId: number;
-        candidateId: number;
-        accepted: boolean;
-      }) => {
-
-        checkExistingOffer();
-
-        if(classId !== user.class) {
-          return
-        }
-        if(groupId !== user.group_id) {
-          return
-        }
-        if (accepted) {
-          setPopup({
-            headline: "Offer accepted!",
-            message: "Congratulations—you've extended the offer successfully.",
-          });
-          setSentIn((prev) => {
-            const newSentIn = [...prev];
-            newSentIn[candidateId] = true; 
-            return newSentIn;
-          })
-
-          setAcceptedOffer(true);
-          setExistingOffer(prev => prev ? {...prev, status: 'accepted'} : null);
-        } else {
-          setPopup({
-            headline: "Offer rejected",
-            message:
-              "That candidate wasn't available or has chosen another offer. Please choose again.",
-          });
-
-          setCheckedState({});
-          setSentIn((prev) => {
-            const newSentIn = [...prev];
-            newSentIn[candidateId] = false; 
-            return newSentIn;
-          })
-
-          setOfferPending(false);
-          setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : null);
-          setAbleToMakeOffer(true);
-        }
+    const handleMakeOfferResponse = ({
+      classId,
+      groupId,
+      candidateId,
+      accepted,
+    }: {
+      classId: number;
+      groupId: number;
+      candidateId: number;
+      accepted: boolean;
+    }) => {
+      // Only process if it's for our group and class
+      if (classId !== user.class || groupId !== user.group_id) {
+        return;
       }
-    );
 
-    socket.on(
-      "checkboxUpdated",
-      ({
-        interview_number,
-        checked,
-      }: {
-        interview_number: number;
-        checked: boolean;
-      }) => {
-        setCheckedState((prev) => ({ ...prev, [interview_number]: checked }));
+      checkExistingOffer();
+
+      if (accepted) {
+        setPopup({
+          headline: "Offer accepted!",
+          message: "Congratulations—you've extended the offer successfully.",
+        });
+        setSentIn((prev) => {
+          const newSentIn = [...prev];
+          newSentIn[candidateId] = true; 
+          return newSentIn;
+        });
+
+        setAcceptedOffer(true);
+        setExistingOffer(prev => prev ? {...prev, status: 'accepted'} : null);
+      } else {
+        setPopup({
+          headline: "Offer rejected",
+          message: "That candidate wasn't available or has chosen another offer. Please choose again.",
+        });
+
+        setCheckedState({});
+        setSentIn((prev) => {
+          const newSentIn = [...prev];
+          newSentIn[candidateId] = false; 
+          return newSentIn;
+        });
+
+        setOfferPending(false);
+        setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : null);
+        setAbleToMakeOffer(true);
       }
-    );
-
-    return () => {
-      socket?.disconnect();
     };
-  }, [user]);
+
+    const handleCheckboxUpdated = ({
+      interview_number,
+      checked,
+    }: {
+      interview_number: number;
+      checked: boolean;
+    }) => {
+      setCheckedState((prev) => ({ ...prev, [interview_number]: checked }));
+    };
+
+    // Register listeners
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("groupMemberOffer", handleGroupMemberOffer);
+    socket.on("confirmOffer", handleConfirmOffer);
+    socket.on("makeOfferResponse", handleMakeOfferResponse);
+    socket.on("checkboxUpdated", handleCheckboxUpdated);
+
+    // Cleanup
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("groupMemberOffer", handleGroupMemberOffer);
+      socket.off("confirmOffer", handleConfirmOffer);
+      socket.off("makeOfferResponse", handleMakeOfferResponse);
+      socket.off("checkboxUpdated", handleCheckboxUpdated);
+    };
+  }, [socket, user, checkExistingOffer]);
 
   const handleCheckboxChange = (interviewNumber: number) => {
     if (!socket || !isConnected) return;
@@ -677,7 +717,8 @@ export default function MakeOffer() {
           class_id: user!.class,
           candidate_id: candidateId,
           status: `pending`,
-        })
+        }),
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -844,40 +885,32 @@ export default function MakeOffer() {
 
                 <div className="mt-2 space-y-1 text-navy text-sm">
                 <p>
-                    <span className="font-medium">Overall:</span> {
-                    (() => {
-                        const totalVotes = (votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                  <span className="font-medium">Overall:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 <p>
-                    <span className="font-medium">Professional Presence:</span> {
-                    (() => {
-                        const totalVotes = (votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                   <span className="font-medium">Professional Pressence:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 <p>
-                    <span className="font-medium">Quality of Answer:</span> {
-                    (() => {
-                        const totalVotes = (votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                  <span className="font-medium">Quality of Answer:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 <p>
-                    <span className="font-medium">Personality:</span> {
-                    (() => {
-                        const totalVotes = (votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0);
-                        if (totalVotes <= -1000) return "No Show";
-                        return Math.max(0, totalVotes / groupSize).toFixed(1);
-                    })()
-                    }
+                  <span className="font-medium">Personality:</span> {
+                    groupSize > 0
+                      ? (Math.max(0, ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize).toFixed(1))
+                      : "N/A"
+                  }
                 </p>
                 </div>
 

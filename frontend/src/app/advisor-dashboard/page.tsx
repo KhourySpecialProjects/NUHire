@@ -1,11 +1,12 @@
 'use client'; //Declares that this page is a client component
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com"; // API base URL from environment variables
 import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
 import { useRouter } from "next/navigation"; // Importing useRouter for navigation
 import Link from "next/link"; // Importing Link for client-side navigation
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
-import { io } from "socket.io-client"; // Importing Socket.IO for real-time communication
 import Slideshow from "../components/slideshow"; // Importing slideshow component for background
+import { useSocket } from "../components/socketContext"; // Importing custom hook to use socket context
 
 const Dashboard = () => {
 
@@ -21,8 +22,8 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const socket = useSocket();
 
-  const socket = io(API_BASE_URL);
 
   // Fetch user data from the API when the component mounts
   // and handle redirection if the user is not an admin
@@ -50,7 +51,19 @@ const Dashboard = () => {
     fetchUser();
   }, [router]);
 
-  socket.emit("adminOnline", { adminEmail: user?.email });
+
+  // Socket connection - only run when both socket AND user are ready
+  useEffect(() => {
+    if (!socket || !user?.email) return; // ✅ Check both socket and user
+
+    console.log('Admin coming online:', user.email); // Debug log
+    socket.emit("adminOnline", { adminEmail: user.email });
+
+    return () => {
+      console.log('Admin going offline:', user.email); // Debug log
+      socket.emit("adminOffline", { adminEmail: user.email });
+    };
+  }, [socket, user?.email]);
 
   if (loading) {
     return (
@@ -91,7 +104,7 @@ const Dashboard = () => {
               className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
             >
               <span className="text-4xl mb-2">👥</span>
-              <span>Create and View Groups</span>
+              <span>Manage Groups and Jobs</span>
             </Link>
             <Link
               href="/sendpopups"
@@ -113,20 +126,6 @@ const Dashboard = () => {
             >
               <span className="text-4xl mb-2">📤</span>
               <span>Upload Job and Resumes</span>
-            </Link>
-            <Link
-              href="/studentCSV"
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
-            >
-              <span className="text-4xl mb-2">📄</span>
-              <span>Student Upload</span>
-            </Link>
-            <Link
-              href="/manageGroups"
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-48 h-48"
-            >
-              <span className="text-4xl mb-2">📚</span>
-              <span>Manage Groups</span>
             </Link>
           </div>
       </main>

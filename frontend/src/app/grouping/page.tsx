@@ -3,9 +3,10 @@ const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
-import { io } from "socket.io-client";
 import Tabs from "../components/tabs";
 import Popup from "../components/popup";
+import { StudentCSVTab } from "../components/StudentCSVTab";
+import { ManageGroupsTab } from "../components/ManageGroupsTab";
 
 const Grouping = () => {
   interface Student {
@@ -29,7 +30,6 @@ const Grouping = () => {
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const router = useRouter();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-  const [donePopup, setDonePopup] = useState(false);
   
   // Delete confirmation popup state
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -57,82 +57,7 @@ const Grouping = () => {
   const [jobGroups, setJobGroups] = useState<string[]>([]);
   const [selectedJobClass, setSelectedJobClass] = useState("");
   const [selectedJobGroup, setSelectedJobGroup] = useState("");
-  const [job_group_id, setGroupIdJob] = useState("");
-   
-  const [groupsTabClass, setGroupsTabClass] = useState("");
-  const [groupsTabGroups, setGroupsTabGroups] = useState<{ [key: string]: any }>({});
-  const [groupsTabStudents, setGroupsTabStudents] = useState<Student[]>([]);
-
-  // Function to refresh groups tab students
-  const refreshGroupsTabStudents = () => {
-    if (groupsTabClass) {
-      fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
-        .then(res => res.json())
-        .then(setGroupsTabStudents)
-        .catch(err => {
-          console.error("Students API error:", err);
-        });
-    }
-  };
-
-  // Delete student function
-  const handleDeleteStudent = async (studentEmail: string, studentName: string, classId: string) => {
-    setDeleteConfirmation({
-      show: true,
-      studentEmail,
-      studentName,
-      classId
-    });
-  };
-
-  const confirmDeleteStudent = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/teacher/del-student`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: deleteConfirmation.studentEmail
-        }),
-      });
-
-      if (response.ok) {
-        setPopup({ 
-          headline: "Success", 
-          message: `${deleteConfirmation.studentName} has been removed from the class successfully!` 
-        });
-        // Refresh the students list
-        refreshGroupsTabStudents();
-      } else {
-        setPopup({ 
-          headline: "Error", 
-          message: "Failed to remove student from class." 
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting student:', error);
-      setPopup({ 
-        headline: "Error", 
-        message: "Failed to remove student from class." 
-      });
-    } finally {
-      // Close the confirmation popup
-      setDeleteConfirmation({
-        show: false,
-        studentEmail: '',
-        studentName: '',
-        classId: ''
-      });
-    }
-  };
-
-  const cancelDeleteStudent = () => {
-    setDeleteConfirmation({
-      show: false,
-      studentEmail: '',
-      studentName: '',
-      classId: ''
-    });
-  };
+  const [job_group_id, setGroupIdJob] = useState("");;
  
   // Fetch user
   useEffect(() => {
@@ -154,7 +79,7 @@ const Grouping = () => {
   // Fetch assigned classes
   useEffect(() => {
     if (user?.email && user.affiliation === "admin") {
-      fetch(`${API_BASE_URL}/moderator-classes-full/${user.email}`)
+      fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`, { credentials: "include" })
         .then(res => res.json())
         .then((data) => {
           setAssignedClassIds(data.map((item: any) => String(item.crn)));
@@ -169,13 +94,13 @@ const Grouping = () => {
   // Tab 1: Fetch groups and students for selected class
   useEffect(() => {
     if (selectedClass) {
-      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(data => {
           const stringJobGroups = Array.isArray(data) ? data.map(String) : [];
           setGroups(stringJobGroups);
         });
-      fetch(`${API_BASE_URL}/students?class=${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups-by-class/${selectedClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(setStudents);
     }
@@ -184,7 +109,7 @@ const Grouping = () => {
   // Tab 2: Fetch job groups for selected job class
   useEffect(() => {
     if (selectedJobClass) {      
-      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`, { credentials: "include" })
         .then(res => {
           return res.json();
         })
@@ -198,38 +123,9 @@ const Grouping = () => {
     }
   }, [selectedJobClass]);
 
- useEffect(() => {
-  if (groupsTabClass) {
-    fetch(`${API_BASE_URL}/groups?class=${groupsTabClass}`)
-      .then(res => {
-        return res.json();
-      })
-      .then(data => {
-        setGroupsTabGroups(data);
-      })
-      .catch(err => {
-        console.error("Groups API error:", err);
-      });
-      
-    fetch(`${API_BASE_URL}/students?class=${groupsTabClass}`)
-      .then(res => {
-        return res.json();
-      })
-      .then(data2 => {
-        setGroupsTabStudents(data2);
-      })
-      .catch(err => {
-        console.error("Students API error:", err);
-      });
-  } else {
-    setGroupsTabGroups({});
-    setGroupsTabStudents([]);
-  }
-}, [groupsTabClass]);
-
   // Fetch jobs
   useEffect(() => {
-    fetch(`${API_BASE_URL}/jobs`)
+    fetch(`${API_BASE_URL}/jobs`, { credentials: "include" })
       .then(res => res.json())
       .then(setJobs);
   }, []);
@@ -296,11 +192,6 @@ const Grouping = () => {
     setSelectedJobs(selectedJobs.filter(job => job.title !== title));
   };
 
-  // Handlers for Tab 3
-  const handleGroupsTabClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setGroupsTabClass(e.target.value);
-  };
-
   // Assign group (Tab 1)
   const handleAssignGroup = async () => {
     if (!group_id || selectedStudents.length === 0 || !selectedClass) {
@@ -311,7 +202,7 @@ const Grouping = () => {
       setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
       return;
     }
-    const response = await fetch(`${API_BASE_URL}/update-group`, {
+    const response = await fetch(`${API_BASE_URL}/groups/update-group`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -319,12 +210,13 @@ const Grouping = () => {
         class_id: selectedClass,
         students: selectedStudents.map(student => student.email)
       }),
+      credentials: "include"
     });
     if (response.ok) {
       setPopup({ headline: "Success", message: "Students assigned to group successfully!" });
       setSelectedStudents([]);
       setGroupId("");
-      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(setGroups);
     } else {
@@ -342,7 +234,7 @@ const Grouping = () => {
       setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
       return;
     }
-    const response = await fetch(`${API_BASE_URL}/update-job`, {
+    const response = await fetch(`${API_BASE_URL}/jobs/update-job`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -350,12 +242,13 @@ const Grouping = () => {
         class_id: selectedJobClass,
         job: selectedJobs.map(job => job.title)
       }),
+      credentials: "include"
     });
     if (response.ok) {
       setPopup({ headline: "Success", message: "Job assigned to group successfully!" });
       setSelectedJobs([]);
       setGroupIdJob("");
-      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`)
+      fetch(`${API_BASE_URL}/groups?class=${selectedJobClass}`, { credentials: "include" })
         .then(res => res.json())
         .then(setJobGroups);
     } else {
@@ -381,8 +274,19 @@ const Grouping = () => {
   return (
     <div className="flex flex-col h-screen bg-sand font-rubik">
       <NavbarAdmin />
-      <div className="flex-1 p-4 overflow-hidden">
+      <div className="flex-1 p-4 overflow-hidden flex flex-col">
         <Tabs>
+          <div title="Manage Groups">
+            <div className="w-full max-h-[calc(100vh-200px)] overflow-y-auto border-4 border-northeasternBlack rounded-lg">
+              <ManageGroupsTab />
+            </div>
+          </div>
+
+          <div title="CSV Group Assignment">
+            <div className="w-full max-h-[calc(100vh-200px)] overflow-y-auto border-4 border-northeasternBlack rounded-lg">
+              <StudentCSVTab />
+            </div>
+          </div>
           {/* Tab: Job Assignment */}
           <div title="Job Assignment">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[80vh]">
@@ -494,149 +398,9 @@ const Grouping = () => {
             </div>
           </div>
 
-          {/* Tab: Class & Student Assignment */}
-          <div title="Class & Student Assignment">
-            {/* FIXED: Remove width constraints and make full width */}
-            <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[80vh]">
-              <h2 className="text-2xl font-bold text-northeasternRed mb-4">Class & Student Assignment</h2>
-              
-              {/* FIXED: Create a responsive grid layout for the form */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                {/* Class Selection */}
-                <div>
-                  <label className="block text-navy font-semibold mb-2">
-                    Your Assigned Classes
-                  </label>
-                  <select
-                    value={selectedClass}
-                    onChange={handleClassChange}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a class</option>
-                    {classes.map(classItem => (
-                      <option key={classItem.id} value={classItem.id}>
-                        {classItem.name}
-                      </option>
-                    ))}
-                  </select>
-                  {classes.length === 0 && (
-                    <p className="text-red-500 text-sm mt-1">
-                      You have no assigned classes. Please contact the administrator.
-                    </p>
-                  )}
-                </div>
-
-                {/* Group Selection */}
-                <div>
-                  <label className="block text-navy font-semibold mb-2">
-                    Select Group
-                  </label>
-                  <select
-                    value={selectedGroup}
-                    onChange={handleGroupChange}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a group</option>
-                    {Array.isArray(groups) && groups.map((groupId) => (
-                      <option key={groupId} value={groupId}>  
-                        Group {groupId}
-                      </option>
-                    ))}
-                  </select>
-                  {groups && groups.length === 0 && (
-                    <p className="text-red-500 text-sm mt-1">
-                      No groups available in this class.
-                    </p>
-                  )}
-                </div>
-
-                {/* Student Selection */}
-                <div>
-                  <label className="block text-navy font-semibold mb-2">
-                    Select Students
-                  </label>
-                  <select
-                    onChange={handleStudentSelection}
-                    className="w-full p-3 border border-wood bg-springWater rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a student</option>
-                    {students.map(student => (
-                      <option key={student.email} value={student.email}>
-                        {student.f_name} {student.l_name} ({student.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Selected Students Display */}
-              <div className="mb-6">
-                <label className="block text-navy font-semibold mb-3">
-                  Selected Students
-                </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {selectedStudents.length === 0 ? (
-                    <p className="text-gray-500 italic p-4 text-center border-2 border-dashed border-gray-300 rounded-lg">
-                      No students selected
-                    </p>
-                  ) : (
-                    selectedStudents.map(student => (
-                      <div key={student.email} className="flex items-center justify-between p-3 bg-springWater rounded-md border border-wood">
-                        <span className="text-navy font-medium">
-                          {student.f_name} {student.l_name} ({student.email})
-                        </span>
-                        <button
-                          onClick={() => handleRemoveStudent(student.email)}
-                          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-center">
-                <button
-                  onClick={handleAssignGroup}
-                  className="bg-northeasternRed text-white px-8 py-3 rounded-lg font-bold hover:bg-navy transition-colors text-lg"
-                >
-                  Assign Students to Group
-                </button>
-              </div>
-            </div>
-          </div>
         </Tabs>
       </div>
       
-      {/* Keep your existing popups unchanged */}
-      {deleteConfirmation.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-red-600 mb-4">Confirm Deletion</h3>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to remove <strong>{deleteConfirmation.studentName}</strong> from this class? 
-              This action cannot be undone.
-            </p>
-            <div className="flex space-x-4 justify-end">
-              <button
-                onClick={cancelDeleteStudent}
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-md font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteStudent}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md font-medium transition-colors"
-              >
-                Delete Student
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       
       {popup && (
         <Popup

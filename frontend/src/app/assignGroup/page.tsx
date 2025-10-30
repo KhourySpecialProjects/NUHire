@@ -1,11 +1,12 @@
 'use client';
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
-import io from "socket.io-client";
+import { useSocket } from "../components/socketContext";
 
 export default function AssignGroupPage() { 
   interface User {
@@ -40,7 +41,8 @@ export default function AssignGroupPage() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [joining, setJoining] = useState<number | null>(null);
   const router = useRouter();
-  const [socketConnected, setSocketConnected] = useState(false); 
+  const socket = useSocket();
+
   // Fetch user information
   useEffect(() => {
     const fetchUser = async () => {
@@ -78,7 +80,7 @@ export default function AssignGroupPage() {
         console.log("Fetching group slots for class:", user.class); // DEBUG
 
         // FIXED: Use the existing group-slots endpoint
-        const groupSlotsResponse = await fetch(`${API_BASE_URL}/group-slots/${user.class}`);
+        const groupSlotsResponse = await fetch(`${API_BASE_URL}/groups/${user.class}`);
         if (groupSlotsResponse.ok) {
           const groupSlotsData = await groupSlotsResponse.json();
           console.log("Group slots data:", groupSlotsData); // DEBUG
@@ -92,7 +94,7 @@ export default function AssignGroupPage() {
         }
 
         // Fetch class information
-        const classResponse = await fetch(`${API_BASE_URL}/class-info/${user.class}`);
+        const classResponse = await fetch(`${API_BASE_URL}/groups/class-info/${user.class}`);
         if (classResponse.ok) {
           const classData = await classResponse.json();
           console.log("Class info data:", classData); // DEBUG
@@ -117,41 +119,29 @@ export default function AssignGroupPage() {
     }
   }, [user]);
 
-    useEffect(() => {
-    if (!user?.class) {
-      return;
-    }
+  useEffect(() => {
+    if (!socket || !user?.class) return;
 
-    const socket = io(API_BASE_URL);
-
-    socket.on('connect', () => {
-      setSocketConnected(true);
-      
-      socket.emit('joinClass', { 
-        classId: user.class,
-      });
-    });
-
-    socket.on("studentJoinedGroup", ({class_id}) => {
+    const handleStudentJoinedGroup = ({ class_id }: { class_id: number }) => {
       console.log("Received studentJoinedGroup event:", { class_id });
       if (user?.class === class_id) {
         fetchGroupSlots();
       }
-    });
-
-    socket.on('disconnect', () => {
-      setSocketConnected(false);
-    });
-
-    socket.on('connect_error', (error) => {
-      setSocketConnected(false);
-    });
-
-    return () => {
-      socket.disconnect();
     };
-  }, [user, router]);
 
+    // Emit join event
+    socket.emit('joinClass', { 
+      classId: user.class,
+    });
+
+    // Register listener
+    socket.on("studentJoinedGroup", handleStudentJoinedGroup);
+
+    // Cleanup
+    return () => {
+      socket.off("studentJoinedGroup", handleStudentJoinedGroup);
+    };
+  }, [socket, user?.class]);
 
   const joinGroup = async (groupId: number) => {
     if (!user) return;
@@ -159,7 +149,7 @@ export default function AssignGroupPage() {
     setJoining(groupId);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/student/join-group`, {
+      const response = await fetch(`${API_BASE_URL}/groups/join-group`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -27,7 +27,8 @@ const ModDashboard = () => {
   useEffect(() => {
     const fetchCRNs = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/moderator-crns`);
+        console.log("Fetching CRNs from API line 30");
+        const response = await fetch(`${API_BASE_URL}/moderator/crns`);
         if (response.ok) {
           const data = await response.json();
           setInfo(data);
@@ -51,7 +52,8 @@ const ModDashboard = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/moderator-crns`, {
+      console.log("Submitting form on line 54:", form);
+      const res = await fetch(`${API_BASE_URL}/moderator/crns`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -82,7 +84,7 @@ const ModDashboard = () => {
     if (!window.confirm("Are you sure you want to delete this CRN?")) return;
     setDeletingCRN(crn);
     try {
-      const res = await fetch(`${API_BASE_URL}/moderator-crns/${crn}`, {
+      const res = await fetch(`${API_BASE_URL}/moderator/crns/${crn}`, {
         method: "DELETE",
         credentials: "include",
       });
