@@ -6,6 +6,7 @@ import Image from "next/image";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
 import io from "socket.io-client";
+import { useSocket } from "../components/socketContext";
 
 export default function AssignGroupPage() { 
   interface User {
@@ -40,7 +41,8 @@ export default function AssignGroupPage() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [joining, setJoining] = useState<number | null>(null);
   const router = useRouter();
-  const [socketConnected, setSocketConnected] = useState(false); 
+  const socket = useSocket();
+
   // Fetch user information
   useEffect(() => {
     const fetchUser = async () => {
@@ -117,41 +119,29 @@ export default function AssignGroupPage() {
     }
   }, [user]);
 
-    useEffect(() => {
-    if (!user?.class) {
-      return;
-    }
+  useEffect(() => {
+    if (!socket || !user?.class) return;
 
-    const socket = io(API_BASE_URL);
-
-    socket.on('connect', () => {
-      setSocketConnected(true);
-      
-      socket.emit('joinClass', { 
-        classId: user.class,
-      });
-    });
-
-    socket.on("studentJoinedGroup", ({class_id}) => {
+    const handleStudentJoinedGroup = ({ class_id }: { class_id: number }) => {
       console.log("Received studentJoinedGroup event:", { class_id });
       if (user?.class === class_id) {
         fetchGroupSlots();
       }
-    });
-
-    socket.on('disconnect', () => {
-      setSocketConnected(false);
-    });
-
-    socket.on('connect_error', (error) => {
-      setSocketConnected(false);
-    });
-
-    return () => {
-      socket.disconnect();
     };
-  }, [user, router]);
 
+    // Emit join event
+    socket.emit('joinClass', { 
+      classId: user.class,
+    });
+
+    // Register listener
+    socket.on("studentJoinedGroup", handleStudentJoinedGroup);
+
+    // Cleanup
+    return () => {
+      socket.off("studentJoinedGroup", handleStudentJoinedGroup);
+    };
+  }, [socket, user?.class]);
 
   const joinGroup = async (groupId: number) => {
     if (!user) return;

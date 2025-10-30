@@ -6,7 +6,7 @@ import Instructions from "../components/instructions";
 import { useProgress } from "../components/useProgress";
 import Footer from "../components/footer";
 import { usePathname } from "next/navigation";
-import { io } from "socket.io-client";
+import { useSocket } from "../components/socketContext"; 
 import RatingSlider from "../components/ratingSlider";
 import Popup from "../components/popup";
 import axios from "axios";
@@ -16,7 +16,7 @@ import { useProgressManager } from "../components/progress";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 // Initialize socket only after API_BASE_URL is defined
-const socket = io(API_BASE_URL);
+const socket = useSocket();
 
 interface User {
   id: string;
@@ -113,23 +113,6 @@ export default function Interview() {
     console.log("Interviews updated:", interviews);
   }, [interviews]);
   
-  // Listen for group submission updates
-  useEffect(() => {
-    if (!user) return;
-
-    fetchGroupSize();
-
-    fetchFinished();
-    console.log(groupFinished);
-
-    socket.emit("interviewStageFinished", {
-      group_id: user.group_id,
-      class_id: user.class,
-      student_id: user.id,
-    });
-
-  }, [user, finished]);
-
   useEffect(() => {
     const handleShowInstructions = () => {
       console.log("Help button clicked - showing instructions");
@@ -223,52 +206,6 @@ export default function Interview() {
     }
   };
  
-  // Update current page when user is loaded
-  useEffect(() => {
-    if (user && user.email) {
-      
-      // Setup socket connection and join group room
-      const roomId = `group_${user.group_id}_class_${user.class}`;
-      socket.emit("joinGroup", roomId);
-      
-      // Emit socket events
-      socket.emit("studentOnline", { studentId: user.email }); 
-      socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
-      
-      // Listen for group move events
-      socket.on("moveGroup", ({groupId, classId, targetPage}) => {
-        if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
-          updateProgress(user, "offer");
-          localStorage.setItem("progress", "offer");
-          window.location.href = targetPage; 
-        }
-      });
-
-      // Update current page in database
-      const updateCurrentPage = async () => {
-        try {
-          await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
-            page: 'interviewpage', 
-            user_email: user.email
-          }
-          , { withCredentials: true });
-        } catch (error) {
-          console.error("Error updating current page:", error);
-        }
-      };
-      
-      updateCurrentPage();
-      
-      // Cleanup function
-      return () => {
-        socket.off("moveGroup");
-        socket.off("ratingUpdated");
-        socket.off("interviewSubmitted");
-      };
-    }
-  }, [user, pathname]); // Remove interviews from dependency array
-
-  // Fetch candidates data when user is loaded
 // Fetch candidates data when user is loaded
 useEffect(() => {
   if (!user?.group_id) return;
@@ -356,62 +293,144 @@ useEffect(() => {
   
   const currentVid = interviews[videoIndex];
 
-  // Listen for popup messages
-  useEffect(() => {
-    socket.on("receivePopup", ({ headline, message }) => {
-      setPopup({ headline, message });
-    });
+  // First useEffect - Fetch data and emit interviewStageFinished
+useEffect(() => {
+  if (!socket || !user) return;
 
-    socket.on("interviewStatusUpdated", ({ count, total }) => {
-      setGroupSubmissions(count);
-      setGroupSize(total);
-      setGroupFinished(count === total);
-    });
+  fetchGroupSize();
+  fetchFinished();
+  console.log(groupFinished);
 
-    socket.on("interviewStageFinished", () => {
-      fetchFinished();
-      fetchGroupSize();
-    });
-    
-    return () => {
-      socket.off("receivePopup");
-      socket.off("interviewStageFinishedBroadcast")
-      socket.off("updateRatingsWithPreset")
+  socket.emit("interviewStageFinished", {
+    group_id: user.group_id,
+    class_id: user.class,
+    student_id: user.id,
+  });
+}, [socket, user, finished]); // Add socket to dependencies
 
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!user || !currentVid) {
-      console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);
-      return;
+// Second useEffect - Setup page and join group
+useEffect(() => {
+  if (!socket || !user?.email) return;
+  
+  // Setup socket connection and join group room
+  const roomId = `group_${user.group_id}_class_${user.class}`;
+  socket.emit("joinGroup", roomId);
+  
+  // Emit socket events
+  socket.emit("studentOnline", { studentId: user.email }); 
+  socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+  
+  // Listen for group move events
+  const handleMoveGroup = ({ groupId, classId, targetPage }: { groupId: number; classId: number; targetPage: string }) => {
+    if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
+      updateProgress(user, "offer");
+      localStorage.setItem("progress", "offer");
+      window.location.href = targetPage; 
     }
+  };
 
-    console.log("Setting up socket listeners with user:", user.id, "and currentVid:", currentVid.resume_id);
+  socket.on("moveGroup", handleMoveGroup);
 
-    socket.on("updateRatingsWithPresetFrontend", ({ classId, groupId, vote, isNoShow, candidateId }) => {
-      console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow, candidateId });
-      
-      const voteData = {
-        student_id: user.id,
-        group_id: groupId,
-        class: classId,
-        question1: isNoShow ? -10000 : (vote.professionalPresence || 0),
-        question2: isNoShow ? -10000 : (vote.qualityOfAnswer || 0),
-        question3: isNoShow ? -10000 : (vote.personality || 0),
-        question4: isNoShow ? -10000 : (vote.overall || 0),
-        candidate_id: candidateId
-      };
-      
-      console.log("Emitting sentPresetVotes with data:", voteData);
-      socket.emit("sentPresetVotes", voteData);
-    });
+  // Update current page in database
+  const updateCurrentPage = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
+        page: 'interviewpage', 
+        user_email: user.email
+      }, { withCredentials: true });
+    } catch (error) {
+      console.error("Error updating current page:", error);
+    }
+  };
+  
+  updateCurrentPage();
+  
+  // Cleanup function
+  return () => {
+    socket.off("moveGroup", handleMoveGroup);
+  };
+}, [socket, user?.email, pathname, updateProgress]); // Add dependencies
 
-    return () => {
-      console.log("Cleaning up socket listeners");
-      socket.off("updateRatingsWithPresetFrontend");
+// Third useEffect - Listen for popup and status updates
+useEffect(() => {
+  if (!socket) return;
+
+  const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+    setPopup({ headline, message });
+  };
+
+  const handleInterviewStatusUpdated = ({ count, total }: { count: number; total: number }) => {
+    setGroupSubmissions(count);
+    setGroupSize(total);
+    setGroupFinished(count === total);
+  };
+
+  const handleInterviewStageFinished = () => {
+    fetchFinished();
+    fetchGroupSize();
+  };
+
+  socket.on("receivePopup", handleReceivePopup);
+  socket.on("interviewStatusUpdated", handleInterviewStatusUpdated);
+  socket.on("interviewStageFinished", handleInterviewStageFinished);
+  
+  return () => {
+    socket.off("receivePopup", handleReceivePopup);
+    socket.off("interviewStatusUpdated", handleInterviewStatusUpdated);
+    socket.off("interviewStageFinished", handleInterviewStageFinished);
+  };
+}, [socket, fetchFinished, fetchGroupSize]); // Add dependencies
+
+// Fourth useEffect - Handle preset ratings
+useEffect(() => {
+  if (!socket || !user || !currentVid) {
+    console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);
+    return;
+  }
+
+  console.log("Setting up socket listeners with user:", user.id, "and currentVid:", currentVid.resume_id);
+
+  const handleUpdateRatingsWithPreset = ({ classId, groupId, vote, isNoShow, candidateId }: {
+    classId: number;
+    groupId: number;
+    vote: { professionalPresence?: number; qualityOfAnswer?: number; personality?: number; overall?: number };
+    isNoShow: boolean;
+    candidateId: number;
+  }) => {
+    console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow, candidateId });
+    
+    const voteData = {
+      student_id: user.id,
+      group_id: groupId,
+      class: classId,
+      question1: isNoShow ? -10000 : (vote.professionalPresence || 0),
+      question2: isNoShow ? -10000 : (vote.qualityOfAnswer || 0),
+      question3: isNoShow ? -10000 : (vote.personality || 0),
+      question4: isNoShow ? -10000 : (vote.overall || 0),
+      candidate_id: candidateId
     };
-  }, [user, currentVid]);
+    
+    console.log("Emitting sentPresetVotes with data:", voteData);
+    socket.emit("sentPresetVotes", voteData);
+  };
+
+  socket.on("updateRatingsWithPresetFrontend", handleUpdateRatingsWithPreset);
+
+  return () => {
+    console.log("Cleaning up socket listeners");
+    socket.off("updateRatingsWithPresetFrontend", handleUpdateRatingsWithPreset);
+  };
+}, [socket, user, currentVid]);
+
+// Fixed completeInterview function
+const completeInterview = () => {
+  if (!socket || !user) return;
+  
+  updateProgress(user, "offer");
+  localStorage.setItem("progress", "offer");
+  window.location.href = '/makeOffer';
+  socket.emit("moveGroup", { groupId: user.group_id, classId: user.class, targetPage: "/makeOffer" });
+};
 
   // Rating change handlers
   const handleOverallSliderChange = (value: number) => {
@@ -492,14 +511,6 @@ useEffect(() => {
     }
   };
   
-  // Complete interview process and move to next stage
-  const completeInterview = () => {
-    updateProgress(user!, "offer");
-    localStorage.setItem("progress", "offer");
-    window.location.href = '/makeOffer';
-    socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/makeOffer"});
-  }
-
   // Loading state
   if (loading) {
     return (

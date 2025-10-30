@@ -10,8 +10,7 @@ import { usePathname } from "next/navigation";
 import Popup from "../components/popup";
 import Slideshow from "../components/slideshow";
 import { useProgressManager } from "../components/progress";
-
-const socket = io(API_BASE_URL); 
+import { useSocket } from "../components/socketContext";
 
 interface User {
   email: string;
@@ -23,6 +22,7 @@ interface User {
 
 const Dashboard = () => {
   const {updateProgress, fetchProgress} = useProgressManager();
+  const socket = useSocket();
   const steps = [
     {
       key: "job_description",
@@ -172,65 +172,59 @@ const Dashboard = () => {
   }, [user]);
 
   useEffect(() => {
-    if (user && user.email) {
-      socket.emit("studentOnline", { studentId: user.email }); 
+    if (!socket || !user?.email) return;
 
-      socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+    socket.emit("studentOnline", { studentId: user.email }); 
+    socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
 
-      const updateCurrentPage = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/users/update-currentpage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ page: 'dashboard', user_email: user.email }),
-            credentials: "include"
-          });
-        } catch (error) {
-          console.error("Error updating current page:", error);
-        }
-      };
+    const updateCurrentPage = async () => {
+      try {
+        await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ page: 'dashboard', user_email: user.email }),
+          credentials: "include"
+        });
+      } catch (error) {
+        console.error("Error updating current page:", error);
+      }
+    };
 
-      updateCurrentPage(); 
-    }
-  }, [user, pathname]);
+    updateCurrentPage();
+  }, [socket, user?.email, pathname]);
 
+  useEffect(() => {
+    if (!socket || !user) return;
 
- useEffect(() => {
-  socket.on("jobUpdated", async ({ job }) => {
-    localStorage.removeItem("pdf-comments");
-    setPopup({ 
-      headline: "You have been assigned a new job!", 
-      message: `You are an employer for ${job}!` 
-    });
-    
-    // Update progress on server
-    await updateProgress(user!, "job_description");
-    
-    // Update local progress state - ADD THIS LINE
-    setProgress("job_description");
-    
-    // Store in localStorage
-    localStorage.setItem("progress", "job_description");
-    
-    await refreshDashboardUI();
-    setFlipped(Array(steps.length).fill(false));
-    
-    // Refresh job description after job update
-    if (user) {
+    const handleJobUpdated = async ({ job }: { job: string }) => {
+      localStorage.removeItem("pdf-comments");
+      setPopup({ 
+        headline: "You have been assigned a new job!", 
+        message: `You are an employer for ${job}!` 
+      });
+      
+      await updateProgress(user, "job_description");
+      setProgress("job_description");
+      localStorage.setItem("progress", "job_description");
+      
+      await refreshDashboardUI();
+      setFlipped(Array(steps.length).fill(false));
+      
       await fetchJobDescription(user);
-    }
-  });
+    };
 
-  socket.on("receivePopup", ({ headline, message }) => {
-    setPopup({ headline, message });
-  });
+    const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+      setPopup({ headline, message });
+    };
 
-  return () => {
-    socket.off("jobUpdated");
-    socket.off("receivePopup");
-  };
-}, [user, updateProgress, refreshDashboardUI]);
+    socket.on("jobUpdated", handleJobUpdated);
+    socket.on("receivePopup", handleReceivePopup);
 
+    return () => {
+      socket.off("jobUpdated", handleJobUpdated);
+      socket.off("receivePopup", handleReceivePopup);
+    };
+  }, [socket, user, updateProgress, refreshDashboardUI, fetchJobDescription, steps.length]);
   const isStepUnlocked = (stepKey: string) => {
     
     // If no job description assigned, block all steps except job_description

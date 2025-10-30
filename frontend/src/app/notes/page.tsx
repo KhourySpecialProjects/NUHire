@@ -3,11 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/navbar';
 import { useRouter } from 'next/navigation';
-import { io } from 'socket.io-client';
+import { useSocket } from '../components/socketContext';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-const socket = io(API_BASE_URL);
-
+const socket = useSocket();
 const NotesPage: React.FC = () => {
   const router = useRouter();
   
@@ -84,14 +83,19 @@ const NotesPage: React.FC = () => {
   };
 
   useEffect(() => {
-    socket.on("jobUpdated", () => {
+    if (!socket) return;
+
+    const handleJobUpdated = () => {
       setNotes([]); 
       setNewNote('');
-    });
-    return () => {
-      socket.off("jobUpdated");
     };
-  }, []);
+
+    socket.on("jobUpdated", handleJobUpdated);
+    
+    return () => {
+      socket.off("jobUpdated", handleJobUpdated);
+    };
+  }, [socket]);
 
   useEffect(() => {
     fetchNotes();

@@ -3,10 +3,9 @@ const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { io } from "socket.io-client";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
-import { group } from "console";
+import {useSocket} from "../components/socketContext";
 
 export default function WaitingGroupPage() {
   interface User {
@@ -21,7 +20,7 @@ export default function WaitingGroupPage() {
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [start, setStart] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false); // Added for debugging
+  const socket = useSocket(); 
   const router = useRouter();
 
   // Fetch user information
@@ -101,17 +100,13 @@ export default function WaitingGroupPage() {
     }
   };
     
-  // Socket connection for listening to teacher's group assignment authorization
   useEffect(() => {
-    if (!user?.class) {
+    if (!socket || !user?.class) {
       return;
     }
 
-    const socket = io(API_BASE_URL);
-
     // Handle connection
-    socket.on('connect', () => {
-      setSocketConnected(true);
+    const handleConnect = () => {
       
       socket.emit('joinClass', { 
         classId: user.class,
@@ -119,33 +114,48 @@ export default function WaitingGroupPage() {
 
       const roomId = `group_${user.group_id}_class_${user.class}`;
       socket.emit("joinGroup", roomId);
-    });
+    };
 
-    socket.on('disconnect', () => {
-      setSocketConnected(false);
-    });
+    const handleDisconnect = () => {
+    };
 
-    socket.on('connect_error', (error) => {
-      setSocketConnected(false);
-    });
+    const handleConnectError = (error: Error) => {
+      console.error('Socket connection error:', error);
+    };
 
-    socket.on('groupStartedGroup', ({ group_id }) => {
+    const handleGroupStartedGroup = ({ group_id }: { group_id: number }) => {
       if (group_id === user.group_id) {
         groupStatusResponse();
       }
       console.log(`📡 Received groupStartedGroup event for group ${group_id}`);
-    });
+    };
 
-    socket.on('groupStartedClass', () => {
+    const handleGroupStartedClass = () => {
       groupStatusResponse();
       console.log(`📡 Received groupStartedClass event`);
-    });
-
-    // FIXED: Cleanup socket connection properly
-    return () => {
-      socket.disconnect();
     };
-  }, [user, router]);
+
+    // Check if already connected
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    // Attach listeners
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    socket.on('groupStartedGroup', handleGroupStartedGroup);
+    socket.on('groupStartedClass', handleGroupStartedClass);
+
+    // Cleanup listeners only, don't disconnect
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
+      socket.off('groupStartedGroup', handleGroupStartedGroup);
+      socket.off('groupStartedClass', handleGroupStartedClass);
+    };
+  }, [socket, user, router]);
 
   if (loading) {
     return (

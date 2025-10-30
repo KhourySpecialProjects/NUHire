@@ -6,6 +6,7 @@ import Link from "next/link"; // Importing Link for client-side navigation
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
 import { io } from "socket.io-client"; // Importing Socket.IO for real-time communication
 import Slideshow from "../components/slideshow"; // Importing slideshow component for background
+import { useSocket } from "../components/socketContext"; // Importing custom hook to use socket context
 
 const Dashboard = () => {
 
@@ -21,8 +22,8 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const socket = useSocket();
 
-  const socket = io(API_BASE_URL);
 
   // Fetch user data from the API when the component mounts
   // and handle redirection if the user is not an admin
@@ -50,7 +51,19 @@ const Dashboard = () => {
     fetchUser();
   }, [router]);
 
-  socket.emit("adminOnline", { adminEmail: user?.email });
+
+  // Socket connection - only run when both socket AND user are ready
+  useEffect(() => {
+    if (!socket || !user?.email) return; // ✅ Check both socket and user
+
+    console.log('Admin coming online:', user.email); // Debug log
+    socket.emit("adminOnline", { adminEmail: user.email });
+
+    return () => {
+      console.log('Admin going offline:', user.email); // Debug log
+      socket.emit("adminOffline", { adminEmail: user.email });
+    };
+  }, [socket, user?.email]);
 
   if (loading) {
     return (

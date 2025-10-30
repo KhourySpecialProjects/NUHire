@@ -3,7 +3,6 @@ const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
-import { io } from "socket.io-client";
 import Tabs from "../components/tabs";
 import Popup from "../components/popup";
 import { StudentCSVTab } from "../components/StudentCSVTab";

@@ -10,12 +10,12 @@ import { Document, Page, pdfjs } from "react-pdf";
 import Footer from "../components/footer";
 import router from "next/router";
 import Popup from "../components/popup";
-import { io } from "socket.io-client";
 import { usePathname } from "next/navigation";
 import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
+import { useSocket } from "../components/socketContext";
 
-const socket = io(API_BASE_URL);
+const socket = useSocket();
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -104,74 +104,117 @@ export default function ResumesPage() {
   }, [router]);
 
   useEffect(() => {
-    if (user && user.email) {
-      socket.emit("studentOnline", { studentId: user.email });
+    if (!socket || !user || !user.email) return;
 
-      // Join the proper room for group coordination
-      const roomId = `group_${user.group_id}_class_${user.class}`;
-      console.log("Joining room:", roomId);
-      socket.emit("joinGroup", roomId);
+    socket.emit("studentOnline", { studentId: user.email });
 
-      socket.emit("studentPageChanged", {
-        studentId: user.email,
-        currentPage: pathname,
-      });
+    // Join the proper room for group coordination
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+    console.log("Joining room:", roomId);
+    socket.emit("joinGroup", roomId);
 
-      const updateCurrentPage = async () => {
-        try {
-          await fetch(`${API_BASE_URL}/users/update-currentpage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              page: "resumepage",
-              user_email: user.email,
-            }),
-            credentials: "include"
-          });
-        } catch (error) {
-          console.error("Error updating current page:", error);
-        }
-      };
+    socket.emit("studentPageChanged", {
+      studentId: user.email,
+      currentPage: pathname,
+    });
 
-      updateCurrentPage();
+    const updateCurrentPage = async () => {
+      try {
+        await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            page: "resumepage",
+            user_email: user.email,
+          }),
+          credentials: "include"
+        });
+      } catch (error) {
+        console.error("Error updating current page:", error);
+      }
+    };
+
+    updateCurrentPage();
+  }, [socket, user, pathname]);
+
+// Popup and group move listeners
+useEffect(() => {
+  if (!socket || !user) return;
+
+  const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+    setPopup({ headline, message });
+
+    if (headline === "Internal Referral") {
+      setRestricted(true);
+    } else {
+      setRestricted(false);
     }
-  }, [user, pathname]);
+  };
 
+  const handleMoveGroup = ({ groupId, classId, targetPage }: { 
+    groupId: number; 
+    classId: number; 
+    targetPage: string 
+  }) => {
+    if (groupId === user.group_id && classId === user.class && targetPage === "/res-review-group") {
+      console.log(`Group navigation triggered: moving to ${targetPage}`);
+      localStorage.setItem("progress", "res_2");
+      window.location.href = targetPage; 
+    }
+  };
+
+  socket.on("receivePopup", handleReceivePopup);
+  socket.on("moveGroup", handleMoveGroup);
+
+  return () => {
+    socket.off("receivePopup", handleReceivePopup);
+    socket.off("moveGroup", handleMoveGroup);
+  };
+}, [socket, user]);
+
+  // Group completed res review listener
   useEffect(() => {
-    socket.on("receivePopup", ({ headline, message }) => {
-      setPopup({ headline, message });
+    if (!socket) return;
 
-      if (headline === "Internal Referral") {
-        setRestricted(true);
-      } else {
-        setRestricted(false);
-      }
-    });
-
-    socket.on("moveGroup", ({groupId, classId, targetPage}) => {
-      if (user && groupId === user.group_id && classId === user.class && targetPage === "/res-review-group") {
-        console.log(`Group navigation triggered: moving to ${targetPage}`);
-        localStorage.setItem("progress", "res_2");
-        window.location.href = targetPage; 
-      }
-  });
-  
-
-    return () => {
-      socket.off("receivePopup");
-      socket.off("groupMove");
-    };
-  }, [user]);
-
-  useEffect(() => {
-    socket.on("groupCompletedResReview", (data) => {
+    const handleGroupCompletedResReview = (data: any) => {
       setDisabled(false); 
-    });
+    };
+
+    socket.on("groupCompletedResReview", handleGroupCompletedResReview);
 
     return () => {
-      socket.off("groupCompletedResReview");
+      socket.off("groupCompletedResReview", handleGroupCompletedResReview);
     };
-  }, [disabled]);
+  }, [socket]);
+
+  // Complete resumes function
+  const completeResumes = () => {
+    if (!socket || !user) {
+      console.error('Socket or user not available');
+      return;
+    }
+
+    updateProgress(user, "res_2");
+    localStorage.setItem("progress", "res_2");
+    window.location.href = "/res-review-group";
+    
+    socket.emit("moveGroup", {
+      groupId: user.group_id, 
+      classId: user.class, 
+      targetPage: "/res-review-group"
+    });
+  };
+
+  // User completed res review
+  useEffect(() => {
+    if (!socket || totalDecisions !== 10 || !user || !user.email) return;
+
+    console.log(`User ${user.email} completed res-review with 10 decisions`);
+    socket.emit("userCompletedResReview", {
+      groupId: user.group_id,
+    });
+  }, [socket, totalDecisions, user]);
+
 
   const fetchResumes = async () => {
     try {
@@ -328,36 +371,6 @@ export default function ResumesPage() {
     setNoResponse((prev) => prev + 1);
     nextResume();
   };
-
-  const completeResumes = () => {
-    updateProgress(user!, "res_2");
-    localStorage.setItem("progress", "res_2");
-    window.location.href = "/res-review-group";
-    socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/res-review-group"});
-
-  };
-
-  // Function to get appropriate tooltip message based on current state
-  const getTooltipMessage = () => {
-    if (totalDecisions < 10) {
-      return `Complete at least 10 resume reviews first (${totalDecisions}/10 completed)`;
-    } else if (disabled && user?.group_id) {
-      return "Waiting for all group members to complete their individual resume reviews";
-    } else if (!user?.group_id) {
-      return "You need to be in a group to proceed";
-    } else {
-      return "Proceed to group resume review";
-    }
-  };
-
-  useEffect(() => {
-    if (totalDecisions === 10 && user && user.email) {
-      console.log(`User ${user.email} completed res-review with 10 decisions`);
-      socket.emit("userCompletedResReview", {
-        groupId: user.group_id,
-      });
-    }
-  }, [totalDecisions, user]);
 
   if (loading) {
     return (

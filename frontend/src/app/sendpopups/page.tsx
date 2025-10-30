@@ -3,11 +3,11 @@ const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
-import { io } from "socket.io-client";
 import Popup from "../components/popup";
 import AdminReactionPopup from "../components/adminReactionPopup";
+import { useSocket } from "../components/socketContext";
 
-const socket = io(API_BASE_URL); 
+const socket = useSocket(); 
 
 const SendPopups = () => {
   interface User {
@@ -317,31 +317,18 @@ const SendPopups = () => {
     }
   };
 
-  const respondToOffer = (
-    classId: number,
-    groupId: number,
-    candidateId: number,
-    accepted: boolean
-  ) => {
-    socket.emit("makeOfferResponse", {
-      classId,
-      groupId,
-      candidateId,
-      accepted,
-    });
-    setPendingOffers((prev) =>
-      prev.filter((o) => o.classId != classId || o.groupId !== groupId || o.candidateId !== candidateId)
-    );
-  };
-
   const sendPopups = async () => {
-  if (!headline || !message || !selectedGroup) {
-    setPopup({ headline: "Error", message: "Please fill in all fields and select a group." });
-    return;
-  }
+    if (!headline || !message || !selectedGroup) {
+      setPopup({ headline: "Error", message: "Please fill in all fields and select a group." });
+      return;
+    }
 
-  // Add validation for preset candidate selection
-  const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
+    if (!socket) {
+      setPopup({ headline: "Error", message: "Socket not connected. Please refresh the page." });
+      return;
+    }
+
+    const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
     if (selectedPresetData) {
       if (!selectedCandidate) {
         setPopup({ headline: "Error", message: "Please select a candidate for this preset popup." });
@@ -372,10 +359,10 @@ const SendPopups = () => {
           return;
         }
 
-        console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData)
+        console.log("emitting sent if have vote data, vote:", selectedPresetData.vote, "all, ", selectedPresetData);
         
         if (selectedPresetData.vote) {
-          console.log("emitting updateRatingsWithPreset")
+          console.log("emitting updateRatingsWithPreset");
           socket.emit("updateRatingsWithPresetBackend", {
             classId: selectedClass,
             groupId: selectedGroup,
@@ -395,7 +382,7 @@ const SendPopups = () => {
           message,
           class: selectedClass, 
           candidateId: selectedCandidate,
-          candidateName: candidateName, // Send the candidate name instead of just ID
+          candidateName: candidateName,
         });
 
         setPopup({ 
@@ -568,17 +555,6 @@ const SendPopups = () => {
             key={`offer-${classId}-${groupId}-${candidateId}`}
             className="mt-6 p-4 bg-springWater rounded-md shadow-md max-w-md mx-auto"
           >
-            <AdminReactionPopup
-              headline={`Group ${groupId} from Class ${classId} wants to offer Candidate ${candidateId}`}
-              message="Do you approve?"
-              onAccept={() => 
-                respondToOffer(classId, groupId, candidateId, true)
-              }
-              onReject={() => 
-                respondToOffer(classId, groupId, candidateId, false)
-              }
-        
-            />
           </div>
         ))}
 

@@ -1,6 +1,6 @@
 "use client"; // Declares that this page is a client component
 import React, { useState, useEffect, use } from "react";// Importing React and hooks for state and effect management
-import { io, Socket } from "socket.io-client"; // Importing socket.io for real-time communication
+import { useSocket } from "../components/socketContext";
 import Navbar from "../components/navbar"; // Importing the navbar component
 import { usePathname, useRouter } from "next/navigation"; // Importing useRouter and usePathname for navigation
 import { useProgress } from "../components/useProgress"; // Custom hook for progress tracking
@@ -13,8 +13,7 @@ import { useProgressManager } from "../components/progress";
 
 // Define the API base URL from environment variables
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-const SOCKET_URL = `${API_BASE_URL}`;
-let socket: Socket | null = null;
+const socket = useSocket();
 
 // Define the VoteData interface to match the expected vote data structure
 type VoteData = {
@@ -464,120 +463,154 @@ export default function MakeOffer() {
 
   // Setup socket.io
   useEffect(() => {
-    if (!user || socket) return;
+    if (!socket || !user) return;
 
-    socket = io(SOCKET_URL, {
-      reconnectionAttempts: 5,
-      timeout: 5000,
-    });
+    setIsConnected(socket.connected); // Set initial connection state
 
-    socket.on("connect", () => {
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+
+    // Emit join group
+    if (socket.connected) {
+      socket.emit("joinGroup", roomId);
+    }
+
+    // Define handlers
+    const handleConnect = () => {
       setIsConnected(true);
-      socket?.emit("joinGroup", `group_${user.group_id}_class_${user.class}`);
-    });
+      socket.emit("joinGroup", roomId);
+    };
 
-    socket.on("disconnect", () => {
+    const handleDisconnect = () => {
       setIsConnected(false);
-    });
+    };
 
-    socket.on("groupMemberOffer", () => {
+    const handleGroupMemberOffer = () => {
       setPopup({
         headline: "Offer submitted",
         message: "Awaiting approval from your advisor…",
       });
       setOfferPending(true);
+    };
+
+  const handleConfirmOffer = (candidateId: number) => {
+      if (!socket || !user || !candidateId) return;
+      
+      // Check if there's already an offer
+      if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
+        let message = "";
+        if (existingOffer.status === 'pending') {
+          message = "You already have a pending offer awaiting advisor approval.";
+        } else if (existingOffer.status === 'accepted') {
+          message = "You already have an accepted offer. You cannot make another offer.";
+        }
+        
+        setPopup({
+          headline: "Offer Already Exists",
+          message: message
+        });
+        return;
+      }
+      
+    // First update local state immediately
+    setOfferConfirmations(prev => {
+      const currentConfirmations = prev[candidateId] || [];
+      if (!currentConfirmations.includes(user.id)) {
+        return {
+          ...prev,
+          [candidateId]: [...currentConfirmations, user.id]
+        };
+      }
+      return prev;
     });
 
-    socket.on("confirmOffer", ({ candidateId, studentId, groupId, classId }) => {
-    // Only process if it's for our group and class
-    if (groupId === user.group_id && classId === user.class) {
-      setOfferConfirmations(prev => {
-        const currentConfirmations = prev[candidateId] || [];
-        if (!currentConfirmations.includes(studentId)) {
-          return {
-            ...prev,
-            [candidateId]: [...currentConfirmations, studentId]
-          };
-        }
-        return prev;
-      });
-    }
-  });
+    // Then emit to other users in the room
+    socket.emit("confirmOffer", {
+      groupId: user.group_id,
+      classId: user.class,
+      candidateId,
+      studentId: user.id,
+      roomId: `group_${user.group_id}_class_${user.class}`
+    });
+  };
 
-    // Listens to Advisor's response
-    socket.on(
-      "makeOfferResponse",
-      ({
-        classId,
-        groupId,
-        candidateId,
-        accepted,
-      }: {
-        classId: number;
-        groupId: number;
-        candidateId: number;
-        accepted: boolean;
-      }) => {
-
-        checkExistingOffer();
-
-        if(classId !== user.class) {
-          return
-        }
-        if(groupId !== user.group_id) {
-          return
-        }
-        if (accepted) {
-          setPopup({
-            headline: "Offer accepted!",
-            message: "Congratulations—you've extended the offer successfully.",
-          });
-          setSentIn((prev) => {
-            const newSentIn = [...prev];
-            newSentIn[candidateId] = true; 
-            return newSentIn;
-          })
-
-          setAcceptedOffer(true);
-          setExistingOffer(prev => prev ? {...prev, status: 'accepted'} : null);
-        } else {
-          setPopup({
-            headline: "Offer rejected",
-            message:
-              "That candidate wasn't available or has chosen another offer. Please choose again.",
-          });
-
-          setCheckedState({});
-          setSentIn((prev) => {
-            const newSentIn = [...prev];
-            newSentIn[candidateId] = false; 
-            return newSentIn;
-          })
-
-          setOfferPending(false);
-          setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : null);
-          setAbleToMakeOffer(true);
-        }
+    const handleMakeOfferResponse = ({
+      classId,
+      groupId,
+      candidateId,
+      accepted,
+    }: {
+      classId: number;
+      groupId: number;
+      candidateId: number;
+      accepted: boolean;
+    }) => {
+      // Only process if it's for our group and class
+      if (classId !== user.class || groupId !== user.group_id) {
+        return;
       }
-    );
 
-    socket.on(
-      "checkboxUpdated",
-      ({
-        interview_number,
-        checked,
-      }: {
-        interview_number: number;
-        checked: boolean;
-      }) => {
-        setCheckedState((prev) => ({ ...prev, [interview_number]: checked }));
+      checkExistingOffer();
+
+      if (accepted) {
+        setPopup({
+          headline: "Offer accepted!",
+          message: "Congratulations—you've extended the offer successfully.",
+        });
+        setSentIn((prev) => {
+          const newSentIn = [...prev];
+          newSentIn[candidateId] = true; 
+          return newSentIn;
+        });
+
+        setAcceptedOffer(true);
+        setExistingOffer(prev => prev ? {...prev, status: 'accepted'} : null);
+      } else {
+        setPopup({
+          headline: "Offer rejected",
+          message: "That candidate wasn't available or has chosen another offer. Please choose again.",
+        });
+
+        setCheckedState({});
+        setSentIn((prev) => {
+          const newSentIn = [...prev];
+          newSentIn[candidateId] = false; 
+          return newSentIn;
+        });
+
+        setOfferPending(false);
+        setExistingOffer(prev => prev ? {...prev, status: 'rejected'} : null);
+        setAbleToMakeOffer(true);
       }
-    );
-
-    return () => {
-      socket?.disconnect();
     };
-  }, [user]);
+
+    const handleCheckboxUpdated = ({
+      interview_number,
+      checked,
+    }: {
+      interview_number: number;
+      checked: boolean;
+    }) => {
+      setCheckedState((prev) => ({ ...prev, [interview_number]: checked }));
+    };
+
+    // Register listeners
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("groupMemberOffer", handleGroupMemberOffer);
+    socket.on("confirmOffer", handleConfirmOffer);
+    socket.on("makeOfferResponse", handleMakeOfferResponse);
+    socket.on("checkboxUpdated", handleCheckboxUpdated);
+
+    // Cleanup
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("groupMemberOffer", handleGroupMemberOffer);
+      socket.off("confirmOffer", handleConfirmOffer);
+      socket.off("makeOfferResponse", handleMakeOfferResponse);
+      socket.off("checkboxUpdated", handleCheckboxUpdated);
+    };
+  }, [socket, user, checkExistingOffer]);
 
   const handleCheckboxChange = (interviewNumber: number) => {
     if (!socket || !isConnected) return;

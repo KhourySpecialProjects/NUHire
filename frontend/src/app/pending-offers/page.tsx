@@ -3,7 +3,7 @@ const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
-import { io } from "socket.io-client";
+import { useSocket } from "../components/socketContext";
 import Popup from "../components/popup";
 
 const OffersManagement = () => {
@@ -30,6 +30,7 @@ const OffersManagement = () => {
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const router = useRouter();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
+  const socket = useSocket();
   
   // Offers state
   const [offersTabClass, setOffersTabClass] = useState("");
@@ -134,15 +135,12 @@ const OffersManagement = () => {
     fetchUser();
   }, [router]);
 
-  // Admin socket setup
   useEffect(() => {
-    if (!user || user.affiliation !== "admin") return;
-
-    const socketUpdate = io(API_BASE_URL);
+    if (!socket || !user || user.affiliation !== "admin") return;
 
     console.log(user);
 
-    socketUpdate.emit("adminOnline", { adminEmail: user.email });
+    socket.emit("adminOnline", { adminEmail: user.email });
 
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
       refreshOffers();
@@ -165,18 +163,25 @@ const OffersManagement = () => {
       }
     };
 
-    socketUpdate.on("makeOfferRequest", onRequest);
-    socketUpdate.on("makeOfferResponse", onResponse);
+    socket.on("makeOfferRequest", onRequest);
+    socket.on("makeOfferResponse", onResponse);
 
     return () => {
-      socketUpdate.off("makeOfferRequest", onRequest);
-      socketUpdate.off("makeOfferResponse", onResponse);
-      socketUpdate.disconnect();
+      socket.off("makeOfferRequest", onRequest);
+      socket.off("makeOfferResponse", onResponse);
+      // Don't disconnect - the context manages the connection
     };
-  }, [user, offersTabClass]);
+  }, [socket, user, offersTabClass]);
 
   // Updated respond to offer function
-  const respondToOffer = async (offerId: number, classId: number, groupId: number, candidateId: number, accepted: boolean, candidateName?: string) => {
+  const respondToOffer = async (
+    offerId: number, 
+    classId: number, 
+    groupId: number, 
+    candidateId: number, 
+    accepted: boolean, 
+    candidateName?: string
+  ) => {
     try {
       console.log(`Responding to offer ${offerId}: ${accepted ? 'ACCEPT' : 'REJECT'}`);
       
@@ -198,9 +203,12 @@ const OffersManagement = () => {
 
       console.log("Database updated successfully");
 
-      // Emit socket response
-      const socketOffer = io(API_BASE_URL);
-      socketOffer.emit("makeOfferResponse", { classId, groupId, candidateId, accepted });
+      // Use the shared socket from context
+      if (!socket) {
+        throw new Error('Socket not connected');
+      }
+
+      socket.emit("makeOfferResponse", { classId, groupId, candidateId, accepted });
       
       console.log("Socket response emitted");
 

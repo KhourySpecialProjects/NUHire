@@ -10,12 +10,12 @@ import Navbar from "../components/navbar";
 import Popup from "../components/popup";
 import Footer from "../components/footer";
 import { usePathname } from "next/navigation";
-import { io } from "socket.io-client";
+import { useSocket } from "../components/socketContext";
 import router from "next/router";
 import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
 
-const socket = io(API_BASE_URL); 
+const socket = useSocket();
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -93,28 +93,40 @@ export default function JobDescriptionPage() {
   }, [router]);
 
   useEffect(() => {
-    if (user && user.email) {
-      socket.emit("studentOnline", { studentId: user.email }); 
+    if (!socket || !user?.email) return;
 
-      socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+    socket.emit("studentOnline", { studentId: user.email }); 
+    socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
 
-      const updateCurrentPage = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/users/update-currentpage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ page: 'jobdes', user_email: user.email }),
-            credentials: "include"
-          });
-        } catch (error) {
-          console.error("Error updating current page:", error);
-        }
-      };
+    const updateCurrentPage = async () => {
+      try {
+        await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ page: 'jobdes', user_email: user.email }),
+          credentials: "include"
+        });
+      } catch (error) {
+        console.error("Error updating current page:", error);
+      }
+    };
 
-      updateCurrentPage(); 
-    }
-  }, [user, pathname]);
+    updateCurrentPage();
+  }, [socket, user?.email, pathname]);
 
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+      setPopup({ headline, message });
+    };
+
+    socket.on("receivePopup", handleReceivePopup);
+
+    return () => {
+      socket.off("receivePopup", handleReceivePopup);
+    };
+  }, [socket]);
 
   // Update your fetchJob useEffect in jobdes/page.tsx
   useEffect(() => {
@@ -181,16 +193,6 @@ export default function JobDescriptionPage() {
       useEffect(() => {
         localStorage.setItem("pdf-comments", JSON.stringify(comments));
       }, [comments]);
-
-
-      useEffect(() => {
-        socket.on("receivePopup", ({ headline, message }) => {
-          setPopup({ headline, message });
-        });
-        return () => {
-          socket.off("receivePopup");
-        };
-      }, []);
     
       const handlePdfClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         if (tool !== "comment") return;

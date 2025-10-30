@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
 import AdminReactionPopup from "../components/adminReactionPopup";
-import { io } from "socket.io-client";
+import { useSocket } from "../components/socketContext";
 import Popup from "../components/popup";
 
 interface User {
@@ -53,7 +53,7 @@ const Upload = () => {
   const [pendingOffers, setPendingOffers] = useState<
   { classId: number; groupId: number; candidateId: number }[]
   >([]);  
-  const socket = io(API_BASE_URL);
+  const socket = useSocket();
 
   useEffect(() => {
     console.log("resumes changed:", resumes);
@@ -87,33 +87,43 @@ const Upload = () => {
   }, [router]);
 
   useEffect(() => {
+    if (!socket) return;
+
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
       const { classId, groupId, candidateId } = data;
-      setPendingOffers((prev) => [...prev, {classId, groupId, candidateId }]);
+      setPendingOffers((prev) => [...prev, { classId, groupId, candidateId }]);
     };
       
-      socket.on("makeOfferRequest", onRequest);
-      return () => {
-        socket.off("makeOfferRequest", onRequest);
-      };
-    }, []);
-  
-    const respondToOffer = (
-      classId: number,
-      groupId: number,
-      candidateId: number,
-      accepted: boolean
-    ) => {
-      socket.emit("makeOfferResponse", {
-        classId,
-        groupId,
-        candidateId,
-        accepted,
-      });
-      setPendingOffers((prev) =>
-        prev.filter((o) => o.classId != classId || o.groupId !== groupId || o.candidateId !== candidateId)
-      );
+    socket.on("makeOfferRequest", onRequest);
+    
+    return () => {
+      socket.off("makeOfferRequest", onRequest);
     };
+  }, [socket]); 
+
+  const respondToOffer = (
+    classId: number,
+    groupId: number,
+    candidateId: number,
+    accepted: boolean
+  ) => {
+    // Check if socket exists before emitting
+    if (!socket) {
+      console.error('Socket not connected');
+      return;
+    }
+
+    socket.emit("makeOfferResponse", {
+      classId,
+      groupId,
+      candidateId,
+      accepted,
+    });
+    
+    setPendingOffers((prev) =>
+      prev.filter((o) => o.classId !== classId || o.groupId !== groupId || o.candidateId !== candidateId)
+    );
+  };
 
   useEffect(() => {
     fetchJobs();
