@@ -278,12 +278,16 @@ const Grouping = () => {
       <div className="flex-1 p-4 overflow-hidden">
         <Tabs>
           <div title="Manage Groups">
-            <ManageGroupsTab />
-          </div>
+              <div className="w-full flex-1">
+                <ManageGroupsTab />
+              </div>
+            </div>
 
-          <div title="CSV Group Assignment">
-            <StudentCSVTab />
-          </div>
+            <div title="CSV Group Assignment">
+              <div className="w-full flex-1">
+                <StudentCSVTab />
+              </div>
+            </div>
           {/* Tab: Job Assignment */}
           <div title="Job Assignment">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[80vh]">

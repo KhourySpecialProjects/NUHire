@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import NavbarAdmin from './navbar-admin';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -468,7 +467,6 @@ export function ManageGroupsTab() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-        <NavbarAdmin />
         <div className="max-w-7xl mx-auto p-4">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-center h-40">
@@ -485,7 +483,6 @@ export function ManageGroupsTab() {
   if (!user) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-        <NavbarAdmin />
         <div className="max-w-7xl mx-auto p-4">
           <div className="bg-white rounded-lg shadow-lg p-6 text-center">
             <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
@@ -498,7 +495,6 @@ export function ManageGroupsTab() {
 
   return (
     <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-      <NavbarAdmin />
       <div className="w-3/4 mx-auto p-4">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">

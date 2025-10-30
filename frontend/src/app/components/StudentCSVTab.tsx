@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import NavbarAdmin from '../components/navbar-admin';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -289,7 +288,6 @@ const handleSubmit = async () => {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-        <NavbarAdmin />
         <div className="max-w-4xl mx-auto p-4">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-center h-40">
@@ -305,7 +303,6 @@ const handleSubmit = async () => {
   if (!user) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-        <NavbarAdmin />
         <div className="max-w-4xl mx-auto p-4">
           <div className="bg-white rounded-lg shadow-lg p-6 text-center">
             <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
@@ -318,7 +315,6 @@ const handleSubmit = async () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-      <NavbarAdmin />
       <div className="max-w-3xl mx-auto bg-northeasternWhite border-northeasternBlack border-4 justify-center rounded-md items-center p-6 mt-6">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">CSV Group Assignment</h1>
