@@ -1,35 +1,39 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
-import io from "socket.io-client";
 import { usePathname } from "next/navigation";
+import { useSocket } from "../components/socketContext";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-const socket = io(API_BASE_URL); 
 
 const StudentPage = () => {
-    const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-    const pathname = usePathname(); 
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
+  const pathname = usePathname(); 
+  const socket = useSocket();
 
-    useEffect(() => {
-        const storedId = localStorage.getItem("studentId");
-        
-        if (!storedId) {
-            console.error("No student ID found in local storage.");
-            return;
-        }
-        socket.emit("studentOnline", { studentId: storedId });
+  useEffect(() => {
+    if (!socket) return;
 
-        socket.emit("updateStudentPageChange", { studentId: storedId, currentPage: pathname });
+    const storedId = localStorage.getItem("studentId");
+    
+    if (!storedId) {
+      console.error("No student ID found in local storage.");
+      return;
+    }
 
-        socket.on("sendPopupToGroup", ({ headline, message }) => {
-            setPopup({ headline, message });
-        });
+    socket.emit("studentOnline", { studentId: storedId });
+    socket.emit("updateStudentPageChange", { studentId: storedId, currentPage: pathname });
 
-        return () => {
-            socket.disconnect();
-        };
-    }, [pathname]); 
+    const handleSendPopupToGroup = ({ headline, message }: { headline: string; message: string }) => {
+      setPopup({ headline, message });
+    };
+
+    socket.on("sendPopupToGroup", handleSendPopupToGroup);
+
+    return () => {
+      socket.off("sendPopupToGroup", handleSendPopupToGroup);
+    };
+  }, [socket, pathname]);
 
     return (
         <div className="p-6 min-h-screen">

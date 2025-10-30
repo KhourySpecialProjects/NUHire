@@ -1,10 +1,11 @@
 'use client';
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
 import AdminReactionPopup from "../components/adminReactionPopup";
-import { io, Socket } from "socket.io-client";
+import { useSocket } from "../components/socketContext";
 import Popup from "../components/popup";
 
 interface User {
@@ -53,7 +54,15 @@ const Upload = () => {
   const [pendingOffers, setPendingOffers] = useState<
   { classId: number; groupId: number; candidateId: number }[]
   >([]);  
-  const socket = io(API_BASE_URL);
+  const socket = useSocket();
+
+  useEffect(() => {
+    console.log("resumes changed:", resumes);
+  }, [resumes]);
+  useEffect(() => {
+    console.log("jobs changed:", jobs);
+  }, [jobs]);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -79,33 +88,43 @@ const Upload = () => {
   }, [router]);
 
   useEffect(() => {
+    if (!socket) return;
+
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
       const { classId, groupId, candidateId } = data;
-      setPendingOffers((prev) => [...prev, {classId, groupId, candidateId }]);
+      setPendingOffers((prev) => [...prev, { classId, groupId, candidateId }]);
     };
       
-      socket.on("makeOfferRequest", onRequest);
-      return () => {
-        socket.off("makeOfferRequest", onRequest);
-      };
-    }, []);
-  
-    const respondToOffer = (
-      classId: number,
-      groupId: number,
-      candidateId: number,
-      accepted: boolean
-    ) => {
-      socket.emit("makeOfferResponse", {
-        classId,
-        groupId,
-        candidateId,
-        accepted,
-      });
-      setPendingOffers((prev) =>
-        prev.filter((o) => o.classId != classId || o.groupId !== groupId || o.candidateId !== candidateId)
-      );
+    socket.on("makeOfferRequest", onRequest);
+    
+    return () => {
+      socket.off("makeOfferRequest", onRequest);
     };
+  }, [socket]); 
+
+  const respondToOffer = (
+    classId: number,
+    groupId: number,
+    candidateId: number,
+    accepted: boolean
+  ) => {
+    // Check if socket exists before emitting
+    if (!socket) {
+      console.error('Socket not connected');
+      return;
+    }
+
+    socket.emit("makeOfferResponse", {
+      classId,
+      groupId,
+      candidateId,
+      accepted,
+    });
+    
+    setPendingOffers((prev) =>
+      prev.filter((o) => o.classId !== classId || o.groupId !== groupId || o.candidateId !== candidateId)
+    );
+  };
 
   useEffect(() => {
     fetchJobs();
@@ -114,9 +133,9 @@ const Upload = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/jobs`);
+      const response = await fetch(`${API_BASE_URL}/jobs`, { credentials: "include" });
       const data = await response.json();
-      setJobs(data);
+      setJobs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching jobs:", error);
     }
@@ -124,9 +143,9 @@ const Upload = () => {
 
   const fetchResumes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf`);
+      const response = await fetch(`${API_BASE_URL}/resume_pdf`, { credentials: "include" });
       const data = await response.json();
-      setResumes(data);
+      setResumes(Array.isArray(data) ? data : []);   
     } catch (error) {
       console.error("Error fetching resumes:", error);
     }
@@ -138,6 +157,7 @@ const Upload = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/delete/resume/${fileName}`, {
         method: "DELETE",
+        credentials: "include"
       });
   
       if (!response.ok) {
@@ -158,6 +178,7 @@ const Upload = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/delete/job/${fileName}`, {
         method: "DELETE",
+        credentials: "include"
       });
   
       if (!response.ok) {
@@ -203,7 +224,8 @@ const Upload = () => {
 
       const response = await fetch(`${API_BASE_URL}/upload/job`, { 
         method: "POST", 
-        body: formData 
+        body: formData,
+        credentials: "include"
       });
 
       if (!response.ok) throw new Error("Job description upload failed");
@@ -213,6 +235,7 @@ const Upload = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: jobTitle, filePath }),
+        credentials: "include"
       });
 
       fetchJobs();
@@ -250,7 +273,8 @@ const Upload = () => {
 
       const response = await fetch(`${API_BASE_URL}/upload/resume`, { 
         method: "POST", 
-        body: formData 
+        body: formData,
+        credentials: "include"
       });
 
       if (!response.ok) throw new Error("Resume upload failed");
@@ -266,6 +290,7 @@ const Upload = () => {
           l_name: resLastName,
           vid: resYouTubeVideo
         }),
+        credentials: "include"
       });
 
       if (!dbResponse.ok) {

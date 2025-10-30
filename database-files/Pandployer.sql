@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: pandployer
 -- ------------------------------------------------------
--- Server version	9.3.0
+-- Server version	9.4.0
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -32,6 +32,24 @@ CREATE TABLE `Candidates` (
   UNIQUE KEY `resume_id_UNIQUE` (`resume_id`),
   KEY `resume_id` (`resume_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `GroupsInfo`
+--
+
+DROP TABLE IF EXISTS `GroupsInfo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `GroupsInfo` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `class_id` int NOT NULL,
+  `started` tinyint NOT NULL DEFAULT '0',
+  `group_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_class_group` (`class_id`,`id`),
+  CONSTRAINT `groupsinfo_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162,8 +180,7 @@ CREATE TABLE `MakeOfferPage` (
   PRIMARY KEY (`id`),
   KEY `selected_candidate` (`selected_candidate`),
   KEY `group_id` (`group_id`),
-  CONSTRAINT `MakeOfferPage_ibfk_1` FOREIGN KEY (`selected_candidate`) REFERENCES `Candidates` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `MakeOfferPage_ibfk_2` FOREIGN KEY (`group_id`) REFERENCES `Groups` (`id`) ON DELETE CASCADE
+  CONSTRAINT `MakeOfferPage_ibfk_1` FOREIGN KEY (`selected_candidate`) REFERENCES `Candidates` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -178,7 +195,6 @@ CREATE TABLE `Moderator` (
   `id` int NOT NULL AUTO_INCREMENT,
   `admin_email` varchar(45) NOT NULL,
   `crn` int NOT NULL,
-  `nom_groups` int NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `crn_UNIQUE` (`crn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -344,8 +360,7 @@ CREATE TABLE `Resumepage2` (
   `group_id` int NOT NULL,
   `class` int NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `group_id` (`group_id`),
-  CONSTRAINT `Resumepage2_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `Groups` (`id`) ON DELETE CASCADE
+  KEY `group_id` (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -358,10 +373,10 @@ DROP TABLE IF EXISTS `Users`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Users` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `f_name` varchar(50) NOT NULL,
-  `l_name` varchar(50) NOT NULL,
+  `f_name` varchar(50) DEFAULT NULL,
+  `l_name` varchar(50) DEFAULT NULL,
   `email` varchar(100) NOT NULL,
-  `affiliation` enum('student','admin') NOT NULL,
+  `affiliation` enum('student','admin','none') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `group_id` int DEFAULT NULL,
   `class` int DEFAULT NULL,
@@ -381,4 +396,4 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-09 13:38:11
+-- Dump completed on 2025-10-28 10:39:58

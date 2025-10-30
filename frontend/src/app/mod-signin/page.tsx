@@ -12,7 +12,7 @@ export default function ModeratorSignIn() {
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch(`${API_BASE_URL}/moderator-login`, {
+    const res = await fetch(`${API_BASE_URL}/auth/moderator-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

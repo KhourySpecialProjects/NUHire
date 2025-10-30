@@ -1,16 +1,21 @@
 FROM node:18-alpine
 
+ENV LOG_LEVEL=DEBUG
+
 WORKDIR /apicode
 
 # Copy package files and install dependencies
-COPY package*.json ./
+COPY package*.json tsconfig.json ./
 RUN npm install
 
-# Copy remaining application files
-COPY . .
+# Copy source code
+COPY src/ ./src/
+
+# Compile TypeScript
+RUN npm run build
 
 # Expose backend port
 EXPOSE 5001
 
 # Start the application
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

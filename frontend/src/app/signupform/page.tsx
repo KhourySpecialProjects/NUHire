@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Slideshow from "../components/slideshow";
 import Image from "next/image";
-import { useProgressManager } from "../components/progress";
 
 // Define API base URL with fallback
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
@@ -13,8 +12,6 @@ export default function SignupDetails() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [affiliation, setAffiliation] = useState('none');
-  const [groupNumber, setGroupNumber] = useState('');
-  const [courseNumber, setCourseNumber] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
@@ -58,19 +55,14 @@ export default function SignupDetails() {
 
     if (affiliation === 'student') {
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/moderator-crns/${courseNumber}`,
-          { method: 'GET', credentials: 'include' }
-        )
         const emailRes = await fetch(
-          `${API_BASE_URL}/moderator-classes/${email}`,
+          `${API_BASE_URL}/moderator/classes/${email}`,
           { method: 'GET', credentials: 'include' }
         )
-        if (!res.ok || !emailRes.ok) {
-          setError('Cannot get backend data.');
+        if (!emailRes.ok) {
+          setError('Invalid CRN or cannot get backend data.');
           return;
         }
-        const {id, admin_email, crn, nom_groups} = await res.json();
         const emailData = await emailRes.json();
         console.log(emailData);
         if (emailData.length !== 0) {
@@ -78,7 +70,7 @@ export default function SignupDetails() {
           return;
         }
       } catch {
-        setError('Failed to validate CRN/group number. Please try again.');
+        setError('Failed to validate CRN. Please check the CRN and try again.');
         return;
       }
     }
@@ -86,7 +78,7 @@ export default function SignupDetails() {
     if (affiliation === 'admin') {
       try {
         const res = await fetch(
-          `${API_BASE_URL}/moderator-classes/${email}`,
+          `${API_BASE_URL}/moderator/classes/${email}`,
           { method: 'GET', credentials: 'include' }
         )
         if (!res.ok) {
@@ -110,9 +102,9 @@ export default function SignupDetails() {
       Last_name: lastName, 
       Email: email, 
       Affiliation: affiliation,
-      // Include group_id only for students
-      ...(affiliation === 'student' && { group_id: groupNumber, course_id: courseNumber })
     };
+
+    console.log('Submitting user:', user);
 
     try {
       const response = await fetch(`${API_BASE_URL}/users`, {
@@ -124,8 +116,8 @@ export default function SignupDetails() {
 
       if (response.ok) {
         setMessage('User added successfully!');
+        console.log('User added successfully:', user, 'redirecting to Keycloak...');
         setTimeout(() => {
-          // Redirect to Keycloak login flow again to set session
           window.location.href = `${API_BASE_URL}/auth/keycloak`;
         }, 1500);
       } else {
@@ -184,15 +176,16 @@ export default function SignupDetails() {
             <option value="student">Student</option>
             <option value="admin">Faculty</option>
           </select>
+
           <button 
             type="submit" 
-            className="w-full bg-northeasternWhite text-northeasternRed font-semibold px-4 py-3 rounded-md hover:bg-northeasternRed hover:bg-northeasternWhite transition"
+            className="w-full bg-northeasternWhite text-northeasternRed font-semibold px-4 py-3 rounded-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
           >
             Submit
           </button>
         </form>
         {message && (
-          <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+          <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50">
             {message}
           </div>
         )}       

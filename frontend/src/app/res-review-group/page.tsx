@@ -1,17 +1,16 @@
 "use client";
+export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 import React, { useState, useEffect } from "react";
 import Instructions from "../components/instructions";
-import { io, Socket } from "socket.io-client";
 import Navbar from "../components/navbar";
 import { usePathname, useRouter } from "next/navigation";
 import { useProgress } from "../components/useProgress";
 import Footer from "../components/footer";
 import Popup from "../components/popup";
 import { useProgressManager } from "../components/progress";
+import { useSocket } from "../components/socketContext";
 
-const SOCKET_URL = `${API_BASE_URL}`; 
-let socket: Socket; // Define socket with correct type
 
 export default function ResReviewGroup() {
   useProgress();
@@ -58,7 +57,8 @@ export default function ResReviewGroup() {
   const router = useRouter();
   const pathname = usePathname();
   const [selectedResumeNumber, setSelectedResumeNumber] = useState<number | "">("");
-  
+  const socket = useSocket();
+
   // Team confirmation state
   const [teamConfirmations, setTeamConfirmations] = useState<string[]>([]);
   const [hasConfirmed, setHasConfirmed] = useState(false);
@@ -74,7 +74,7 @@ export default function ResReviewGroup() {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        const response = await fetch(`${API_BASE_URL}/group-size/${user.group_id}`);
+        const response = await fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" });
         if (response.ok) {
           const data = await response.json();
           setGroupSize(data.count);
@@ -117,45 +117,33 @@ export default function ResReviewGroup() {
     console.log("Resumes has changes:", resumes)
   }, [resumes]);
 
+
   useEffect(() => {
-    if (!user) return; // Only check for user, not socket
+    if (!socket || !user) return;
 
-    // If socket exists but is not connected, close it
-    if (socket && !socket.connected) {
-      socket.close();
-    }
+    console.log("Socket connected:", socket.id);
+    setIsConnected(true);
     
-    // Initialize new socket
-    socket = io(SOCKET_URL, {
-      reconnectionAttempts: 5,
-      timeout: 5000,
-    });
-    
-    socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
-      setIsConnected(true);
-      
-      // Join the proper room format
-      const roomId = `group_${user.group_id}_class_${user.class}`;
-      console.log("Joining room:", roomId);
-      socket.emit("joinGroup", roomId);
-    });
-
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-    });
+    // Join the proper room format
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+    console.log("Joining room:", roomId);
+    socket.emit("joinGroup", roomId);
 
     // Handle checkbox updates from other group members
-    socket.on("checkboxUpdated", ({ resume_number, checked }: { resume_number: number; checked: boolean }) => {
+    const handleCheckboxUpdated = ({ resume_number, checked }: { resume_number: number; checked: boolean }) => {
       console.log(`Received checkbox update: Resume ${resume_number}, Checked: ${checked}`);
       setCheckedState((prev) => ({
         ...prev,
         [resume_number]: checked,
       }));
-    });
+    };
 
     // Handle team confirmation updates
-    socket.on("teamConfirmSelection", ({ studentId, groupId, classId }) => {
+    const handleTeamConfirmSelection = ({ studentId, groupId, classId }: { 
+      studentId: string; 
+      groupId: number; 
+      classId: number 
+    }) => {
       if (groupId === user.group_id && classId === user.class) {
         setTeamConfirmations(prev => {
           if (!prev.includes(studentId)) {
@@ -164,61 +152,112 @@ export default function ResReviewGroup() {
           return prev;
         });
       }
-    });
+    };
 
-    socket.on("moveGroup", ({groupId, classId, targetPage}) => {
-      if (user && groupId === user.group_id && classId === user.class) {
+    // Handle group move
+    const handleMoveGroup = ({ groupId, classId, targetPage }: { 
+      groupId: number; 
+      classId: number; 
+      targetPage: string 
+    }) => {
+      if (groupId === user.group_id && classId === user.class) {
         console.log(`Group navigation triggered: moving to ${targetPage}`);
         updateProgress(user, "interview");
         localStorage.setItem("progress", "interview");
         window.location.href = targetPage; 
       }
-    });
+    };
 
-    socket.on("connect_error", (err) => {
-      console.error("Socket connection error:", err);
-    });
+    // Handle disconnect
+    const handleDisconnect = () => {
+      setIsConnected(false);
+    };
 
-    socket.on("reconnect_failed", () => {
-      console.error("Socket reconnection failed.");
-    });
+    // Handle connect
+    const handleConnect = () => {
+      console.log("Socket reconnected:", socket.id);
+      setIsConnected(true);
+      const roomId = `group_${user.group_id}_class_${user.class}`;
+      socket.emit("joinGroup", roomId);
+    };
+
+    // Attach listeners
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("checkboxUpdated", handleCheckboxUpdated);
+    socket.on("teamConfirmSelection", handleTeamConfirmSelection);
+    socket.on("moveGroup", handleMoveGroup);
+
+    // Check initial connection state
+    if (socket.connected) {
+      setIsConnected(true);
+    }
 
     return () => {
-      if (socket) {
-        console.log("Cleaning up socket connection");
-        socket.off("connect");
-        socket.off("disconnect");
-        socket.off("checkboxUpdated");
-        socket.off("teamConfirmSelection");
-        socket.off("connect_error");
-        socket.off("reconnect_failed");
-        socket.off("moveGroup");
-        socket.close();
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("checkboxUpdated", handleCheckboxUpdated);
+      socket.off("teamConfirmSelection", handleTeamConfirmSelection);
+      socket.off("moveGroup", handleMoveGroup);
+    };
+  }, [socket, user]);
+
+  // Student online and page change
+  useEffect(() => {
+    if (!socket || !user || !user.email) return;
+
+    socket.emit("studentOnline", { studentId: user.email }); 
+    
+    socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+    
+    const updateCurrentPage = async () => {
+      try {
+        await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ page: 'resumepage2', user_email: user.email }),
+          credentials: "include"
+        });
+      } catch (error) {
+        console.error("Error updating current page:", error);
       }
     };
-  }, [user]);
+    
+    updateCurrentPage(); 
+  }, [socket, user, pathname]);
 
-  useEffect(() => {
-    if (user && user.email) {
-      socket.emit("studentOnline", { studentId: user.email }); 
-      
-      socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
-      
-      const updateCurrentPage = async () => {
-        try {
-          await fetch(`${API_BASE_URL}/update-currentpage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ page: 'resumepage2', user_email: user.email }),
-          });
-        } catch (error) {
-          console.error("Error updating current page:", error);
-        }
-      };
-      
-      updateCurrentPage(); 
+  // Complete resumes function
+  const completeResumes = () => {
+    if (!socket || !user) {
+      console.error('Socket or user not available');
+      return;
     }
-  }, [user, pathname]);
+
+    const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
+    if (selectedCount !== 4) {
+      setPopup({ headline: "Selection Error", message: "Please select exactly 4 resumes to proceed." });
+      return;
+    }
+
+    // Check if all team members have confirmed
+    if (teamConfirmations.length < groupSize) {
+      setPopup({ 
+        headline: "Team Confirmation Required", 
+        message: `All ${groupSize} team members must confirm the selection before proceeding to interviews.` 
+      });
+      return;
+    }
+
+    localStorage.setItem("progress", "interview");
+    updateProgress(user, "interview");
+    window.location.href = "/interview-stage"; 
+    
+    socket.emit("moveGroup", {
+      groupId: user.group_id, 
+      classId: user.class, 
+      targetPage: "/interview-stage"
+    });
+  };
 
   useEffect(() => {
     const handleShowInstructions = () => {
@@ -235,7 +274,7 @@ export default function ResReviewGroup() {
 
   const fetchResumes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf`);
+      const response = await fetch(`${API_BASE_URL}/resume_pdf`, {  credentials: "include"});
       const data: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await response.json();
 
       console.log("Raw resume data from API:", data);
@@ -275,7 +314,7 @@ export default function ResReviewGroup() {
         if (!user || !user.class) return;
 
         // Update the endpoint to include class filtering
-        const response = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`);
+        const response = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, {  credentials: "include"});
         const data: ResumeData[] = await response.json();
 
         const voteData: { [key: number]: VoteData } = {};
@@ -361,28 +400,6 @@ export default function ResReviewGroup() {
   };
 
   const selectedResume = resumes.find(r => r.resume_number === selectedResumeNumber);
-
-  const completeResumes = () => {
-    const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
-    if (selectedCount !== 4) {
-      setPopup({ headline: "Selection Error", message: "Please select exactly 4 resumes to proceed." });
-      return;
-    }
-
-    // Check if all team members have confirmed
-    if (teamConfirmations.length < groupSize) {
-      setPopup({ 
-        headline: "Team Confirmation Required", 
-        message: `All ${groupSize} team members must confirm the selection before proceeding to interviews.` 
-      });
-      return;
-    }
-
-    localStorage.setItem("progress", "interview")
-    updateProgress(user!, "interview");
-    window.location.href = "/interview-stage"; 
-    socket.emit("moveGroup", {groupId: user!.group_id, classId: user!.class, targetPage: "/interview-stage"});
-  };
 
   // Calculate selected resume count
   const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
