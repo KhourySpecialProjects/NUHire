@@ -37,7 +37,11 @@ const Facts: React.FC = () => {
           if (factsRes.ok) {
             const factsData = await factsRes.json();
             console.log("Facts data:", factsData);
-            setFacts(factsData);
+            // Map object { one, two, three } to array
+            const factsArray = ["one", "two", "three"]
+              .map(key => factsData[key])
+              .filter(fact => fact && fact.trim());
+            setFacts(factsArray.map(fact => ({ fact })));
           } else {
             console.warn("Facts fetch failed:", factsRes.status, await factsRes.text());
           }
