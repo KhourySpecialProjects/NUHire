@@ -69,7 +69,7 @@ const NavbarAdmin = () => {
       <div
         ref={dropdownRef}
         className={`fixed top-0 left-0 z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-auto min-w-max border-r-4 border-northeasternRed`}
-        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0', height: '440px', top: '0' }}
+        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0', height: '400px', top: '0' }}
       >
         <div className="flex flex-col gap-2 pt-6 px-4">
           <div className="flex items-center justify-between mb-2">
