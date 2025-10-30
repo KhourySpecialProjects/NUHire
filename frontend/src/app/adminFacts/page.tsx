@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -94,6 +95,7 @@ export default function AdminFactsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik items-center justify-center">
+      <NavbarAdmin />
       <div className="max-w-lg w-full bg-white border-4 border-northeasternBlack rounded-lg shadow-lg p-8 mt-10">
         <h1 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Add Waiting Room Facts</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
