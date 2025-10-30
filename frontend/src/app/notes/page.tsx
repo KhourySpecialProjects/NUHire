@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useSocket } from '../components/socketContext';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-const socket = useSocket();
 const NotesPage: React.FC = () => {
   const router = useRouter();
+  const socket = useSocket();
+
   
   interface Note {
     id: number;

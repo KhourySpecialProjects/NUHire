@@ -15,8 +15,6 @@ import router from "next/router";
 import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
 
-const socket = useSocket();
-
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url
@@ -39,6 +37,7 @@ interface User {
 }
 
 export default function JobDescriptionPage() { 
+  const socket = useSocket();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [fileUrl, setJob] = useState("");
   const [numPages, setNumPages] = useState<number | null>(null);

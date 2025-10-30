@@ -15,7 +15,6 @@ import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
 import { useSocket } from "../components/socketContext";
 
-const socket = useSocket();
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -24,6 +23,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function ResumesPage() {
   useProgress();
+  const socket = useSocket();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [resumes, setResumes] = useState(0);
   const [resumesList, setResumesList] = useState<{ file_path: string }[]>([]);

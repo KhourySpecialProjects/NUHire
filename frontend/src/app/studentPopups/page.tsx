@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { useSocket } from "../components/socketContext";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-const socket = useSocket();
 
 const StudentPage = () => {
-    const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-    const pathname = usePathname(); 
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
+  const pathname = usePathname(); 
+  const socket = useSocket();
 
   useEffect(() => {
     if (!socket) return;

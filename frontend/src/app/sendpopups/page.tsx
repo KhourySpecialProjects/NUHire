@@ -8,9 +8,9 @@ import Popup from "../components/popup";
 import AdminReactionPopup from "../components/adminReactionPopup";
 import { useSocket } from "../components/socketContext";
 
-const socket = useSocket(); 
-
 const SendPopups = () => {
+  const socket = useSocket(); 
+
   interface User {
     affiliation: string;
     email: string;

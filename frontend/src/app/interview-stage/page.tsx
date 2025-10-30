@@ -13,11 +13,7 @@ import Popup from "../components/popup";
 import axios from "axios";
 import { useProgressManager } from "../components/progress";
 
-// Define API_BASE_URL with a fallback
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-
-// Initialize socket only after API_BASE_URL is defined
-const socket = useSocket();
 
 interface User {
   id: string;
@@ -41,6 +37,7 @@ interface Resume {
 
 export default function Interview() {
   useProgress();
+  const socket = useSocket();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

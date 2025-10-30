@@ -14,7 +14,6 @@ import { useProgressManager } from "../components/progress";
 
 // Define the API base URL from environment variables
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-const socket = useSocket();
 
 // Define the VoteData interface to match the expected vote data structure
 type VoteData = {
@@ -50,6 +49,7 @@ interface Offer {
 // Main component for the MakeOffer page
 export default function MakeOffer() {
   useProgress();
+  const socket = useSocket();
   const router = useRouter();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(
