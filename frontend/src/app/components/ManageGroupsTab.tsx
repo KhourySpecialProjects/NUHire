@@ -494,7 +494,7 @@ export function ManageGroupsTab() {
   }
 
 return (
-  <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+  <div className="bg-northeasternWhite font-rubik">
     <div className="w-full p-4">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full">
         <div className="flex justify-between items-center mb-6">

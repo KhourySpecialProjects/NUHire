@@ -275,19 +275,19 @@ const Grouping = () => {
   return (
     <div className="flex flex-col h-screen bg-sand font-rubik">
       <NavbarAdmin />
-      <div className="flex-1 p-4 overflow-hidden">
+      <div className="flex-1 p-4 overflow-hidden flex flex-col">
         <Tabs>
           <div title="Manage Groups">
-              <div className="w-full flex-1">
-                <ManageGroupsTab />
-              </div>
+            <div className="w-full h-full overflow-y-auto">
+              <ManageGroupsTab />
             </div>
+          </div>
 
-            <div title="CSV Group Assignment">
-              <div className="w-full flex-1">
-                <StudentCSVTab />
-              </div>
+          <div title="CSV Group Assignment">
+            <div className="w-full h-full overflow-y-auto">
+              <StudentCSVTab />
             </div>
+          </div>
           {/* Tab: Job Assignment */}
           <div title="Job Assignment">
             <div className="border-4 border-northeasternBlack bg-northeasternWhite rounded-lg p-6 flex flex-col overflow-y-auto max-h-[80vh]">
