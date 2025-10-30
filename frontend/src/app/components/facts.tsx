@@ -30,7 +30,7 @@ const Facts: React.FC = () => {
 
         // Only fetch facts if user has group_id and class_id
         if (userRes.ok && userData.group_id && userData.class_id) {
-          const factsUrl = `${API_BASE_URL}/facts/get/${userData.group_id}/${userData.class_id}`;
+          const factsUrl = `${API_BASE_URL}/facts/get/${userData.group_id}/${userData.class}`;
           console.log("Fetching facts from:", factsUrl);
           const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
           console.log("Facts fetch response status:", factsRes.status);
