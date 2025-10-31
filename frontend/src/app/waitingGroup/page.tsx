@@ -221,13 +221,6 @@ export default function WaitingGroupPage() {
                     <h2 className="text-2xl font-bold text-navy mb-4">
                       Waiting for Teacher to allow Start
                     </h2>
-                    <p className="text-lg text-gray-700 mb-4">
-                      Your teacher needs to enable your group to begin.
-                    </p>
-                    <p className="text-md text-gray-600 mb-4">
-                      Please wait while your teacher prepares...
-                    </p>
-                    {/* Facts appear here */}
                     <Facts />
                   </div>
                 </div>
