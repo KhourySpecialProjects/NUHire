@@ -217,7 +217,6 @@ export default function WaitingGroupPage() {
                       <div className="w-12 h-12 bg-northeasternRed rounded-full opacity-20 animate-pulse"></div>
                     </div>
                   </div>
-                  
                   <div className="text-center">
                     <h2 className="text-2xl font-bold text-navy mb-4">
                       Waiting for Teacher to allow Start
@@ -225,13 +224,14 @@ export default function WaitingGroupPage() {
                     <p className="text-lg text-gray-700 mb-4">
                       Your teacher needs to enable your group to begin.
                     </p>
-                    <p className="text-md text-gray-600">
+                    <p className="text-md text-gray-600 mb-4">
                       Please wait while your teacher prepares...
                     </p>
+                    {/* Facts appear here */}
+                    <Facts />
                   </div>
                 </div>
               </div>
-              <Facts />
             </>
           ) : (
             // Authorization Received State
