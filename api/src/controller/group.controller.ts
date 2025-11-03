@@ -488,4 +488,40 @@ export class GroupController {
       });
     });
   };
+
+  addStudent = (req: AuthRequest, res: Response): void => {
+    const { email, class_id, group_id } = req.body;
+
+    console.log('Adding student to group:', { email, class_id, group_id });
+
+    if (!email || !class_id || !group_id) {
+      res.status(400).json({
+        error: 'Missing required fields: email, class_id, group_id'
+      });
+      return;
+    }
+
+    const updateQuery = 'UPDATE Users SET group_id = ? WHERE email = ? AND class = ?';
+
+    this.db.query(updateQuery, [group_id, email, class_id], (err, result: any) => {
+      if (err) {
+        console.error('Error adding student to group:', err);
+        res.status(500).json({ error: 'Failed to add student to group' });
+        return;
+      }
+
+      if (result.affectedRows === 0) {
+        res.status(404).json({ error: 'Student not found in this class' });
+        return;
+      }
+
+      console.log(`✅ Student ${email} successfully added to group ${group_id} in class ${class_id}`);
+      res.json({
+        message: 'Student added to group successfully',
+        email,
+        group_id,
+        class_id
+      });
+    });
+  };
 }

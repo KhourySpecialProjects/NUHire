@@ -645,6 +645,44 @@ return (
                               </div>
                             </div>
                           ))}
+                          <button
+                            onClick={async () => {
+                              const email = prompt("Enter the email of the student to add to this group:");
+                              if (!email) return;
+                              try {
+                                const response = await fetch(`${API_BASE_URL}/groups/add-student`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  credentials: 'include',
+                                  body: JSON.stringify({
+                                    email,
+                                    group_id: group.group_id,
+                                    class_id: selectedClass
+                                  }),
+                                });
+                                if (response.ok) {
+                                  // Refresh students and groups
+                                  const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+                                    credentials: 'include'
+                                  });
+                                  if (studentResponse.ok) {
+                                    const studentData = await studentResponse.json();
+                                    setStudents(studentData);
+                                    organizeStudentsIntoGroups(studentData);
+                                  }
+                                  setPopup({ headline: 'Success', message: 'Student added successfully!' });
+                                } else {
+                                  const errorData = await response.json();
+                                  setPopup({ headline: 'Error', message: `Failed to add student: ${errorData.error || 'Unknown error'}` });
+                                }
+                              } catch (error) {
+                                setPopup({ headline: 'Error', message: 'Failed to add student. Please try again.' });
+                              }
+                            }}
+                            className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                          >
+                            ➕ Add Student to Group
+                          </button>
                         </div>
                       )}
                     </div>

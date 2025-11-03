@@ -19,6 +19,7 @@ export default (db: Connection, io: SocketIOServer): Router => {
   router.patch('/remove-from-group', requireAuth, groupController.removeFromGroup);
   router.patch('/start-all-groups', requireAuth, groupController.startAllGroups);
   router.patch('/start-group', requireAuth, groupController.startGroup);
+  router.post('/add-student', requireAuth, groupController.addStudent);
   router.get('/started/:classId/:groupId', requireAuth, groupController.getGroupStarted);
   router.get('/status/:classId/:groupId', requireAuth, groupController.getGroupStatus);
   router.get(' ', requireAuth, groupController.getGroupsSeen);
