@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation";
 import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
 import { useSocket } from "../components/socketContext";
-
+import Facts from "../components/facts";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -555,6 +555,20 @@ useEffect(() => {
               "Next: Resume Review Pt. 2 →"
             )}
           </button>
+          {disabled && totalDecisions === 10 && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+              <div className="bg-white border-4 border-navy rounded-lg shadow-lg p-8 text-center max-w-md mx-auto">
+                <h2 className="text-2xl font-bold text-navy mb-4">Waiting for Teammates</h2>
+                <p className="text-lg text-gray-700 mb-4">
+                  You have completed your resume decisions.<br />
+                  Waiting for other group members to finish...
+                </p>
+                <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto mb-4"></div>
+                {/* Show facts here */}
+                <Facts />
+              </div>
+            </div>
+          )}
         </div>
       </footer>
       <Footer />
