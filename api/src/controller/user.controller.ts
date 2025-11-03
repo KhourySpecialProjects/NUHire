@@ -140,6 +140,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
             action: 'created'
           });
           this.io.emit('userAdded');
+          console.log('Emitted userAdded event via WebSocket');
         });
       }
     });

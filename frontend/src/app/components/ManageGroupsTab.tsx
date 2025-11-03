@@ -88,6 +88,7 @@ export function ManageGroupsTab() {
           organizeStudentsIntoGroups(studentData);
         });
       }
+      console.log('User added event received, refreshed student data.');
     };
 
     socket.on('userAdded', handleUserAdded);
