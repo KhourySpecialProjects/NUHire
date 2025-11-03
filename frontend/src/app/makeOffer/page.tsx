@@ -495,6 +495,43 @@ export default function MakeOffer() {
     setInterviewsWithVideos(merged);
   }, [resumes]);
 
+    const handleConfirmOfferClick = (candidateId: number) => {
+    if (!socket || !user || !candidateId) return;
+    if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
+      let message = "";
+      if (existingOffer.status === 'pending') {
+        message = "You already have a pending offer awaiting advisor approval.";
+      } else if (existingOffer.status === 'accepted') {
+        message = "You already have an accepted offer. You cannot make another offer.";
+      }
+      setPopup({
+        headline: "Offer Already Exists",
+        message: message
+      });
+      return;
+    }
+    // Update local state for this user
+    setOfferConfirmations(prev => {
+      const currentConfirmations = prev[candidateId] || [];
+      if (!currentConfirmations.includes(user.id)) {
+        return {
+          ...prev,
+          [candidateId]: [...currentConfirmations, user.id]
+        };
+      }
+      return prev;
+    });
+    // Emit to other users in the room
+    socket.emit("confirmOffer", {
+      groupId: user.group_id,
+      classId: user.class,
+      candidateId,
+      studentId: user.id,
+      roomId: `group_${user.group_id}_class_${user.class}`
+    });
+    console.log("Emitted confirmOffer for candidate:", candidateId);
+  };
+
   // Setup socket.io
   useEffect(() => {
     if (!socket || !user) return;
@@ -527,47 +564,15 @@ export default function MakeOffer() {
       setOfferPending(true);
     };
 
-  const handleConfirmOffer = (candidateId: number) => {
-      if (!socket || !user || !candidateId) return;
-      
-      // Check if there's already an offer
-      if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
-        let message = "";
-        if (existingOffer.status === 'pending') {
-          message = "You already have a pending offer awaiting advisor approval.";
-        } else if (existingOffer.status === 'accepted') {
-          message = "You already have an accepted offer. You cannot make another offer.";
+    const handleConfirmOfferSocket = ({ candidateId, studentId }: { candidateId: number, studentId: string }) => {
+      setOfferConfirmations(prev => {
+        const current = prev[candidateId] || [];
+        if (!current.includes(studentId)) {
+          return { ...prev, [candidateId]: [...current, studentId] };
         }
-        
-        setPopup({
-          headline: "Offer Already Exists",
-          message: message
-        });
-        return;
-      }
-      
-    // First update local state immediately
-    setOfferConfirmations(prev => {
-      const currentConfirmations = prev[candidateId] || [];
-      if (!currentConfirmations.includes(user.id)) {
-        return {
-          ...prev,
-          [candidateId]: [...currentConfirmations, user.id]
-        };
-      }
-      return prev;
-    });
-
-    // Then emit to other users in the room
-    socket.emit("confirmOffer", {
-      groupId: user.group_id,
-      classId: user.class,
-      candidateId,
-      studentId: user.id,
-      roomId: `group_${user.group_id}_class_${user.class}`
-    });
-    console.log("Emitted confirmOffer for candidate:", candidateId)
-  };
+        return prev;
+      });
+    };
 
     const handleMakeOfferResponse = ({
       classId,
@@ -633,7 +638,7 @@ export default function MakeOffer() {
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("groupMemberOffer", handleGroupMemberOffer);
-    socket.on("confirmOffer", handleConfirmOffer);
+    socket.on("confirmOffer", handleConfirmOfferSocket);
     socket.on("makeOfferResponse", handleMakeOfferResponse);
     socket.on("checkboxUpdated", handleCheckboxUpdated);
 
@@ -642,7 +647,7 @@ export default function MakeOffer() {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("groupMemberOffer", handleGroupMemberOffer);
-      socket.off("confirmOffer", handleConfirmOffer);
+      socket.off("confirmOffer", handleConfirmOfferSocket);
       socket.off("makeOfferResponse", handleMakeOfferResponse);
       socket.off("checkboxUpdated", handleCheckboxUpdated);
     };
@@ -1004,7 +1009,7 @@ export default function MakeOffer() {
               {!allConfirmed ? (
                 // Individual confirmation button
                 <button
-                  onClick={() => handleConfirmOffer(selectedCandidateId)}
+                  onClick={() => handleConfirmOfferClick(selectedCandidateId)}
                   disabled={hasConfirmed || offerPending || isOfferDisabled}
                   className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
                     hasConfirmed
