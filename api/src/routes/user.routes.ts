@@ -16,7 +16,7 @@ export default (db: Connection): Router => {
   router.post('/update-currentpage', requireAuth, userController.updateCurrentPage);
   router.post('/update-user-class', requireAuth, userController.updateUserClass);
   router.post('/update-seen', requireAuth, userController.updateUserSeen);
-  router.get('/check', userController.check);
+  router.get('/check', requireAuth,  userController.check);
 
   return router;
 };
