@@ -64,11 +64,6 @@ export default function SignupDetails() {
           `${API_BASE_URL}/users/check`,
           { method: 'GET', credentials: 'include', body: JSON.stringify({ email }) }
         );
-        if (!checkRes.ok) {
-          setError('Failed to check email. Please try again.');
-          setMessage('Error checking your email.');
-          return;
-        }
         const checkData = await checkRes.json();
         if (checkData === 0) {
           setMessage('Student is not registered by instructor.');
