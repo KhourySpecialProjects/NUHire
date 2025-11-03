@@ -5,7 +5,6 @@ import { useSocket } from "../components/socketContext";
 import Navbar from "../components/navbar"; // Importing the navbar component
 import { usePathname, useRouter } from "next/navigation"; // Importing useRouter and usePathname for navigation
 import { useProgress } from "../components/useProgress"; // Custom hook for progress tracking
-import NotesPage from "../components/note"; // Importing the notes page component
 import Footer from "../components/footer"; // Importing the footer component
 import Popup from "../components/popup"; // Importing the popup component
 import axios from "axios"; // Importing axios for HTTP requests
@@ -90,8 +89,9 @@ export default function MakeOffer() {
   
   const [existingOffer, setExistingOffer] = useState<Offer | null>(null);
   const [ableToMakeOffer, setAbleToMakeOffer] = useState(true);
+  const [checkedStateRestored, setCheckedStateRestored] = useState(false);
 
-  const checkExistingOffer = async () => {
+const checkExistingOffer = async () => {
     if (!user?.group_id || !user?.class) return;
     
     try {
@@ -242,6 +242,28 @@ export default function MakeOffer() {
     };
     fetchUser();
   }, [router]);
+
+  useEffect(() => {
+    const savedCheckedState = localStorage.getItem('makeOffer_checkedState');
+    if (savedCheckedState) {
+      setCheckedState(JSON.parse(savedCheckedState));
+      setCheckedStateRestored(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user || !interviews.length || checkedStateRestored) return;
+    const grouped = groupInterviewsByCandidate(interviews);
+    const checkboxData: { [key: number]: boolean } = {};
+    for (const [candidateIdStr, candidateInterviews] of Object.entries(grouped)) {
+      const candidateId = parseInt(candidateIdStr);
+      candidateInterviews.forEach((interview) => {
+        checkboxData[candidateId] =
+          checkboxData[candidateId] || interview.checked;
+      });
+    }
+    setCheckedState(checkboxData);
+  }, [interviews, user, checkedStateRestored]);
 
   // Update current page when user is loaded
   useEffect(() => {
