@@ -62,7 +62,7 @@ export default function SignupDetails() {
       try {
         const checkRes = await fetch(
           `${API_BASE_URL}/users/check`,
-          { method: 'GET', credentials: 'include', body: JSON.stringify({ email }) }
+          { method: 'GET', body: JSON.stringify({ email }) }
         );
         const checkData = await checkRes.json();
         console.log("Check data for student affiliation:", checkData);
