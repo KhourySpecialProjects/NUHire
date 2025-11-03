@@ -273,11 +273,6 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
 
   check = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
-        res.status(401).json({ message: 'Unauthorized' });
-        return;
-      }
-
       const { email } = req.body;
 
       if (!email) {
