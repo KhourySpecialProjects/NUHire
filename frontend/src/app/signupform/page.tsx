@@ -46,6 +46,10 @@ export default function SignupDetails() {
     fetchUserDetails();
   }, []);
 
+  useEffect(() => {
+    console.log("email changed:", email);
+  }, [email]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -61,7 +65,7 @@ export default function SignupDetails() {
     if (affiliation === 'student') {
       try {
         const checkRes = await fetch(
-          `${API_BASE_URL}/users/check/${email}`,
+          `${API_BASE_URL}/users/check?email=${encodeURIComponent(email)}`,
           { method: 'GET'}
         );
         const checkData = await checkRes.json();

@@ -288,7 +288,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
           return;
         }
         const rows = result as RowDataPacket[];
-        const count = rows[0]?.count || 0;
+        const count = rows[0].count;
         console.log("Check query result:", result);
         res.json({ exists: count > 0 });
       });
