@@ -273,7 +273,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
 
   check = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { email } = req.body;
+      const { email } = req.query;
       console.log("Check endpoint hit with email:", email);
 
       if (!email) {
