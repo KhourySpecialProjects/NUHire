@@ -109,6 +109,58 @@ export default function Interview() {
   };
 
   useEffect(() => {
+    const savedVideoIndex = localStorage.getItem('interviewStage_videoIndex');
+    const savedOverall = localStorage.getItem('interviewStage_overall');
+    const savedProfessionalPresence = localStorage.getItem('interviewStage_professionalPresence');
+    const savedQualityOfAnswer = localStorage.getItem('interviewStage_qualityOfAnswer');
+    const savedPersonality = localStorage.getItem('interviewStage_personality');
+    const savedNoShow = localStorage.getItem('interviewStage_noShow');
+    if (savedVideoIndex) setVideoIndex(Number(savedVideoIndex));
+    if (savedOverall) setOverall(Number(savedOverall));
+    if (savedProfessionalPresence) setProfessionalPresence(Number(savedProfessionalPresence));
+    if (savedQualityOfAnswer) setQualityOfAnswer(Number(savedQualityOfAnswer));
+    if (savedPersonality) setPersonality(Number(savedPersonality));
+    if (savedNoShow) setNoShow(savedNoShow === 'true');
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('interviewStage_videoIndex', String(videoIndex));
+  }, [videoIndex]);
+
+  useEffect(() => {
+    localStorage.setItem('interviewStage_overall', String(overall));
+  }, [overall]);
+
+  useEffect(() => {
+    localStorage.setItem('interviewStage_professionalPresence', String(professionalPresence));
+  }, [professionalPresence]);
+
+  useEffect(() => {
+    localStorage.setItem('interviewStage_qualityOfAnswer', String(qualityOfAnswer));
+  }, [qualityOfAnswer]);
+
+  useEffect(() => {
+    localStorage.setItem('interviewStage_personality', String(personality));
+  }, [personality]);
+
+  useEffect(() => {
+    localStorage.setItem('interviewStage_noShow', String(noShow));
+  }, [noShow]);
+
+  // Clear state when finished
+  useEffect(() => {
+    if (finished) {
+      localStorage.removeItem('interviewStage_videoIndex');
+      localStorage.removeItem('interviewStage_overall');
+      localStorage.removeItem('interviewStage_professionalPresence');
+      localStorage.removeItem('interviewStage_qualityOfAnswer');
+      localStorage.removeItem('interviewStage_personality');
+      localStorage.removeItem('interviewStage_noShow');
+    }
+  }, [finished]);
+
+  useEffect(() => {
     console.log("Interviews updated:", interviews);
   }, [interviews]);
   
