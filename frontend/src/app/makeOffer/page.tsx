@@ -51,9 +51,10 @@ export default function MakeOffer() {
   const socket = useSocket();
   const router = useRouter();
   const {updateProgress, fetchProgress} = useProgressManager();
-  const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(
-    {}
-  );
+  const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(() => {
+    const savedCheckedState = localStorage.getItem('makeOffer_checkedState');
+    return savedCheckedState ? JSON.parse(savedCheckedState) : {};
+  });
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -244,9 +245,8 @@ const checkExistingOffer = async () => {
   }, [router]);
 
   useEffect(() => {
-    const savedCheckedState = localStorage.getItem('makeOffer_checkedState');
-    if (savedCheckedState) {
-      setCheckedState(JSON.parse(savedCheckedState));
+    // Mark as restored after first render
+    if (Object.keys(checkedState).length > 0) {
       setCheckedStateRestored(true);
     }
   }, []);
