@@ -66,7 +66,7 @@ export default function SignupDetails() {
         );
         const checkData = await checkRes.json();
         console.log("Check data for student affiliation:", checkData);
-        if (checkData === 0) {
+        if (!checkData.exists) {
           setMessage('Student is not registered by instructor.');
           return;
         }

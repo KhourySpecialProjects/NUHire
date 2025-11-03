@@ -281,17 +281,19 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
         return;
       }
 
-      this.db.query('SELECT COUNT(*) FROM Users WHERE email = ?', [email], (err, result) => {
+      this.db.query('SELECT COUNT(*) AS count FROM Users WHERE email = ?', [email], (err, result) => {
         if (err) {
           console.error('Database error:', err);
           res.status(500).json({ error: 'Failed to check if email is within users.' });
           return;
         }
+        const rows = result as RowDataPacket[];
+        const count = rows[0]?.count || 0;
         console.log("Check query result:", result);
-        res.json({ message: 'Seen updated successfully!' });
+        res.json({ exists: count > 0 });
       });
     } catch (error) {
-      console.error('Unexpected error in updateUserSeen:', error);
+      console.error('Unexpected error in check:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   };
