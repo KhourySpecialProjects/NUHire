@@ -564,7 +564,6 @@ useEffect(() => {
                   Waiting for other group members to finish...
                 </p>
                 <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto mb-4"></div>
-                {/* Show facts here */}
                 <Facts />
               </div>
             </div>

@@ -60,6 +60,26 @@ export default function SignupDetails() {
 
     if (affiliation === 'student') {
       try {
+        const checkRes = await fetch(
+          `${API_BASE_URL}/users/check`,
+          { method: 'GET', credentials: 'include', body: JSON.stringify({ email }) }
+        );
+        if (!checkRes.ok) {
+          setError('Failed to check email. Please try again.');
+          setMessage('Error checking your email.');
+          return;
+        }
+        const checkData = await checkRes.json();
+        if (checkData === 0) {
+          setMessage('Student is not registered by instructor.');
+          return;
+        }
+      } catch {
+        setError('Failed to check email. Please try again.');
+        setMessage('Error checking your email.');
+        return;
+      }
+      try {
         const emailRes = await fetch(
           `${API_BASE_URL}/moderator/classes/${email}`,
           { method: 'GET', credentials: 'include' }
