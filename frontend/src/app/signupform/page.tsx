@@ -65,7 +65,7 @@ export default function SignupDetails() {
     if (affiliation === 'student') {
       try {
         const checkRes = await fetch(
-          `${API_BASE_URL}/users/check?email=${encodeURIComponent(email)}`,
+          `${API_BASE_URL}/users/check/${email}`,
           { method: 'GET', credentials: 'include' }
         );
         const checkData = await checkRes.json();
