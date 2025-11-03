@@ -61,8 +61,44 @@ export default function ResumesPage() {
     "You have to wait for the rest of your group to finish before moving on.",
     "The decisions you make here will not affect the candidate's overall application.",
     "They will just be another factor your group considers when making a final decision.",
-
   ];  
+
+  useEffect(() => {
+    if (totalDecisions === 10) {
+      localStorage.removeItem('resumeReviewIndex');
+      localStorage.removeItem('resumeReviewAccepted');
+      localStorage.removeItem('resumeReviewRejected');
+      localStorage.removeItem('resumeReviewNoResponse');
+    }
+  }, [totalDecisions]);
+
+  useEffect(() => {
+    const savedIndex = localStorage.getItem('resumeReviewIndex');
+    const savedAccepted = localStorage.getItem('resumeReviewAccepted');
+    const savedRejected = localStorage.getItem('resumeReviewRejected');
+    const savedNoResponse = localStorage.getItem('resumeReviewNoResponse');
+    if (savedIndex !== null) setCurrentResumeIndex(Number(savedIndex));
+    if (savedAccepted !== null) setAccepted(Number(savedAccepted));
+    if (savedRejected !== null) setRejected(Number(savedRejected));
+    if (savedNoResponse !== null) setNoResponse(Number(savedNoResponse));
+  }, []);
+
+  // Save progress to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('resumeReviewIndex', String(currentResumeIndex));
+  }, [currentResumeIndex]);
+
+  useEffect(() => {
+    localStorage.setItem('resumeReviewAccepted', String(accepted));
+  }, [accepted]);
+
+  useEffect(() => {
+    localStorage.setItem('resumeReviewRejected', String(rejected));
+  }, [rejected]);
+
+  useEffect(() => {
+    localStorage.setItem('resumeReviewNoResponse', String(noResponse));
+  }, [noResponse]);
 
   useEffect(() => {
     const handleShowInstructions = () => {
@@ -137,40 +173,40 @@ export default function ResumesPage() {
     updateCurrentPage();
   }, [socket, user, pathname]);
 
-// Popup and group move listeners
-useEffect(() => {
-  if (!socket || !user) return;
+  // Popup and group move listeners
+  useEffect(() => {
+    if (!socket || !user) return;
 
-  const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
-    setPopup({ headline, message });
+    const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+      setPopup({ headline, message });
 
-    if (headline === "Internal Referral") {
-      setRestricted(true);
-    } else {
-      setRestricted(false);
-    }
-  };
+      if (headline === "Internal Referral") {
+        setRestricted(true);
+      } else {
+        setRestricted(false);
+      }
+    };
 
-  const handleMoveGroup = ({ groupId, classId, targetPage }: { 
-    groupId: number; 
-    classId: number; 
-    targetPage: string 
-  }) => {
-    if (groupId === user.group_id && classId === user.class && targetPage === "/res-review-group") {
-      console.log(`Group navigation triggered: moving to ${targetPage}`);
-      localStorage.setItem("progress", "res_2");
-      window.location.href = targetPage; 
-    }
-  };
+    const handleMoveGroup = ({ groupId, classId, targetPage }: { 
+      groupId: number; 
+      classId: number; 
+      targetPage: string 
+    }) => {
+      if (groupId === user.group_id && classId === user.class && targetPage === "/res-review-group") {
+        console.log(`Group navigation triggered: moving to ${targetPage}`);
+        localStorage.setItem("progress", "res_2");
+        window.location.href = targetPage; 
+      }
+    };
 
-  socket.on("receivePopup", handleReceivePopup);
-  socket.on("moveGroup", handleMoveGroup);
+    socket.on("receivePopup", handleReceivePopup);
+    socket.on("moveGroup", handleMoveGroup);
 
-  return () => {
-    socket.off("receivePopup", handleReceivePopup);
-    socket.off("moveGroup", handleMoveGroup);
-  };
-}, [socket, user]);
+    return () => {
+      socket.off("receivePopup", handleReceivePopup);
+      socket.off("moveGroup", handleMoveGroup);
+    };
+  }, [socket, user]);
 
   // Group completed res review listener
   useEffect(() => {

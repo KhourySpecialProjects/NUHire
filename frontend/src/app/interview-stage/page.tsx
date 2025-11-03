@@ -12,6 +12,7 @@ import RatingSlider from "../components/ratingSlider";
 import Popup from "../components/popup";
 import axios from "axios";
 import { useProgressManager } from "../components/progress";
+import Facts from "../components/facts";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -755,6 +756,19 @@ const completeInterview = () => {
                 ? `Next: Make Offer page (${groupSubmissions}/${groupSize} submitted)`
                 : "Next: Make Offer page"}
           </button>
+          {finished && !groupFinished && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+              <div className="bg-white border-4 border-navy rounded-lg shadow-lg p-8 text-center max-w-md mx-auto">
+                <h2 className="text-2xl font-bold text-navy mb-4">Waiting for Teammates</h2>
+                <p className="text-lg text-gray-700 mb-4">
+                  You have completed your interviews and ratings.<br />
+                  Waiting for other group members to finish...
+                </p>
+                <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto mb-4"></div>
+                <Facts />
+              </div>
+            </div>
+          )}
         </div>
       </footer>
       <Footer />
