@@ -139,42 +139,42 @@ export default function MakeOffer() {
     }
   };
 
-  // useEffect(() => {
-  //   if (acceptedOffer) {
-  //     localStorage.removeItem('makeOffer_existingOffer');
-  //     localStorage.removeItem('makeOffer_acceptedOffer');
-  //     localStorage.removeItem('makeOffer_sentIn');
-  //     localStorage.removeItem('makeOffer_offerPending');
-  //   }
-  // }, [acceptedOffer]);
+  useEffect(() => {
+    if (acceptedOffer) {
+      localStorage.removeItem('makeOffer_existingOffer');
+      localStorage.removeItem('makeOffer_acceptedOffer');
+      localStorage.removeItem('makeOffer_sentIn');
+      localStorage.removeItem('makeOffer_offerPending');
+    }
+  }, [acceptedOffer]);
 
-  // useEffect(() => {
-  //   const savedOffer = localStorage.getItem('makeOffer_existingOffer');
-  //   const savedAccepted = localStorage.getItem('makeOffer_acceptedOffer');
-  //   const savedSentIn = localStorage.getItem('makeOffer_sentIn');
-  //   const savedPending = localStorage.getItem('makeOffer_offerPending');
-  //   if (savedOffer) setExistingOffer(JSON.parse(savedOffer));
-  //   if (savedAccepted) setAcceptedOffer(savedAccepted === 'true');
-  //   if (savedSentIn) setSentIn(JSON.parse(savedSentIn));
-  //   if (savedPending) setOfferPending(savedPending === 'true');
-  // }, []);
+  useEffect(() => {
+    const savedOffer = localStorage.getItem('makeOffer_existingOffer');
+    const savedAccepted = localStorage.getItem('makeOffer_acceptedOffer');
+    const savedSentIn = localStorage.getItem('makeOffer_sentIn');
+    const savedPending = localStorage.getItem('makeOffer_offerPending');
+    if (savedOffer) setExistingOffer(JSON.parse(savedOffer));
+    if (savedAccepted) setAcceptedOffer(savedAccepted === 'true');
+    if (savedSentIn) setSentIn(JSON.parse(savedSentIn));
+    if (savedPending) setOfferPending(savedPending === 'true');
+  }, []);
 
-  // // Save offer state to localStorage whenever it changes
-  // useEffect(() => {
-  //   localStorage.setItem('makeOffer_existingOffer', JSON.stringify(existingOffer));
-  // }, [existingOffer]);
+  // Save offer state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('makeOffer_existingOffer', JSON.stringify(existingOffer));
+  }, [existingOffer]);
 
-  // useEffect(() => {
-  //   localStorage.setItem('makeOffer_acceptedOffer', String(acceptedOffer));
-  // }, [acceptedOffer]);
+  useEffect(() => {
+    localStorage.setItem('makeOffer_acceptedOffer', String(acceptedOffer));
+  }, [acceptedOffer]);
 
-  // useEffect(() => {
-  //   localStorage.setItem('makeOffer_sentIn', JSON.stringify(sentIn));
-  // }, [sentIn]);
+  useEffect(() => {
+    localStorage.setItem('makeOffer_sentIn', JSON.stringify(sentIn));
+  }, [sentIn]);
 
-  // useEffect(() => {
-  //   localStorage.setItem('makeOffer_offerPending', String(offerPending));
-  // }, [offerPending]);
+  useEffect(() => {
+    localStorage.setItem('makeOffer_offerPending', String(offerPending));
+  }, [offerPending]);
 
   useEffect(() => {
     if (user?.group_id && user?.class) {
@@ -565,6 +565,7 @@ export default function MakeOffer() {
       studentId: user.id,
       roomId: `group_${user.group_id}_class_${user.class}`
     });
+    console.log("Emitted confirmOffer for candidate:", candidateId)
   };
 
     const handleMakeOfferResponse = ({
