@@ -36,6 +36,7 @@ export default function SignupDetails() {
         }
       } else {
         setError('Authentication failed. Please try again.');
+        setMessage('Something went wrong. Please restart login process.');
       }
     };
 
@@ -50,6 +51,7 @@ export default function SignupDetails() {
     // Basic validation
     if (!firstName || !lastName || !email || affiliation === 'none') {
       setError('Please fill in all required fields');
+      setMessage('Please complete the form before submitting.');
       return;
     }
 
@@ -61,16 +63,19 @@ export default function SignupDetails() {
         )
         if (!emailRes.ok) {
           setError('Invalid CRN or cannot get backend data.');
+          setMessage('Please check your affiliation and try again.');
           return;
         }
         const emailData = await emailRes.json();
         console.log(emailData);
         if (emailData.length !== 0) {
           setError('This email is set as an instructor.');
+          setMessage('Please use a student email to sign up.');
           return;
         }
       } catch {
         setError('Failed to validate CRN. Please check the CRN and try again.');
+        setMessage('Error validating your affiliation.');
         return;
       }
     }
@@ -83,15 +88,18 @@ export default function SignupDetails() {
         )
         if (!res.ok) {
           setError('Cannot get backend data.');
+          setMessage('Please check your affiliation and try again.');
           return;
         }
         const crns = await res.json();
         if (crns.length === 0) {
           setError('This email is not set as a instructor.');
+          setMessage('Please use an instructor email to sign up.');
           return;
         }
       } catch {
         setError('Failed to validate Email. Please try again.');
+        setMessage('Error validating your affiliation.');
         return;
       }
     }
@@ -123,10 +131,12 @@ export default function SignupDetails() {
       } else {
         const errorData = await response.json();
         setError(errorData.message || 'Failed to add user');
+        setMessage('There was an error submitting the form.');
       }
     } catch (error) {
       console.error('Error during signup:', error);
       setError('Failed to add user. Please check your connection or try again later.');
+      setMessage('An error occurred while submitting the form.');
     }
   };
 
