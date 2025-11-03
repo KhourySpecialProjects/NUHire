@@ -512,6 +512,7 @@ export default function MakeOffer() {
     const handleConnect = () => {
       setIsConnected(true);
       socket.emit("joinGroup", roomId);
+      console.log("Connected and joined room:", roomId);
     };
 
     const handleDisconnect = () => {
