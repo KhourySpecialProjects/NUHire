@@ -14,7 +14,10 @@ export default function SignupDetails() {
   const [affiliation, setAffiliation] = useState('none');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
+
+  useEffect(() => {
+    console.log("Message updated:", message);
+  }, [message])
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -193,18 +196,13 @@ export default function SignupDetails() {
           >
             Submit
           </button>
-        </form>
-        {message && (
+        </form>   
+      </div>
+              {message && (
           <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50">
             {message}
           </div>
-        )}       
-        {error && (
-          <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
-            {error}
-          </div>
-        )}     
-      </div>
+        )} 
       <footer className="w-full flex justify-center p-2 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl fixed bottom-0 z-20">
         <a
           className="flex items-center text-wood hover:text-blue-300 transition-colors duration-200"
