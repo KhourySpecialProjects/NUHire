@@ -145,6 +145,8 @@ export default function MakeOffer() {
       localStorage.removeItem('makeOffer_acceptedOffer');
       localStorage.removeItem('makeOffer_sentIn');
       localStorage.removeItem('makeOffer_offerPending');
+      localStorage.removeItem('makeOffer_checkedState');
+      localStorage.removeItem('makeOffer_offerConfirmations');
     }
   }, [acceptedOffer]);
 
@@ -153,13 +155,24 @@ export default function MakeOffer() {
     const savedAccepted = localStorage.getItem('makeOffer_acceptedOffer');
     const savedSentIn = localStorage.getItem('makeOffer_sentIn');
     const savedPending = localStorage.getItem('makeOffer_offerPending');
+    const savedCheckedState = localStorage.getItem('makeOffer_checkedState');
+    const savedOfferConfirmations = localStorage.getItem('makeOffer_offerConfirmations');
+    if (savedCheckedState) setCheckedState(JSON.parse(savedCheckedState));
+    if (savedOfferConfirmations) setOfferConfirmations(JSON.parse(savedOfferConfirmations));
     if (savedOffer) setExistingOffer(JSON.parse(savedOffer));
     if (savedAccepted) setAcceptedOffer(savedAccepted === 'true');
     if (savedSentIn) setSentIn(JSON.parse(savedSentIn));
     if (savedPending) setOfferPending(savedPending === 'true');
   }, []);
 
-  // Save offer state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('makeOffer_checkedState', JSON.stringify(checkedState));
+  }, [checkedState]);
+
+  useEffect(() => {
+    localStorage.setItem('makeOffer_offerConfirmations', JSON.stringify(offerConfirmations));
+  }, [offerConfirmations]);
+
   useEffect(() => {
     localStorage.setItem('makeOffer_existingOffer', JSON.stringify(existingOffer));
   }, [existingOffer]);
