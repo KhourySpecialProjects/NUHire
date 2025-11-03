@@ -198,7 +198,7 @@ export default function SignupDetails() {
           </button>
         </form>   
         {message && (
-          <div className="mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+          <div className="mt-4 text-northeasternBlack px-4 py-3 rounded">
             {message}
           </div>
         )} 
