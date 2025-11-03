@@ -274,6 +274,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
   check = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { email } = req.body;
+      console.log("Check endpoint hit with email:", email);
 
       if (!email) {
         res.status(400).json({ error: 'Email is required.' });
@@ -286,7 +287,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
           res.status(500).json({ error: 'Failed to update seen.' });
           return;
         }
-
+        console.log("Check query result:", result);
         res.json({ message: 'Seen updated successfully!' });
       });
     } catch (error) {
