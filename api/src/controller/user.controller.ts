@@ -284,7 +284,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
       this.db.query('SELECT COUNT(*) FROM Users WHERE email = ?', [email], (err, result) => {
         if (err) {
           console.error('Database error:', err);
-          res.status(500).json({ error: 'Failed to update seen.' });
+          res.status(500).json({ error: 'Failed to check if email is within users.' });
           return;
         }
         console.log("Check query result:", result);
