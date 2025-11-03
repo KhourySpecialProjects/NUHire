@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSocket } from './socketContext';
 import Popup from './popup';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
@@ -46,10 +47,7 @@ export function ManageGroupsTab() {
   const [availableGroups, setAvailableGroups] = useState<number[]>([]);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-
-  useEffect(() => {
-    console.log("Groups updated:", groups);
-  }, [groups]);
+  const socket = useSocket();
   
   // Fetch user authentication
   useEffect(() => {
@@ -75,6 +73,29 @@ export function ManageGroupsTab() {
 
     fetchUser();
   }, [router]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUserAdded = () => {
+      if (selectedClass) {
+        fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+          credentials: 'include'
+        })
+        .then(res => res.ok ? res.json() : [])
+        .then(studentData => {
+          setStudents(studentData);
+          organizeStudentsIntoGroups(studentData);
+        });
+      }
+    };
+
+    socket.on('userAdded', handleUserAdded);
+
+    return () => {
+      socket.off('userAdded', handleUserAdded);
+    };
+  }, [socket, selectedClass, availableGroups]);
 
   // Fetch classes when user is loaded
   useEffect(() => {
