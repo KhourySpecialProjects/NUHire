@@ -41,7 +41,7 @@ export class App {
     this.server = require('http').createServer(this.app);
     this.io = new SocketIOServer(this.server, {
       cors: {
-        origin: process.env.REACT_APP_FRONT_URL!,
+        origin: 'https://nuhire-wgez.onrender.com', 
         credentials: true
       }
     });
@@ -53,7 +53,7 @@ export class App {
   private initializeMiddleware(): void {
     // CORS configuration
     this.app.use(cors({
-      origin: process.env.REACT_APP_FRONT_URL!,
+      origin: 'https://nuhire-wgez.onrender.com', 
       credentials: true
     }));
 
