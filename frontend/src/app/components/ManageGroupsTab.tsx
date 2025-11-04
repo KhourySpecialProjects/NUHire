@@ -649,7 +649,9 @@ return (
                               </div>
                             </div>
                           ))}
-                          <button
+                        </div>
+                      )}
+                      <button
                             onClick={() => {
                               setAddStudentGroupId(group.group_id);
                               setAddStudentEmail('');
@@ -659,8 +661,6 @@ return (
                           >
                             ➕ Add Student to Group
                           </button>
-                        </div>
-                      )}
                     </div>
                     <div className="mt-auto pt-4 border-t border-gray-100">
                       <button
