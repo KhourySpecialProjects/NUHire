@@ -519,7 +519,7 @@ export class GroupController {
         return;
       }
 
-      const updateQuery = 'INSERT INTO Users WHERE group_id = ? WHERE email = ? AND class = ?';
+      const updateQuery = 'INSERT INTO Users (group_id ,email, class) VALUES (?, ?, ?)';
       console.log('📝 Attempting to add student to group:', { group_id, email, class_id });
       this.db.query(updateQuery, [group_id, email, class_id], (err, result: any) => {
         if (err) {
