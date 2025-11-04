@@ -48,7 +48,11 @@ export function ManageGroupsTab() {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const socket = useSocket();
-  
+  const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
+  const [addStudentEmail, setAddStudentEmail] = useState('');
+  const [addStudentGroupId, setAddStudentGroupId] = useState<number | null>(null);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+    
   // Fetch user authentication
   useEffect(() => {
     const fetchUser = async () => {
@@ -646,38 +650,10 @@ return (
                             </div>
                           ))}
                           <button
-                            onClick={async () => {
-                              const email = prompt("Enter the email of the student to add to this group:");
-                              if (!email) return;
-                              try {
-                                const response = await fetch(`${API_BASE_URL}/groups/add-student`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  credentials: 'include',
-                                  body: JSON.stringify({
-                                    email,
-                                    group_id: group.group_id,
-                                    class_id: selectedClass
-                                  }),
-                                });
-                                if (response.ok) {
-                                  // Refresh students and groups
-                                  const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
-                                    credentials: 'include'
-                                  });
-                                  if (studentResponse.ok) {
-                                    const studentData = await studentResponse.json();
-                                    setStudents(studentData);
-                                    organizeStudentsIntoGroups(studentData);
-                                  }
-                                  setPopup({ headline: 'Success', message: 'Student added successfully!' });
-                                } else {
-                                  const errorData = await response.json();
-                                  setPopup({ headline: 'Error', message: `Failed to add student: ${errorData.error || 'Unknown error'}` });
-                                }
-                              } catch (error) {
-                                setPopup({ headline: 'Error', message: 'Failed to add student. Please try again.' });
-                              }
+                            onClick={() => {
+                              setAddStudentGroupId(group.group_id);
+                              setAddStudentEmail('');
+                              setAddStudentModalOpen(true);
                             }}
                             className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
                           >
@@ -731,6 +707,74 @@ return (
         )}
       </div>
     </div>
+
+    {addStudentModalOpen && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-96">
+          <h3 className="text-lg font-semibold mb-4">Add Student to Group {addStudentGroupId}</h3>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Student Email:
+          </label>
+          <input
+            type="email"
+            value={addStudentEmail}
+            onChange={e => setAddStudentEmail(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
+            placeholder="Enter student email"
+            autoFocus
+          />
+          <div className="flex space-x-3">
+            <button
+              onClick={async () => {
+                if (!addStudentEmail || !addStudentGroupId) return;
+                setIsAddingStudent(true);
+                try {
+                  const response = await fetch(`${API_BASE_URL}/groups/add-student`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                      email: addStudentEmail,
+                      group_id: addStudentGroupId,
+                      class_id: selectedClass
+                    }),
+                  });
+                  if (response.ok) {
+                    const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+                      credentials: 'include'
+                    });
+                    if (studentResponse.ok) {
+                      const studentData = await studentResponse.json();
+                      setStudents(studentData);
+                      organizeStudentsIntoGroups(studentData);
+                    }
+                    setPopup({ headline: 'Success', message: 'Student added successfully!' });
+                    setAddStudentModalOpen(false);
+                  } else {
+                    const errorData = await response.json();
+                    setPopup({ headline: 'Error', message: `Failed to add student: ${errorData.error || 'Unknown error'}` });
+                  }
+                } catch (error) {
+                  setPopup({ headline: 'Error', message: 'Failed to add student. Please try again.' });
+                } finally {
+                  setIsAddingStudent(false);
+                }
+              }}
+              disabled={isAddingStudent || !addStudentEmail}
+              className={`flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 ${isAddingStudent ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isAddingStudent ? 'Adding...' : 'Add Student'}
+            </button>
+            <button
+              onClick={() => setAddStudentModalOpen(false)}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {reassignModalOpen && selectedStudent && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
