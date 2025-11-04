@@ -520,7 +520,11 @@ export class GroupController {
       }
 
       // Student does not exist, insert new row
-      const insertQuery = 'INSERT INTO Users (email, class, group_id) VALUES (?, ?, ?)';
+      const insertQuery = `
+        INSERT INTO Users (email, class, group_id)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE group_id = VALUES(group_id)
+      `;      
       console.log('📝 Inserting new student:', { email, class_id, group_id });
       this.db.query(insertQuery, [email, class_id, group_id], (err, result: any) => {
         if (err) {
