@@ -490,19 +490,32 @@ export class GroupController {
   };
 
   addStudent = (req: AuthRequest, res: Response): void => {
-    const { email, class_id, group_id } = req.body;
+  const { email, class_id, group_id } = req.body;
 
-    console.log('Adding student to group:', { email, class_id, group_id });
+  console.log('Adding student to group:', { email, class_id, group_id });
 
-    if (!email || !class_id || !group_id) {
-      res.status(400).json({
-        error: 'Missing required fields: email, class_id, group_id'
-      });
+  if (!email || !class_id || !group_id) {
+    res.status(400).json({
+      error: 'Missing required fields: email, class_id, group_id'
+    });
+    return;
+  }
+
+  const selectQuery = 'SELECT group_id FROM Users WHERE email = ? AND class = ?';
+  this.db.query(selectQuery, [email, class_id], (selectErr, selectResults: any[]) => {
+    if (selectErr) {
+      console.error('Error checking student group:', selectErr);
+      res.status(500).json({ error: 'Failed to check student group' });
       return;
     }
 
-    const updateQuery = 'UPDATE Users SET group_id = ? WHERE email = ? AND class = ?';
+    if (selectResults[0].group_id !== null) {
+      res.status(404).json({ error: 'Student is already in a group' });
+      return;
+    }
 
+    // Student exists and is not in a group, proceed to update
+    const updateQuery = 'INSERT INTO Users WHERE group_id = ? WHERE email = ? AND class = ?';
     this.db.query(updateQuery, [group_id, email, class_id], (err, result: any) => {
       if (err) {
         console.error('Error adding student to group:', err);
@@ -511,7 +524,7 @@ export class GroupController {
       }
 
       if (result.affectedRows === 0) {
-        res.status(404).json({ error: 'Student not found in this class' });
+        res.status(404).json({ error: 'Student not added' });
         return;
       }
 
@@ -523,5 +536,6 @@ export class GroupController {
         class_id
       });
     });
-  };
+  });
+};
 }
