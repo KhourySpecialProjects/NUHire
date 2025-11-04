@@ -492,7 +492,7 @@ export class GroupController {
   addStudent = (req: AuthRequest, res: Response): void => {
     const { email, class_id, group_id } = req.body;
 
-    console.log('Adding student to group:', { email, class_id, group_id });
+    console.log('Adding student to group (INSERT):', { email, class_id, group_id });
 
     if (!email || !class_id || !group_id) {
       console.log('❌ Missing required fields:', { email, class_id, group_id });
@@ -503,40 +503,41 @@ export class GroupController {
     }
 
     const selectQuery = 'SELECT group_id FROM Users WHERE email = ? AND class = ?';
-    console.log('🔍 Checking if student exists and group assignment:', { email, class_id });
+    console.log('🔍 Checking if student exists:', { email, class_id });
     this.db.query(selectQuery, [email, class_id], (selectErr, selectResults: any[]) => {
       if (selectErr) {
-        console.error('❌ Error checking student group:', selectErr);
-        res.status(500).json({ error: 'Failed to check student group' });
+        console.error('❌ Error checking student:', selectErr);
+        res.status(500).json({ error: 'Failed to check student' });
         return;
       }
 
       console.log('🔎 selectResults:', selectResults);
 
-      if (selectResults[0].group_id !== null) {
-        console.log(`❌ Student ${email} is already in a group (group_id: ${selectResults[0].group_id})`);
-        res.status(404).json({ error: 'Student is already in a group' });
+      if (selectResults && selectResults.length > 0) {
+        console.log(`❌ Student ${email} already exists in class ${class_id}`);
+        res.status(404).json({ error: 'Student already exists in this class' });
         return;
       }
 
-      const updateQuery = 'INSERT INTO Users (group_id ,email, class) VALUES (?, ?, ?)';
-      console.log('📝 Attempting to add student to group:', { group_id, email, class_id });
-      this.db.query(updateQuery, [group_id, email, class_id], (err, result: any) => {
+      // Student does not exist, insert new row
+      const insertQuery = 'INSERT INTO Users (email, class, group_id) VALUES (?, ?, ?)';
+      console.log('📝 Inserting new student:', { email, class_id, group_id });
+      this.db.query(insertQuery, [email, class_id, group_id], (err, result: any) => {
         if (err) {
-          console.error('❌ Error adding student to group:', err);
+          console.error('❌ Error inserting student:', err);
           res.status(500).json({ error: 'Failed to add student to group' });
           return;
         }
 
-        console.log('🟢 Update result:', result);
+        console.log('🟢 Insert result:', result);
 
         if (result.affectedRows === 0) {
-          console.log(`❌ Student ${email} not added to group ${group_id} in class ${class_id}`);
+          console.log(`❌ Student ${email} not inserted to group ${group_id} in class ${class_id}`);
           res.status(404).json({ error: 'Student not added' });
           return;
         }
 
-        console.log(`✅ Student ${email} successfully added to group ${group_id} in class ${class_id}`);
+        console.log(`✅ Student ${email} successfully inserted to group ${group_id} in class ${class_id}`);
         res.json({
           message: 'Student added to group successfully',
           email,
