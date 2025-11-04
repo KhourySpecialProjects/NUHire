@@ -735,8 +735,8 @@ return (
                     credentials: 'include',
                     body: JSON.stringify({
                       email: addStudentEmail,
+                      class_id: selectedClass,
                       group_id: addStudentGroupId,
-                      class_id: selectedClass
                     }),
                   });
                   if (response.ok) {
