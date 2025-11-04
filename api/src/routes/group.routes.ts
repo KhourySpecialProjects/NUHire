@@ -24,6 +24,7 @@ export default (db: Connection, io: SocketIOServer): Router => {
   router.get('/status/:classId/:groupId', requireAuth, groupController.getGroupStatus);
   router.get(' ', requireAuth, groupController.getGroupsSeen);
   router.post('/create-single-group', requireAuth, groupController.createSingleGroup);
+  router.delete('/delete-student', requireAuth, groupController.deleteStudent);
 
   return router;
 };

@@ -551,4 +551,25 @@ export class GroupController {
       });
     });
   };
+
+  deleteStudent = (req: AuthRequest, res: Response): void => {
+    const { email, class_id } = req.body;
+
+    if (!email || !class_id) {
+      res.status(400).json({ error: 'Missing required fields: email, class_id' });
+      return;
+    }
+
+    this.db.query('DELETE FROM Users WHERE email = ? AND class = ?', [email, class_id], (err, result: any) => {
+      if (err) {
+        res.status(500).json({ error: 'Failed to delete student' });
+        return;
+      }
+      if (result.affectedRows === 0) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+      res.json({ message: 'Student deleted successfully', email, class_id });
+    });
+  };
 }

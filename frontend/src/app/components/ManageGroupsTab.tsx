@@ -453,6 +453,39 @@ export function ManageGroupsTab() {
     }
   };
 
+  const deleteStudent = async (email: string) => {
+    if (!confirm('Are you sure you want to permanently delete this student?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/groups/delete-student`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          class_id: selectedClass
+        }),
+      });
+      if (response.ok) {
+        const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+          credentials: 'include'
+        });
+        if (studentResponse.ok) {
+          const studentData = await studentResponse.json();
+          setStudents(studentData);
+          organizeStudentsIntoGroups(studentData);
+        }
+        setPopup({ headline: 'Success', message: 'Student deleted successfully!' });
+      } else {
+        const errorData = await response.json();
+        setPopup({ headline: 'Error', message: `Failed to delete student: ${errorData.error || 'Unknown error'}` });
+      }
+    } catch (error) {
+      setPopup({ headline: 'Error', message: 'Failed to delete student. Please try again.' });
+    }
+  };
+
   // Start all groups
   const startAllGroups = async () => {
     if (!confirm('Are you sure you want to start all groups? This action cannot be undone.')) {
@@ -639,13 +672,23 @@ return (
                                 >
                                   ↻ Reassign
                                 </button>
-                                <button
-                                  onClick={() => removeStudentFromGroup(student.email)}
-                                  className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                  title="Remove from group"
-                                >
-                                  × Remove
-                                </button>
+                                {group.group_id === -1 ? (
+                                  <button
+                                    onClick={() => deleteStudent(student.email)}
+                                    className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                    title="Delete student"
+                                  >
+                                    × Delete
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => removeStudentFromGroup(student.email)}
+                                    className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                    title="Remove from group"
+                                  >
+                                    × Remove
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}
