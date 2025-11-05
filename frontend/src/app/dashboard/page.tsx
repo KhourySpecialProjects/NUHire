@@ -136,7 +136,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error refreshing dashboard UI:", error);
     }
-  }, [fetchJobDescription, fetchProgress, steps.length]);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -171,7 +171,7 @@ const Dashboard = () => {
     };
 
     fetchUser();
-  }, [router, fetchJobDescription, fetchProgress]);
+  }, [router]);
 
   useEffect(() => {
     if (!socket || !user?.email) return;
@@ -226,7 +226,7 @@ const Dashboard = () => {
       socket.off("jobUpdated", handleJobUpdated);
       socket.off("receivePopup", handleReceivePopup);
     };
-  }, [socket, user, updateProgress, refreshDashboardUI, fetchJobDescription, steps.length]);
+  }, [socket, user, updateProgress, refreshDashboardUI, fetchJobDescription]);
   
   const isStepUnlocked = (stepKey: string) => {
     
