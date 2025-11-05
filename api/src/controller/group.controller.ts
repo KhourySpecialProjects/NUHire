@@ -518,22 +518,13 @@ export class GroupController {
       // If student doesn't exist, create them
       if (!checkResults || checkResults.length === 0) {
         console.log(`📝 Student ${email} does not exist. Creating new student.`);
-        
-        // Check if first and last name are provided for new student
-        if (!f_name || !l_name) {
-          console.log('❌ First name and last name required for new student');
-          res.status(400).json({ 
-            error: 'First name and last name are required to create a new student' 
-          });
-          return;
-        }
 
         const insertQuery = `
-          INSERT INTO Users (f_name, l_name, email, affiliation, class, group_id) 
-          VALUES (?, ?, ?, 'student', ?, ?)
+          INSERT INTO Users (email, affiliation, class, group_id) 
+          VALUES (?, 'student', ?, ?)
         `;
         
-        this.db.query(insertQuery, [f_name, l_name, email, class_id, group_id], (insertErr, insertResult: any) => {
+        this.db.query(insertQuery, [email, class_id, group_id], (insertErr, insertResult: any) => {
           if (insertErr) {
             console.error('❌ Error creating student:', insertErr);
             res.status(500).json({ error: 'Failed to create student' });
