@@ -197,6 +197,9 @@ const Dashboard = () => {
   useEffect(() => {
   if (!socket || !user) return;
 
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+    socket.emit("joinGroup", roomId);
+    
   const handleJobUpdated = async ({ job, group_id, class_id, message }: { 
     job: string, 
     group_id: number, 

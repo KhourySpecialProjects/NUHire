@@ -170,15 +170,13 @@ export class JobController {
 
       if (emails.length > 0) {
         emails.forEach((email: string) => {
-          const studentSocketId = this.onlineStudents[email];
-          if (studentSocketId) {
-            this.io.to(studentSocketId).emit('jobUpdated', {
+          const roomID = `${job_group_id}-${class_id}`;
+          this.io.to(roomID).emit('jobUpdated', {
               job: jobTitle,
               group_id: job_group_id,
               class_id,
               message: `Your group has been assigned a new job. All progress has been reset.`
             });
-          }
         });
       }
 
