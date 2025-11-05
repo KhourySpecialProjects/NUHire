@@ -248,6 +248,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
 
   updateUserSeen = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
+      console.log("=== POST /user/update-seen endpoint hit ===");
       if (!req.isAuthenticated || !req.isAuthenticated()) {
         res.status(401).json({ message: 'Unauthorized' });
         return;
@@ -259,14 +260,14 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
         res.status(400).json({ error: 'Email is required.' });
         return;
       }
-
+      console.log("Updating 'seen' status for email:", email);
       this.db.query('UPDATE Users SET `seen` = 1 WHERE email = ?', [email], (err, result) => {
         if (err) {
           console.error('Database error:', err);
           res.status(500).json({ error: 'Failed to update seen.' });
           return;
         }
-
+        console.log("'seen' status updated successfully for email:", email);
         res.json({ message: 'Seen updated successfully!' });
       });
     } catch (error) {
