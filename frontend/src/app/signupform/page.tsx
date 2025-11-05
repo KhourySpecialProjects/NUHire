@@ -12,6 +12,8 @@ export default function SignupDetails() {
   const [email, setEmail] = useState('');
   const [affiliation, setAffiliation] = useState('none');
   const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     console.log("Message updated:", message);
   }, [message])
@@ -91,6 +93,7 @@ export default function SignupDetails() {
         setMessage('Error validating your affiliation.');
         return;
       }
+      setTimeout(() => setSubmitting(false), 5000);
     }
 
     if (affiliation === 'admin') {
@@ -197,14 +200,17 @@ export default function SignupDetails() {
 
           <button 
             type="submit" 
-            className="w-full bg-northeasternWhite text-northeasternRed font-semibold px-4 py-3 rounded-md hover:bg-northeasternRed hover:text-northeasternWhite transition"
+            className={`w-full bg-northeasternWhite text-northeasternRed font-semibold px-4 py-3 rounded-md hover:bg-northeasternRed hover:text-northeasternWhite transition ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={submitting}
           >
-            Submit
+            {submitting ? 'Please wait...' : 'Submit'}
           </button>
         </form>   
         {message && (
-          <div className="mt-4 text-northeasternBlack px-4 py-3 justify-center rounded">
-            {message}
+          <div className="flex justify-center">
+            <div className="mt-4 text-northeasternBlack px-4 py-3 rounded text-center w-full max-w-md">
+              {message}
+            </div>
           </div>
         )} 
       </div>
