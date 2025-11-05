@@ -173,7 +173,7 @@ export class JobController {
           const studentSocketId = this.onlineStudents[email];
           if (studentSocketId) {
             this.io.to(studentSocketId).emit('jobUpdated', {
-              job: [jobTitle],
+              job: jobTitle,
               group_id: job_group_id,
               class_id,
               message: `Your group has been assigned a new job. All progress has been reset.`
@@ -181,13 +181,6 @@ export class JobController {
           }
         });
       }
-
-      this.io.emit('groupJobUpdated', {
-        job_group_id,
-        class_id,
-        job: [jobTitle],
-        message: `Group ${job_group_id} job updated - all progress reset`
-      });
 
       console.log(`Job "${jobTitle}" assigned to Group ${job_group_id} in Class ${class_id}. All related data cleared.`);
 

@@ -6,7 +6,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import io from "socket.io-client";
 import { usePathname } from "next/navigation";
 import Popup from "../components/popup";
 import Slideshow from "../components/slideshow";
@@ -199,7 +198,7 @@ const Dashboard = () => {
   if (!socket || !user) return;
 
   const handleJobUpdated = async ({ job, group_id, class_id, message }: { 
-    job: string[], 
+    job: string, 
     group_id: number, 
     class_id: number, 
     message: string 
@@ -238,39 +237,6 @@ const Dashboard = () => {
   };
 }, [socket, user, updateProgress, refreshDashboardUI]);
 
-  useEffect(() => {
-    if (!socket || !user) return;
-
-    const handleJobUpdated = async ({ job }: { job: string }) => {
-      localStorage.removeItem("pdf-comments");
-      setPopup({ 
-        headline: "You have been assigned a new job!", 
-        message: `You are an employer for ${job}!` 
-      });
-      
-      await updateProgress(user, "job_description");
-      setProgress("job_description");
-      localStorage.setItem("progress", "job_description");
-      
-      await refreshDashboardUI();
-      setFlipped(Array(steps.length).fill(false));
-      
-      await fetchJobDescription(user);
-    };
-
-    const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
-      setPopup({ headline, message });
-    };
-
-    socket.on("jobUpdated", handleJobUpdated);
-    socket.on("receivePopup", handleReceivePopup);
-
-    return () => {
-      socket.off("jobUpdated", handleJobUpdated);
-      socket.off("receivePopup", handleReceivePopup);
-    };
-  }, [socket, user, updateProgress, refreshDashboardUI]);
-  
   const isStepUnlocked = (stepKey: string) => {
     
     // If no job description assigned, block all steps except job_description
