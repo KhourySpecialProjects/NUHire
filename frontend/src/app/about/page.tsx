@@ -1,15 +1,57 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Slideshow from "../components/slideshow";
 import Image from "next/image";
 
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+
 export default function AboutPage() {
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkSeenStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          
+          if (userData.seen === 1) {
+            console.log("User has already seen intro, redirecting to dashboard");
+            router.push("/dashboard");
+            return;
+          }
+          else {
+            localStorage.clear();
+          }
+        }
+      } catch (error) {
+        console.error("Error checking seen status:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSeenStatus();
+  }, [router]);
 
   const handleContinue = () => {
     console.log("Continuing to instructions page");
     window.location.href = `https://nuhire-wgez.onrender.com/instructions`;
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden font-rubik flex flex-col">
@@ -51,7 +93,6 @@ export default function AboutPage() {
         </button>
       </div>
 
-      {/* Footer - no longer fixed */}
       <footer className="w-full flex justify-center p-2 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl z-20">
         <a
           className="flex items-center text-wood hover:text-blue-300 transition-colors duration-200"
