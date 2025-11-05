@@ -1,9 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Slideshow from "../components/slideshow";
 import Image from "next/image";
-import { useSocket } from "../components/socketContext";
 
 // Define API base URL with fallback
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
@@ -14,7 +12,6 @@ export default function SignupDetails() {
   const [email, setEmail] = useState('');
   const [affiliation, setAffiliation] = useState('none');
   const [message, setMessage] = useState('');
-
   useEffect(() => {
     console.log("Message updated:", message);
   }, [message])

@@ -24,8 +24,6 @@ export class AuthController {
       failureFlash: false
     }),
     (req: AuthRequest, res: Response) => {
-      console.log('=== Authentication successful ===');
-      console.log('req.user after auth:', req.user);
 
       const user = req.user;
       const FRONT_URL = process.env.REACT_APP_FRONT_URL;
@@ -55,23 +53,19 @@ export class AuthController {
           const dbUser = results[0];
 
           const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
-          console.log("This sis the gotten user", dbUser)
           // Admin check
           if (dbUser.affiliation === 'admin') {
-            console.log('🔀 Redirecting admin to advisor dashboard');
             res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
             return;
           }
 
           // Check if user needs to complete signup (missing names only)
           if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null || dbUser.affiliation === 'none') {
-            console.log('🔀 User needs to complete signup form - missing names');
             res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
             return;
           }
 
           // User has group - check if group is started
-          console.log(`🔍 Checking group status for group ${dbUser.group_id}, class ${dbUser.class}`);
           const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
           
           this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
@@ -82,21 +76,16 @@ export class AuthController {
             }
 
             if (startResults.length > 0 && startResults[0].started === 1) {
-              console.log('✅ Group is started');
               if (dbUser.seen === 1) {
-                console.log('🔀 User has seen intro, going to dashboard');
                 res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
               } else {
-                console.log('🔀 User needs to see intro, going to about');
                 res.redirect(`${FRONT_URL}/about`);
               }
             } else {
-              console.log('⏳ Group not started, going to waiting room');
               res.redirect(`${FRONT_URL}/waitingGroup`);
             }
           });
         } else {
-          console.log('🆕 User not found in database, redirecting to signup form');
           res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
         }
       });

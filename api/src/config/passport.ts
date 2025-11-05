@@ -35,9 +35,6 @@ export function configurePassport(db: Connection): void {
         userInfoURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/userinfo`
       },
       async (accessToken: string, refreshToken: string, profile: KeycloakProfile, done: (error: any, user?: any) => void) => {
-        console.log('=== Passport Callback SUCCESS ===');
-        console.log('Profile:', JSON.stringify(profile, null, 2));
-
         try {
           const userEmail = profile.email;
           const parts = profile.name.split(" ");
@@ -47,8 +44,6 @@ export function configurePassport(db: Connection): void {
           if (!userEmail) {
             throw new Error('No email found in Keycloak profile');
           }
-
-          console.log('Looking up user by email:', userEmail);
 
           const [rows] = await db.promise().execute(
             'SELECT * FROM Users WHERE email = ?',
@@ -60,7 +55,6 @@ export function configurePassport(db: Connection): void {
 
 
           if (users.length === 0) {
-            console.log('Creating new user from Keycloak profile');
             await db.promise().execute(
               'INSERT INTO Users (email, f_name, l_name, affiliation) VALUES (?, ?, ?, ?)',
               [
@@ -75,10 +69,8 @@ export function configurePassport(db: Connection): void {
               [userEmail]
             );
             dbUser = (newUserRows as any[])[0];
-            console.log('New user created:', dbUser);
           } else {
             dbUser = users[0];
-            console.log('Existing user found:', dbUser);
           }
 
           dbUser.keycloakProfile = profile;
