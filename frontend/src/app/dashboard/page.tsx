@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
@@ -24,6 +24,9 @@ interface User {
 const Dashboard = () => {
   const {updateProgress, fetchProgress} = useProgressManager();
   const socket = useSocket();
+  const router = useRouter();
+  const pathname = usePathname();
+  
   const steps = [
     {
       key: "job_description",
@@ -69,8 +72,47 @@ const Dashboard = () => {
     },
   ];
 
-  // Function to refresh user, progress bar, and menu bar
-  const refreshDashboardUI = async () => {
+  // State declarations - MUST come before any functions that use them
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
+  const [progress, setProgress] = useState<string>("none"); 
+  const [jobDescription, setJobDescription] = useState<string | null>(null);
+  const [jobLoading, setJobLoading] = useState(true);
+  const [flipped, setFlipped] = useState(Array(steps.length).fill(false));
+
+  // Wrap fetchJobDescription in useCallback to prevent recreating on every render
+  const fetchJobDescription = useCallback(async (user: User) => {
+    if (!user?.group_id || !user?.class) {
+      setJobDescription(null);
+      setJobLoading(false);
+      return;
+    }
+
+    try {
+      setJobLoading(true);
+      const response = await fetch(`${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`, {credentials: "include"});
+      
+      if (response.ok) {
+        const data = await response.json();
+        setJobDescription(data.job);
+      } else if (response.status === 404) {
+        // No job assignment found
+        setJobDescription(null);
+      } else {
+        console.error("Error fetching job description:", response.statusText);
+        setJobDescription(null);
+      }
+    } catch (error) {
+      console.error("Error fetching job description:", error);
+      setJobDescription(null);
+    } finally {
+      setJobLoading(false);
+    }
+  }, []); // Empty dependency array since it doesn't depend on external values
+
+  // Wrap refreshDashboardUI in useCallback
+  const refreshDashboardUI = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
       const userData = await response.json();
@@ -94,45 +136,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error refreshing dashboard UI:", error);
     }
-  };
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-  const [progress, setProgress] = useState<string>("none"); 
-  const pathname = usePathname(); 
-  const router = useRouter();
-
-  const [jobDescription, setJobDescription] = useState<string | null>(null);
-  const [jobLoading, setJobLoading] = useState(true);
-
-  const fetchJobDescription = async (user: User) => {
-    if (!user?.group_id || !user?.class) {
-      setJobDescription(null);
-      setJobLoading(false);
-      return;
-    }
-
-    try {
-      setJobLoading(true);
-      const response = await fetch(`${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`, {  credentials: "include"});
-      
-      if (response.ok) {
-        const data = await response.json();
-        setJobDescription(data.job);
-      } else if (response.status === 404) {
-        // No job assignment found
-        setJobDescription(null);
-      } else {
-        console.error("Error fetching job description:", response.statusText);
-        setJobDescription(null);
-      }
-    } catch (error) {
-      console.error("Error fetching job description:", error);
-      setJobDescription(null);
-    } finally {
-      setJobLoading(false);
-    }
-  };
+  }, [fetchJobDescription, fetchProgress, steps.length]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -168,9 +172,6 @@ const Dashboard = () => {
 
     fetchUser();
   }, [router, fetchJobDescription, fetchProgress]);
-
-  useEffect(()  => {
-  }, [user]);
 
   useEffect(() => {
     if (!socket || !user?.email) return;
@@ -226,6 +227,7 @@ const Dashboard = () => {
       socket.off("receivePopup", handleReceivePopup);
     };
   }, [socket, user, updateProgress, refreshDashboardUI, fetchJobDescription, steps.length]);
+  
   const isStepUnlocked = (stepKey: string) => {
     
     // If no job description assigned, block all steps except job_description
@@ -250,8 +252,6 @@ const Dashboard = () => {
     const unlocked = stepIndex <= progressIndex;
     return unlocked;
   };
-
-  const [flipped, setFlipped] = useState(Array(steps.length).fill(false));
 
   const handleFlip = (idx: number) => {
     if (!isStepUnlocked(steps[idx].key)) return;
