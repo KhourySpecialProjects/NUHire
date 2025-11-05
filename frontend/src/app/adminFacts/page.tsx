@@ -99,7 +99,13 @@ export default function AdminFactsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
-      <div className="max-w-lg w-full bg-white border-4 border-northeasternBlack rounded-lg shadow-lg p-8 mt-10">
+      {/* Page Title */}
+      <div className="flex justify-center items-center py-6">
+        <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
+          Waiting Page Facts
+        </h1>
+      </div>
+      <div className="max-w-lg w-full bg-white border-4 border-northeasternBlack justify-center rounded-lg shadow-lg p-8 mt-10">
         <h1 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Add Waiting Room Facts</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Class Dropdown */}
