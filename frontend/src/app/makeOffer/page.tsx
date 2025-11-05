@@ -150,11 +150,12 @@ const checkExistingOffer = async () => {
     }
   }, [acceptedOffer]);
 
+  // Restore checkedState from localStorage FIRST
   useEffect(() => {
     const savedCheckedState = localStorage.getItem('makeOffer_checkedState');
     if (savedCheckedState) {
       setCheckedState(JSON.parse(savedCheckedState));
-      setCheckedStateRestored(true);
+      setCheckedStateRestored(true); // Set flag immediately when restoring
     }
   }, []);
 
@@ -163,9 +164,8 @@ const checkExistingOffer = async () => {
     const savedAccepted = localStorage.getItem('makeOffer_acceptedOffer');
     const savedSentIn = localStorage.getItem('makeOffer_sentIn');
     const savedPending = localStorage.getItem('makeOffer_offerPending');
-    const savedCheckedState = localStorage.getItem('makeOffer_checkedState');
     const savedOfferConfirmations = localStorage.getItem('makeOffer_offerConfirmations');
-    if (savedCheckedState) setCheckedState(JSON.parse(savedCheckedState));
+    
     if (savedOfferConfirmations) setOfferConfirmations(JSON.parse(savedOfferConfirmations));
     if (savedOffer) setExistingOffer(JSON.parse(savedOffer));
     if (savedAccepted) setAcceptedOffer(savedAccepted === 'true');
@@ -250,27 +250,6 @@ const checkExistingOffer = async () => {
     };
     fetchUser();
   }, [router]);
-
-  useEffect(() => {
-    // Mark as restored after first render
-    if (Object.keys(checkedState).length > 0) {
-      setCheckedStateRestored(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!user || !interviews.length || checkedStateRestored) return;
-    const grouped = groupInterviewsByCandidate(interviews);
-    const checkboxData: { [key: number]: boolean } = {};
-    for (const [candidateIdStr, candidateInterviews] of Object.entries(grouped)) {
-      const candidateId = parseInt(candidateIdStr);
-      candidateInterviews.forEach((interview) => {
-        checkboxData[candidateId] =
-          checkboxData[candidateId] || interview.checked;
-      });
-    }
-    setCheckedState(checkboxData);
-  }, [interviews, user, checkedStateRestored]);
 
   // Update current page when user is loaded
   useEffect(() => {
@@ -498,8 +477,12 @@ const checkExistingOffer = async () => {
     }
 
     setVoteCounts(voteData);
-    setCheckedState(checkboxData);
-  }, [interviews, user]);
+    
+    // Only set checkedState if it hasn't been restored from localStorage
+    if (!checkedStateRestored) {
+      setCheckedState(checkboxData);
+    }
+  }, [interviews, user, checkedStateRestored]); // Add checkedStateRestored to dependencies
 
   useEffect(() => {
     if (!interviews.length || !candidates.length) return;
@@ -877,251 +860,252 @@ const checkExistingOffer = async () => {
   if (!user || user.affiliation !== "student") return null;
 
   return (
-  <div className="min-h-screen bg-sand font-rubik">
-    {showInstructions && (
-      <Instructions 
-        instructions={offerInstructions}
-        onDismiss={() => setShowInstructions(false)}
-        title="Offer Instructions"
-        progress={4}
-      />
-    )}
+    <div className="min-h-screen bg-sand font-rubik">
+      {showInstructions && (
+        <Instructions 
+          instructions={offerInstructions}
+          onDismiss={() => setShowInstructions(false)}
+          title="Offer Instructions"
+          progress={4}
+        />
+      )}
 
-    <Navbar />
-    <div className="flex-1 flex flex-col px-4 py-8">
-      <div className="w-full p-6">
-        <h1 className="text-3xl font-bold text-center text-navy mb-6">
-          Make an Offer as a Group
-        </h1>
+      <Navbar />
+      <div className="flex-1 flex flex-col px-4 py-8">
+        <div className="w-full p-6">
+          <h1 className="text-3xl font-bold text-center text-navy mb-6">
+            Make an Offer as a Group
+          </h1>
 
-        {/* NEW: Show existing offer status */}
-        {existingOffer && (
-          <div className={`mb-6 p-4 rounded-lg text-center ${
-            existingOffer.status === 'pending' 
-              ? 'bg-yellow-100 border border-yellow-400 text-yellow-800'
-              : existingOffer.status === 'accepted'
-              ? 'bg-green-100 border border-green-400 text-green-800'
-              : 'bg-red-100 border border-red-400 text-red-800'
-          }`}>
-            <h3 className="font-bold mb-2">
-              {existingOffer.status === 'pending' && 'Offer Pending Approval'}
-              {existingOffer.status === 'accepted' && 'Offer Accepted!'}
-              {existingOffer.status === 'rejected' && 'Offer Rejected'}
-            </h3>
-            <p>
-              {existingOffer.status === 'pending' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' is awaiting advisor approval.'}
-              {existingOffer.status === 'accepted' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' has been accepted! Congratulations!'}
-              {existingOffer.status === 'rejected' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' was rejected. You may select a different candidate.'}
-            </p>
-          </div>
-        )}
+          {/* NEW: Show existing offer status */}
+          {existingOffer && (
+            <div className={`mb-6 p-4 rounded-lg text-center ${
+              existingOffer.status === 'pending' 
+                ? 'bg-yellow-100 border border-yellow-400 text-yellow-800'
+                : existingOffer.status === 'accepted'
+                ? 'bg-green-100 border border-green-400 text-green-800'
+                : 'bg-red-100 border border-red-400 text-red-800'
+            }`}>
+              <h3 className="font-bold mb-2">
+                {existingOffer.status === 'pending' && 'Offer Pending Approval'}
+                {existingOffer.status === 'accepted' && 'Offer Accepted!'}
+                {existingOffer.status === 'rejected' && 'Offer Rejected'}
+              </h3>
+              <p>
+                {existingOffer.status === 'pending' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' is awaiting advisor approval.'}
+                {existingOffer.status === 'accepted' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' has been accepted! Congratulations!'}
+                {existingOffer.status === 'rejected' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' was rejected. You may select a different candidate.'}
+              </p>
+            </div>
+          )}
 
-        <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
-          {interviewsWithVideos.map((interview, index) => {
-            const interviewNumber = interview.candidate_id;
-            const votes = voteCounts[interviewNumber] || {
-              Overall: 0,
-              Profesionality: 0,
-              Quality: 0,
-              Personality: 0,
-            };
+          <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
+            {interviewsWithVideos.map((interview, index) => {
+              const interviewNumber = interview.candidate_id;
+              const votes = voteCounts[interviewNumber] || {
+                Overall: 0,
+                Profesionality: 0,
+                Quality: 0,
+                Personality: 0,
+              };
 
-            const isNoShow = (
-              (votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0) <= -1000 ||
-              (votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0) <= -1000 ||
-              (votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0) <= -1000 ||
-              (votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0) <= -1000
-            );
-            const isAccepted = sentIn[interviewNumber] === true;
-            const isRejected = sentIn[interviewNumber] === false;
-            return (
-              <div
-                key={interviewNumber}
-                className={`p-6 rounded-lg shadow-md flex flex-col gap-4 ${
-                  isAccepted
-                    ? "bg-green-100 border border-green-500"
-                    : isRejected
-                    ? "bg-red-100 border border-red-300 pointer-events-none"
-                    : isNoShow
-                    ? "bg-gray-100 border border-gray-400 opacity-75" // Special styling for No Show
-                    : "bg-wood"
-                }`}
-              >
-                <h3 className="text-xl font-semibold text-navy text-center">
-                  {interview.f_name} {interview.l_name} 
-                  {isAccepted && " ✓ Offered"} 
-                  {isRejected && " ✗ Not Offered"}
-                  {isNoShow && " (No Show)"}
-                </h3>
-
-                <div className="aspect-video w-full">
-                  <iframe
-                    className="w-full h-full rounded-lg shadow-md"
-                    src={interview.video_path}
-                    title="Interview Video"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-
-                <div className="mt-2 space-y-1 text-navy text-sm">
-                <p>
-                  <span className="font-medium">Overall:</span> {
-                    groupSize > 0
-                      ? (Math.max(0, ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize).toFixed(1))
-                      : "N/A"
-                  }
-                </p>
-                <p>
-                   <span className="font-medium">Professional Pressence:</span> {
-                    groupSize > 0
-                      ? (Math.max(0, ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize).toFixed(1))
-                      : "N/A"
-                  }
-                </p>
-                <p>
-                  <span className="font-medium">Quality of Answer:</span> {
-                    groupSize > 0
-                      ? (Math.max(0, ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize).toFixed(1))
-                      : "N/A"
-                  }
-                </p>
-                <p>
-                  <span className="font-medium">Personality:</span> {
-                    groupSize > 0
-                      ? (Math.max(0, ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize).toFixed(1))
-                      : "N/A"
-                  }
-                </p>
-                </div>
-
-                <a
-                  href={`${API_BASE_URL}/${interview.resume_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`text-navy hover:underline ${isRejected ? "pointer-events-none opacity-50" : ""}`}
+              const isNoShow = (
+                (votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0) <= -1000 ||
+                (votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0) <= -1000 ||
+                (votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0) <= -1000 ||
+                (votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0) <= -1000
+              );
+              const isAccepted = sentIn[interviewNumber] === true;
+              const isRejected = sentIn[interviewNumber] === false;
+              return (
+                <div
+                  key={interviewNumber}
+                  className={`p-6 rounded-lg shadow-md flex flex-col gap-4 ${
+                    isAccepted
+                      ? "bg-green-100 border border-green-500"
+                      : isRejected
+                      ? "bg-red-100 border border-red-300 pointer-events-none"
+                      : isNoShow
+                      ? "bg-gray-100 border border-gray-400 opacity-75" // Special styling for No Show
+                      : "bg-wood"
+                  }`}
                 >
-                  View / Download Resume
-                </a>
+                  <h3 className="text-xl font-semibold text-navy text-center">
+                    {interview.f_name} {interview.l_name} 
+                    {isAccepted && " ✓ Offered"} 
+                    {isRejected && " ✗ Not Offered"}
+                    {isNoShow && " (No Show)"}
+                  </h3>
 
-                {!isRejected && !isNoShow && ( // Add !isNoShow here
-                  <label className={`flex items-center mt-2 ${isOfferDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={checkedState[interviewNumber] || false}
-                      onChange={() => !isOfferDisabled && handleCheckboxChange(interviewNumber)}
-                      disabled={isOfferDisabled}
-                      className="h-4 w-4 text-redHeader"
-                    />
-                    <span className="ml-2 text-navy text-sm">Selected for Offer</span>
-                  </label>
-                )}
-
-                {/* Add a message for No Show candidates */}
-                {isNoShow && (
-                  <div className="text-center text-red-600 text-sm font-medium bg-red-50 p-2 rounded">
-                    This candidate did not show up for the interview
+                  <div className="aspect-video w-full">
+                    <iframe
+                      className="w-full h-full rounded-lg shadow-md"
+                      src={interview.video_path}
+                      title="Interview Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    ></iframe>
                   </div>
+
+                  <div className="mt-2 space-y-1 text-navy text-sm">
+                  <p>
+                    <span className="font-medium">Overall:</span> {
+                      groupSize > 0
+                        ? (Math.max(0, ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize).toFixed(1))
+                        : "N/A"
+                    }
+                  </p>
+                  <p>
+                    <span className="font-medium">Professional Pressence:</span> {
+                      groupSize > 0
+                        ? (Math.max(0, ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize).toFixed(1))
+                        : "N/A"
+                    }
+                  </p>
+                  <p>
+                    <span className="font-medium">Quality of Answer:</span> {
+                      groupSize > 0
+                        ? (Math.max(0, ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize).toFixed(1))
+                        : "N/A"
+                    }
+                  </p>
+                  <p>
+                    <span className="font-medium">Personality:</span> {
+                      groupSize > 0
+                        ? (Math.max(0, ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize).toFixed(1))
+                        : "N/A"
+                    }
+                  </p>
+                  </div>
+
+                  <a
+                    href={`${API_BASE_URL}/${interview.resume_path}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`text-navy hover:underline ${isRejected ? "pointer-events-none opacity-50" : ""}`}
+                  >
+                    View / Download Resume
+                  </a>
+
+                  {!isRejected && !isNoShow && ( // Add !isNoShow here
+                    <label className={`flex items-center mt-2 ${isOfferDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={checkedState[interviewNumber] || false}
+                        onChange={() => !isOfferDisabled && handleCheckboxChange(interviewNumber)}
+                        disabled={isOfferDisabled}
+                        className="h-4 w-4 text-redHeader"
+                      />
+                      <span className="ml-2 text-navy text-sm">Selected for Offer</span>
+                    </label>
+                  )}
+
+                  {/* Add a message for No Show candidates */}
+                  {isNoShow && (
+                    <div className="text-center text-red-600 text-sm font-medium bg-red-50 p-2 rounded">
+                      This candidate did not show up for the interview
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {popup && (
+            <Popup
+              headline={popup.headline}
+              message={popup.message}
+              onDismiss={() => setPopup(null)}
+            />
+          )}
+
+          {selectedCount === 1 && !isOfferDisabled && !acceptedOffer && (
+            <div className="flex flex-col items-center my-6 gap-4">
+              {/* Team confirmation status */}
+              <div className="text-center">
+                <p className="text-navy font-medium">
+                  Team Confirmation: {confirmationCount}/{groupSize} members ready
+                </p>
+              </div>
+
+              {/* Confirmation/Offer button */}
+              <div className="flex gap-4">
+                {!allConfirmed ? (
+                  // Individual confirmation button
+                  <button
+                    onClick={() => handleConfirmOfferClick(selectedCandidateId)}
+                    disabled={hasConfirmed || offerPending || isOfferDisabled}
+                    className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
+                      hasConfirmed
+                        ? "bg-green-500 text-white cursor-not-allowed"
+                        : isOfferDisabled
+                        ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    {hasConfirmed ? `✓ Confirmed (${confirmationCount}/${groupSize})` : 'Confirm Selection'}
+                  </button>
+                ) : (
+                  // Final offer button (only appears when all confirmed)
+                  <button
+                    onClick={handleMakeOffer}
+                    disabled={offerPending || isOfferDisabled}
+                    className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
+                      offerPending || isOfferDisabled
+                        ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                        : "bg-redHeader text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    {offerPending ? "Awaiting Advisor…" : isOfferDisabled ? "Offer Already Submitted" : "Make Team Offer"}
+                  </button>
                 )}
               </div>
-            );
-          })}
-        </div>
 
-        {popup && (
-          <Popup
-            headline={popup.headline}
-            message={popup.message}
-            onDismiss={() => setPopup(null)}
-          />
-        )}
-
-        {selectedCount === 1 && !isOfferDisabled && !acceptedOffer && (
-          <div className="flex flex-col items-center my-6 gap-4">
-            {/* Team confirmation status */}
-            <div className="text-center">
-              <p className="text-navy font-medium">
-                Team Confirmation: {confirmationCount}/{groupSize} members ready
-              </p>
-            </div>
-
-            {/* Confirmation/Offer button */}
-            <div className="flex gap-4">
-              {!allConfirmed ? (
-                // Individual confirmation button
-                <button
-                  onClick={() => handleConfirmOfferClick(selectedCandidateId)}
-                  disabled={hasConfirmed || offerPending || isOfferDisabled}
-                  className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
-                    hasConfirmed
-                      ? "bg-green-500 text-white cursor-not-allowed"
-                      : isOfferDisabled
-                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-                >
-                  {hasConfirmed ? `✓ Confirmed (${confirmationCount}/${groupSize})` : 'Confirm Selection'}
-                </button>
-              ) : (
-                // Final offer button (only appears when all confirmed)
-                <button
-                  onClick={handleMakeOffer}
-                  disabled={offerPending || isOfferDisabled}
-                  className={`px-6 py-3 rounded-lg shadow-md font-rubik transition duration-300 ${
-                    offerPending || isOfferDisabled
-                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      : "bg-redHeader text-white hover:bg-blue-700"
-                  }`}
-                >
-                  {offerPending ? "Awaiting Advisor…" : isOfferDisabled ? "Offer Already Submitted" : "Make Team Offer"}
-                </button>
+              {/* Status message */}
+              {!allConfirmed && confirmationCount > 0 && !isOfferDisabled && (
+                <p className="text-sm text-orange-600 text-center">
+                  Waiting for {groupSize - confirmationCount} more team member{groupSize - confirmationCount !== 1 ? 's' : ''} to confirm
+                </p>
               )}
             </div>
+          )}
 
-            {/* Status message */}
-            {!allConfirmed && confirmationCount > 0 && !isOfferDisabled && (
-              <p className="text-sm text-orange-600 text-center">
-                Waiting for {groupSize - confirmationCount} more team member{groupSize - confirmationCount !== 1 ? 's' : ''} to confirm
-              </p>
-            )}
-          </div>
-        )}
-
-        {selectedCount === 1 && isOfferDisabled && (
-          <div className="flex flex-col items-center my-6 gap-4">
-            <div className="text-center">
-              <p className="text-gray-600 font-medium">
-                {ableToMakeOffer && !acceptedOffer && 'Offer actions disabled - awaiting advisor approval'}
-                {ableToMakeOffer && acceptedOffer && 'Offer actions disabled - offer already accepted'}
-              </p>
+          {selectedCount === 1 && isOfferDisabled && (
+            <div className="flex flex-col items-center my-6 gap-4">
+              <div className="text-center">
+                <p className="text-gray-600 font-medium">
+                  {ableToMakeOffer && !acceptedOffer && 'Offer actions disabled - awaiting advisor approval'}
+                  {ableToMakeOffer && acceptedOffer && 'Offer actions disabled - offer already accepted'}
+                </p>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Footer navigation buttons */}
-      <footer className="flex justify-between mt-6 px-4">
-        <button
-          onClick={() => (window.location.href = "/jobdes")}
-          className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
-          disabled={true}
-        >
-          ← Back: Interview Stage
-        </button>
-        <button
-          onClick={completeMakeOffer}
-          className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
-            !acceptedOffer
-              ? "cursor-not-allowed opacity-50"
-              : "hover:bg-blue-400"
-          }`}
-          disabled={!acceptedOffer}
-        >
-          Next: Employer Panel →
-        </button>
-      </footer>
+        {/* Footer navigation buttons */}
+        <footer className="flex justify-between mt-6 px-4">
+          <button
+            onClick={() => (window.location.href = "/jobdes")}
+            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik"
+            disabled={true}
+          >
+            ← Back: Interview Stage
+          </button>
+          <button
+            onClick={completeMakeOffer}
+            className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
+              !acceptedOffer
+                ? "cursor-not-allowed opacity-50"
+                : "hover:bg-blue-400"
+            }`}
+            disabled={!acceptedOffer}
+          >
+            Next: Employer Panel →
+          </button>
+        </footer>
+      </div>
+      <Footer />
     </div>
-    <Footer />
-  </div>
-)};
+  )
+};
