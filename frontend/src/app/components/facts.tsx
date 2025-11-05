@@ -83,7 +83,7 @@ const Facts: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchFacts
+    fetchFacts();
   }, [user]);
 
   if (loading) {
