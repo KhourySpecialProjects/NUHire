@@ -26,7 +26,7 @@ const Facts: React.FC = () => {
   const fetchFacts = async () => {
     console.log("Fetching facts...");
     console.log ("User in fetchFacts:", user);
-    
+
     const factsUrl = `${API_BASE_URL}/facts/get/${user?.group_id}/${user?.class_id}`;
     try {
       const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
@@ -66,29 +66,25 @@ const Facts: React.FC = () => {
 
 
   useEffect(() => {
-
-    const fetchUserAndFacts = async () => {
+    const fetchUser = async () => {
       try {
-        // Fetch user first
         const userRes = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await userRes.json();
         const newUser = { group_id: userData.group_id, class_id: userData.class };
         setUser(newUser);
         console.log("User data fetched:", userData);
-        if (userRes.ok && userData.group_id && userData.class) {
-          console.log("Fetching facts for group_id:", userData.group_id, "class_id:", userData.class);
-          fetchFacts();
-        } else {
-          console.warn("User does not have group_id and class_id, or user fetch failed.");
-        }      
       } catch (error) {
         console.error("Error fetching user or facts:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchUserAndFacts();
+    fetchUser();
   }, []);
+
+  useEffect(() => {
+    fetchFacts
+  }, [user]);
 
   if (loading) {
     return (
