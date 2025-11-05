@@ -76,7 +76,7 @@ export default function SignupDetails() {
         const checkData = await checkRes.json();
         console.log("Check data for student affiliation:", checkData);
         
-        if (!checkData.exists) {
+        if (checkData.group_id === null  || checkData.class_id === null) {
           setMessage('Student is not registered by instructor. Please contact your instructor to be added to the system.');
           setSubmitting(false);
           return; // CRITICAL: Stop execution here

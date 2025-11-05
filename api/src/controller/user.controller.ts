@@ -285,16 +285,27 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
         return;
       }
 
-      this.db.query('SELECT COUNT(*) AS count FROM Users WHERE email = ?', [email], (err, result) => {
+      this.db.query('SELECT group_id, class AS class_id FROM Users WHERE email = ?', [email], (err, result: any[]) => {
         if (err) {
           console.error('Database error:', err);
           res.status(500).json({ error: 'Failed to check if email is within users.' });
           return;
         }
-        const rows = result as RowDataPacket[];
-        const count = rows[0].count;
+        
         console.log("Check query result:", result);
-        res.json({ exists: count > 0 });
+        
+        // Check if user exists
+        if (!result || result.length === 0) {
+          res.json({ exists: false });
+          return;
+        }
+        
+        // User exists, return their data with exists flag
+        res.json({ 
+          exists: true,
+          group_id: result[0].group_id,
+          class_id: result[0].class_id
+        });
       });
     } catch (error) {
       console.error('Unexpected error in check:', error);
