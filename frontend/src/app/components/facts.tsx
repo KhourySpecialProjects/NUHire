@@ -25,6 +25,8 @@ const Facts: React.FC = () => {
 
   const fetchFacts = async () => {
     console.log("Fetching facts...");
+    console.log ("User in fetchFacts:", user);
+    
     const factsUrl = `${API_BASE_URL}/facts/get/${user?.group_id}/${user?.class_id}`;
     try {
       const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
@@ -48,7 +50,7 @@ const Facts: React.FC = () => {
  useEffect(() => {
     if (!socket || !user?.class_id || !user?.group_id) return;
 
-    const handleNewFacts = ({ class_id }: { class_id: number }) => {
+    const handleNewFacts = () => {
       fetchFacts();
     };
 
