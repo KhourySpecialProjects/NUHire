@@ -46,7 +46,7 @@ export default function InstructionsPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          user_email: email
+          email: email
         }),
       });
 
