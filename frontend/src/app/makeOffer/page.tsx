@@ -828,19 +828,25 @@ const checkExistingOffer = async () => {
   };
 
   const completeMakeOffer = () => {
-    const selectedCount = Object.values(checkedState).filter(Boolean).length;
-    if (selectedCount !== 1) {
+    // Check if there's an accepted offer
+    const hasAcceptedOffer = Object.values(sentIn).some(status => status === true);
+    
+    // Check if all candidates were rejected (all are false, none are 'none' or true)
+    const allRejected = Object.values(sentIn).every(status => status === false);
+    
+    if (!hasAcceptedOffer && !allRejected) {
       setPopup({
         headline: "Action Required",
-        message: "Please select exactly one candidate to make an offer.",
+        message: "You must have either an accepted offer or all offers rejected to proceed.",
       });
       return;
     }
+    
     updateProgress(user!, "employer");
     localStorage.setItem("progress", "employer");
     window.location.href = "/dashboard";
   };
-
+  
   const selectedCount = Object.values(checkedState).filter(Boolean).length;
 
   const isOfferDisabled = existingOffer !== null && (existingOffer.status === 'pending' || existingOffer.status === 'accepted');
