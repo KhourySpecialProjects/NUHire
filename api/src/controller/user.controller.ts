@@ -87,6 +87,8 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
             }
             
             console.log('✅ User record updated successfully');
+            this.io.emit('userUpdated');
+            console.log('Emitted userUpdated event via WebSocket');
             res.status(200).json({
               message: 'User information updated successfully',
               action: 'updated',
@@ -97,8 +99,6 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
             });
           }
         );
-        this.io.emit('userUpdated');
-        console.log('Emitted userUpdated event via WebSocket');
         return;
       } else {
         console.log('User does not exist, creating new user');
