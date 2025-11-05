@@ -490,9 +490,9 @@ export class GroupController {
   };
 
   addStudent = (req: AuthRequest, res: Response): void => {
-    const { email, class_id, group_id } = req.body;
+    const { email, class_id, group_id, f_name, l_name } = req.body;
 
-    console.log('Adding student to group:', { email, class_id, group_id });
+    console.log('Adding student to group:', { email, class_id, group_id, f_name, l_name });
 
     if (!email || !class_id || !group_id) {
       console.log('❌ Missing required fields:', { email, class_id, group_id });
@@ -502,7 +502,7 @@ export class GroupController {
       return;
     }
 
-    // Check if the student exists in ANY class first
+    // Check if the student exists in the database
     const checkStudentQuery = 'SELECT * FROM Users WHERE email = ?';
     console.log('🔍 Checking if student exists:', { email });
     
@@ -515,57 +515,87 @@ export class GroupController {
 
       console.log('🔎 checkResults:', checkResults);
 
+      // If student doesn't exist, create them
       if (!checkResults || checkResults.length === 0) {
-        console.log(`❌ Student ${email} does not exist in the database. Must be imported via CSV first.`);
-        res.status(404).json({ error: 'Student not found. Please import students via CSV first.' });
+        console.log(`📝 Student ${email} does not exist. Creating new student.`);
+        
+        // Check if first and last name are provided for new student
+        if (!f_name || !l_name) {
+          console.log('❌ First name and last name required for new student');
+          res.status(400).json({ 
+            error: 'First name and last name are required to create a new student' 
+          });
+          return;
+        }
+
+        const insertQuery = `
+          INSERT INTO Users (f_name, l_name, email, affiliation, class, group_id) 
+          VALUES (?, ?, ?, 'student', ?, ?)
+        `;
+        
+        this.db.query(insertQuery, [f_name, l_name, email, class_id, group_id], (insertErr, insertResult: any) => {
+          if (insertErr) {
+            console.error('❌ Error creating student:', insertErr);
+            res.status(500).json({ error: 'Failed to create student' });
+            return;
+          }
+
+          console.log('✅ New student created successfully:', insertResult);
+          this.io.emit('userAdded');
+          console.log('Emitted userAdded event via WebSocket');
+          
+          res.status(201).json({
+            message: 'Student created and added to group successfully',
+            email,
+            group_id,
+            class_id,
+            f_name,
+            l_name,
+            action: 'created'
+          });
+        });
         return;
       }
 
-      // Student exists, now check if they're already in this specific class
-      const selectQuery = 'SELECT group_id FROM Users WHERE email = ? AND class = ?';
-      console.log('🔍 Checking if student is in this class:', { email, class_id });
+      // Student exists, check if they're already in this specific class
+      const existingStudent = checkResults[0];
+      console.log('🔍 Student exists, checking class assignment:', existingStudent);
       
-      this.db.query(selectQuery, [email, class_id], (selectErr, selectResults: any[]) => {
-        if (selectErr) {
-          console.error('❌ Error checking student in class:', selectErr);
-          res.status(500).json({ error: 'Failed to check student in class' });
+      if (existingStudent.class === class_id) {
+        console.log(`❌ Student ${email} already exists in class ${class_id}`);
+        res.status(409).json({ error: 'Student already exists in this class' });
+        return;
+      }
+
+      // Student exists but not in this class, update their class and group
+      const updateQuery = 'UPDATE Users SET class = ?, group_id = ? WHERE email = ?';
+      console.log('📝 Updating student class and group:', { email, class_id, group_id });
+      
+      this.db.query(updateQuery, [class_id, group_id, email], (updateErr, updateResult: any) => {
+        if (updateErr) {
+          console.error('❌ Error updating student:', updateErr);
+          res.status(500).json({ error: 'Failed to add student to class and group' });
           return;
         }
 
-        console.log('🔎 selectResults:', selectResults);
+        console.log('🟢 Update result:', updateResult);
 
-        if (selectResults && selectResults.length > 0) {
-          console.log(`❌ Student ${email} already exists in class ${class_id}`);
-          res.status(409).json({ error: 'Student already exists in this class' });
+        if (updateResult.affectedRows === 0) {
+          console.log(`❌ Student ${email} not updated`);
+          res.status(404).json({ error: 'Student not added' });
           return;
         }
 
-        // Student exists but not in this class, update their class and group
-        const updateQuery = 'UPDATE Users SET class = ?, group_id = ? WHERE email = ?';
-        console.log('📝 Updating student class and group:', { email, class_id, group_id });
+        console.log(`✅ Student ${email} successfully added to group ${group_id} in class ${class_id}`);
+        this.io.emit('userAdded');
+        console.log('Emitted userAdded event via WebSocket');
         
-        this.db.query(updateQuery, [class_id, group_id, email], (err, result: any) => {
-          if (err) {
-            console.error('❌ Error updating student:', err);
-            res.status(500).json({ error: 'Failed to add student to class and group' });
-            return;
-          }
-
-          console.log('🟢 Update result:', result);
-
-          if (result.affectedRows === 0) {
-            console.log(`❌ Student ${email} not updated`);
-            res.status(404).json({ error: 'Student not added' });
-            return;
-          }
-
-          console.log(`✅ Student ${email} successfully added to group ${group_id} in class ${class_id}`);
-          res.json({
-            message: 'Student added to group successfully',
-            email,
-            group_id,
-            class_id
-          });
+        res.json({
+          message: 'Student added to group successfully',
+          email,
+          group_id,
+          class_id,
+          action: 'updated'
         });
       });
     });
