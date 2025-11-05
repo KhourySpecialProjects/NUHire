@@ -20,10 +20,11 @@ const Facts: React.FC = () => {
   const socket = useSocket();
 
   const fetchFacts = async () => {
+    console.log("Fetching facts...");
     const factsUrl = `${API_BASE_URL}/facts/get/${user?.group_id}/${user?.class_id}`;
     try {
       const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
-
+      console.log("Facts response:", factsRes);
       if (factsRes.ok) {
         const factsData = await factsRes.json();
 
@@ -63,12 +64,12 @@ const Facts: React.FC = () => {
     const fetchUserAndFacts = async () => {
       try {
         // Fetch user first
-        console.log("Fetching user info...");
         const userRes = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await userRes.json();
         setUser(userData);
-
+        console.log("User data fetched:", userData);
         if (userRes.ok && userData.group_id && userData.class) {
+          console.log("Fetching facts for group_id:", userData.group_id, "class_id:", userData.class_id);
           fetchFacts();
         } else {
           console.warn("User does not have group_id and class_id, or user fetch failed.");
