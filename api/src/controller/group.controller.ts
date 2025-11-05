@@ -492,7 +492,7 @@ export class GroupController {
   addStudent = (req: AuthRequest, res: Response): void => {
     const { email, class_id, group_id } = req.body;
 
-    console.log('Adding student to group (INSERT):', { email, class_id, group_id });
+    console.log('Adding student to group:', { email, class_id, group_id });
 
     if (!email || !class_id || !group_id) {
       console.log('❌ Missing required fields:', { email, class_id, group_id });
@@ -502,51 +502,70 @@ export class GroupController {
       return;
     }
 
-    const selectQuery = 'SELECT group_id FROM Users WHERE email = ? AND class = ?';
-    console.log('🔍 Checking if student exists:', { email, class_id });
-    this.db.query(selectQuery, [email, class_id], (selectErr, selectResults: any[]) => {
-      if (selectErr) {
-        console.error('❌ Error checking student:', selectErr);
+    // Check if the student exists in ANY class first
+    const checkStudentQuery = 'SELECT * FROM Users WHERE email = ?';
+    console.log('🔍 Checking if student exists:', { email });
+    
+    this.db.query(checkStudentQuery, [email], (checkErr, checkResults: any[]) => {
+      if (checkErr) {
+        console.error('❌ Error checking student:', checkErr);
         res.status(500).json({ error: 'Failed to check student' });
         return;
       }
 
-      console.log('🔎 selectResults:', selectResults);
+      console.log('🔎 checkResults:', checkResults);
 
-      if (selectResults && selectResults.length > 0) {
-        console.log(`❌ Student ${email} already exists in class ${class_id}`);
-        res.status(404).json({ error: 'Student already exists in this class' });
+      if (!checkResults || checkResults.length === 0) {
+        console.log(`❌ Student ${email} does not exist in the database. Must be imported via CSV first.`);
+        res.status(404).json({ error: 'Student not found. Please import students via CSV first.' });
         return;
       }
 
-      // Student does not exist, insert new row
-      const insertQuery = `
-        INSERT INTO Users (email, class, group_id)
-        VALUES (?, ?, ?)
-        ON DUPLICATE KEY UPDATE group_id = VALUES(group_id)
-      `;      
-      console.log('📝 Inserting new student:', { email, class_id, group_id });
-      this.db.query(insertQuery, [email, class_id, group_id], (err, result: any) => {
-        if (err) {
-          console.error('❌ Error inserting student:', err);
-          res.status(500).json({ error: 'Failed to add student to group' });
+      // Student exists, now check if they're already in this specific class
+      const selectQuery = 'SELECT group_id FROM Users WHERE email = ? AND class = ?';
+      console.log('🔍 Checking if student is in this class:', { email, class_id });
+      
+      this.db.query(selectQuery, [email, class_id], (selectErr, selectResults: any[]) => {
+        if (selectErr) {
+          console.error('❌ Error checking student in class:', selectErr);
+          res.status(500).json({ error: 'Failed to check student in class' });
           return;
         }
 
-        console.log('🟢 Insert result:', result);
+        console.log('🔎 selectResults:', selectResults);
 
-        if (result.affectedRows === 0) {
-          console.log(`❌ Student ${email} not inserted to group ${group_id} in class ${class_id}`);
-          res.status(404).json({ error: 'Student not added' });
+        if (selectResults && selectResults.length > 0) {
+          console.log(`❌ Student ${email} already exists in class ${class_id}`);
+          res.status(409).json({ error: 'Student already exists in this class' });
           return;
         }
 
-        console.log(`✅ Student ${email} successfully inserted to group ${group_id} in class ${class_id}`);
-        res.json({
-          message: 'Student added to group successfully',
-          email,
-          group_id,
-          class_id
+        // Student exists but not in this class, update their class and group
+        const updateQuery = 'UPDATE Users SET class = ?, group_id = ? WHERE email = ?';
+        console.log('📝 Updating student class and group:', { email, class_id, group_id });
+        
+        this.db.query(updateQuery, [class_id, group_id, email], (err, result: any) => {
+          if (err) {
+            console.error('❌ Error updating student:', err);
+            res.status(500).json({ error: 'Failed to add student to class and group' });
+            return;
+          }
+
+          console.log('🟢 Update result:', result);
+
+          if (result.affectedRows === 0) {
+            console.log(`❌ Student ${email} not updated`);
+            res.status(404).json({ error: 'Student not added' });
+            return;
+          }
+
+          console.log(`✅ Student ${email} successfully added to group ${group_id} in class ${class_id}`);
+          res.json({
+            message: 'Student added to group successfully',
+            email,
+            group_id,
+            class_id
+          });
         });
       });
     });
