@@ -7,6 +7,7 @@ import Tabs from "../components/tabs";
 import Popup from "../components/popup";
 import { StudentCSVTab } from "../components/StudentCSVTab";
 import { ManageGroupsTab } from "../components/ManageGroupsTab";
+import { useSocket } from "../components/socketContext";
 
 const Grouping = () => {
   interface Student {
@@ -30,7 +31,8 @@ const Grouping = () => {
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const router = useRouter();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-  
+  const socket = useSocket();
+
   // Delete confirmation popup state
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     show: boolean;
@@ -192,37 +194,6 @@ const Grouping = () => {
     setSelectedJobs(selectedJobs.filter(job => job.title !== title));
   };
 
-  // Assign group (Tab 1)
-  const handleAssignGroup = async () => {
-    if (!group_id || selectedStudents.length === 0 || !selectedClass) {
-      setPopup({ headline: "Incomplete Information", message: "Please enter a valid group ID, select a class, and select students." });
-      return;
-    }
-    if (user?.affiliation === "admin" && !assignedClassIds.includes(selectedClass)) {
-      setPopup({ headline: "Access Denied", message: "You are not assigned to this class." });
-      return;
-    }
-    const response = await fetch(`${API_BASE_URL}/groups/update-group`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        group_id,
-        class_id: selectedClass,
-        students: selectedStudents.map(student => student.email)
-      }),
-      credentials: "include"
-    });
-    if (response.ok) {
-      setPopup({ headline: "Success", message: "Students assigned to group successfully!" });
-      setSelectedStudents([]);
-      setGroupId("");
-      fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" })
-        .then(res => res.json())
-        .then(setGroups);
-    } else {
-      setPopup({ headline: "Error", message: "Failed to assign students to group." });
-    }
-  };
 
   // Assign job (Tab 2)
   const handleAssignJob = async () => {
