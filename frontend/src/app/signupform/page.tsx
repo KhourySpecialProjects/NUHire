@@ -51,10 +51,12 @@ export default function SignupDetails() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
+    setSubmitting(true);
 
     // Basic validation
     if (!firstName || !lastName || !email || affiliation === 'none') {
       setMessage('Please complete the form before submitting.');
+      setSubmitting(false);
       return;
     }
 
@@ -64,36 +66,54 @@ export default function SignupDetails() {
           `${API_BASE_URL}/users/check/${email}`,
           { method: 'GET', credentials: 'include' }
         );
-        const checkData = await checkRes.json();
-        console.log("Check data for student affiliation:", checkData);
-        if (!checkData.exists) {
-          setMessage('Student is not registered by instructor.');
+        
+        if (!checkRes.ok) {
+          setMessage('Error checking your registration status.');
+          setSubmitting(false);
           return;
         }
-      } catch {
-        setMessage('Error checking your email.');
+        
+        const checkData = await checkRes.json();
+        console.log("Check data for student affiliation:", checkData);
+        
+        if (!checkData.exists) {
+          setMessage('Student is not registered by instructor. Please contact your instructor to be added to the system.');
+          setSubmitting(false);
+          return; // CRITICAL: Stop execution here
+        }
+      } catch (error) {
+        console.error('Error checking email:', error);
+        setMessage('Error checking your email. Please try again.');
+        setSubmitting(false);
         return;
       }
+      
       try {
         const emailRes = await fetch(
           `${API_BASE_URL}/moderator/classes/${email}`,
           { method: 'GET', credentials: 'include' }
-        )
+        );
+        
         if (!emailRes.ok) {
           setMessage('Please check your affiliation and try again.');
+          setSubmitting(false);
           return;
         }
+        
         const emailData = await emailRes.json();
         console.log(emailData);
+        
         if (emailData.length !== 0) {
           setMessage('Please use a student email to sign up.');
+          setSubmitting(false);
           return;
         }
-      } catch {
+      } catch (error) {
+        console.error('Error validating affiliation:', error);
         setMessage('Error validating your affiliation.');
+        setSubmitting(false);
         return;
       }
-      setTimeout(() => setSubmitting(false), 5000);
     }
 
     if (affiliation === 'admin') {
@@ -101,18 +121,25 @@ export default function SignupDetails() {
         const res = await fetch(
           `${API_BASE_URL}/moderator/classes/${email}`,
           { method: 'GET', credentials: 'include' }
-        )
+        );
+        
         if (!res.ok) {
           setMessage('Please check your affiliation and try again.');
+          setSubmitting(false);
           return;
         }
+        
         const crns = await res.json();
+        
         if (crns.length === 0) {
           setMessage('Please use an instructor email to sign up.');
+          setSubmitting(false);
           return;
         }
-      } catch {
+      } catch (error) {
+        console.error('Error validating affiliation:', error);
         setMessage('Error validating your affiliation.');
+        setSubmitting(false);
         return;
       }
     }
@@ -143,11 +170,13 @@ export default function SignupDetails() {
         }, 1500);
       } else {
         const errorData = await response.json();
-        setMessage('There was an error submitting the form.');
+        setMessage(errorData.message || 'There was an error submitting the form.');
+        setSubmitting(false);
       }
     } catch (error) {
       console.error('Error during signup:', error);
       setMessage('An error occurred while submitting the form.');
+      setSubmitting(false);
     }
   };
 
