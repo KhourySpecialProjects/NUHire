@@ -232,6 +232,10 @@ export default function ResumesPage() {
 
     updateProgress(user, "res_2");
     localStorage.setItem("progress", "res_2");
+    localStorage.removeItem('resumeReviewIndex');
+    localStorage.removeItem('resumeReviewAccepted');
+    localStorage.removeItem('resumeReviewRejected');
+    localStorage.removeItem('resumeReviewNoResponse');
     window.location.href = "/res-review-group";
     
     socket.emit("moveGroup", {

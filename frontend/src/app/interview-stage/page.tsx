@@ -479,6 +479,12 @@ const completeInterview = () => {
   
   updateProgress(user, "offer");
   localStorage.setItem("progress", "offer");
+  localStorage.removeItem('interviewStage_videoIndex');
+  localStorage.removeItem('interviewStage_overall');
+  localStorage.removeItem('interviewStage_professionalPresence');
+  localStorage.removeItem('interviewStage_qualityOfAnswer');
+  localStorage.removeItem('interviewStage_personality');
+  localStorage.removeItem('interviewStage_noShow');
   window.location.href = '/makeOffer';
   socket.emit("moveGroup", { groupId: user.group_id, classId: user.class, targetPage: "/makeOffer" });
 };
