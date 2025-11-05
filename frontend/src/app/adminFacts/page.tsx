@@ -97,7 +97,7 @@ export default function AdminFactsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-sand font-rubik items-center justify-center">
+    <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <NavbarAdmin />
       <div className="max-w-lg w-full bg-white border-4 border-northeasternBlack rounded-lg shadow-lg p-8 mt-10">
         <h1 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Add Waiting Room Facts</h1>
