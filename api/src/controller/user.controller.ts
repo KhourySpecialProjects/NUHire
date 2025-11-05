@@ -97,6 +97,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
             });
           }
         );
+        this.io.emit('userUpdated');
         return;
       } else {
         console.log('User does not exist, creating new user');
