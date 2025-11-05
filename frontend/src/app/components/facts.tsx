@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useSocket } from "./socketContext";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -16,38 +17,62 @@ const Facts: React.FC = () => {
   const [facts, setFacts] = useState<Fact[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const socket = useSocket();
+
+  const fetchFacts = async () => {
+    const factsUrl = `${API_BASE_URL}/facts/get/${user?.group_id}/${user?.class_id}`;
+    try {
+      const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
+
+      if (factsRes.ok) {
+        const factsData = await factsRes.json();
+
+        const factsArray = ["one", "two", "three"]
+          .map(key => factsData[key])
+          .filter(fact => fact && fact.trim());
+
+        setFacts(factsArray.map(fact => ({ fact })));
+      } else {
+        console.warn("Facts fetch failed:", factsRes.status, await factsRes.text());
+      }
+    } catch (error) {
+      console.error("Error fetching facts:", error);
+    }
+  };
+
+ useEffect(() => {
+    if (!socket || !user?.class_id || !user?.group_id) return;
+
+    const handleNewFacts = ({ class_id }: { class_id: number }) => {
+      fetchFacts();
+    };
+
+    const roomId = `group_${user.group_id}_class_${user.class_id}`;
+    socket.emit("joinGroup", roomId);
+
+    socket.on("factsUpdated", handleNewFacts);
+
+    return () => {
+      socket.off("factsUpdated", handleNewFacts);
+    };
+  }, [socket, user]);
+
 
   useEffect(() => {
+
     const fetchUserAndFacts = async () => {
       try {
         // Fetch user first
         console.log("Fetching user info...");
         const userRes = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
         const userData = await userRes.json();
-        console.log("User fetch response status:", userRes.status);
-        console.log("User data:", userData);
         setUser(userData);
 
-        // Only fetch facts if user has group_id and class_id
         if (userRes.ok && userData.group_id && userData.class) {
-          const factsUrl = `${API_BASE_URL}/facts/get/${userData.group_id}/${userData.class}`;
-          console.log("Fetching facts from:", factsUrl);
-          const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
-          console.log("Facts fetch response status:", factsRes.status);
-          if (factsRes.ok) {
-            const factsData = await factsRes.json();
-            console.log("Facts data:", factsData);
-            // Map object { one, two, three } to array
-            const factsArray = ["one", "two", "three"]
-              .map(key => factsData[key])
-              .filter(fact => fact && fact.trim());
-            setFacts(factsArray.map(fact => ({ fact })));
-          } else {
-            console.warn("Facts fetch failed:", factsRes.status, await factsRes.text());
-          }
+          fetchFacts();
         } else {
           console.warn("User does not have group_id and class_id, or user fetch failed.");
-        }
+        }      
       } catch (error) {
         console.error("Error fetching user or facts:", error);
       } finally {
