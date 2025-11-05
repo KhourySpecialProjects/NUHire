@@ -98,6 +98,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
           }
         );
         this.io.emit('userUpdated');
+        console.log('Emitted userUpdated event via WebSocket');
         return;
       } else {
         console.log('User does not exist, creating new user');
