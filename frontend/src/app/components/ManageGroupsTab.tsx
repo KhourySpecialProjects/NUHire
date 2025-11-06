@@ -735,7 +735,7 @@ return (
               </h2>
             </div>
             <div className="flex justify-center">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+              <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
                 {groups.map((group) => (
                   <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[300px] w-full">
                     <div className="flex justify-between items-center mb-4">
@@ -822,7 +822,7 @@ return (
                           setAddStudentEmail('');
                           setAddStudentModalOpen(true);
                         }}
-                        className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                        className="w-full mt-2 bg-green-100 text-northeasternRed-600 hover:bg-northeasternRed-700 py-2 px-3 rounded-md text-sm font-medium transition-colors"
                       >
                         ➕ Add Student to Group
                       </button>
@@ -834,7 +834,7 @@ return (
                             setSelectedGroupForJob(group.group_id);
                             setAssignJobModalOpen(true);
                           }}
-                          className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-purple-100 text-purple-700 hover:bg-purple-200"
+                          className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed-600 text-purple-700 hover:bg-northeasternRed-700"
                         >
                           💼 Assign Job
                         </button>
@@ -907,7 +907,7 @@ return (
             <button
               onClick={assignJobToGroup}
               disabled={isAssigningJob || !selectedJobId}
-              className={`flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 bg-northeasternRed600 text-white py-2 px-4 rounded-lg hover:bg-northeasternRed-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isAssigningJob ? 'Assigning...' : 'Assign Job'}
             </button>
