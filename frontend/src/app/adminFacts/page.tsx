@@ -13,7 +13,6 @@ export default function AdminFactsPage() {
   const [classes, setClasses] = useState<ModeratorClass[]>([]);
   const [groups, setGroups] = useState<number[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [facts, setFacts] = useState(["", "", ""]);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
@@ -70,7 +69,7 @@ export default function AdminFactsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedClass || !selectedGroup || facts.some(f => !f.trim())) {
+    if (!selectedClass || facts.some(f => !f.trim())) {
       setPopup({ headline: "Error", message: "Please select class, group, and enter all three facts." });
       return;
     }
@@ -78,7 +77,7 @@ export default function AdminFactsPage() {
       // Send as { one, two, three }
       const payload = { one: facts[0], two: facts[1], three: facts[2] };
       console.log("Posting facts payload:", payload);
-      const res = await fetch(`${API_BASE_URL}/facts/create/${selectedGroup}/${selectedClass}`, {
+      const res = await fetch(`${API_BASE_URL}/facts/create//${selectedClass}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -125,26 +124,8 @@ export default function AdminFactsPage() {
                 ))}
               </select>
             </div>
-            {/* Group Dropdown */}
-            {selectedClass && (
-              <div>
-                <label className="block text-lg font-medium mb-2 text-northeasternBlack">Select Group:</label>
-                <select
-                  value={selectedGroup}
-                  onChange={e => setSelectedGroup(e.target.value)}
-                  className="w-full p-3 border border-wood rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Select a Group --</option>
-                  {groups.map(groupId => (
-                    <option key={groupId} value={groupId}>
-                      Group {groupId}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
             {/* Fact Inputs */}
-            {selectedClass && selectedGroup && (
+            {selectedClass && (
               <div className="space-y-4">
                 {[0, 1, 2].map(i => (
                   <div key={i}>

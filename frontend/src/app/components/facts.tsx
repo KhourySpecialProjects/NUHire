@@ -27,7 +27,7 @@ const Facts: React.FC = () => {
     console.log("Fetching facts...");
     console.log ("User in fetchFacts:", user);
 
-    const factsUrl = `${API_BASE_URL}/facts/get/${user?.group_id}/${user?.class_id}`;
+    const factsUrl = `${API_BASE_URL}/facts/get/${user?.class_id}`;
     try {
       const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
       console.log("Facts response:", factsRes);
@@ -54,7 +54,7 @@ const Facts: React.FC = () => {
       fetchFacts();
     };
 
-    const roomId = `group_${user.group_id}_class_${user.class_id}`;
+    const roomId = `class_${user.class_id}`;
     socket.emit("joinGroup", roomId);
 
     socket.on("factsUpdated", handleNewFacts);
