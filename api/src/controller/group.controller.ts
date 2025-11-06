@@ -621,7 +621,7 @@ export class GroupController {
     const query = `
       SELECT step
       FROM Progress
-      WHERE class_id = ? AND group_id = ?
+      WHERE crn = ? AND group_id = ?
     `;
 
     this.db.query(query, [classId, groupId], (err, results: any[]) => {
