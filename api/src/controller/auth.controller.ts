@@ -75,6 +75,8 @@ export class AuthController {
               return;
             }
 
+            console.log('seen group results:', dbUser);
+
             if (startResults.length > 0 && startResults[0].started === 1) {
               if (dbUser.seen === 1) {
                 res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
