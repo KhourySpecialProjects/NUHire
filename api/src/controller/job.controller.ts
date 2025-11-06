@@ -174,7 +174,10 @@ export class JobController {
       const roomID = `group_${job_group_id}_class_${class_id}`;
         this.io.to(roomID).emit('jobUpdated', {
           job: jobTitle,
-        });
+        }
+      );
+
+      
 
       console.log(`Job "${jobTitle}" assigned to Group ${job_group_id} in Class ${class_id}. All related data cleared.`);
 

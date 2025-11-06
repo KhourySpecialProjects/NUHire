@@ -117,6 +117,38 @@ export function ManageGroupsTab() {
   }, [socket, selectedClass]);
 
   useEffect(() => {
+    if (!socket || !selectedClass) return;
+
+    const handleProgressUpdated = async (data: { crn: string; group_id: number; step: string; email: string }) => {
+      console.log('Progress updated event received:', data);
+      
+      if (data.crn === selectedClass) {
+        try {
+          const { jobAssignment, progress } = await fetchGroupJobAndProgress(data.group_id, selectedClass);
+          
+          setGroups(prevGroups => 
+            prevGroups.map(group => 
+              group.group_id === data.group_id 
+                ? { ...group, progress }
+                : group
+            )
+          );
+          
+          console.log(`Updated progress for group ${data.group_id} to: ${progress}`);
+        } catch (error) {
+          console.error('Error refreshing progress:', error);
+        }
+      }
+    };
+
+    socket.on('progressUpdated', handleProgressUpdated);
+
+    return () => {
+      socket.off('progressUpdated', handleProgressUpdated);
+    };
+  }, [socket, selectedClass, groups]);
+
+  useEffect(() => {
     const fetchClasses = async () => {
       if (!user?.email) return;
 
