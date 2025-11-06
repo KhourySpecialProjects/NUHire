@@ -21,6 +21,8 @@ const ModDashboard = () => {
   const [form, setForm] = useState({ admin_email: "", crn: "" });
   const [submitting, setSubmitting] = useState(false);
   const [deletingCRN, setDeletingCRN] = useState<number | null>(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [crnToDelete, setCrnToDelete] = useState<number | null>(null);
 
   const socket = io(API_BASE_URL)
 
@@ -81,10 +83,18 @@ const ModDashboard = () => {
   };
 
   const handleDelete = async (crn: number) => {
-    if (!window.confirm("Are you sure you want to delete this CRN?")) return;
-    setDeletingCRN(crn);
+    setCrnToDelete(crn);
+    setConfirmModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!crnToDelete) return;
+    
+    setConfirmModalOpen(false);
+    setDeletingCRN(crnToDelete);
+    
     try {
-      const res = await fetch(`${API_BASE_URL}/moderator/crns/${crn}`, {
+      const res = await fetch(`${API_BASE_URL}/moderator/crns/${crnToDelete}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -100,6 +110,7 @@ const ModDashboard = () => {
       setPopup({ headline: "Error", message: "Failed to delete CRN." });
     } finally {
       setDeletingCRN(null);
+      setCrnToDelete(null);
     }
   };
 
@@ -145,7 +156,6 @@ const ModDashboard = () => {
                   >
                     <div>
                       <div className="font-bold text-northeasternRed">CRN: {i.crn}</div>
-                      {/* REMOVED: Groups: {i.nom_groups} */}
                       <div className="text-navy text-sm">Admin: {i.admin_email}</div>
                     </div>
                     <button
@@ -195,6 +205,36 @@ const ModDashboard = () => {
         </div>
       </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete CRN {crnToDelete}? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={executeDelete}
+                className="flex-1 bg-northeasternRed text-white py-2 px-4 rounded-lg hover:bg-red-700"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmModalOpen(false);
+                  setCrnToDelete(null);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {popup && (
         <Popup
           headline={popup.headline}
