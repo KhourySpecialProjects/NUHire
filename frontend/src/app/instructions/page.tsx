@@ -66,7 +66,7 @@ export default function InstructionsPage() {
   };
 
   const handleContinue = async () => {
-    updateUserSeeDash();
+    await updateUserSeeDash();
     window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(name)}`;
   };
 
