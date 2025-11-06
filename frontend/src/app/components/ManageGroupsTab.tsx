@@ -34,8 +34,8 @@ interface User {
 }
 
 interface JobOption {
-  job_id: number;
-  job_name: string;
+  id: number;
+  title: string;
 }
 
 export function ManageGroupsTab() {
@@ -219,7 +219,7 @@ export function ManageGroupsTab() {
           const jobsData = await response.json();
           setAvailableJobs(jobsData);
           if (jobsData.length > 0) {
-            setSelectedJobId(jobsData[0].job_id);
+            setSelectedJobId(jobsData[0].id);  // Changed from job_id to id
           }
         }
       } catch (error) {
@@ -834,7 +834,7 @@ return (
                             setSelectedGroupForJob(group.group_id);
                             setAssignJobModalOpen(true);
                           }}
-                          className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed-600 text-purple-700 hover:bg-northeasternRed-700"
+                          className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700"
                         >
                           💼 Assign Job
                         </button>
@@ -898,8 +898,8 @@ return (
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
           >
             {availableJobs.map((job) => (
-              <option key={job.job_id} value={job.job_id}>
-                {job.job_name}
+              <option key={job.id} value={job.id}>
+                {job.title}
               </option>
             ))}
           </select>
@@ -907,7 +907,7 @@ return (
             <button
               onClick={assignJobToGroup}
               disabled={isAssigningJob || !selectedJobId}
-              className={`flex-1 bg-northeasternRed600 text-white py-2 px-4 rounded-lg hover:bg-northeasternRed-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 bg-northeasternRed text-white py-2 px-4 rounded-lg hover:bg-red-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isAssigningJob ? 'Assigning...' : 'Assign Job'}
             </button>
