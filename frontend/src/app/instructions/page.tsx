@@ -39,7 +39,7 @@ export default function InstructionsPage() {
     try {
       console.log("Updating user-see-dash field for email:", email);
       
-      const response = await fetch(`${API_BASE_URL}/user/update-seen`, {
+      const response = await fetch(`${API_BASE_URL}/users/update-seen`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
