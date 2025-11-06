@@ -262,7 +262,7 @@ export function ManageGroupsTab() {
     fetchJobs();
   }, [assignJobModalOpen]);
 
-  const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
+const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
     try {
       const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${groupId}/${classId}`, {
         credentials: 'include'
@@ -281,9 +281,7 @@ export function ManageGroupsTab() {
       let progress = 'none';
       if (progressResponse.ok) {
         const progressData = await progressResponse.json();
-        if (Array.isArray(progressData) && progressData.length > 0) {
-          progress = progressData[0].step || 'none';
-        }
+        progress = progressData.progress || 'none';  // Changed from progressData[0].step to progressData.progress
       }
 
       return { jobAssignment, progress };
