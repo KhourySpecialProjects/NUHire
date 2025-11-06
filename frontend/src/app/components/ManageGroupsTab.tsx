@@ -33,6 +33,11 @@ interface User {
   email: string;
 }
 
+interface JobOption {
+  job_id: number;
+  job_name: string;
+}
+
 export function ManageGroupsTab() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<ClassInfo[]>([]);
@@ -54,9 +59,15 @@ export function ManageGroupsTab() {
   const [addStudentEmail, setAddStudentEmail] = useState('');
   const [addStudentGroupId, setAddStudentGroupId] = useState<number | null>(null);
   const [isAddingStudent, setIsAddingStudent] = useState(false);
+  
+  // New state for job assignment
+  const [assignJobModalOpen, setAssignJobModalOpen] = useState(false);
+  const [selectedGroupForJob, setSelectedGroupForJob] = useState<number | null>(null);
+  const [availableJobs, setAvailableJobs] = useState<JobOption[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [isAssigningJob, setIsAssigningJob] = useState(false);
     
-  // ...existing useEffects for user, socket, classes, etc...
-  // Fetch user authentication
+  // ...existing useEffects...
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -103,9 +114,8 @@ export function ManageGroupsTab() {
     return () => {
       socket.off('userAdded', handleUserAdded);
     };
-  }, [socket, selectedClass, availableGroups]);
+  }, [socket, selectedClass]);
 
-  // Fetch classes when user is loaded
   useEffect(() => {
     const fetchClasses = async () => {
       if (!user?.email) return;
@@ -142,7 +152,6 @@ export function ManageGroupsTab() {
         if (response.ok) {
           const groupData = await response.json();
           console.log("Available groups from GroupsInfo:", groupData);
-          // Convert to numbers and sort
           const groupNumbers = Array.isArray(groupData) 
             ? groupData.map(Number).sort((a, b) => a - b)
             : [];
@@ -196,9 +205,33 @@ export function ManageGroupsTab() {
     organizeWhenGroupsChange();
   }, [availableGroups]); 
 
+  // Fetch available jobs when modal opens
+  useEffect(() => {
+    const fetchJobs = async () => {
+      if (!assignJobModalOpen) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/jobs`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const jobsData = await response.json();
+          setAvailableJobs(jobsData);
+          if (jobsData.length > 0) {
+            setSelectedJobId(jobsData[0].job_id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      }
+    };
+
+    fetchJobs();
+  }, [assignJobModalOpen]);
+
   const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
     try {
-      // Fetch job assignment
       const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${groupId}/${classId}`, {
         credentials: 'include'
       });
@@ -209,7 +242,6 @@ export function ManageGroupsTab() {
         jobAssignment = jobData.job || 'No job assigned';
       }
 
-      // Fetch progress
       const progressResponse = await fetch(`${API_BASE_URL}/progress/group/${classId}/${groupId}`, {
         credentials: 'include'
       });
@@ -250,7 +282,6 @@ export function ManageGroupsTab() {
 
     const groupsArray: Group[] = [];
     
-    // Fetch start statuses, jobs, and progress for all available groups
     const startStatuses = selectedClass ? await fetchGroupStartStatuses(selectedClass, availableGroups) : [];
     const jobProgressPromises = availableGroups.map(groupId => 
       fetchGroupJobAndProgress(groupId, selectedClass)
@@ -299,8 +330,54 @@ export function ManageGroupsTab() {
     setGroups(groupsArray);
   };
 
-  // ...existing functions (createNewGroup, handleClassChange, reassignStudent, etc.)...
+  const assignJobToGroup = async () => {
+    if (!selectedGroupForJob || !selectedJobId || !selectedClass) return;
 
+    setIsAssigningJob(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs/assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          group_id: selectedGroupForJob,
+          class_id: selectedClass,
+          job_id: selectedJobId
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh groups to show new job assignment
+        const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+          credentials: 'include'
+        });
+        
+        if (studentResponse.ok) {
+          const studentData = await studentResponse.json();
+          setStudents(studentData);
+          await organizeStudentsIntoGroups(studentData);
+        }
+        
+        setPopup({ headline: 'Success', message: 'Job assigned successfully!' });
+        setAssignJobModalOpen(false);
+        setSelectedGroupForJob(null);
+        setSelectedJobId(null);
+      } else {
+        const errorData = await response.json();
+        setPopup({ headline: 'Error', message: `Failed to assign job: ${errorData.error || 'Unknown error'}` });
+      }
+    } catch (error) {
+      console.error('Error assigning job:', error);
+      setPopup({ headline: 'Error', message: 'Failed to assign job. Please try again.' });
+    } finally {
+      setIsAssigningJob(false);
+    }
+  };
+
+  // ...existing functions (createNewGroup, handleClassChange, etc.)...
   const createNewGroup = async () => {
     if (!selectedClass) return;
 
@@ -347,7 +424,7 @@ export function ManageGroupsTab() {
   };
 
   const reassignStudent = async (studEmail: string, newGroup: number) => {
-    try {;
+    try {
       const response = await fetch(`${API_BASE_URL}/groups/reassign-student`, {
         method: 'PATCH',
         headers: {
@@ -672,7 +749,6 @@ return (
                       </span>
                     </div>
                     
-                    {/* Job Assignment and Progress Info */}
                     {group.group_id !== -1 && (
                       <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                         <div className="mb-2">
@@ -741,17 +817,28 @@ return (
                         </div>
                       )}
                       <button
-                            onClick={() => {
-                              setAddStudentGroupId(group.group_id);
-                              setAddStudentEmail('');
-                              setAddStudentModalOpen(true);
-                            }}
-                            className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                          >
-                            ➕ Add Student to Group
-                          </button>
+                        onClick={() => {
+                          setAddStudentGroupId(group.group_id);
+                          setAddStudentEmail('');
+                          setAddStudentModalOpen(true);
+                        }}
+                        className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                      >
+                        ➕ Add Student to Group
+                      </button>
                     </div>
-                    <div className="mt-auto pt-4 border-t border-gray-100">
+                    <div className="mt-auto pt-4 border-t border-gray-100 space-y-2">
+                      {group.group_id !== -1 && (
+                        <button
+                          onClick={() => {
+                            setSelectedGroupForJob(group.group_id);
+                            setAssignJobModalOpen(true);
+                          }}
+                          className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-purple-100 text-purple-700 hover:bg-purple-200"
+                        >
+                          💼 Assign Job
+                        </button>
+                      )}
                       <button
                         onClick={() => startGroup(group.group_id)}
                         disabled={group.isStarted || startingGroups.has(group.group_id)}
@@ -796,6 +883,48 @@ return (
         )}
       </div>
     </div>
+
+    {/* Assign Job Modal */}
+    {assignJobModalOpen && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-96">
+          <h3 className="text-lg font-semibold mb-4">Assign Job to Group {selectedGroupForJob}</h3>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Job:
+          </label>
+          <select
+            value={selectedJobId || ''}
+            onChange={e => setSelectedJobId(parseInt(e.target.value))}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
+          >
+            {availableJobs.map((job) => (
+              <option key={job.job_id} value={job.job_id}>
+                {job.job_name}
+              </option>
+            ))}
+          </select>
+          <div className="flex space-x-3">
+            <button
+              onClick={assignJobToGroup}
+              disabled={isAssigningJob || !selectedJobId}
+              className={`flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isAssigningJob ? 'Assigning...' : 'Assign Job'}
+            </button>
+            <button
+              onClick={() => {
+                setAssignJobModalOpen(false);
+                setSelectedGroupForJob(null);
+                setSelectedJobId(null);
+              }}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {addStudentModalOpen && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
