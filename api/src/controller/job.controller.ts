@@ -172,11 +172,8 @@ export class JobController {
         emails.forEach((email: string) => {
           const roomID = `${job_group_id}-${class_id}`;
           this.io.to(roomID).emit('jobUpdated', {
-              job: jobTitle,
-              group_id: job_group_id,
-              class_id,
-              message: `Your group has been assigned a new job. All progress has been reset.`
-            });
+            job: jobTitle,
+          });
         });
       }
 

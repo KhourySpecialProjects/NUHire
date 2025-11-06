@@ -173,6 +173,24 @@ const Dashboard = () => {
   }, [router]);
 
   useEffect(() => {
+    if (!socket || !user) return;
+
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+    socket.emit("joinGroup", roomId);
+    console.log(`Joined room: ${roomId}`);
+
+    const handleReconnect = () => {
+      socket.emit("joinGroup", roomId);
+    };
+    
+    socket.on('connect', handleReconnect);
+    
+    return () => {
+      socket.off('connect', handleReconnect);
+    };
+  }, [socket, user]);
+
+  useEffect(() => {
     if (!socket || !user?.email) return;
 
     socket.emit("studentOnline", { studentId: user.email }); 
@@ -195,50 +213,44 @@ const Dashboard = () => {
   }, [socket, user?.email, pathname]);
 
   useEffect(() => {
-  if (!socket || !user) return;
+    if (!socket || !user) return;
+      
+    const handleJobUpdated = async ({ job }: { 
+      job: string, 
+    }) => {
+      // Clear any cached comments
+      localStorage.removeItem("pdf-comments");
+      
+      // Show popup with the job title (job is an array, so use job[0])
+      setPopup({ 
+        headline: "You have been assigned a new job!", 
+        message: `You are an employer for ${job[0]}!` 
+      });
+      
+      // Update progress to job_description stage
+      await updateProgress(user, "job_description");
+      setProgress("job_description");
+      localStorage.setItem("progress", "job_description");
+      
+      // Refresh the entire dashboard (this will fetch the new job description)
+      await refreshDashboardUI();
+      
+      // Reset all flipped cards
+      setFlipped(Array(steps.length).fill(false));
+    };
 
-    const roomId = `group_${user.group_id}_class_${user.class}`;
-    socket.emit("joinGroup", roomId);
-    
-  const handleJobUpdated = async ({ job, group_id, class_id, message }: { 
-    job: string, 
-    group_id: number, 
-    class_id: number, 
-    message: string 
-  }) => {
-    // Clear any cached comments
-    localStorage.removeItem("pdf-comments");
-    
-    // Show popup with the job title (job is an array, so use job[0])
-    setPopup({ 
-      headline: "You have been assigned a new job!", 
-      message: `You are an employer for ${job[0]}!` 
-    });
-    
-    // Update progress to job_description stage
-    await updateProgress(user, "job_description");
-    setProgress("job_description");
-    localStorage.setItem("progress", "job_description");
-    
-    // Refresh the entire dashboard (this will fetch the new job description)
-    await refreshDashboardUI();
-    
-    // Reset all flipped cards
-    setFlipped(Array(steps.length).fill(false));
-  };
+    const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+      setPopup({ headline, message });
+    };
 
-  const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
-    setPopup({ headline, message });
-  };
+    socket.on("jobUpdated", handleJobUpdated);
+    socket.on("receivePopup", handleReceivePopup);
 
-  socket.on("jobUpdated", handleJobUpdated);
-  socket.on("receivePopup", handleReceivePopup);
-
-  return () => {
-    socket.off("jobUpdated", handleJobUpdated);
-    socket.off("receivePopup", handleReceivePopup);
-  };
-}, [socket, user, updateProgress, refreshDashboardUI]);
+    return () => {
+      socket.off("jobUpdated", handleJobUpdated);
+      socket.off("receivePopup", handleReceivePopup);
+    };
+  }, [socket, user, updateProgress, refreshDashboardUI]);
 
   const isStepUnlocked = (stepKey: string) => {
     
