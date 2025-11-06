@@ -224,7 +224,7 @@ const Dashboard = () => {
       // Show popup with the job title (job is an array, so use job[0])
       setPopup({ 
         headline: "You have been assigned a new job!", 
-        message: `You are an employer for ${job[0]}!` 
+        message: `You are an employer for ${job}!` 
       });
       
       // Update progress to job_description stage
