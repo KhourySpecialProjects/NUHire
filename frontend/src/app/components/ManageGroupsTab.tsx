@@ -91,21 +91,45 @@ export function ManageGroupsTab() {
     fetchUser();
   }, [router]);
 
+  const refreshGroupsAndStudents = async () => {
+    if (!selectedClass) return;
+
+    try {
+      const [studentResponse, groupsResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+          credentials: 'include'
+        }),
+        fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
+          credentials: 'include'
+        })
+      ]);
+
+      if (studentResponse.ok && groupsResponse.ok) {
+        const studentData = await studentResponse.json();
+        const groupData = await groupsResponse.json();
+        
+        const groupNumbers = Array.isArray(groupData) 
+          ? groupData.map(Number).sort((a, b) => a - b)
+          : [];
+
+        setStudents(studentData);
+        setAvailableGroups(groupNumbers);
+        
+        if (groupNumbers.length > 0) {
+          await organizeStudentsIntoGroups(studentData);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing groups and students:', error);
+    }
+  };
+
   useEffect(() => {
     if (!socket) return;
 
     const handleUserAdded = () => {
-      if (selectedClass) {
-        fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
-          credentials: 'include'
-        })
-        .then(res => res.ok ? res.json() : [])
-        .then(studentData => {
-          setStudents(studentData);
-          organizeStudentsIntoGroups(studentData);
-        });
-      }
-      console.log('User added event received, refreshed student data.');
+      console.log('User added event received, refreshing data...');
+      refreshGroupsAndStudents();
     };
 
     socket.on('userAdded', handleUserAdded);
@@ -113,7 +137,7 @@ export function ManageGroupsTab() {
     return () => {
       socket.off('userAdded', handleUserAdded);
     };
-  }, [socket, selectedClass]);
+  }, [socket, selectedClass, refreshGroupsAndStudents]); 
 
   useEffect(() => {
     if (!socket || !selectedClass) return;
