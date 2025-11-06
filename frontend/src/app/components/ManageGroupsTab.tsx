@@ -59,15 +59,14 @@ export function ManageGroupsTab() {
   const [addStudentEmail, setAddStudentEmail] = useState('');
   const [addStudentGroupId, setAddStudentGroupId] = useState<number | null>(null);
   const [isAddingStudent, setIsAddingStudent] = useState(false);
-  
-  // New state for job assignment
   const [assignJobModalOpen, setAssignJobModalOpen] = useState(false);
   const [selectedGroupForJob, setSelectedGroupForJob] = useState<number | null>(null);
   const [availableJobs, setAvailableJobs] = useState<JobOption[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [isAssigningJob, setIsAssigningJob] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: string; data: any } | null>(null);
     
-  // ...existing useEffects...
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -281,7 +280,7 @@ const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
       let progress = 'none';
       if (progressResponse.ok) {
         const progressData = await progressResponse.json();
-        progress = progressData.progress || 'none';  // Changed from progressData[0].step to progressData.progress
+        progress = progressData.progress || 'none';
       }
 
       return { jobAssignment, progress };
@@ -502,10 +501,41 @@ const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
   };
 
   const removeStudentFromGroup = async (email: string) => {
-    if (!confirm('Are you sure you want to remove this student from their group?')) {
-      return;
+    setConfirmAction({ type: 'removeStudent', data: email });
+    setConfirmModalOpen(true);
+  };
+
+  const deleteStudent = async (email: string) => {
+    setConfirmAction({ type: 'deleteStudent', data: email });
+    setConfirmModalOpen(true);
+  };
+
+  const startAllGroups = async () => {
+    setConfirmAction({ type: 'startAllGroups', data: null });
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    setConfirmModalOpen(false);
+
+    switch (confirmAction.type) {
+      case 'removeStudent':
+        await executeRemoveStudent(confirmAction.data);
+        break;
+      case 'deleteStudent':
+        await executeDeleteStudent(confirmAction.data);
+        break;
+      case 'startAllGroups':
+        await executeStartAllGroups();
+        break;
     }
 
+    setConfirmAction(null);
+  };
+
+  const executeRemoveStudent = async (email: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/groups/remove-from-group`, {
         method: 'PATCH',
@@ -538,6 +568,66 @@ const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
     } catch (error) {
       console.error('Error removing student:', error);
       setPopup({ headline: 'Error', message: 'Failed to remove student. Please try again.' });
+    }
+  };
+
+  const executeDeleteStudent = async (email: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/groups/delete-student`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          class_id: selectedClass
+        }),
+      });
+      if (response.ok) {
+        const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+          credentials: 'include'
+        });
+        if (studentResponse.ok) {
+          const studentData = await studentResponse.json();
+          setStudents(studentData);
+          organizeStudentsIntoGroups(studentData);
+        }
+        setPopup({ headline: 'Success', message: 'Student deleted successfully!' });
+      } else {
+        const errorData = await response.json();
+        setPopup({ headline: 'Error', message: `Failed to delete student: ${errorData.error || 'Unknown error'}` });
+      }
+    } catch (error) {
+      setPopup({ headline: 'Error', message: 'Failed to delete student. Please try again.' });
+    }
+  };
+
+  const executeStartAllGroups = async () => {
+    setIsStartingAll(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/groups/start-all-groups`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          class_id: selectedClass
+        }),
+      });
+
+      if (response.ok) {
+        setGroups(prev => prev.map(group => ({ ...group, isStarted: true })));
+        setPopup({ headline: 'Success', message: 'All groups started successfully!' });
+      } else {
+        const errorData = await response.json();
+        setPopup({ headline: 'Error', message: `Failed to start all groups: ${errorData.error || 'Unknown error'}` });
+      }
+    } catch (error) {
+      console.error('Error starting all groups:', error);
+      setPopup({ headline: 'Error', message: 'Failed to start all groups. Please try again.' });
+    } finally {
+      setIsStartingAll(false);
     }
   };
 
@@ -601,73 +691,6 @@ const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
         newSet.delete(groupId);
         return newSet;
       });
-    }
-  };
-
-  const deleteStudent = async (email: string) => {
-    if (!confirm('Are you sure you want to permanently delete this student?')) {
-      return;
-    }
-    try {
-      const response = await fetch(`${API_BASE_URL}/groups/delete-student`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          email,
-          class_id: selectedClass
-        }),
-      });
-      if (response.ok) {
-        const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
-          credentials: 'include'
-        });
-        if (studentResponse.ok) {
-          const studentData = await studentResponse.json();
-          setStudents(studentData);
-          organizeStudentsIntoGroups(studentData);
-        }
-        setPopup({ headline: 'Success', message: 'Student deleted successfully!' });
-      } else {
-        const errorData = await response.json();
-        setPopup({ headline: 'Error', message: `Failed to delete student: ${errorData.error || 'Unknown error'}` });
-      }
-    } catch (error) {
-      setPopup({ headline: 'Error', message: 'Failed to delete student. Please try again.' });
-    }
-  };
-
-  const startAllGroups = async () => {
-    if (!confirm('Are you sure you want to start all groups? This action cannot be undone.')) {
-      return;
-    }
-
-    setIsStartingAll(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/groups/start-all-groups`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          class_id: selectedClass
-        }),
-      });
-
-      if (response.ok) {
-        setGroups(prev => prev.map(group => ({ ...group, isStarted: true })));
-        setPopup({ headline: 'Success', message: 'All groups started successfully!' });
-      } else {
-        const errorData = await response.json();
-        setPopup({ headline: 'Error', message: `Failed to start all groups: ${errorData.error || 'Unknown error'}` });
-      }
-    } catch (error) {
-      console.error('Error starting all groups:', error);
-      setPopup({ headline: 'Error', message: 'Failed to start all groups. Please try again.' });
-    } finally {
-      setIsStartingAll(false);
     }
   };
 
@@ -1024,6 +1047,36 @@ return (
             </button>
             <button
               onClick={() => setAddStudentModalOpen(false)}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {confirmModalOpen && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-96">
+          <h3 className="text-lg font-semibold mb-4">Confirm Action</h3>
+          <p className="text-gray-600 mb-6">
+            {confirmAction?.type === 'removeStudent' && 'Are you sure you want to remove this student from their group?'}
+            {confirmAction?.type === 'deleteStudent' && 'Are you sure you want to permanently delete this student?'}
+            {confirmAction?.type === 'startAllGroups' && 'Are you sure you want to start all groups? This action cannot be undone.'}
+          </p>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleConfirmAction}
+              className="flex-1 bg-northeasternRed text-white py-2 px-4 rounded-lg hover:bg-red-700"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => {
+                setConfirmModalOpen(false);
+                setConfirmAction(null);
+              }}
               className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
             >
               Cancel
