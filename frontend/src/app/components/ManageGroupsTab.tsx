@@ -729,7 +729,7 @@ return (
 
         {selectedClass && groups.length > 0 && (
           <div>
-            <div className="mb-4 flex justify-between items-center">
+            <div className="mb-4 flex justify-between items-center">  
               <h2 className="text-xl font-semibold text-gray-900">
                 Class Groups ({groups.length} groups, {students.length} students total)
               </h2>
@@ -737,7 +737,7 @@ return (
             <div className="flex justify-center">
               <div className="grid grid-cols-3 gap-6 w-full">                
                 {groups.map((group) => (
-                  <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[300px] w-full">
+                  <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px] w-full">
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center">
                         <h3 className="text-xl font-semibold text-gray-900">
