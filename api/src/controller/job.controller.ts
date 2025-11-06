@@ -168,6 +168,9 @@ export class JobController {
 
       await promiseDb.query('COMMIT');
 
+      console.log('Emitting jobUpdated event via Socket.IO to online students in the group/class');
+      console.log('Online students record:', this.onlineStudents);
+      console.log("this is the emails", emails);
       if (emails.length > 0) {
         emails.forEach((email: string) => {
           const roomID = `${job_group_id}-${class_id}`;
