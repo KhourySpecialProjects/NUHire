@@ -171,14 +171,10 @@ export class JobController {
       console.log('Emitting jobUpdated event via Socket.IO to online students in the group/class');
       console.log('Online students record:', this.onlineStudents);
       console.log("this is the emails", emails);
-      if (emails.length > 0) {
-        emails.forEach((email: string) => {
-          const roomID = `${job_group_id}-${class_id}`;
-          this.io.to(roomID).emit('jobUpdated', {
-            job: jobTitle,
-          });
+      const roomID = `${job_group_id}-${class_id}`;
+        this.io.to(roomID).emit('jobUpdated', {
+          job: jobTitle,
         });
-      }
 
       console.log(`Job "${jobTitle}" assigned to Group ${job_group_id} in Class ${class_id}. All related data cleared.`);
 
