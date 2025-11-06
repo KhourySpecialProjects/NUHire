@@ -648,6 +648,8 @@ export class GroupController {
           return currentIndex < earliestIndex ? current : earliest;
         });
       }
+
+      console.log(`Leftmost progress step for class ${classId}, group ${groupId}:`, leftmostStep);
       
       res.json({ progress: leftmostStep });
     });
