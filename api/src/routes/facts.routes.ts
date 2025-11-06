@@ -8,8 +8,8 @@ export default (db: Connection, io: SocketIOServer): Router => {
   const router = Router();
   const factsController = new FactsController(db, io);
 
-  router.post('/create/:group_id/:class_id', requireAuth, factsController.newFacts);
-  router.get('/get/:group_id/:class_id', requireAuth, factsController.getFacts);
+  router.post('/create/:class_id', requireAuth, factsController.newFacts);
+  router.get('/get/:class_id', requireAuth, factsController.getFacts);
 
   return router;
 };
