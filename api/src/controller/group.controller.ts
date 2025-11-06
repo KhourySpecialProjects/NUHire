@@ -612,4 +612,44 @@ export class GroupController {
       res.json({ message: 'Student deleted successfully', email, class_id });
     });
   };
+
+  getProgress = (req: AuthRequest, res: Response): void => {
+    const { classId, groupId } = req.params;
+
+    console.log('Fetching group progress for class:', classId, 'group:', groupId);
+
+    const query = `
+      SELECT step
+      FROM Progress
+      WHERE class_id = ? AND group_id = ?
+    `;
+
+    this.db.query(query, [classId, groupId], (err, results: any[]) => {
+      if (err) {
+        console.error('Error fetching group progress:', err);
+        res.status(500).json({ error: 'Failed to fetch group progress' });
+        return;
+      }
+      
+      console.log(`Group progress for class ${classId}, group ${groupId}:`, results);
+      
+      const stepOrder = ['none', 'job_description', 'res_1', 'res_2', 'interview', 'offer', 'employer'];
+      
+      const steps = results.map((row: any) => row.step);
+      
+      const validSteps = steps.filter((step: string) => step !== 'none');
+      
+      let leftmostStep = 'none';
+      
+      if (validSteps.length > 0) {
+        leftmostStep = validSteps.reduce((earliest: string, current: string) => {
+          const earliestIndex = stepOrder.indexOf(earliest);
+          const currentIndex = stepOrder.indexOf(current);
+          return currentIndex < earliestIndex ? current : earliest;
+        });
+      }
+      
+      res.json({ progress: leftmostStep });
+    });
+  };
 }

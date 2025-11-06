@@ -20,6 +20,8 @@ interface Group {
   group_id: number;
   students: Student[];
   isStarted: boolean;
+  jobAssignment?: string;
+  progress?: string;
 }
 
 interface ClassInfo {
@@ -53,6 +55,7 @@ export function ManageGroupsTab() {
   const [addStudentGroupId, setAddStudentGroupId] = useState<number | null>(null);
   const [isAddingStudent, setIsAddingStudent] = useState(false);
     
+  // ...existing useEffects for user, socket, classes, etc...
   // Fetch user authentication
   useEffect(() => {
     const fetchUser = async () => {
@@ -193,6 +196,39 @@ export function ManageGroupsTab() {
     organizeWhenGroupsChange();
   }, [availableGroups]); 
 
+  const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
+    try {
+      // Fetch job assignment
+      const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${groupId}/${classId}`, {
+        credentials: 'include'
+      });
+      
+      let jobAssignment = 'No job assigned';
+      if (jobResponse.ok) {
+        const jobData = await jobResponse.json();
+        jobAssignment = jobData.job || 'No job assigned';
+      }
+
+      // Fetch progress
+      const progressResponse = await fetch(`${API_BASE_URL}/progress/group/${classId}/${groupId}`, {
+        credentials: 'include'
+      });
+      
+      let progress = 'none';
+      if (progressResponse.ok) {
+        const progressData = await progressResponse.json();
+        if (Array.isArray(progressData) && progressData.length > 0) {
+          progress = progressData[0].step || 'none';
+        }
+      }
+
+      return { jobAssignment, progress };
+    } catch (error) {
+      console.error(`Error fetching job/progress for group ${groupId}:`, error);
+      return { jobAssignment: 'No job assigned', progress: 'none' };
+    }
+  };
+
   const organizeStudentsIntoGroups = async (studentList: Student[]) => {
     const groupMap = new Map<number | null, Student[]>();
     
@@ -214,12 +250,17 @@ export function ManageGroupsTab() {
 
     const groupsArray: Group[] = [];
     
-    // Fetch start statuses for all available groups
+    // Fetch start statuses, jobs, and progress for all available groups
     const startStatuses = selectedClass ? await fetchGroupStartStatuses(selectedClass, availableGroups) : [];
+    const jobProgressPromises = availableGroups.map(groupId => 
+      fetchGroupJobAndProgress(groupId, selectedClass)
+    );
+    const jobProgressData = await Promise.all(jobProgressPromises);
     
-    availableGroups.forEach(groupId => {
+    availableGroups.forEach((groupId, index) => {
       const students = groupMap.get(groupId) || [];
       const statusInfo = startStatuses.find(s => s.groupId === groupId);
+      const { jobAssignment, progress } = jobProgressData[index];
       
       groupsArray.push({
         group_id: groupId,
@@ -228,7 +269,9 @@ export function ManageGroupsTab() {
           const bName = b.f_name || '';
           return aName.localeCompare(bName);
         }),
-        isStarted: statusInfo ? statusInfo.started : false // Use actual status from database
+        isStarted: statusInfo ? statusInfo.started : false,
+        jobAssignment,
+        progress
       });
     });
     
@@ -241,7 +284,9 @@ export function ManageGroupsTab() {
           const bName = b.f_name || '';
           return aName.localeCompare(bName);
         }),
-        isStarted: false
+        isStarted: false,
+        jobAssignment: 'N/A',
+        progress: 'N/A'
       });
     }
     
@@ -253,6 +298,8 @@ export function ManageGroupsTab() {
 
     setGroups(groupsArray);
   };
+
+  // ...existing functions (createNewGroup, handleClassChange, reassignStudent, etc.)...
 
   const createNewGroup = async () => {
     if (!selectedClass) return;
@@ -295,12 +342,10 @@ export function ManageGroupsTab() {
     }
   };
 
-  // Handle class selection
   const handleClassChange = (classId: string) => {
     setSelectedClass(classId);
   };
 
-  // Reassign student to different group
   const reassignStudent = async (studEmail: string, newGroup: number) => {
     try {;
       const response = await fetch(`${API_BASE_URL}/groups/reassign-student`, {
@@ -317,7 +362,6 @@ export function ManageGroupsTab() {
       });
 
       if (response.ok) {
-        // Refresh students data
         const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
           credentials: 'include'
         });
@@ -341,7 +385,6 @@ export function ManageGroupsTab() {
     }
   };
 
-  // Remove student from group
   const removeStudentFromGroup = async (email: string) => {
     if (!confirm('Are you sure you want to remove this student from their group?')) {
       return;
@@ -361,7 +404,6 @@ export function ManageGroupsTab() {
       });
 
       if (response.ok) {
-        // Refresh students data
         const studentResponse = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
           credentials: 'include'
         });
@@ -407,7 +449,6 @@ export function ManageGroupsTab() {
     return statuses;
   };
   
-  // Update the startGroup function
   const startGroup = async (groupId: number) => {
     setStartingGroups(prev => new Set(prev).add(groupId));
 
@@ -480,7 +521,6 @@ export function ManageGroupsTab() {
     }
   };
 
-  // Start all groups
   const startAllGroups = async () => {
     if (!confirm('Are you sure you want to start all groups? This action cannot be undone.')) {
       return;
@@ -501,7 +541,6 @@ export function ManageGroupsTab() {
       });
 
       if (response.ok) {
-        // Update all groups status locally
         setGroups(prev => prev.map(group => ({ ...group, isStarted: true })));
         setPopup({ headline: 'Success', message: 'All groups started successfully!' });
       } else {
@@ -516,7 +555,6 @@ export function ManageGroupsTab() {
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
@@ -532,7 +570,6 @@ export function ManageGroupsTab() {
     );
   }
 
-  // Access denied state
   if (!user) {
     return (
       <div className="flex flex-col h-full overflow-auto bg-northeasternWhite font-rubik">
@@ -634,6 +671,21 @@ return (
                         {group.students.length} student{group.students.length !== 1 ? 's' : ''}
                       </span>
                     </div>
+                    
+                    {/* Job Assignment and Progress Info */}
+                    {group.group_id !== -1 && (
+                      <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="mb-2">
+                          <p className="text-xs font-semibold text-gray-600 uppercase">Job Assignment</p>
+                          <p className="text-sm text-gray-800">{group.jobAssignment}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-600 uppercase">Progress</p>
+                          <p className="text-sm text-gray-800 capitalize">{group.progress?.replace('_', ' ')}</p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex-1 flex flex-col justify-center mb-4">
                       {group.students.length === 0 ? (
                         <div className="flex-1 flex items-center justify-center min-h-[120px]">
