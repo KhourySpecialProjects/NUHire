@@ -336,16 +336,25 @@ export function ManageGroupsTab() {
     setIsAssigningJob(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/jobs/assign`, {
+      // Find the job title from availableJobs using selectedJobId
+      const selectedJob = availableJobs.find(job => job.id === selectedJobId);
+      
+      if (!selectedJob) {
+        setPopup({ headline: 'Error', message: 'Selected job not found.' });
+        setIsAssigningJob(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/jobs/update-job`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-          group_id: selectedGroupForJob,
+          job_group_id: selectedGroupForJob,
           class_id: selectedClass,
-          job_id: selectedJobId
+          job: selectedJob.title  // Send the job title
         }),
       });
 
