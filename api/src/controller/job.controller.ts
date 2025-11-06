@@ -171,7 +171,7 @@ export class JobController {
       console.log('Emitting jobUpdated event via Socket.IO to online students in the group/class');
       console.log('Online students record:', this.onlineStudents);
       console.log("this is the emails", emails);
-      const roomID = `${job_group_id}-${class_id}`;
+      const roomID = `group_${job_group_id}_class_${class_id}`;
         this.io.to(roomID).emit('jobUpdated', {
           job: jobTitle,
         });
