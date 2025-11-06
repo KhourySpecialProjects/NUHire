@@ -274,7 +274,7 @@ export function ManageGroupsTab() {
         jobAssignment = jobData.job || 'No job assigned';
       }
 
-      const progressResponse = await fetch(`${API_BASE_URL}/groups/${classId}/${groupId}`, {
+      const progressResponse = await fetch(`${API_BASE_URL}/groups/getProgress/${classId}/${groupId}`, {
         credentials: 'include'
       });
       
