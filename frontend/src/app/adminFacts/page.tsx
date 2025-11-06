@@ -77,7 +77,7 @@ export default function AdminFactsPage() {
       // Send as { one, two, three }
       const payload = { one: facts[0], two: facts[1], three: facts[2] };
       console.log("Posting facts payload:", payload);
-      const res = await fetch(`${API_BASE_URL}/facts/create//${selectedClass}`, {
+      const res = await fetch(`${API_BASE_URL}/facts/create/${selectedClass}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
