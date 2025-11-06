@@ -744,7 +744,7 @@ return (
               </h2>
             </div>
             <div className="flex justify-center">
-              <div className="grid grid-cols-3 sm: grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
+              <div className="grid grid-cols-3 sm: grid-cols-2  w-full">
                 {groups.map((group) => (
                   <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px] w-full">
                     <div className="flex justify-between items-center mb-4">
