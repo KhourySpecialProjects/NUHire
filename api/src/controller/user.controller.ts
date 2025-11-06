@@ -247,6 +247,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
   };
 
   updateUserSeen = async (req: AuthRequest, res: Response): Promise<void> => {
+    console.log("=== POST /user/update-seen endpoint hit ===");
     try {
       if (!req.isAuthenticated || !req.isAuthenticated()) {
         res.status(401).json({ message: 'Unauthorized' });
@@ -254,6 +255,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
       }
 
       const { email } = req.body;
+      console.log("Request body:", { email });
 
       if (!email) {
         res.status(400).json({ error: 'Email is required.' });
@@ -265,6 +267,7 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
           res.status(500).json({ error: 'Failed to update seen.' });
           return;
         }
+        console.log("User 'seen' field updated successfully for email:", email);
         res.json({ message: 'Seen updated successfully!' });
       });
     } catch (error) {

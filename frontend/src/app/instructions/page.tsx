@@ -50,6 +50,7 @@ export default function InstructionsPage() {
         }),
       });
 
+      console.log("Response from update-seen endpoint:", response);
       if (response.ok) {
         const result = await response.json();
         console.log("Successfully updated user-see-dash field:", result);
