@@ -16,10 +16,12 @@ export default function AdminFactsPage() {
   const [facts, setFacts] = useState(["", "", ""]);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-
-  // New state to hold currently saved facts from the DB
   const [currentFacts, setCurrentFacts] = useState<{ one: string; two: string; three: string } | null>(null);
   const socket = useSocket();
+
+  useEffect(() => {
+    console.log("current facts changed", currentFacts);
+  }, [currentFacts]);
 
   // Fetch classes for dropdown
   useEffect(() => {
