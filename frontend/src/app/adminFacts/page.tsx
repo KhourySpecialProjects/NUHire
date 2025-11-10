@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
+import { io, Socket } from "socket.io-client";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -16,6 +17,10 @@ export default function AdminFactsPage() {
   const [facts, setFacts] = useState(["", "", ""]);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
+
+  // New state to hold currently saved facts from the DB
+  const [currentFacts, setCurrentFacts] = useState<{ one: string; two: string; three: string } | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   // Fetch classes for dropdown
   useEffect(() => {
@@ -43,6 +48,7 @@ export default function AdminFactsPage() {
   useEffect(() => {
     if (!selectedClass) {
       setGroups([]);
+      setCurrentFacts(null);
       return;
     }
     const fetchGroups = async () => {
@@ -58,6 +64,92 @@ export default function AdminFactsPage() {
     };
     fetchGroups();
   }, [selectedClass]);
+
+  // Fetch current saved facts for the selected class
+  useEffect(() => {
+    if (!selectedClass) {
+      setCurrentFacts(null);
+      return;
+    }
+
+    const fetchFacts = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/facts/get/${selectedClass}`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          // API returns [] when no facts; controller returns object { one, two, three } when exists
+          if (Array.isArray(data) && data.length === 0) {
+            setCurrentFacts(null);
+          } else if (data && (data.one !== undefined || data.two !== undefined || data.three !== undefined)) {
+            setCurrentFacts({
+              one: data.one || "",
+              two: data.two || "",
+              three: data.three || ""
+            });
+          } else {
+            setCurrentFacts(null);
+          }
+        } else {
+          // non-ok - still clear but show a popup
+          setCurrentFacts(null);
+          const errorText = await res.text();
+          setPopup({ headline: "Error", message: `Failed to fetch facts: ${errorText || res.statusText}` });
+        }
+      } catch (error) {
+        setCurrentFacts(null);
+        setPopup({ headline: "Error", message: "Failed to fetch facts." });
+      }
+    };
+
+    fetchFacts();
+  }, [selectedClass]);
+
+  // Setup socket to auto-refresh facts when they change (server emits 'factsUpdated' to class room)
+  useEffect(() => {
+    // create socket once
+    const s = io(API_BASE_URL, { autoConnect: true });
+    socketRef.current = s;
+
+    const handleFactsUpdated = () => {
+      // re-fetch facts for current selectedClass
+      if (!selectedClass) return;
+      (async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/facts/get/${selectedClass}`, { credentials: "include" });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length === 0) {
+              setCurrentFacts(null);
+            } else if (data && (data.one !== undefined || data.two !== undefined || data.three !== undefined)) {
+              setCurrentFacts({
+                one: data.one || "",
+                two: data.two || "",
+                three: data.three || ""
+              });
+            } else {
+              setCurrentFacts(null);
+            }
+          }
+        } catch (err) {
+          // swallow socket-triggered fetch errors silently (we already have UI for manual actions)
+          console.error("Error fetching facts after factsUpdated socket:", err);
+        }
+      })();
+    };
+
+    s.on("connect", () => {
+      // no-op; connection established
+    });
+
+    s.on("factsUpdated", handleFactsUpdated);
+
+    return () => {
+      s.off("factsUpdated", handleFactsUpdated);
+      s.disconnect();
+      socketRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // only once
 
   const handleFactChange = (index: number, value: string) => {
     setFacts(prev => {
@@ -76,7 +168,6 @@ export default function AdminFactsPage() {
     try {
       // Send as { one, two, three }
       const payload = { one: facts[0], two: facts[1], three: facts[2] };
-      console.log("Posting facts payload:", payload);
       const res = await fetch(`${API_BASE_URL}/facts/create/${selectedClass}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,8 +177,10 @@ export default function AdminFactsPage() {
       if (res.ok) {
         setPopup({ headline: "Success", message: "Facts added successfully!" });
         setFacts(["", "", ""]);
+        // update local currentFacts immediately to reflect saved changes (server will also emit)
+        setCurrentFacts({ one: payload.one, two: payload.two, three: payload.three });
       } else {
-        const errorData = await res.json();
+        const errorData = await res.json().catch(() => ({}));
         setPopup({ headline: "Error", message: errorData.error || "Failed to add facts." });
       }
     } catch (error) {
@@ -107,6 +200,23 @@ export default function AdminFactsPage() {
       <div className="flex-1 p-6 flex justify-center items-start">
         <div className="max-w-lg w-full bg-white border-4 border-northeasternBlack justify-center rounded-lg shadow-lg p-8 mt-10">
           <h1 className="text-3xl font-bold text-northeasternRed mb-6 text-center">Add Waiting Room Facts</h1>
+
+          {/* Display current facts (if any) */}
+          {selectedClass ? (
+            <div className="mb-6 p-4 rounded bg-gray-50 border border-gray-200">
+              <h3 className="font-semibold text-northeasternBlack mb-2">Current Facts for CRN {selectedClass}</h3>
+              {currentFacts ? (
+                <ul className="list-disc pl-5 text-gray-800">
+                  <li className="mb-1">{currentFacts.one || <em className="text-gray-400">—</em>}</li>
+                  <li className="mb-1">{currentFacts.two || <em className="text-gray-400">—</em>}</li>
+                  <li className="mb-1">{currentFacts.three || <em className="text-gray-400">—</em>}</li>
+                </ul>
+              ) : (
+                <p className="text-gray-600 italic">No facts set yet for this class.</p>
+              )}
+            </div>
+          ) : null}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Class Dropdown */}
             <div>
@@ -124,6 +234,7 @@ export default function AdminFactsPage() {
                 ))}
               </select>
             </div>
+
             {/* Fact Inputs */}
             {selectedClass && (
               <div className="space-y-4">
@@ -151,6 +262,7 @@ export default function AdminFactsPage() {
               Add Facts
             </button>
           </form>
+
           {popup && (
             <div className={`mt-6 p-4 rounded text-center font-medium ${popup.headline === "Success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
               <h2 className="text-lg font-bold mb-2">{popup.headline}</h2>
