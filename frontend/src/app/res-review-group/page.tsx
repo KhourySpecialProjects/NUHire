@@ -63,6 +63,8 @@ export default function ResReviewGroup() {
   const [teamConfirmations, setTeamConfirmations] = useState<string[]>([]);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [groupSize, setGroupSize] = useState(4);
+  const [confirmedSelection, setConfirmedSelection] = useState<number[]>([]);
+
   
   const resumeInstructions = [
     "Review the resumes and decide as a group which 4 candidates continue.",
@@ -117,19 +119,16 @@ export default function ResReviewGroup() {
     console.log("Resumes has changes:", resumes)
   }, [resumes]);
 
-
   useEffect(() => {
     if (!socket || !user) return;
 
     console.log("Socket connected:", socket.id);
     setIsConnected(true);
     
-    // Join the proper room format
     const roomId = `group_${user.group_id}_class_${user.class}`;
     console.log("Joining room:", roomId);
     socket.emit("joinGroup", roomId);
 
-    // Handle checkbox updates from other group members
     const handleCheckboxUpdated = ({ resume_number, checked }: { resume_number: number; checked: boolean }) => {
       console.log(`Received checkbox update: Resume ${resume_number}, Checked: ${checked}`);
       setCheckedState((prev) => ({
@@ -138,7 +137,6 @@ export default function ResReviewGroup() {
       }));
     };
 
-    // Handle team confirmation updates
     const handleTeamConfirmSelection = ({ studentId, groupId, classId }: { 
       studentId: string; 
       groupId: number; 
@@ -154,7 +152,17 @@ export default function ResReviewGroup() {
       }
     };
 
-    // Handle group move
+    // NEW: Handle team unconfirm event
+    const handleTeamUnconfirmSelection = ({ studentId, groupId, classId }: { 
+      studentId: string; 
+      groupId: number; 
+      classId: number 
+    }) => {
+      if (groupId === user.group_id && classId === user.class) {
+        setTeamConfirmations(prev => prev.filter(id => id !== studentId));
+      }
+    };
+
     const handleMoveGroup = ({ groupId, classId, targetPage }: { 
       groupId: number; 
       classId: number; 
@@ -168,12 +176,10 @@ export default function ResReviewGroup() {
       }
     };
 
-    // Handle disconnect
     const handleDisconnect = () => {
       setIsConnected(false);
     };
 
-    // Handle connect
     const handleConnect = () => {
       console.log("Socket reconnected:", socket.id);
       setIsConnected(true);
@@ -181,14 +187,13 @@ export default function ResReviewGroup() {
       socket.emit("joinGroup", roomId);
     };
 
-    // Attach listeners
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("checkboxUpdated", handleCheckboxUpdated);
     socket.on("teamConfirmSelection", handleTeamConfirmSelection);
+    socket.on("teamUnconfirmSelection", handleTeamUnconfirmSelection); // NEW
     socket.on("moveGroup", handleMoveGroup);
 
-    // Check initial connection state
     if (socket.connected) {
       setIsConnected(true);
     }
@@ -198,6 +203,7 @@ export default function ResReviewGroup() {
       socket.off("disconnect", handleDisconnect);
       socket.off("checkboxUpdated", handleCheckboxUpdated);
       socket.off("teamConfirmSelection", handleTeamConfirmSelection);
+      socket.off("teamUnconfirmSelection", handleTeamUnconfirmSelection); // NEW
       socket.off("moveGroup", handleMoveGroup);
     };
   }, [socket, user]);
@@ -350,21 +356,51 @@ export default function ResReviewGroup() {
     }
   }, [user]);
 
-  // Handle checkbox toggle
   const handleCheckboxChange = (resumeNumber: number) => {
     if (!socket || !isConnected) {
       console.warn("Socket not connected. Checkbox state not sent.");
       return;
     }
-  
+
     const newCheckedState = !checkedState[resumeNumber];
     const roomId = `group_${user!.group_id}_class_${user!.class}`;
-  
+
     console.log(`Sending checkbox update to room ${roomId}:`);
     console.log(`Resume ${resumeNumber}, Checked: ${newCheckedState}`);
-  
-    // Don't update local state immediately - wait for server confirmation
-    // This ensures all group members see the same state
+
+    // If user has confirmed and they're changing the selection, unconfirm them
+    if (hasConfirmed) {
+      // Check if this change would alter the confirmed selection
+      const currentSelected = Object.entries(checkedState)
+        .filter(([_, isChecked]) => isChecked)
+        .map(([num, _]) => parseInt(num));
+      
+      let newSelection: number[];
+      if (newCheckedState) {
+        newSelection = [...currentSelected, resumeNumber];
+      } else {
+        newSelection = currentSelected.filter(num => num !== resumeNumber);
+      }
+
+      // If the selection has changed from what was confirmed, unconfirm
+      const selectionChanged = JSON.stringify(newSelection.sort()) !== JSON.stringify(confirmedSelection.sort());
+      
+      if (selectionChanged) {
+        setHasConfirmed(false);
+        
+        // Remove user from team confirmations
+        setTeamConfirmations(prev => prev.filter(id => id !== user!.id.toString()));
+        
+        // Emit unconfirm event to other team members
+        socket.emit("teamUnconfirmSelection", {
+          groupId: user!.group_id,
+          classId: user!.class,
+          studentId: user!.id.toString(),
+          roomId: roomId
+        });
+      }
+    }
+
     socket.emit("check", {
       group_id: roomId,
       resume_number: resumeNumber,
