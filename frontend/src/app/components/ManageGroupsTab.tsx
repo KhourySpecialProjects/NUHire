@@ -66,6 +66,8 @@ export function ManageGroupsTab() {
   const [isAssigningJob, setIsAssigningJob] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: string; data: any } | null>(null);
+  const [scrollStates, setScrollStates] = useState<Record<number, { canScrollDown: boolean; canScrollUp: boolean }>>({});
+
     
   useEffect(() => {
     const fetchUser = async () => {
@@ -143,6 +145,28 @@ export function ManageGroupsTab() {
     const statuses = await Promise.all(statusPromises);
     return statuses;
   };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>, groupId: number) => {
+    const element = e.currentTarget;
+    const canScrollDown = element.scrollHeight > element.clientHeight && 
+                          element.scrollTop < element.scrollHeight - element.clientHeight - 5;
+    const canScrollUp = element.scrollTop > 5;
+    
+    setScrollStates(prev => ({
+      ...prev,
+      [groupId]: { canScrollDown, canScrollUp }
+    }));
+  };
+
+  useEffect(() => {
+    const initialStates: Record<number, { canScrollDown: boolean; canScrollUp: boolean }> = {};
+    groups.forEach(group => {
+      if (group.students.length > 3) {
+        initialStates[group.group_id] = { canScrollDown: true, canScrollUp: false };
+      }
+    });
+    setScrollStates(initialStates);
+  }, [groups]);
 
   const organizeStudentsIntoGroups = async (studentList: Student[], groupIds: number[]) => {
     const groupMap = new Map<number | null, Student[]>();
@@ -815,60 +839,82 @@ export function ManageGroupsTab() {
                           </div>
                         </div>
                       )}
-
-                        <div className="flex-1 flex flex-col justify-center mb-4">
-                          {group.students.length === 0 ? (
-                            <div className="flex-1 flex items-center justify-center min-h-[120px]">
-                              <p className="text-gray-400 text-base italic text-center">No students in this group</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                              {group.students.map((student) => (
-
-                              <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <div className="mb-3">
-                                  <p className="font-medium text-gray-900 text-base">
-                                    {student.f_name && student.l_name 
-                                      ? `${student.f_name} ${student.l_name}`
-                                      : student.f_name || student.l_name || 'No Name'
-                                    }
-                                  </p>
-                                  <p className="text-sm text-gray-600 truncate" title={student.email}>
-                                    {student.email}
-                                  </p>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedStudent(student);
-                                      setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
-                                      setReassignModalOpen(true);
-                                    }}
-                                    className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                    title="Reassign student"
-                                  >
-                                    ↻ Reassign
-                                  </button>
-                                  {group.group_id === -1 ? (
-                                    <button
-                                      onClick={() => deleteStudent(student.email)}
-                                      className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                      title="Delete student"
-                                    >
-                                      × Delete
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => removeStudentFromGroup(student.email)}
-                                      className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                      title="Remove from group"
-                                    >
-                                      × Remove
-                                    </button>
-                                  )}
+                      <div className="flex-1 flex flex-col justify-center mb-4 relative">
+                        {group.students.length === 0 ? (
+                          <div className="flex-1 flex items-center justify-center min-h-[120px]">
+                            <p className="text-gray-400 text-base italic text-center">No students in this group</p>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            {/* Scroll Up Indicator */}
+                            {scrollStates[group.group_id]?.canScrollUp && (
+                              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
+                                <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                                  ▲ Scroll up
                                 </div>
                               </div>
-                            ))}
+                            )}
+                            
+                            {/* Student List */}
+                            <div 
+                              className="space-y-3 max-h-[400px] overflow-y-auto pr-2"
+                              onScroll={(e) => handleScroll(e, group.group_id)}
+                            >
+                              {group.students.map((student) => (
+                                <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                  <div className="mb-3">
+                                    <p className="font-medium text-gray-900 text-base">
+                                      {student.f_name && student.l_name 
+                                        ? `${student.f_name} ${student.l_name}`
+                                        : student.f_name || student.l_name || 'No Name'
+                                      }
+                                    </p>
+                                    <p className="text-sm text-gray-600 truncate" title={student.email}>
+                                      {student.email}
+                                    </p>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedStudent(student);
+                                        setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
+                                        setReassignModalOpen(true);
+                                      }}
+                                      className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                      title="Reassign student"
+                                    >
+                                      ↻ Reassign
+                                    </button>
+                                    {group.group_id === -1 ? (
+                                      <button
+                                        onClick={() => deleteStudent(student.email)}
+                                        className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                        title="Delete student"
+                                      >
+                                        × Delete
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => removeStudentFromGroup(student.email)}
+                                        className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                        title="Remove from group"
+                                      >
+                                        × Remove
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Scroll Down Indicator */}
+                            {scrollStates[group.group_id]?.canScrollDown && (
+                              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
+                                <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                                  ▼ Scroll down
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                         <button
