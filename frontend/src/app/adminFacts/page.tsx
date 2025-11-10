@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
-import { io, Socket } from "socket.io-client";
-
+import { useSocket } from "../components/socketContext"; // Importing custom hook to use socket context
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 interface ModeratorClass {
@@ -20,7 +19,7 @@ export default function AdminFactsPage() {
 
   // New state to hold currently saved facts from the DB
   const [currentFacts, setCurrentFacts] = useState<{ one: string; two: string; three: string } | null>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const socket = useSocket();
 
   // Fetch classes for dropdown
   useEffect(() => {
@@ -106,9 +105,7 @@ export default function AdminFactsPage() {
 
   // Setup socket to auto-refresh facts when they change (server emits 'factsUpdated' to class room)
   useEffect(() => {
-    // create socket once
-    const s = io(API_BASE_URL, { autoConnect: true });
-    socketRef.current = s;
+    if (!socket) return;
 
     const handleFactsUpdated = () => {
       // re-fetch facts for current selectedClass
@@ -137,18 +134,15 @@ export default function AdminFactsPage() {
       })();
     };
 
-    s.on("connect", () => {
-      // no-op; connection established
+    socket.on("connect", () => {
     });
 
-    s.on("factsUpdated", handleFactsUpdated);
+    socket.on("factsUpdated", handleFactsUpdated);
 
     return () => {
-      s.off("factsUpdated", handleFactsUpdated);
-      s.disconnect();
-      socketRef.current = null;
+      socket.off("factsUpdated", handleFactsUpdated);
+      socket.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // only once
 
   const handleFactChange = (index: number, value: string) => {
