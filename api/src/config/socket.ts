@@ -314,11 +314,6 @@ export function initializeSocketHandlers(io: SocketIOServer, db: Connection): Re
         }
       });
     });
-
-    socket.on('progressUpdated', ({ crn, group_id, step, email }) => {
-      console.log(`Progress updated: Group ${group_id}, Class ${crn}, Step: ${step}`);
-      io.emit('progressUpdated', { crn, group_id, step, email });
-    });
   });
 
   return onlineStudents;
