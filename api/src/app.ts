@@ -53,8 +53,10 @@ export class App {
   private initializeMiddleware(): void {
     // CORS configuration
     this.app.use(cors({
-      origin: 'https://nuhire-wgez.onrender.com', 
-      credentials: true
+      origin: 'https://nuhire-wgez.onrender.com',
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
     }));
 
     // Body parser
