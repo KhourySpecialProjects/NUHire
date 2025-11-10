@@ -79,12 +79,12 @@ export function ManageGroupsTab() {
         
         if (response.ok) {
           const userData = await response.json();
+          console.log("the user data for auth/user", userData)
           
-          // Check if user is a moderator/teacher
-          if (userData.affiliation !== 'moderator' && userData.affiliation !== 'teacher') {
+          if (userData.affiliation !== 'admin') {
             setPopup({ 
               headline: 'Access Denied', 
-              message: 'You must be a teacher or moderator to access this page.' 
+              message: 'You must be a teacher to access this page.' 
             });
             setTimeout(() => router.push('/'), 2000);
             return;
