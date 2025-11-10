@@ -234,6 +234,12 @@ export interface SocketEvents {
     studentId: string;
     roomId: string;
   };
+  teamUnconfirmSelection: {
+    groupId: number;
+    classId: number;
+    studentId: string;
+    roomId: string;
+  };
   
   // Preset votes
   sentPresetVotes: {

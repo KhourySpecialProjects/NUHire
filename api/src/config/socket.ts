@@ -281,6 +281,15 @@ export function initializeSocketHandlers(io: SocketIOServer, db: Connection): Re
       });
     });
 
+      socket.on('teamUnconfirmSelection', ({ groupId, classId, studentId, roomId }: SocketEvents['teamUnconfirmSelection']) => {
+      io.to(roomId).emit('teamUnconfirmSelection', {
+        groupId,
+        classId,
+        studentId,
+        roomId
+      });
+    });
+
     socket.on('allowGroupAssignment', ({ classId, message }: SocketEvents['allowGroupAssignment']) => {
       console.log('Teacher allowing group assignment for class:', classId);
       io.to(`class_${classId}`).emit('allowGroupAssignmentStudent', {
