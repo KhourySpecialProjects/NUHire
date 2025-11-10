@@ -11,7 +11,6 @@ interface ModeratorClass {
 
 export default function AdminFactsPage() {
   const [classes, setClasses] = useState<ModeratorClass[]>([]);
-  const [groups, setGroups] = useState<number[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [facts, setFacts] = useState(["", "", ""]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +47,6 @@ export default function AdminFactsPage() {
   // Fetch groups for selected class
   useEffect(() => {
     if (!selectedClass) {
-      setGroups([]);
       setCurrentFacts(null);
       return;
     }
@@ -57,7 +55,6 @@ export default function AdminFactsPage() {
         const res = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
-          setGroups(Array.isArray(data) ? data.map(Number) : []);
         }
       } catch (error) {
         setPopup({ headline: "Error", message: "Failed to fetch groups." });

@@ -222,7 +222,7 @@ export class JobController {
         }
 
         if (results.length === 0) {
-          res.status(404).json({ message: 'No job assignment found for this group' });
+          res.status(201).json({ message: 'No job assignment found for this group' });
           return;
         }
 
