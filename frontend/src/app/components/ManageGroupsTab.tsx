@@ -671,8 +671,6 @@ export function ManageGroupsTab() {
     }
   };
 
-  // ... rest of the JSX remains the same
-
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
@@ -710,19 +708,6 @@ export function ManageGroupsTab() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <span className="ml-2 text-gray-600">Loading...</span>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col h-full overflow-auto bg-northeasternWhite font-rubik">
-        <div className="w-full p-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
-            <p className="text-gray-600">You must be logged in to access this page.</p>
           </div>
         </div>
       </div>
@@ -804,7 +789,7 @@ export function ManageGroupsTab() {
                 </h2>
               </div>
               <div className="flex justify-center">
-                <div className="grid grid-cols-3 sm:grid-cols-2 w-full gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-2  w-full gap-4">
                   {groups.map((group) => (
                     <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px]">
                       <div className="flex justify-between items-center mb-4">
@@ -831,14 +816,15 @@ export function ManageGroupsTab() {
                         </div>
                       )}
 
-                      <div className="flex-1 flex flex-col justify-center mb-4">
-                        {group.students.length === 0 ? (
-                          <div className="flex-1 flex items-center justify-center min-h-[120px]">
-                            <p className="text-gray-400 text-base italic text-center">No students in this group</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {group.students.map((student) => (
+                        <div className="flex-1 flex flex-col justify-center mb-4">
+                          {group.students.length === 0 ? (
+                            <div className="flex-1 flex items-center justify-center min-h-[120px]">
+                              <p className="text-gray-400 text-base italic text-center">No students in this group</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                              {group.students.map((student) => (
+
                               <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <div className="mb-3">
                                   <p className="font-medium text-gray-900 text-base">
