@@ -300,7 +300,7 @@ export function ManageGroupsTab() {
   // NEW: Listen for progressUpdated events and refresh the specific group
   useEffect(() => {
     if (!socket || !selectedClass) return;
-
+    
     const handleProgressUpdated = async (data: { crn: string; group_id: number; step: string; email: string }) => {
       console.log('Progress updated event received:', data);
       

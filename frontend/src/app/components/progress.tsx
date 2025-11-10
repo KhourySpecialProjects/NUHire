@@ -1,7 +1,5 @@
 'use client';
 
-import { useSocket } from './socketContext';
-
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 interface User {
@@ -16,7 +14,6 @@ interface ProgressOperations {
 }
 
 export const useProgressManager = (): ProgressOperations => {
-  const socket = useSocket();
 
   const fetchProgress = async (user: User): Promise<string> => {
     if (!user?.email) {
@@ -40,7 +37,7 @@ export const useProgressManager = (): ProgressOperations => {
   };
 
   const updateProgress = async (user: User, step: string): Promise<void> => {
-    if (!user?.email || !socket) {
+    if (!user?.email) {
       return;
     }
 
@@ -59,21 +56,6 @@ export const useProgressManager = (): ProgressOperations => {
       
       if (response.ok) {
         const responseData = await response.json();
-        
-        // Emit socket event to notify advisor dashboard to refresh
-         socket.emit('progressUpdated', {
-          crn: user.class,
-          group_id: user.group_id,
-          step: step,
-          email: user.email
-        });
-        console.log('Progress update emitted to socket:', {
-          crn: user.class,
-          group_id: user.group_id,
-          step: step,
-          email: user.email
-        });
-
       } else {
         const errorText = await response.text();
         throw new Error(`Failed to update progress: ${errorText}`);

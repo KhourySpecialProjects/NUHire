@@ -71,6 +71,13 @@ export class ProgressController {
           step,
           email
         });
+        this.io.emit('progressUpdated', {
+          crn,
+          group_id,
+          step,
+          email
+        });
+        console.log('Progress updated and event emitted');
 
         res.json({
           success: true,
