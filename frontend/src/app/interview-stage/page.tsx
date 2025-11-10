@@ -60,6 +60,8 @@ export default function Interview() {
   const [finished, setFinished] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [currentCandidateId, setCurrentCandidateId] = useState<number | null>(null);
+  const [videosLoading, setVideosLoading] = useState(true);
+
 
 
   const [interviews, setInterviews] = useState<Array<{
@@ -260,92 +262,95 @@ export default function Interview() {
       setPopup({ headline: "Submission Error", message: "Failed to submit your ratings. Please try again." });
     }
   };
- 
-// Fetch candidates data when user is loaded
-useEffect(() => {
-  if (!user?.group_id) return;
-  
-  const fetchCandidates = async () => {
-    try {
-      // Get all resumes for the group and filter by class
-      const resumeResponse = await axios.get(
-        `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
-        { withCredentials: true, timeout: 8000 }
-      );
+
+  useEffect(() => {
+    if (!user?.group_id) return;
+    
+    const fetchCandidates = async () => {
+      setVideosLoading(true); // Start loading
       
-      const allResumes: Resume[] = resumeResponse.data;
-      
-      // Filter to get only checked resumes and ensure no duplicates
-      const checkedResumes = allResumes
-      .filter((resume: Resume) => resume.checked === 1)
-      .reduce<Resume[]>((unique, resume) => {
-        if (!unique.some((r) => r.resume_number === resume.resume_number)) {
-          unique.push(resume);
+      try {
+        // Get all resumes for the group and filter by class
+        const resumeResponse = await axios.get(
+          `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
+          { withCredentials: true, timeout: 8000 }
+        );
+        
+        const allResumes: Resume[] = resumeResponse.data;
+        
+        // Filter to get only checked resumes and ensure no duplicates
+        const checkedResumes = allResumes
+          .filter((resume: Resume) => resume.checked === 1)
+          .reduce<Resume[]>((unique, resume) => {
+            if (!unique.some((r) => r.resume_number === resume.resume_number)) {
+              unique.push(resume);
+            }
+            return unique;
+          }, []);
+        
+        if (checkedResumes.length === 0) {
+          setInterviews([]);
+          setVideosLoading(false); // Stop loading
+          return;
         }
-        return unique;
-      }, []);
-      
-      
-      if (checkedResumes.length === 0) {
-        setInterviews([]);
-        return;
+        
+        const candidatePromises = checkedResumes.map(resume => 
+          axios.get(`${API_BASE_URL}/candidates/resume/${resume.resume_number}`, { 
+            timeout: 8000, 
+            withCredentials: true,
+          })
+          .then(response => {
+            console.log(`Raw response for resume ${resume.resume_number}:`, response.data);
+            
+            const candidateData = {
+              resume_id: response.data.resume_id,
+              title: response.data.title || `Candidate ${response.data.resume_id}`,
+              interview: response.data.interview,
+              video_path: response.data.interview,
+              first_name: response.data.f_name,
+              last_name: response.data.l_name,
+            };
+            
+            console.log(`Formatted candidate data for resume ${resume.resume_number}:`, candidateData);
+            return candidateData;
+          })
+          .catch(err => {
+            console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
+            return null;
+          })
+        );
+
+        const results = await Promise.allSettled(candidatePromises);
+        console.log("Promise.allSettled results:", results);
+
+        // Log each result individually
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            console.log(`Result ${index} (fulfilled):`, result.value);
+          } else {
+            console.log(`Result ${index} (rejected):`, result.reason);
+          }
+        });
+
+        const finalInterviews = results
+          .map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null)
+          .filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null)
+          .slice(0,4);
+
+        setInterviews(finalInterviews);
+        console.log("Final interviews array:", finalInterviews);
+        
+      } catch (err) {
+        console.error("Error fetching interviews:", err);
+        setError('Failed to load interview data. Please try refreshing the page.');
+      } finally {
+        setVideosLoading(false); // Stop loading regardless of success or failure
       }
-      
-      const candidatePromises = checkedResumes.map(resume => 
-        axios.get(`${API_BASE_URL}/candidates/resume/${resume.resume_number}`, { 
-          timeout: 8000, 
-         withCredentials: true,
-        })
-        .then(response => {
-          console.log(`Raw response for resume ${resume.resume_number}:`, response.data);
-          
-          const candidateData = {
-            resume_id: response.data.resume_id,
-            title: response.data.title || `Candidate ${response.data.resume_id}`,
-            interview: response.data.interview,
-            video_path: response.data.interview,
-            first_name: response.data.f_name,
-            last_name: response.data.l_name,
-          };
-          
-          console.log(`Formatted candidate data for resume ${resume.resume_number}:`, candidateData);
-          return candidateData;
-        })
-        .catch(err => {
-          console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
-          return null;
-        })
-      );
+    };
+    
+    fetchCandidates();
+  }, [user]);
 
-      const results = await Promise.allSettled(candidatePromises);
-      console.log("Promise.allSettled results:", results);
-
-      // Log each result individually
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          console.log(`Result ${index} (fulfilled):`, result.value);
-        } else {
-          console.log(`Result ${index} (rejected):`, result.reason);
-        }
-      });
-
-      const finalInterviews = results
-        .map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null)
-        .filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null)
-        .slice(0,4);
-
-      setInterviews(finalInterviews);
-
-      console.log("Final interviews array:", finalInterviews);
-    } catch (err) {
-      console.error("Error fetching interviews:", err);
-      setError('Failed to load interview data. Please try refreshing the page.');
-    }
-  };
-  
-  fetchCandidates();
-}, [user]); // This will run whenever user changes 
-  
   const currentVid = interviews[videoIndex];
 
   // Save candidate ID whenever video changes
@@ -644,6 +649,25 @@ const completeInterview = () => {
             Go to Login
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (videosLoading) {
+    return (
+      <div className="bg-sand font-rubik min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <h1 className="text-2xl font-bold text-center mb-6">Interview Stage</h1>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-20 h-20 border-t-4 border-redHeader border-solid rounded-full animate-spin mb-6"></div>
+              <p className="text-lg font-semibold text-navy mb-2">Loading Interview Videos...</p>
+              <p className="text-sm text-gray-600">Please wait while we fetch the candidate interviews</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }

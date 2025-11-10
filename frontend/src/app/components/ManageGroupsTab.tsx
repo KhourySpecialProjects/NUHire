@@ -31,6 +31,7 @@ interface ClassInfo {
 
 interface User {
   email: string;
+  affiliation: string;
 }
 
 interface JobOption {
@@ -78,6 +79,17 @@ export function ManageGroupsTab() {
         
         if (response.ok) {
           const userData = await response.json();
+          
+          // Check if user is a moderator/teacher
+          if (userData.affiliation !== 'moderator' && userData.affiliation !== 'teacher') {
+            setPopup({ 
+              headline: 'Access Denied', 
+              message: 'You must be a teacher or moderator to access this page.' 
+            });
+            setTimeout(() => router.push('/'), 2000);
+            return;
+          }
+          
           setUser(userData);
         } else {
           router.push('/');
@@ -285,20 +297,24 @@ export function ManageGroupsTab() {
     };
   }, [socket, selectedClass]);
 
+  // NEW: Listen for progressUpdated events and refresh the specific group
   useEffect(() => {
     if (!socket || !selectedClass) return;
 
     const handleProgressUpdated = async (data: { crn: string; group_id: number; step: string; email: string }) => {
       console.log('Progress updated event received:', data);
       
+      // Check if this progress update is for the currently selected class
       if (data.crn === selectedClass) {
         try {
+          // Fetch updated progress for the specific group
           const { jobAssignment, progress } = await fetchGroupJobAndProgress(data.group_id, selectedClass);
           
+          // Update only the affected group
           setGroups(prevGroups => 
             prevGroups.map(group => 
               group.group_id === data.group_id 
-                ? { ...group, progress }
+                ? { ...group, progress, jobAssignment }
                 : group
             )
           );
@@ -396,7 +412,6 @@ export function ManageGroupsTab() {
     fetchStudentsAndOrganize();
   }, [selectedClass, availableGroups]);
 
-  // Fetch available jobs when modal opens
   useEffect(() => {
     const fetchJobs = async () => {
       if (!assignJobModalOpen) return;
@@ -420,6 +435,21 @@ export function ManageGroupsTab() {
 
     fetchJobs();
   }, [assignJobModalOpen]);
+
+  const handleClassChange = (classId: string) => {
+    // Verify teacher has access to this class
+    const hasAccess = classes.some(cls => cls.crn.toString() === classId);
+    
+    if (!hasAccess && classId !== '') {
+      setPopup({ 
+        headline: 'Access Denied', 
+        message: 'You do not have permission to manage this class.' 
+      });
+      return;
+    }
+    
+    setSelectedClass(classId);
+  };
 
   const assignJobToGroup = async () => {
     if (!selectedGroupForJob || !selectedJobId || !selectedClass) return;
@@ -502,10 +532,6 @@ export function ManageGroupsTab() {
     } finally {
       setIsCreatingGroup(false);
     }
-  };
-
-  const handleClassChange = (classId: string) => {
-    setSelectedClass(classId);
   };
 
   const reassignStudent = async (studEmail: string, newGroup: number) => {
@@ -723,21 +749,6 @@ export function ManageGroupsTab() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center justify-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Loading...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-northeasternWhite font-rubik">
       <div className="w-full p-4">
@@ -846,7 +857,6 @@ export function ManageGroupsTab() {
                           </div>
                         ) : (
                           <div className="relative">
-                            {/* Scroll Up Indicator */}
                             {scrollStates[group.group_id]?.canScrollUp && (
                               <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
                                 <div className="text-blue-600 text-xs font-semibold animate-bounce">
@@ -855,7 +865,6 @@ export function ManageGroupsTab() {
                               </div>
                             )}
                             
-                            {/* Student List */}
                             <div 
                               className="space-y-3 max-h-[400px] overflow-y-auto pr-2"
                               onScroll={(e) => handleScroll(e, group.group_id)}
@@ -907,7 +916,6 @@ export function ManageGroupsTab() {
                               ))}
                             </div>
                             
-                            {/* Scroll Down Indicator */}
                             {scrollStates[group.group_id]?.canScrollDown && (
                               <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
                                 <div className="text-blue-600 text-xs font-semibold animate-bounce">
