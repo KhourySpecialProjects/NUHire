@@ -297,7 +297,6 @@ export function ManageGroupsTab() {
     };
   }, [socket, selectedClass]);
 
-  // NEW: Listen for progressUpdated events and refresh the specific group
   useEffect(() => {
     if (!socket || !selectedClass) return;
     
@@ -305,13 +304,11 @@ export function ManageGroupsTab() {
       console.log('Progress updated event received:', data);
       console.log('Currently selected class:', selectedClass);
       
-      // Check if this progress update is for the currently selected class
       if (data.crn === selectedClass) {
         try {
-          // Fetch updated progress for the specific group
           const { jobAssignment, progress } = await fetchGroupJobAndProgress(data.group_id, selectedClass);
-          
-          // Update only the affected group
+          console.log(`Fetched updated progress for group ${data.group_id}: ${progress}`);
+          console.log(`Fetched job assignment for group ${data.group_id}: ${jobAssignment}`);
           setGroups(prevGroups => 
             prevGroups.map(group => 
               group.group_id === data.group_id 
