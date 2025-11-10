@@ -40,7 +40,7 @@ export const useProgressManager = (): ProgressOperations => {
   };
 
   const updateProgress = async (user: User, step: string): Promise<void> => {
-    if (!user?.email) {
+    if (!user?.email || !socket) {
       return;
     }
 
@@ -61,22 +61,19 @@ export const useProgressManager = (): ProgressOperations => {
         const responseData = await response.json();
         
         // Emit socket event to notify advisor dashboard to refresh
-        if (socket) {
-          socket.emit('progressUpdated', {
-            crn: user.class,
-            group_id: user.group_id,
-            step: step,
-            email: user.email
-          });
-          console.log('Progress update emitted to socket:', {
-            crn: user.class,
-            group_id: user.group_id,
-            step: step,
-            email: user.email
-          });
-        } else {
-          console.warn('Socket not available - progress update not emitted');
-        }
+         socket.emit('progressUpdated', {
+          crn: user.class,
+          group_id: user.group_id,
+          step: step,
+          email: user.email
+        });
+        console.log('Progress update emitted to socket:', {
+          crn: user.class,
+          group_id: user.group_id,
+          step: step,
+          email: user.email
+        });
+
       } else {
         const errorText = await response.text();
         throw new Error(`Failed to update progress: ${errorText}`);
