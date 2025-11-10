@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from './socketContext';
 import Popup from './popup';
@@ -66,7 +66,6 @@ export function ManageGroupsTab() {
   const [isAssigningJob, setIsAssigningJob] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: string; data: any } | null>(null);
-  const isFetchingRef = useRef(false);
     
   useEffect(() => {
     const fetchUser = async () => {
@@ -145,86 +144,77 @@ export function ManageGroupsTab() {
     return statuses;
   };
 
-  const organizeStudentsIntoGroups = async (studentList: Student[], groupIds: number[], classId: string) => {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
-
-    try {
-      const groupMap = new Map<number | null, Student[]>();
-      
-      groupIds.forEach(groupId => {
-        groupMap.set(groupId, []);
-      });
-      
-      studentList.forEach(student => {
-        const groupKey = student.group_id;
-        if (groupKey !== null && groupIds.includes(groupKey)) {
-          groupMap.get(groupKey)!.push(student);
-        } else if (groupKey === null) {
-          if (!groupMap.has(null)) {
-            groupMap.set(null, []);
-          }
-          groupMap.get(null)!.push(student);
+  const organizeStudentsIntoGroups = async (studentList: Student[], groupIds: number[]) => {
+    const groupMap = new Map<number | null, Student[]>();
+    
+    groupIds.forEach(groupId => {
+      groupMap.set(groupId, []);
+    });
+    
+    studentList.forEach(student => {
+      const groupKey = student.group_id;
+      if (groupKey !== null && groupIds.includes(groupKey)) {
+        groupMap.get(groupKey)!.push(student);
+      } else if (groupKey === null) {
+        if (!groupMap.has(null)) {
+          groupMap.set(null, []);
         }
-      });
-
-      const groupsArray: Group[] = [];
-      
-      const startStatuses = await fetchGroupStartStatuses(classId, groupIds);
-      const jobProgressPromises = groupIds.map(groupId => 
-        fetchGroupJobAndProgress(groupId, classId)
-      );
-      const jobProgressData = await Promise.all(jobProgressPromises);
-      
-      groupIds.forEach((groupId, index) => {
-        const students = groupMap.get(groupId) || [];
-        const statusInfo = startStatuses.find(s => s.groupId === groupId);
-        const { jobAssignment, progress } = jobProgressData[index];
-        
-        groupsArray.push({
-          group_id: groupId,
-          students: students.sort((a, b) => {
-            const aName = a.f_name || '';
-            const bName = b.f_name || '';
-            return aName.localeCompare(bName);
-          }),
-          isStarted: statusInfo ? statusInfo.started : false,
-          jobAssignment,
-          progress
-        });
-      });
-      
-      const ungroupedStudents = groupMap.get(null) || [];
-      if (ungroupedStudents.length > 0) {
-        groupsArray.push({
-          group_id: -1,
-          students: ungroupedStudents.sort((a, b) => {
-            const aName = a.f_name || '';
-            const bName = b.f_name || '';
-            return aName.localeCompare(bName);
-          }),
-          isStarted: false,
-          jobAssignment: 'N/A',
-          progress: 'N/A'
-        });
+        groupMap.get(null)!.push(student);
       }
-      
-      groupsArray.sort((a, b) => {
-        if (a.group_id === -1) return 1; 
-        if (b.group_id === -1) return -1;
-        return a.group_id - b.group_id;
-      });
+    });
 
-      setGroups(groupsArray);
-    } finally {
-      isFetchingRef.current = false;
+    const groupsArray: Group[] = [];
+    
+    const startStatuses = selectedClass ? await fetchGroupStartStatuses(selectedClass, groupIds) : [];
+    const jobProgressPromises = groupIds.map(groupId => 
+      fetchGroupJobAndProgress(groupId, selectedClass)
+    );
+    const jobProgressData = await Promise.all(jobProgressPromises);
+    
+    groupIds.forEach((groupId, index) => {
+      const students = groupMap.get(groupId) || [];
+      const statusInfo = startStatuses.find(s => s.groupId === groupId);
+      const { jobAssignment, progress } = jobProgressData[index];
+      
+      groupsArray.push({
+        group_id: groupId,
+        students: students.sort((a, b) => {
+          const aName = a.f_name || '';
+          const bName = b.f_name || '';
+          return aName.localeCompare(bName);
+        }),
+        isStarted: statusInfo ? statusInfo.started : false,
+        jobAssignment,
+        progress
+      });
+    });
+    
+    const ungroupedStudents = groupMap.get(null) || [];
+    if (ungroupedStudents.length > 0) {
+      groupsArray.push({
+        group_id: -1,
+        students: ungroupedStudents.sort((a, b) => {
+          const aName = a.f_name || '';
+          const bName = b.f_name || '';
+          return aName.localeCompare(bName);
+        }),
+        isStarted: false,
+        jobAssignment: 'N/A',
+        progress: 'N/A'
+      });
     }
+    
+    groupsArray.sort((a, b) => {
+      if (a.group_id === -1) return 1; 
+      if (b.group_id === -1) return -1;
+      return a.group_id - b.group_id;
+    });
+
+    setGroups(groupsArray);
   };
 
   const refreshGroupsAndStudents = async () => {
-    if (!selectedClass || isFetchingRef.current) return;
-
-    isFetchingRef.current = true;
+    if (!selectedClass) return;
 
     try {
       const [studentResponse, groupsResponse] = await Promise.all([
@@ -248,15 +238,11 @@ export function ManageGroupsTab() {
         setAvailableGroups(groupNumbers);
         
         if (groupNumbers.length > 0) {
-          await organizeStudentsIntoGroups(studentData, groupNumbers, selectedClass);
-        } else {
-          setGroups([]);
+          await organizeStudentsIntoGroups(studentData, groupNumbers);
         }
       }
     } catch (error) {
       console.error('Error refreshing groups and students:', error);
-    } finally {
-      isFetchingRef.current = false;
     }
   };
 
@@ -328,58 +314,63 @@ export function ManageGroupsTab() {
     fetchClasses();
   }, [user]);
 
-  // COMBINED EFFECT - This replaces the three separate effects
   useEffect(() => {
-    const fetchAndOrganizeData = async () => {
+    const fetchAvailableGroups = async () => {
       if (!selectedClass) {
         setAvailableGroups([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const groupData = await response.json();
+          console.log("Available groups from GroupsInfo:", groupData);
+          const groupNumbers = Array.isArray(groupData) 
+            ? groupData.map(Number).sort((a, b) => a - b)
+            : [];
+          setAvailableGroups(groupNumbers);
+        }
+      } catch (error) {
+        console.error('Error fetching available groups:', error);
+        setAvailableGroups([]);
+      }
+    };
+
+    fetchAvailableGroups();
+  }, [selectedClass]);
+
+  useEffect(() => {
+    const fetchStudentsAndOrganize = async () => {
+      if (!selectedClass) {
         setStudents([]);
         setGroups([]);
         return;
       }
 
-      if (isFetchingRef.current) return;
-      isFetchingRef.current = true;
-
       try {
-        const [groupsResponse, studentsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/groups?class=${selectedClass}`, {
-            credentials: 'include'
-          }),
-          fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
-            credentials: 'include'
-          })
-        ]);
-
-        if (groupsResponse.ok && studentsResponse.ok) {
-          const groupData = await groupsResponse.json();
-          const studentData = await studentsResponse.json();
-          
-          const groupNumbers = Array.isArray(groupData) 
-            ? groupData.map(Number).sort((a, b) => a - b)
-            : [];
-          
-          setAvailableGroups(groupNumbers);
+        const response = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const studentData = await response.json();
           setStudents(studentData);
           
-          if (groupNumbers.length > 0) {
-            await organizeStudentsIntoGroups(studentData, groupNumbers, selectedClass);
-          } else {
-            setGroups([]);
+          if (availableGroups.length > 0) {
+            await organizeStudentsIntoGroups(studentData, availableGroups);
           }
         }
       } catch (error) {
-        console.error('Error fetching and organizing data:', error);
-        setAvailableGroups([]);
-        setStudents([]);
-        setGroups([]);
-      } finally {
-        isFetchingRef.current = false;
+        console.error('Error fetching students:', error);
       }
     };
 
-    fetchAndOrganizeData();
-  }, [selectedClass]); // Only depends on selectedClass
+    fetchStudentsAndOrganize();
+  }, [selectedClass, availableGroups]);
 
   // Fetch available jobs when modal opens
   useEffect(() => {
@@ -679,6 +670,36 @@ export function ManageGroupsTab() {
       });
     }
   };
+
+  // ... rest of the JSX remains the same
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+        <div className="max-w-7xl mx-auto p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col h-full overflow-auto bg-northeasternWhite font-rubik">
+        <div className="w-full p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
+            <p className="text-gray-600">You must be logged in to access this page.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
