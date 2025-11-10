@@ -303,6 +303,7 @@ export function ManageGroupsTab() {
     
     const handleProgressUpdated = async (data: { crn: string; group_id: number; step: string; email: string }) => {
       console.log('Progress updated event received:', data);
+      console.log('Currently selected class:', selectedClass);
       
       // Check if this progress update is for the currently selected class
       if (data.crn === selectedClass) {
