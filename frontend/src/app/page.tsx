@@ -31,7 +31,7 @@ export default function Home() {
           onClick={handleModeratorLogin} 
           className="m-2 px-2 py-2 bg-northeasternWhite text-black border-4 border-northeasternRed rounded-md text-lg transition-opacity hover:opacity-60 active:opacity-30"
         >
-          Moderator
+          Admin
         </button>
       </div>
 

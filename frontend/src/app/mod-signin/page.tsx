@@ -36,10 +36,10 @@ export default function ModeratorSignIn() {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md flex flex-col gap-4 w-full max-w-sm z-10"
       >
-        <h2 className="text-2xl font-bold text-center text-northeasternRed">Moderator Sign In</h2>
+        <h2 className="text-2xl font-bold text-center text-northeasternRed">Admin Sign In</h2>
         <input
           type="text"
-          placeholder="Moderator Username"
+          placeholder="Admin Username"
           value={username}
           onChange={e => setUsername(e.target.value)}
           className="border p-2 rounded"

@@ -2,7 +2,7 @@
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/navbar";
+import NavbarAdmin from "../components/navbar-admin";
 import Footer from "../components/footer";
 import Slideshow from "../components/slideshow";
 import { io } from "socket.io-client";
@@ -132,11 +132,11 @@ const ModDashboard = () => {
         <Slideshow />
       </div>       
       <div className="fixed inset-0 bg-sand/80 z-5" />
-      <Navbar />
+      <NavbarAdmin />
       <div className="flex-1 flex flex-col px-4 py-8 z-10">
         {/* Title at the very top */}
         <h1 className="text-3xl font-extrabold text-redHeader text-center mb-8">
-          Moderator Class Management
+          Admin Class Management
         </h1>
 
         {/* Center the two panels */}
@@ -156,7 +156,7 @@ const ModDashboard = () => {
                   >
                     <div>
                       <div className="font-bold text-northeasternRed">CRN: {i.crn}</div>
-                      <div className="text-navy text-sm">Admin: {i.admin_email}</div>
+                      <div className="text-navy text-sm">Teacher: {i.admin_email}</div>
                     </div>
                     <button
                       onClick={() => handleDelete(i.crn)}
