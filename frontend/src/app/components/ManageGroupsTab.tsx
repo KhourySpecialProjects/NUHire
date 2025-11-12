@@ -333,7 +333,7 @@ export function ManageGroupsTab() {
       console.log('Progress updated event received:', data);
       console.log('type of data.crn:', typeof data.crn);
       
-      if (data.crn === selectedClass) {
+      if (data.crn.toString() === selectedClass) {
         console.log("inside the if condition for matching class CRN")
         try {
           // Use the step from the socket event directly
