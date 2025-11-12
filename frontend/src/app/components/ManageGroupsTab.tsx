@@ -170,6 +170,25 @@ export function ManageGroupsTab() {
     }));
   };
 
+  const downloadCSV = () => {
+    if (!selectedClass || students.length === 0) {
+      setPopup({ headline: 'Error', message: 'Please select a class and upload student data first' });
+      return;
+    }
+
+    const csvContent = students
+      .map(student => `${student.group_id},${student.email}`)
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `group_assignments_class_${selectedClass}.csv`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     const initialStates: Record<number, { canScrollDown: boolean; canScrollUp: boolean }> = {};
     groups.forEach(group => {
@@ -792,7 +811,20 @@ export function ManageGroupsTab() {
                       '🚀 Start All Groups'
                     )}
                   </button>
-                )}
+                  
+                ) && (
+                <button
+                  onClick={downloadCSV}
+                  disabled={!selectedClass}
+                  className={`px-6 py-3 rounded-lg font-semibold ${
+                    selectedClass
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Download CSV
+                </button>)
+              }
               </div>
             )}
           </div>
