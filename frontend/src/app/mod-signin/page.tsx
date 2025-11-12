@@ -26,7 +26,7 @@ export default function ModeratorSignIn() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-sand font-rubik">
       <div className="fixed inset-0 z-0">
         <Slideshow />
       </div>       
