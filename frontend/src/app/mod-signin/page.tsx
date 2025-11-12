@@ -27,10 +27,8 @@ export default function ModeratorSignIn() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      <NavbarAdmin />
-      {/* Slideshow Background */}
       <Slideshow />
-
+      <NavbarAdmin />
       {/* Semi-transparent overlay for better text readability */}
       <div className="absolute inset-0 bg-sand/70 z-1" />
 
