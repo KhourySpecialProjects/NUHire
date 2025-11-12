@@ -409,6 +409,7 @@ export function ManageGroupsTab() {
       if (!selectedClass) {
         setStudents([]);
         setGroups([]);
+        setIsLoadingGroups(false);
         return;
       }
 
@@ -423,10 +424,15 @@ export function ManageGroupsTab() {
           
           if (availableGroups.length > 0) {
             await organizeStudentsIntoGroups(studentData, availableGroups);
+          } else {
+            setIsLoadingGroups(false);
           }
+        } else {
+          setIsLoadingGroups(false);
         }
       } catch (error) {
         console.error('Error fetching students:', error);
+        setIsLoadingGroups(false);
       }
     };
 
@@ -468,6 +474,9 @@ export function ManageGroupsTab() {
       return;
     }
     
+    if (classId !== '') {
+      setIsLoadingGroups(true);
+    }
     setSelectedClass(classId);
   };
 
@@ -849,23 +858,15 @@ export function ManageGroupsTab() {
             </select>
           </div>
 
-          {selectedClass && groups.length > 0 && (
+          {selectedClass && groups.length > 0 && !isLoadingGroups && (
             <div>
               <div className="mb-4 flex justify-between items-center">  
                 <h2 className="text-xl font-semibold text-gray-900">
                   Class Groups ({groups.length} groups, {students.length} students total)
                 </h2>
               </div>
-              {isLoadingGroups ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-northeasternRed mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading group information...</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-center">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4">
+              <div className="flex justify-center">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4">
                     {groups.map((group) => (
                       <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px]">
                         <div className="flex justify-between items-center mb-4">
@@ -1014,11 +1015,19 @@ export function ManageGroupsTab() {
                     ))}
                   </div>
                 </div>
-              )}
             </div>
           )}
 
-          {selectedClass && groups.length === 0 && (
+          {selectedClass && isLoadingGroups && (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-northeasternRed mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading group information...</p>
+              </div>
+            </div>
+          )}
+
+          {selectedClass && groups.length === 0 && !isLoadingGroups && (
             <div className="text-center py-8">
               <p className="text-gray-500 text-lg">No groups found for this class.</p>
               <p className="text-gray-400 text-sm mt-2">
