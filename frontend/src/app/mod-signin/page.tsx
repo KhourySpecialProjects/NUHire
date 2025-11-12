@@ -31,14 +31,17 @@ export default function ModeratorSignIn() {
         <Slideshow />
       </div>       
       <div className="fixed inset-0 bg-sand/80 z-5" />
-      <div className="z-7 bg-northeasternBlack text-northeasternWhite flex items-center px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
-        <Link
-          href="/advisor-dashboard"
-          className="text-3xl font-rubik text-center font-bold text-northeasternRed drop-shadow-lg"
-        >
-          NUHire
-        </Link>
-      </div>
+      <nav className="navbar w-full relative">
+      {/* Top bar */}
+        <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
+          <Link
+            href="/advisor-dashboard"
+            className="text-3xl font-rubik text-center font-bold text-northeasternRed drop-shadow-lg"
+          >
+            NUHire
+          </Link>
+        </div>
+      </nav>
     
       <div className="flex-1 flex flex-col justify-center items-center z-10 relative">
         <form
