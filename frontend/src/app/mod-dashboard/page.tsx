@@ -144,7 +144,6 @@ const ModDashboard = () => {
           </div>
         </nav>     
         <div className="flex-1 flex flex-col px-4 py-8 z-10">
-        {/* Title at the very top */}
         <h1 className="text-3xl font-extrabold text-redHeader text-center mb-8">
           Admin Class Management
         </h1>
