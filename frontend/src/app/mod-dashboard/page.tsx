@@ -137,7 +137,7 @@ const ModDashboard = () => {
           <div className="bg-northeasternBlack text-northeasternWhite flex items-center justify-between px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
             <Link
               href="/advisor-dashboard"
-              className="text-3xl font-rubik font-bold text-northeasternRed drop-shadow-lg"
+              className="text-3xl font-rubik items-center font-bold text-northeasternRed drop-shadow-lg"
             >
               NUHire
             </Link>
