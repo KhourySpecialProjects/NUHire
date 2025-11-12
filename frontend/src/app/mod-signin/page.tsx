@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
+import NavbarAdmin from "../components/navbar-admin";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 export default function ModeratorSignIn() {
@@ -26,6 +27,7 @@ export default function ModeratorSignIn() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+      <NavbarAdmin />
       {/* Slideshow Background */}
       <Slideshow />
 
