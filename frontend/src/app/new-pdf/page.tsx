@@ -50,19 +50,54 @@ const Upload = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   
+  // Scroll states for jobs and resumes
+  const [jobsScrollState, setJobsScrollState] = useState({ canScrollDown: false, canScrollUp: false });
+  const [resumesScrollState, setResumesScrollState] = useState({ canScrollDown: false, canScrollUp: false });
+
   const router = useRouter();
   const [pendingOffers, setPendingOffers] = useState<
   { classId: number; groupId: number; candidateId: number }[]
   >([]);  
   const socket = useSocket();
 
-  useEffect(() => {
-    console.log("resumes changed:", resumes);
-  }, [resumes]);
-  useEffect(() => {
-    console.log("jobs changed:", jobs);
-  }, [jobs]);
+  const handleJobsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const element = e.currentTarget;
+    const canScrollDown = element.scrollHeight > element.clientHeight && 
+                          element.scrollTop < element.scrollHeight - element.clientHeight - 5;
+    const canScrollUp = element.scrollTop > 5;
+    
+    setJobsScrollState({ canScrollDown, canScrollUp });
+  };
 
+  const handleResumesScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const element = e.currentTarget;
+    const canScrollDown = element.scrollHeight > element.clientHeight && 
+                          element.scrollTop < element.scrollHeight - element.clientHeight - 5;
+    const canScrollUp = element.scrollTop > 5;
+    
+    setResumesScrollState({ canScrollDown, canScrollUp });
+  };
+
+  // Check initial scroll states when jobs/resumes update
+  useEffect(() => {
+    const checkInitialScroll = () => {
+      const jobsElement = document.getElementById('jobs-list');
+      const resumesElement = document.getElementById('resumes-list');
+      
+      if (jobsElement && jobs.length > 0) {
+        const canScrollDown = jobsElement.scrollHeight > jobsElement.clientHeight;
+        setJobsScrollState({ canScrollDown, canScrollUp: false });
+      }
+      
+      if (resumesElement && resumes.length > 0) {
+        const canScrollDown = resumesElement.scrollHeight > resumesElement.clientHeight;
+        setResumesScrollState({ canScrollDown, canScrollUp: false });
+      }
+    };
+    
+    // Small delay to ensure elements are rendered
+    setTimeout(checkInitialScroll, 100);
+  }, [jobs, resumes]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -108,7 +143,6 @@ const Upload = () => {
     candidateId: number,
     accepted: boolean
   ) => {
-    // Check if socket exists before emitting
     if (!socket) {
       console.error('Socket not connected');
       return;
@@ -205,13 +239,11 @@ const Upload = () => {
     }
   };
 
-  // Helper function to validate YouTube URL
   const isValidYouTubeUrl = (url: string) => {
     const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/).+/;
     return youtubeRegex.test(url);
   };
 
-  // Separate upload function for Job Description
   const uploadJobDescription = async () => {
     if (!jobFile) return setPopup({ headline: "Error", message: "No file selected for upload." });
     if (!jobTitle.trim()) return setPopup({ headline: "Error", message: "Please enter a job title before uploading." });
@@ -239,24 +271,22 @@ const Upload = () => {
       });
 
       fetchJobs();
-      // Clear job form
       setJobTitle("");
       setJobFile(null);
-      const resumeFileInput = document.querySelector('input[type="file"][accept="application/pdf"]:last-of-type') as HTMLInputElement;
-      if (resumeFileInput) {
-        resumeFileInput.value = '';
+      const jobFileInput = document.querySelector('input[type="file"][accept="application/pdf"]:first-of-type') as HTMLInputElement;
+      if (jobFileInput) {
+        jobFileInput.value = '';
       }
       
-      setPopup({ headline: "Success", message: "Resume uploaded successfully!" });
+      setPopup({ headline: "Success", message: "Job description uploaded successfully!" });
     } catch (error) {
-      console.error("Resume upload error:", error);
-      setPopup({ headline: "Error", message: "Failed to upload" });
+      console.error("Job upload error:", error);
+      setPopup({ headline: "Error", message: "Failed to upload job description" });
     } finally {
-      setResumeUploading(false);
+      setJobUploading(false);
     }
   };
   
-  // Separate upload function for Resume
   const uploadResume = async () => {
     if (!resumeFile) return setPopup({ headline: "Error", message: "No file selected for upload." });
     if (!resTitle.trim()) return setPopup({ headline: "Error", message: "Please enter a resume title before uploading." });
@@ -299,14 +329,12 @@ const Upload = () => {
       }
 
       fetchResumes();
-      // Clear resume form
       setResTitle("");
       setResFirstName("");
       setResLastName("");
       setResYouTubeVideo("");
       setResumeFile(null);
       
-      // Reset the resume file input - fix the selector to target the second file input
       const resumeFileInput = document.querySelector('input[type="file"][accept="application/pdf"]:last-of-type') as HTMLInputElement;
       if (resumeFileInput) {
         resumeFileInput.value = '';
@@ -315,7 +343,6 @@ const Upload = () => {
       setPopup({ headline: "Success", message: "Resume uploaded successfully!" });
     } catch (error) {
       console.error("Resume upload error:", error);
-      // Fix: Properly handle the unknown error type
       const errorMessage = error instanceof Error ? error.message : "Resume upload failed. Please try again.";
       setPopup({ headline: "Error", message: errorMessage });
     } finally {
@@ -369,27 +396,49 @@ const Upload = () => {
           </div>
 
           <h3 className="text-xl font-bold mt-6 mb-3">Existing Job Descriptions</h3>
-          <div className="max-h-60 overflow-y-auto">
-            {jobs.length === 0 ? (
-              <p className="text-gray-500">No job descriptions uploaded yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {jobs.map((job) => (
-                  <li key={job.id} className="border border-gray-200 p-3 rounded-md flex justify-between items-center">
-                    <div>
-                      <strong className="text-navy">{job.title}</strong>
-                      <a href={`${API_BASE_URL}/${job.file_path}`} target="_blank" className="text-blue-500 ml-2 hover:underline">
-                        View PDF
-                      </a>
-                    </div>
-                    <button 
-                      onClick={() => deleteJob(job.file_path)} 
-                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
+          <div className="relative">
+            {jobsScrollState.canScrollUp && (
+              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
+                <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                  ▲ Scroll up
+                </div>
+              </div>
+            )}
+            
+            <div 
+              id="jobs-list"
+              className="max-h-60 overflow-y-auto"
+              onScroll={handleJobsScroll}
+            >
+              {jobs.length === 0 ? (
+                <p className="text-gray-500">No job descriptions uploaded yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {jobs.map((job) => (
+                    <li key={job.id} className="border border-gray-200 p-3 rounded-md flex justify-between items-center">
+                      <div>
+                        <strong className="text-navy">{job.title}</strong>
+                        <a href={`${API_BASE_URL}/${job.file_path}`} target="_blank" className="text-blue-500 ml-2 hover:underline">
+                          View PDF
+                        </a>
+                      </div>
+                      <button 
+                        onClick={() => deleteJob(job.file_path)} 
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                        Delete
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            
+            {jobsScrollState.canScrollDown && (
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
+                <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                  ▼ Scroll down
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -407,7 +456,6 @@ const Upload = () => {
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy" 
             />
             
-            {/* Name fields in a row */}
             <div className="grid grid-cols-2 gap-3">
               <input 
                 type="text" 
@@ -449,36 +497,58 @@ const Upload = () => {
           </div>
 
           <h3 className="text-xl font-bold mt-6 mb-3">Existing Candidates</h3>
-          <div className="max-h-60 overflow-y-auto">
-            {resumes.length === 0 ? (
-              <p className="text-gray-500">No Candidates uploaded yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {resumes.map((resume) => (
-                  <li key={resume.id} className="border border-gray-200 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="font-semibold text-navy">{resume.first_name} {resume.last_name}</div>
-                        <div className="flex gap-2 mt-1">
-                          <a href={`${API_BASE_URL}/${resume.file_path}`} target="_blank" className="text-blue-500 text-sm hover:underline">
-                            View PDF
-                          </a>
-                          {resume.interview && (
-                            <a href={resume.interview} target="_blank" className="text-red-500 text-sm hover:underline">
-                              Watch Interview
+          <div className="relative">
+            {resumesScrollState.canScrollUp && (
+              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
+                <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                  ▲ Scroll up
+                </div>
+              </div>
+            )}
+            
+            <div 
+              id="resumes-list"
+              className="max-h-60 overflow-y-auto"
+              onScroll={handleResumesScroll}
+            >
+              {resumes.length === 0 ? (
+                <p className="text-gray-500">No Candidates uploaded yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {resumes.map((resume) => (
+                    <li key={resume.id} className="border border-gray-200 p-3 rounded-md">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-semibold text-navy">{resume.first_name} {resume.last_name}</div>
+                          <div className="flex gap-2 mt-1">
+                            <a href={`${API_BASE_URL}/${resume.file_path}`} target="_blank" className="text-blue-500 text-sm hover:underline">
+                              View PDF
                             </a>
-                          )}
+                            {resume.interview && (
+                              <a href={resume.interview} target="_blank" className="text-red-500 text-sm hover:underline">
+                                Watch Interview
+                              </a>
+                            )}
+                          </div>
                         </div>
+                        <button 
+                          onClick={() => deleteResume(resume.file_path)} 
+                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200 ml-2">
+                          Delete
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => deleteResume(resume.file_path)} 
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200 ml-2">
-                        Delete
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            
+            {resumesScrollState.canScrollDown && (
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
+                <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                  ▼ Scroll down
+                </div>
+              </div>
             )}
           </div>
         </div>
