@@ -329,9 +329,23 @@ export function ManageGroupsTab() {
       
       if (data.crn === selectedClass) {
         try {
-          const { jobAssignment, progress } = await fetchGroupJobAndProgress(data.group_id, selectedClass);
-          console.log(`Fetched updated progress for group ${data.group_id}: ${progress}`);
-          console.log(`Fetched job assignment for group ${data.group_id}: ${jobAssignment}`);
+          // Use the step from the socket event directly
+          const progress = data.step;
+          
+          // Optionally fetch the job assignment if needed
+          const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${data.group_id}/${selectedClass}`, {
+            credentials: 'include'
+          });
+          
+          let jobAssignment = 'No job assigned';
+          if (jobResponse.ok) {
+            const jobData = await jobResponse.json();
+            jobAssignment = jobData.job || 'No job assigned';
+          }
+          
+          console.log(`Updating progress for group ${data.group_id} to: ${progress}`);
+          console.log(`Job assignment for group ${data.group_id}: ${jobAssignment}`);
+          
           setGroups(prevGroups => 
             prevGroups.map(group => 
               group.group_id === data.group_id 
@@ -340,7 +354,7 @@ export function ManageGroupsTab() {
             )
           );
           
-          console.log(`Updated progress for group ${data.group_id} to: ${progress}`);
+          console.log(`Successfully updated group ${data.group_id}`);
         } catch (error) {
           console.error('Error refreshing progress:', error);
         }
