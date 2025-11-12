@@ -68,6 +68,7 @@ export function ManageGroupsTab() {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: string; data: any } | null>(null);
   const [scrollStates, setScrollStates] = useState<Record<number, { canScrollDown: boolean; canScrollUp: boolean }>>({});
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
 
     
   useEffect(() => {
@@ -200,6 +201,8 @@ export function ManageGroupsTab() {
   }, [groups]);
 
   const organizeStudentsIntoGroups = async (studentList: Student[], groupIds: number[]) => {
+    setIsLoadingGroups(true);
+    
     const groupMap = new Map<number | null, Student[]>();
     
     groupIds.forEach(groupId => {
@@ -266,6 +269,7 @@ export function ManageGroupsTab() {
     });
 
     setGroups(groupsArray);
+    setIsLoadingGroups(false);
   };
 
   const refreshGroupsAndStudents = async () => {
@@ -454,7 +458,6 @@ export function ManageGroupsTab() {
   }, [assignJobModalOpen]);
 
   const handleClassChange = (classId: string) => {
-    // Verify teacher has access to this class
     const hasAccess = classes.some(cls => cls.crn.toString() === classId);
     
     if (!hasAccess && classId !== '') {
@@ -773,7 +776,7 @@ export function ManageGroupsTab() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">📚 Manage Groups 📚</h1>
             {selectedClass && (
-              <div className="flex space-x-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={createNewGroup}
                   disabled={isCreatingGroup}
@@ -793,38 +796,38 @@ export function ManageGroupsTab() {
                   )}
                 </button>
                 {groups.length > 0 && (
-                  <button
-                    onClick={startAllGroups}
-                    disabled={isStartingAll || groups.every(g => g.isStarted)}
-                    className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                      isStartingAll || groups.every(g => g.isStarted)
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
-                    }`}
-                  >
-                    {isStartingAll ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
-                        Starting All...
-                      </div>
-                    ) : (
-                      '🚀 Start All Groups'
-                    )}
-                  </button>
-                  
-                ) && (
-                <button
-                  onClick={downloadCSV}
-                  disabled={!selectedClass}
-                  className={`px-6 py-3 rounded-lg font-semibold ${
-                    selectedClass
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  Download CSV
-                </button>)
-              }
+                  <>
+                    <button
+                      onClick={startAllGroups}
+                      disabled={isStartingAll || groups.every(g => g.isStarted)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        isStartingAll || groups.every(g => g.isStarted)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
+                      }`}
+                    >
+                      {isStartingAll ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
+                          Starting All...
+                        </div>
+                      ) : (
+                        '🚀 Start All Groups'
+                      )}
+                    </button>
+                    <button
+                      onClick={downloadCSV}
+                      disabled={!selectedClass}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        selectedClass
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      📥 Download CSV
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -853,156 +856,165 @@ export function ManageGroupsTab() {
                   Class Groups ({groups.length} groups, {students.length} students total)
                 </h2>
               </div>
-              <div className="flex justify-center">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4">
-                  {groups.map((group) => (
-                    <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px]">
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center">
-                          <h3 className="text-xl font-semibold text-gray-900">
-                            {group.group_id !== -1 ? `Group ${group.group_id}` : 'No Group'}
-                          </h3>
+              {isLoadingGroups ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-northeasternRed mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading group information...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4">
+                    {groups.map((group) => (
+                      <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px]">
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center">
+                            <h3 className="text-xl font-semibold text-gray-900">
+                              {group.group_id !== -1 ? `Group ${group.group_id}` : 'No Group'}
+                            </h3>
+                          </div>
+                          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {group.students.length} student{group.students.length !== 1 ? 's' : ''}
+                          </span>
                         </div>
-                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          {group.students.length} student{group.students.length !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      
-                      {group.group_id !== -1 && (
-                        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="mb-2">
-                            <p className="text-xs font-semibold text-gray-600 uppercase">Job Assignment</p>
-                            <p className="text-sm text-gray-800">{group.jobAssignment}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-gray-600 uppercase">Progress</p>
-                            <p className="text-sm text-gray-800 capitalize">{group.progress?.replace('_', ' ')}</p>
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex-1 flex flex-col justify-center mb-4 relative">
-                        {group.students.length === 0 ? (
-                          <div className="flex-1 flex items-center justify-center min-h-[120px]">
-                            <p className="text-gray-400 text-base italic text-center">No students in this group</p>
-                          </div>
-                        ) : (
-                          <div className="relative">
-                            {scrollStates[group.group_id]?.canScrollUp && (
-                              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
-                                <div className="text-blue-600 text-xs font-semibold animate-bounce">
-                                  ▲ Scroll up
-                                </div>
-                              </div>
-                            )}
-                            
-                            <div 
-                              className="space-y-3 max-h-[400px] overflow-y-auto pr-2"
-                              onScroll={(e) => handleScroll(e, group.group_id)}
-                            >
-                              {group.students.map((student) => (
-                                <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                  <div className="mb-3">
-                                    <p className="font-medium text-gray-900 text-base">
-                                      {student.f_name && student.l_name 
-                                        ? `${student.f_name} ${student.l_name}`
-                                        : student.f_name || student.l_name || 'No Name'
-                                      }
-                                    </p>
-                                    <p className="text-sm text-gray-600 truncate" title={student.email}>
-                                      {student.email}
-                                    </p>
-                                  </div>
-                                  <div className="flex space-x-2">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedStudent(student);
-                                        setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
-                                        setReassignModalOpen(true);
-                                      }}
-                                      className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                      title="Reassign student"
-                                    >
-                                      ↻ Reassign
-                                    </button>
-                                    {group.group_id === -1 ? (
-                                      <button
-                                        onClick={() => deleteStudent(student.email)}
-                                        className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                        title="Delete student"
-                                      >
-                                        × Delete
-                                      </button>
-                                    ) : (
-                                      <button
-                                        onClick={() => removeStudentFromGroup(student.email)}
-                                        className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                        title="Remove from group"
-                                      >
-                                        × Remove
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
+                        
+                        {group.group_id !== -1 && (
+                          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="mb-2">
+                              <p className="text-xs font-semibold text-gray-600 uppercase">Job Assignment</p>
+                              <p className="text-sm text-gray-800">{group.jobAssignment}</p>
                             </div>
-                            
-                            {scrollStates[group.group_id]?.canScrollDown && (
-                              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
-                                <div className="text-blue-600 text-xs font-semibold animate-bounce">
-                                  ▼ Scroll down
-                                </div>
-                              </div>
-                            )}
+                            <div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase">Progress</p>
+                              <p className="text-sm text-gray-800 capitalize">{group.progress?.replace('_', ' ')}</p>
+                            </div>
                           </div>
                         )}
-                        <button
-                          onClick={() => {
-                            setAddStudentGroupId(group.group_id);
-                            setAddStudentEmail('');
-                            setAddStudentModalOpen(true);
-                          }}
-                          className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                        >
-                          ➕ Add Student to Group
-                        </button>
-                      </div>
-                      <div className="mt-auto pt-4 border-t border-gray-100 space-y-2">
-                        {group.group_id !== -1 && (
+                        <div className="flex-1 flex flex-col justify-center mb-4 relative">
+                          {group.students.length === 0 ? (
+                            <div className="flex-1 flex items-center justify-center min-h-[120px]">
+                              <p className="text-gray-400 text-base italic text-center">No students in this group</p>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              {scrollStates[group.group_id]?.canScrollUp && (
+                                <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
+                                  <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                                    ▲ Scroll up
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div 
+                                className="space-y-3 max-h-[400px] overflow-y-auto pr-2"
+                                onScroll={(e) => handleScroll(e, group.group_id)}
+                              >
+                                {group.students.map((student) => (
+                                  <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <div className="mb-3">
+                                      <p className="font-medium text-gray-900 text-base">
+                                        {student.f_name && student.l_name 
+                                          ? `${student.f_name} ${student.l_name}`
+                                          : student.f_name || student.l_name || 'No Name'
+                                        }
+                                      </p>
+                                      <p className="text-sm text-gray-600 truncate" title={student.email}>
+                                        {student.email}
+                                      </p>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedStudent(student);
+                                          setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
+                                          setReassignModalOpen(true);
+                                        }}
+                                        className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                        title="Reassign student"
+                                      >
+                                        ↻ Reassign
+                                      </button>
+                                      {group.group_id === -1 ? (
+                                        <button
+                                          onClick={() => deleteStudent(student.email)}
+                                          className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                          title="Delete student"
+                                        >
+                                          × Delete
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => removeStudentFromGroup(student.email)}
+                                          className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                                          title="Remove from group"
+                                        >
+                                          × Remove
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {scrollStates[group.group_id]?.canScrollDown && (
+                                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
+                                  <div className="text-blue-600 text-xs font-semibold animate-bounce">
+                                    ▼ Scroll down
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <button
                             onClick={() => {
-                              setSelectedGroupForJob(group.group_id);
-                              setAssignJobModalOpen(true);
+                              setAddStudentGroupId(group.group_id);
+                              setAddStudentEmail('');
+                              setAddStudentModalOpen(true);
                             }}
-                            className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700"
+                            className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
                           >
-                            💼 Assign Job
+                            ➕ Add Student to Group
                           </button>
-                        )}
-                        <button
-                          onClick={() => startGroup(group.group_id)}
-                          disabled={group.isStarted || startingGroups.has(group.group_id)}
-                          className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors ${
-                            group.isStarted || startingGroups.has(group.group_id)
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
-                        >
-                          {startingGroups.has(group.group_id) ? (
-                            <div className="flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Starting...
-                            </div>
-                          ) : group.isStarted ? (
-                            '✅ Started'
-                          ) : (
-                            '🚀 Start Group'
+                        </div>
+                        <div className="mt-auto pt-4 border-t border-gray-100 space-y-2">
+                          {group.group_id !== -1 && (
+                            <button
+                              onClick={() => {
+                                setSelectedGroupForJob(group.group_id);
+                                setAssignJobModalOpen(true);
+                              }}
+                              className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700"
+                            >
+                              💼 Assign Job
+                            </button>
                           )}
-                        </button>
+                          <button
+                            onClick={() => startGroup(group.group_id)}
+                            disabled={group.isStarted || startingGroups.has(group.group_id)}
+                            className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors ${
+                              group.isStarted || startingGroups.has(group.group_id)
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                          >
+                            {startingGroups.has(group.group_id) ? (
+                              <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Starting...
+                              </div>
+                            ) : group.isStarted ? (
+                              '✅ Started'
+                            ) : (
+                              '🚀 Start Group'
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
