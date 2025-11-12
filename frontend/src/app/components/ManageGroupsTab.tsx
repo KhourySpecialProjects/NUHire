@@ -328,6 +328,7 @@ export function ManageGroupsTab() {
       console.log('Currently selected class:', selectedClass);
       
       if (data.crn === selectedClass) {
+        console.log("inside the if condition for matching class CRN")
         try {
           // Use the step from the socket event directly
           const progress = data.step;
