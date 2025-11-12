@@ -27,11 +27,11 @@ export default function ModeratorSignIn() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      <Slideshow />
+      <div className="fixed inset-0 z-0">
+        <Slideshow />
+      </div>       
+      <div className="fixed inset-0 bg-sand/80 z-5" />
       <NavbarAdmin />
-      {/* Semi-transparent overlay for better text readability */}
-      <div className="absolute inset-0 bg-sand/70 z-1" />
-
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md flex flex-col gap-4 w-full max-w-sm z-10"
