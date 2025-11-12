@@ -2,7 +2,7 @@
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 import React, { useState, useEffect } from "react";
-import NavbarAdmin from "../components/navbar-admin";
+import Link from "next/link";
 import Footer from "../components/footer";
 import Slideshow from "../components/slideshow";
 import { io } from "socket.io-client";
@@ -132,8 +132,18 @@ const ModDashboard = () => {
         <Slideshow />
       </div>       
       <div className="fixed inset-0 bg-sand/80 z-5" />
-      <NavbarAdmin />
-      <div className="flex-1 flex flex-col px-4 py-8 z-10">
+      <nav className="navbar w-full relative">
+        {/* Top bar */}
+          <div className="bg-northeasternBlack text-northeasternWhite flex items-center justify-between px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
+            <Link
+              href="/advisor-dashboard"
+              className="text-3xl font-rubik font-bold text-northeasternRed drop-shadow-lg"
+            >
+              NUHire
+            </Link>
+          </div>
+        </nav>     
+        <div className="flex-1 flex flex-col px-4 py-8 z-10">
         {/* Title at the very top */}
         <h1 className="text-3xl font-extrabold text-redHeader text-center mb-8">
           Admin Class Management

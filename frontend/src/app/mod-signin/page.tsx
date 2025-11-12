@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Slideshow from "../components/slideshow";
+import Link from "next/link";
 import Popup from "../components/popup";
-import NavbarAdmin from "../components/navbar-admin";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 export default function ModeratorSignIn() {
@@ -31,7 +31,18 @@ export default function ModeratorSignIn() {
         <Slideshow />
       </div>       
       <div className="fixed inset-0 bg-sand/80 z-5" />
-      <NavbarAdmin />
+      <nav className="navbar w-full relative">
+      {/* Top bar */}
+        <div className="bg-northeasternBlack text-northeasternWhite flex items-center justify-between px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
+          <Link
+            href="/advisor-dashboard"
+            className="text-3xl font-rubik font-bold text-northeasternRed drop-shadow-lg"
+          >
+            NUHire
+          </Link>
+        </div>
+      </nav>
+    
       <div className="flex-1 flex flex-col justify-center items-center z-10 relative">
         <form
           onSubmit={handleSubmit}
