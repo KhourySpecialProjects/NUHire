@@ -33,7 +33,7 @@ export default function ModeratorSignIn() {
       <div className="fixed inset-0 bg-sand/80 z-5" />
       <nav className="navbar w-full relative">
       {/* Top bar */}
-        <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
+        <div className="bg-northeasternBlack text-northeasternWhite flex px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full">
           <Link
             href="/advisor-dashboard"
             className="text-3xl font-rubik text-center font-bold text-northeasternRed drop-shadow-lg"
