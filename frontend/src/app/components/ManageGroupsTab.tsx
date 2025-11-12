@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from './socketContext';
 import Popup from './popup';
+import { use } from 'passport';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -105,6 +106,12 @@ export function ManageGroupsTab() {
 
     fetchUser();
   }, [router]);
+
+  useEffect(() => {
+    console.log("Selected class changed to:", selectedClass);
+    console.log("type of selectedClass:", typeof selectedClass);
+  }, [selectedClass]);
+
 
   const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
     try {
@@ -325,7 +332,7 @@ export function ManageGroupsTab() {
     
     const handleProgressUpdated = async (data: { crn: string; group_id: number; step: string; email: string }) => {
       console.log('Progress updated event received:', data);
-      console.log('Currently selected class:', selectedClass);
+      console.log('type of data.crn:', typeof data.crn);
       
       if (data.crn === selectedClass) {
         console.log("inside the if condition for matching class CRN")
