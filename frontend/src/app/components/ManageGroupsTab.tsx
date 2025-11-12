@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from './socketContext';
 import Popup from './popup';
-import { use } from 'passport';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
