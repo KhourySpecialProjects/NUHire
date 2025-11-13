@@ -69,6 +69,45 @@ export function ManageGroupsTab() {
   const [confirmAction, setConfirmAction] = useState<{ type: string; data: any } | null>(null);
   const [scrollStates, setScrollStates] = useState<Record<number, { canScrollDown: boolean; canScrollUp: boolean }>>({});
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [sendPopupModalOpen, setSendPopupModalOpen] = useState(false);
+  const [selectedGroupForPopup, setSelectedGroupForPopup] = useState<number | null>(null);
+  const [popupHeadline, setPopupHeadline] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [availableCandidates, setAvailableCandidates] = useState<{id: number, name: string}[]>([]);
+  const [selectedCandidateForPopup, setSelectedCandidateForPopup] = useState<string>("");
+  const [isSendingPopup, setIsSendingPopup] = useState(false);
+
+  const presetPopups = [
+    {
+      title: "Internal Referral",
+      headline: "Internal Referral",
+      message: "{candidateName} has an internal referral for this position! The averages of scores will be skewed in favor of the candidate!",
+      location: "interview",
+      vote: { overall: 10, professionalPresence: 0, qualityOfAnswer: 0, personality: 0 }
+    },
+    {
+      title: "No Show",
+      headline: "Abandoned Interview",
+      message: "{candidateName} did not show up for the interview. You can change the scores, but everything will be saved as the lowest score.",
+      location: "interview",
+      vote: { overall: -1000, professionalPresence: -1000, qualityOfAnswer: -1000, personality: -1000 }
+    },
+    {
+      title: "Resume Discrepancy",
+      headline: "Inconsistent Information",
+      message: "{candidateName}'s resume did not align with their responses during the interview and they couldn't explain their projects, raising concerns about accuracy.",
+      location: "interview",
+      vote: { overall: -5, professionalPresence: 0, qualityOfAnswer: -10, personality: 0 }
+    },
+    {
+      title: "Late Arrival",
+      headline: "Late Interview Start",
+      message: "{candidateName} arrived late to the interview. This may have impacted the flow and available time for questions.",
+      location: "interview",
+      vote: { overall: -5, professionalPresence: -10, qualityOfAnswer: 0, personality: 0 }
+    },
+  ];
 
     
   useEffect(() => {
@@ -105,12 +144,6 @@ export function ManageGroupsTab() {
 
     fetchUser();
   }, [router]);
-
-  useEffect(() => {
-    console.log("Selected class changed to:", selectedClass);
-    console.log("type of selectedClass:", typeof selectedClass);
-  }, [selectedClass]);
-
 
   const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
     try {
@@ -331,10 +364,9 @@ export function ManageGroupsTab() {
     
     const handleProgressUpdated = async (data: { crn: string; group_id: number; step: string; email: string }) => {
       console.log('Progress updated event received:', data);
-      console.log('type of data.crn:', typeof data.crn);
+      console.log('Currently selected class:', selectedClass);
       
-      if (data.crn.toString() === selectedClass) {
-        console.log("inside the if condition for matching class CRN")
+      if (data.crn === selectedClass) {
         try {
           // Use the step from the socket event directly
           const progress = data.step;
@@ -771,6 +803,115 @@ export function ManageGroupsTab() {
     }
   };
 
+  const openPopupModal = async (groupId: number) => {
+    setSelectedGroupForPopup(groupId);
+    setSendPopupModalOpen(true);
+    
+    // Fetch candidates for this group
+    try {
+      const response = await fetch(`${API_BASE_URL}/candidates/by-groups/${selectedClass}/${groupId}`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const candidatesData = await response.json();
+        const formattedCandidates = candidatesData.map((candidate: any) => ({
+          id: candidate.id || candidate.resume_id,
+          name: `${candidate.f_name} ${candidate.l_name}`
+        }));
+        setAvailableCandidates(formattedCandidates);
+      }
+    } catch (error) {
+      console.error('Error fetching candidates:', error);
+      setAvailableCandidates([]);
+    }
+  };
+
+  const handlePresetSelection = (presetTitle: string) => {
+    setSelectedPreset(presetTitle);
+    const preset = presetPopups.find((p) => p.title === presetTitle);
+    if (preset) {
+      setPopupHeadline(preset.headline);
+      setPopupMessage(preset.message);
+    }
+    setSelectedCandidateForPopup("");
+  };
+
+  const handleCandidateSelectionForPopup = (candidateId: string) => {
+    setSelectedCandidateForPopup(candidateId);
+    if (selectedPreset) {
+      const preset = presetPopups.find((p) => p.title === selectedPreset);
+      const candidate = availableCandidates.find((c) => c.id.toString() === candidateId);
+      
+      if (preset && candidate) {
+        const messageWithName = preset.message.replace('{candidateName}', candidate.name);
+        setPopupMessage(messageWithName);
+      }
+    }
+  };
+
+  const sendPopupToGroup = async () => {
+    if (!popupHeadline || !popupMessage || !selectedGroupForPopup) {
+      setPopup({ headline: "Error", message: "Please fill in all fields." });
+      return;
+    }
+
+    if (!socket) {
+      setPopup({ headline: "Error", message: "Socket not connected. Please refresh the page." });
+      return;
+    }
+
+    const selectedPresetData = presetPopups.find(p => p.title === selectedPreset);
+    if (selectedPresetData && !selectedCandidateForPopup) {
+      setPopup({ headline: "Error", message: "Please select a candidate for this preset popup." });
+      return;
+    }
+
+    setIsSendingPopup(true);
+
+    try {
+      if (selectedPresetData?.vote) {
+        socket.emit("updateRatingsWithPresetBackend", {
+          classId: selectedClass,
+          groupId: selectedGroupForPopup,
+          vote: selectedPresetData.vote,
+          candidateId: selectedCandidateForPopup,
+          isNoShow: selectedPresetData.title === "No Show"
+        });
+      }
+
+      const selectedCandidateData = availableCandidates.find(c => c.id.toString() === selectedCandidateForPopup);
+      const candidateName = selectedCandidateData ? selectedCandidateData.name : `Candidate ${selectedCandidateForPopup}`;
+
+      socket.emit("sendPopupToGroups", {
+        groups: [selectedGroupForPopup.toString()],
+        headline: popupHeadline,
+        message: popupMessage,
+        class: selectedClass,
+        candidateId: selectedCandidateForPopup,
+        candidateName: candidateName,
+      });
+
+      setPopup({ 
+        headline: "Success", 
+        message: selectedCandidateData 
+          ? `Popup sent successfully to Group ${selectedGroupForPopup} about ${candidateName}!`
+          : `Popup sent successfully to Group ${selectedGroupForPopup}!`
+      });
+
+      setSendPopupModalOpen(false);
+      setPopupHeadline("");
+      setPopupMessage("");
+      setSelectedPreset("");
+      setSelectedCandidateForPopup("");
+    } catch (error) {
+      console.error("Error sending popup:", error);
+      setPopup({ headline: "Error", message: "Failed to send popup. Please try again." });
+    } finally {
+      setIsSendingPopup(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
@@ -1001,15 +1142,29 @@ export function ManageGroupsTab() {
                         </div>
                         <div className="mt-auto pt-4 border-t border-gray-100 space-y-2">
                           {group.group_id !== -1 && (
-                            <button
-                              onClick={() => {
-                                setSelectedGroupForJob(group.group_id);
-                                setAssignJobModalOpen(true);
-                              }}
-                              className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700"
-                            >
-                              💼 Assign Job
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  setSelectedGroupForJob(group.group_id);
+                                  setAssignJobModalOpen(true);
+                                }}
+                                className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700"
+                              >
+                                💼 Assign Job
+                              </button>
+                              <button
+                                onClick={() => openPopupModal(group.group_id)}
+                                disabled={group.progress !== 'interview'}
+                                className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                                  group.progress === 'interview'
+                                    ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                                title={group.progress !== 'interview' ? 'Only available during interview stage' : 'Send popup to this group'}
+                              >
+                                📢 Send Popup
+                              </button>
+                            </>
                           )}
                           <button
                             onClick={() => startGroup(group.group_id)}
@@ -1097,6 +1252,110 @@ export function ManageGroupsTab() {
                   setAssignJobModalOpen(false);
                   setSelectedGroupForJob(null);
                   setSelectedJobId(null);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Popup Modal */}
+      {sendPopupModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-[500px] max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Send Popup to Group {selectedGroupForPopup}</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Choose a Preset (Optional):
+              </label>
+              <select
+                value={selectedPreset}
+                onChange={(e) => handlePresetSelection(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Select a Preset --</option>
+                {presetPopups.map((preset) => (
+                  <option key={preset.title} value={preset.title}>
+                    {preset.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedPreset && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Candidate for {selectedPreset}:
+                </label>
+                <select
+                  value={selectedCandidateForPopup}
+                  onChange={(e) => handleCandidateSelectionForPopup(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select a Candidate --</option>
+                  {availableCandidates.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.name} (ID: {candidate.id})
+                    </option>
+                  ))}
+                </select>
+                {availableCandidates.length === 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    This group is not currently interviewing any candidates.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Headline:
+              </label>
+              <input
+                type="text"
+                placeholder="Enter popup headline"
+                value={popupHeadline}
+                onChange={(e) => setPopupHeadline(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Message:
+              </label>
+              <textarea
+                placeholder="Enter your message here"
+                value={popupMessage}
+                onChange={(e) => setPopupMessage(e.target.value)}
+                className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={4}
+              />
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={sendPopupToGroup}
+                disabled={isSendingPopup || !popupHeadline || !popupMessage}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                  isSendingPopup || !popupHeadline || !popupMessage
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                }`}
+              >
+                {isSendingPopup ? 'Sending...' : 'Send Popup'}
+              </button>
+              <button
+                onClick={() => {
+                  setSendPopupModalOpen(false);
+                  setPopupHeadline("");
+                  setPopupMessage("");
+                  setSelectedPreset("");
+                  setSelectedCandidateForPopup("");
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
               >

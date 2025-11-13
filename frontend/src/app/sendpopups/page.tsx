@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
 import Popup from "../components/popup";
-import AdminReactionPopup from "../components/adminReactionPopup";
 import { useSocket } from "../components/socketContext";
 
 const SendPopups = () => {
