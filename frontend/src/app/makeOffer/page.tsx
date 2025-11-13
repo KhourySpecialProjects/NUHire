@@ -1,20 +1,18 @@
-"use client"; // Declares that this page is a client component
+"use client";
 export const dynamic = "force-dynamic";
-import React, { useState, useEffect, use } from "react";// Importing React and hooks for state and effect management
+import React, { useState, useEffect, use } from "react";
 import { useSocket } from "../components/socketContext";
-import Navbar from "../components/navbar"; // Importing the navbar component
-import { usePathname, useRouter } from "next/navigation"; // Importing useRouter and usePathname for navigation
-import { useProgress } from "../components/useProgress"; // Custom hook for progress tracking
-import Footer from "../components/footer"; // Importing the footer component
-import Popup from "../components/popup"; // Importing the popup component
-import axios from "axios"; // Importing axios for HTTP requests
-import Instructions from "../components/instructions"; // Importing the instructions component
+import Navbar from "../components/navbar";
+import { usePathname, useRouter } from "next/navigation";
+import { useProgress } from "../components/useProgress";
+import Footer from "../components/footer";
+import Popup from "../components/popup";
+import axios from "axios";
+import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
 
-// Define the API base URL from environment variables
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
-// Define the VoteData interface to match the expected vote data structure
 type VoteData = {
   Overall: number;
   Profesionality: number;
@@ -45,15 +43,12 @@ interface Offer {
   status: 'pending' | 'accepted' | 'rejected';
 }
 
-// Main component for the MakeOffer page
 export default function MakeOffer() {
   useProgress();
   const socket = useSocket();
   const router = useRouter();
   const {updateProgress, fetchProgress} = useProgressManager();
-  const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>(
-    {}
-  );
+  const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>({});
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -71,6 +66,8 @@ export default function MakeOffer() {
   const [acceptedOffer, setAcceptedOffer] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
   const [sentIn, setSentIn] = useState<(true | false | 'none')[]>(['none', 'none', 'none', 'none']);
+  const [videosLoading, setVideosLoading] = useState(true);
+  
   const offerInstructions = [
     "Review everything about the candidates you know.",
     "Discuss as a team which person is getting the job offer.",
@@ -79,7 +76,7 @@ export default function MakeOffer() {
   const [groupSize, setGroupSize] = useState(4);
   const selectedCandidateId = Object.entries(checkedState)
     .filter(([_, checked]) => checked)
-    .map(([id]) => Number(id))[0]; // Get the selected candidate ID
+    .map(([id]) => Number(id))[0];
   const [offerConfirmations, setOfferConfirmations] = useState<{[candidateId: number]: string[]}>({});
   const confirmations = selectedCandidateId ? (offerConfirmations[selectedCandidateId] || []) : [];
   const hasConfirmed = confirmations.includes(user?.id || '');
@@ -91,7 +88,7 @@ export default function MakeOffer() {
   const [ableToMakeOffer, setAbleToMakeOffer] = useState(true);
   const [checkedStateRestored, setCheckedStateRestored] = useState(false);
 
-const checkExistingOffer = async () => {
+  const checkExistingOffer = async () => {
     if (!user?.group_id || !user?.class) return;
     
     try {
@@ -102,7 +99,6 @@ const checkExistingOffer = async () => {
       if (response.ok) {
         const offer = await response.json();
         
-        // Fix: Handle null response properly
         if (offer && offer.id) {
           setExistingOffer(offer);
           
@@ -135,7 +131,6 @@ const checkExistingOffer = async () => {
       console.error("Error checking existing offer:", error);
       setExistingOffer(null);
       setOfferPending(false);
-    } finally {
     }
   };
 
@@ -150,12 +145,11 @@ const checkExistingOffer = async () => {
     }
   }, [acceptedOffer]);
 
-  // Restore checkedState from localStorage FIRST
   useEffect(() => {
     const savedCheckedState = localStorage.getItem('makeOffer_checkedState');
     if (savedCheckedState) {
       setCheckedState(JSON.parse(savedCheckedState));
-      setCheckedStateRestored(true); // Set flag immediately when restoring
+      setCheckedStateRestored(true);
     }
   }, []);
 
@@ -220,7 +214,6 @@ const checkExistingOffer = async () => {
         }, {});
         
         setPopupVotes(votesMap);
-        console.log("Fetched popup votes:", popupVotes);
       } catch (error) {
         console.error('Error fetching popup votes:', error);
       }
@@ -229,7 +222,6 @@ const checkExistingOffer = async () => {
     fetchPopupVotes();
   }, [user, candidates]);
 
-  // Load user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -251,17 +243,14 @@ const checkExistingOffer = async () => {
     fetchUser();
   }, [router]);
 
-  // Update current page when user is loaded
   useEffect(() => {
     if (user && user.email) {
-      // Emit socket events
       socket?.emit("studentOnline", { studentId: user.email });
       socket?.emit("studentPageChanged", {
         studentId: user.email,
         currentPage: pathname,
       });
 
-      // Update current page in database
       const updateCurrentPage = async () => {
         try {
           await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
@@ -283,10 +272,9 @@ const checkExistingOffer = async () => {
     const fetchInterviews = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/interview/group/${user.group_id}?class=${user.class}` , {credentials: "include"}
+          `${API_BASE_URL}/interview/group/${user.group_id}?class=${user.class}`, {credentials: "include"}
         );
         const data = await response.json();
-
         setInterviews(data);
       } catch (err) {
         console.error("Error fetching interviews:", err);
@@ -296,12 +284,10 @@ const checkExistingOffer = async () => {
     const fetchGroupSize = async () => {
       if (!user?.group_id) return;
       try {
-        console.log("insize size", user)
         const response = await fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" });
         if (response.ok) {
           const data = await response.json();
           setGroupSize(data.count);
-          console.log("Fetched group size:", data.count);
         }
       } catch (err) {
         console.error("Failed to fetch group size:", err);
@@ -314,13 +300,16 @@ const checkExistingOffer = async () => {
 
   useEffect(() => {
     if (!interviews.length) {
+      setVideosLoading(false);
       return;
     }
+
+    setVideosLoading(true);
 
     const fetchCandidates = async () => {
       try {
         const fetchedCandidates = await Promise.all(
-          interviews.map(async (interview, index) => {
+          interviews.map(async (interview) => {
             const id = interview.candidate_id;
             const url = `${API_BASE_URL}/candidates/resume/${id}`;
           
@@ -328,61 +317,47 @@ const checkExistingOffer = async () => {
               const res = await fetch(url, {credentials: "include"});
 
               if (!res.ok) {
-                console.error(`  ❌ Invalid response for candidate ${id}:`, {
-                  status: res.status,
-                  statusText: res.statusText,
-                  url: url
-                });
-                throw new Error(
-                  `Invalid response for candidate ${interview.candidate_id}: ${res.status}`
-                );
+                console.error(`Invalid response for candidate ${id}`);
+                return null;
               }
 
-              // Check if response has content
               const contentType = res.headers.get('content-type');
               if (!contentType || !contentType.includes('application/json')) {
-                console.error(`  ❌ Invalid content-type for candidate ${id}:`, contentType);
-                throw new Error(`Invalid content-type for candidate ${id}: ${contentType}`);
+                console.error(`Invalid content-type for candidate ${id}`);
+                return null;
               }
               
-              // Get response text first to debug
               const responseText = await res.text();
               
               if (!responseText.trim()) {
-                console.error(`  ❌ Empty response for candidate ${id}`);
-                throw new Error(`Empty response for candidate ${id}`);
+                console.error(`Empty response for candidate ${id}`);
+                return null;
               }
 
               const data = JSON.parse(responseText);
               
               if (!data) {
-                console.error(`  ❌ No data found for candidate ${id}`);
-                throw new Error(`No data found for candidate ${id}`);
+                console.error(`No data found for candidate ${id}`);
+                return null;
               }
               
               return data;
               
             } catch (parseError) {
-              console.error(`  ❌ Error processing candidate ${id}:`, parseError);
-              // Instead of throwing, return a placeholder or skip this candidate
-              return null; // or create a placeholder object
+              console.error(`Error processing candidate ${id}:`, parseError);
+              return null;
             }
           })
         );
 
-        // Filter out null candidates (failed fetches)
         const validCandidates = fetchedCandidates.filter(candidate => candidate !== null);
         setCandidates(validCandidates);
               
       } catch (err) {
-        console.error("=== Error in fetchCandidates ===");
-        console.error("Error type:", typeof err);
-        console.error("Error message:", err instanceof Error ? err.message : err);
-        console.error("Full error object:", err);
-        console.error("Current interviews that caused error:", interviews);
-        
-        // Set empty array to prevent infinite loops
+        console.error("Error in fetchCandidates:", err);
         setCandidates([]);
+      } finally {
+        setVideosLoading(false);
       }
     };
 
@@ -412,14 +387,10 @@ const checkExistingOffer = async () => {
             const res = await fetch(`${API_BASE_URL}/resume_pdf/id/${id}`, {credentials: "include"});
 
             if (!res.ok) {
-              throw new Error(
-                `Invalid response for resume ${candidate.resume_id}`
-              );
+              throw new Error(`Invalid response for resume ${candidate.resume_id}`);
             }
 
             const data = await res.json();
-            
-            // Fix: If data is an array, take the first element
             const resumeData = Array.isArray(data) ? data[0] : data;
             return resumeData;
           })
@@ -446,7 +417,6 @@ const checkExistingOffer = async () => {
     return grouped;
   };
 
-  // Calculate vote totals and checkbox state
   useEffect(() => {
     if (!user || !interviews.length) return;
 
@@ -454,9 +424,7 @@ const checkExistingOffer = async () => {
     const voteData: { [key: number]: VoteData } = {};
     const checkboxData: { [key: number]: boolean } = {};
 
-    for (const [candidateIdStr, candidateInterviews] of Object.entries(
-      grouped
-    )) {
+    for (const [candidateIdStr, candidateInterviews] of Object.entries(grouped)) {
       const candidateId = parseInt(candidateIdStr);
       voteData[candidateId] = {
         Overall: 0,
@@ -471,28 +439,23 @@ const checkExistingOffer = async () => {
         voteData[candidateId].Quality += interview.question3;
         voteData[candidateId].Personality += interview.question4;
 
-        checkboxData[candidateId] =
-          checkboxData[candidateId] || interview.checked;
+        checkboxData[candidateId] = checkboxData[candidateId] || interview.checked;
       });
     }
 
     setVoteCounts(voteData);
     
-    // Only set checkedState if it hasn't been restored from localStorage
     if (!checkedStateRestored) {
       setCheckedState(checkboxData);
     }
-  }, [interviews, user, checkedStateRestored]); // Add checkedStateRestored to dependencies
+  }, [interviews, user, checkedStateRestored]);
 
   useEffect(() => {
     if (!interviews.length || !candidates.length) return;
 
-    const uniqueCandidateIds = [
-      ...new Set(interviews.map((i) => i.candidate_id)),
-    ];
+    const uniqueCandidateIds = [...new Set(interviews.map((i) => i.candidate_id))];
 
     const merged = uniqueCandidateIds.map((id) => {
-      // Fix: Match interview candidate_id with candidate's resume_id (not the candidate's id)
       const candidate = candidates.find((c) => c.resume_id === id);
       
       if (!candidate) {
@@ -520,7 +483,7 @@ const checkExistingOffer = async () => {
     setInterviewsWithVideos(merged);
   }, [resumes]);
 
-    const handleConfirmOfferClick = (candidateId: number) => {
+  const handleConfirmOfferClick = (candidateId: number) => {
     if (!socket || !user || !candidateId) return;
     if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
       let message = "";
@@ -535,7 +498,7 @@ const checkExistingOffer = async () => {
       });
       return;
     }
-    // Update local state for this user
+    
     setOfferConfirmations(prev => {
       const currentConfirmations = prev[candidateId] || [];
       if (!currentConfirmations.includes(user.id)) {
@@ -546,7 +509,7 @@ const checkExistingOffer = async () => {
       }
       return prev;
     });
-    // Emit to other users in the room
+    
     socket.emit("confirmOffer", {
       groupId: user.group_id,
       classId: user.class,
@@ -554,27 +517,22 @@ const checkExistingOffer = async () => {
       studentId: user.id,
       roomId: `group_${user.group_id}_class_${user.class}`
     });
-    console.log("Emitted confirmOffer for candidate:", candidateId);
   };
 
-  // Setup socket.io
   useEffect(() => {
     if (!socket || !user) return;
 
-    setIsConnected(socket.connected); // Set initial connection state
+    setIsConnected(socket.connected);
 
     const roomId = `group_${user.group_id}_class_${user.class}`;
 
-    // Emit join group
     if (socket.connected) {
       socket.emit("joinGroup", roomId);
     }
 
-    // Define handlers
     const handleConnect = () => {
       setIsConnected(true);
       socket.emit("joinGroup", roomId);
-      console.log("Connected and joined room:", roomId);
     };
 
     const handleDisconnect = () => {
@@ -610,7 +568,6 @@ const checkExistingOffer = async () => {
       candidateId: number;
       accepted: boolean;
     }) => {
-      // Only process if it's for our group and class
       if (classId !== user.class || groupId !== user.group_id) {
         return;
       }
@@ -659,7 +616,6 @@ const checkExistingOffer = async () => {
       setCheckedState((prev) => ({ ...prev, [interview_number]: checked }));
     };
 
-    // Register listeners
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("groupMemberOffer", handleGroupMemberOffer);
@@ -667,7 +623,6 @@ const checkExistingOffer = async () => {
     socket.on("makeOfferResponse", handleMakeOfferResponse);
     socket.on("checkboxUpdated", handleCheckboxUpdated);
 
-    // Cleanup
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
@@ -695,50 +650,8 @@ const checkExistingOffer = async () => {
       checked: newCheckedState,
     });
   };
-    
-  const handleConfirmOffer = (candidateId: number) => {
-    if (!socket || !user || !candidateId) return;
-    
-    // Check if there's already an offer
-    if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
-      let message = "";
-      if (existingOffer.status === 'pending') {
-        message = "You already have a pending offer awaiting advisor approval.";
-      } else if (existingOffer.status === 'accepted') {
-        message = "You already have an accepted offer. You cannot make another offer.";
-      }
-      
-      setPopup({
-        headline: "Offer Already Exists",
-        message: message
-      });
-      return;
-    }
-    
-    // First update local state immediately
-    setOfferConfirmations(prev => {
-      const currentConfirmations = prev[candidateId] || [];
-      if (!currentConfirmations.includes(user.id)) {
-        return {
-          ...prev,
-          [candidateId]: [...currentConfirmations, user.id]
-        };
-      }
-      return prev;
-    });
-
-    // Then emit to other users in the room
-    socket.emit("confirmOffer", {
-      groupId: user.group_id,
-      classId: user.class,
-      candidateId,
-      studentId: user.id,
-      roomId: `group_${user.group_id}_class_${user.class}`
-    });
-  };
 
   const handleMakeOffer = async () => {
-    // Check if there's already an offer
     if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
       let message = "";
       if (existingOffer.status === 'pending') {
@@ -796,7 +709,6 @@ const checkExistingOffer = async () => {
         return;
       }
 
-      // Update existing offer state
       setExistingOffer({
         id: result.id,
         class_id: user!.class,
@@ -805,7 +717,6 @@ const checkExistingOffer = async () => {
         status: 'pending'
       });
 
-      // THEN emit socket event for real-time updates
       socket?.emit("makeOfferRequest", {
         classId: user!.class,
         groupId: user!.group_id,
@@ -828,10 +739,7 @@ const checkExistingOffer = async () => {
   };
 
   const completeMakeOffer = () => {
-    // Check if there's an accepted offer
     const hasAcceptedOffer = Object.values(sentIn).some(status => status === true);
-    
-    // Check if all candidates were rejected (all are false, none are 'none' or true)
     const allRejected = Object.values(sentIn).every(status => status === false);
     
     if (!hasAcceptedOffer && !allRejected) {
@@ -848,7 +756,6 @@ const checkExistingOffer = async () => {
   };
   
   const selectedCount = Object.values(checkedState).filter(Boolean).length;
-
   const isOfferDisabled = existingOffer !== null && (existingOffer.status === 'pending' || existingOffer.status === 'accepted');
 
   if (loading) {
@@ -860,8 +767,28 @@ const checkExistingOffer = async () => {
         </div>
       </div>
     );
-  }  
-  
+  }
+
+  if (videosLoading) {
+    return (
+      <div className="min-h-screen bg-sand font-rubik">
+        <Navbar />
+        <div className="flex-1 flex flex-col px-4 py-8">
+          <div className="w-full p-6">
+            <h1 className="text-3xl font-bold text-center text-navy mb-6">
+              Make an Offer as a Group
+            </h1>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-20 h-20 border-t-4 border-redHeader border-solid rounded-full animate-spin mb-6"></div>
+              <p className="text-lg font-semibold text-navy mb-2">Loading Candidate Offers...</p>
+              <p className="text-sm text-gray-600">Please wait while we fetch the candidate information</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!user || user.affiliation !== "student") return null;
 
@@ -883,7 +810,6 @@ const checkExistingOffer = async () => {
             Make an Offer as a Group
           </h1>
 
-          {/* NEW: Show existing offer status */}
           {existingOffer && (
             <div className={`mb-6 p-4 rounded-lg text-center ${
               existingOffer.status === 'pending' 
@@ -906,7 +832,7 @@ const checkExistingOffer = async () => {
           )}
 
           <div className="grid grid-cols-2 gap-8 w-full min-h-[60vh] items-stretch">
-            {interviewsWithVideos.map((interview, index) => {
+            {interviewsWithVideos.map((interview) => {
               const interviewNumber = interview.candidate_id;
               const votes = voteCounts[interviewNumber] || {
                 Overall: 0,
@@ -923,6 +849,7 @@ const checkExistingOffer = async () => {
               );
               const isAccepted = sentIn[interviewNumber] === true;
               const isRejected = sentIn[interviewNumber] === false;
+              
               return (
                 <div
                   key={interviewNumber}
@@ -932,7 +859,7 @@ const checkExistingOffer = async () => {
                       : isRejected
                       ? "bg-red-100 border border-red-300 pointer-events-none"
                       : isNoShow
-                      ? "bg-gray-100 border border-gray-400 opacity-75" // Special styling for No Show
+                      ? "bg-gray-100 border border-gray-400 opacity-75"
                       : "bg-wood"
                   }`}
                 >
@@ -955,34 +882,34 @@ const checkExistingOffer = async () => {
                   </div>
 
                   <div className="mt-2 space-y-1 text-navy text-sm">
-                  <p>
-                    <span className="font-medium">Overall:</span> {
-                      groupSize > 0
-                        ? (Math.max(0, ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize).toFixed(1))
-                        : "N/A"
-                    }
-                  </p>
-                  <p>
-                    <span className="font-medium">Professional Pressence:</span> {
-                      groupSize > 0
-                        ? (Math.max(0, ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize).toFixed(1))
-                        : "N/A"
-                    }
-                  </p>
-                  <p>
-                    <span className="font-medium">Quality of Answer:</span> {
-                      groupSize > 0
-                        ? (Math.max(0, ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize).toFixed(1))
-                        : "N/A"
-                    }
-                  </p>
-                  <p>
-                    <span className="font-medium">Personality:</span> {
-                      groupSize > 0
-                        ? (Math.max(0, ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize).toFixed(1))
-                        : "N/A"
-                    }
-                  </p>
+                    <p>
+                      <span className="font-medium">Overall:</span> {
+                        groupSize > 0
+                          ? (Math.max(0, ((votes.Overall || 0) + (popupVotes[interviewNumber]?.question4 || 0)) / groupSize).toFixed(1))
+                          : "N/A"
+                      }
+                    </p>
+                    <p>
+                      <span className="font-medium">Professional Presence:</span> {
+                        groupSize > 0
+                          ? (Math.max(0, ((votes.Profesionality || 0) + (popupVotes[interviewNumber]?.question1 || 0)) / groupSize).toFixed(1))
+                          : "N/A"
+                      }
+                    </p>
+                    <p>
+                      <span className="font-medium">Quality of Answer:</span> {
+                        groupSize > 0
+                          ? (Math.max(0, ((votes.Quality || 0) + (popupVotes[interviewNumber]?.question2 || 0)) / groupSize).toFixed(1))
+                          : "N/A"
+                      }
+                    </p>
+                    <p>
+                      <span className="font-medium">Personality:</span> {
+                        groupSize > 0
+                          ? (Math.max(0, ((votes.Personality || 0) + (popupVotes[interviewNumber]?.question3 || 0)) / groupSize).toFixed(1))
+                          : "N/A"
+                      }
+                    </p>
                   </div>
 
                   <a
@@ -994,7 +921,7 @@ const checkExistingOffer = async () => {
                     View / Download Resume
                   </a>
 
-                  {!isRejected && !isNoShow && ( // Add !isNoShow here
+                  {!isRejected && !isNoShow && (
                     <label className={`flex items-center mt-2 ${isOfferDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <input
                         type="checkbox"
@@ -1007,7 +934,6 @@ const checkExistingOffer = async () => {
                     </label>
                   )}
 
-                  {/* Add a message for No Show candidates */}
                   {isNoShow && (
                     <div className="text-center text-red-600 text-sm font-medium bg-red-50 p-2 rounded">
                       This candidate did not show up for the interview
@@ -1028,17 +954,14 @@ const checkExistingOffer = async () => {
 
           {selectedCount === 1 && !isOfferDisabled && !acceptedOffer && (
             <div className="flex flex-col items-center my-6 gap-4">
-              {/* Team confirmation status */}
               <div className="text-center">
                 <p className="text-navy font-medium">
                   Team Confirmation: {confirmationCount}/{groupSize} members ready
                 </p>
               </div>
 
-              {/* Confirmation/Offer button */}
               <div className="flex gap-4">
                 {!allConfirmed ? (
-                  // Individual confirmation button
                   <button
                     onClick={() => handleConfirmOfferClick(selectedCandidateId)}
                     disabled={hasConfirmed || offerPending || isOfferDisabled}
@@ -1053,7 +976,6 @@ const checkExistingOffer = async () => {
                     {hasConfirmed ? `✓ Confirmed (${confirmationCount}/${groupSize})` : 'Confirm Selection'}
                   </button>
                 ) : (
-                  // Final offer button (only appears when all confirmed)
                   <button
                     onClick={handleMakeOffer}
                     disabled={offerPending || isOfferDisabled}
@@ -1068,7 +990,6 @@ const checkExistingOffer = async () => {
                 )}
               </div>
 
-              {/* Status message */}
               {!allConfirmed && confirmationCount > 0 && !isOfferDisabled && (
                 <p className="text-sm text-orange-600 text-center">
                   Waiting for {groupSize - confirmationCount} more team member{groupSize - confirmationCount !== 1 ? 's' : ''} to confirm
@@ -1089,7 +1010,6 @@ const checkExistingOffer = async () => {
           )}
         </div>
 
-        {/* Footer navigation buttons */}
         <footer className="flex justify-between mt-6 px-4">
           <button
             onClick={() => (window.location.href = "/jobdes")}
@@ -1113,5 +1033,5 @@ const checkExistingOffer = async () => {
       </div>
       <Footer />
     </div>
-  )
-};
+  );
+}
