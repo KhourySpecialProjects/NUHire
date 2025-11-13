@@ -101,21 +101,21 @@ const Dashboard = () => {
         <div className="mt-6 gap-6 flex flex-row justify-center items-center">
             <Link
               href="/grouping"
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-96 h-96"
+              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-72 h-72"
             >
               <span className="text-4xl mb-2">👥</span>
               <span>Manage Groups and Jobs</span>
             </Link>
             <Link 
               href="/new-pdf" 
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-96 h-96"
+              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-72 h-72"
             >
               <span className="text-4xl mb-2">📤</span>
               <span>Upload Job and Resumes</span>
             </Link>
             <Link 
               href="/adminFacts" 
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-96 h-96"
+              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-72 h-72"
             >
               <span className="text-4xl mb-2">🔍</span>
               <span>Waiting Facts</span>
