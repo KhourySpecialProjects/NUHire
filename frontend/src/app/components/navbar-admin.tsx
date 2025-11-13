@@ -29,9 +29,8 @@ const NavbarAdmin = () => {
     { label: "Dashboard", path: "/advisor-dashboard" },
     { label: "Profile", path: "/userProfile" },
     { label: "Manage Groups and Jobs", path: "/grouping" },
-    { label: "Send Popups", path: "/sendpopups" },
-    { label: "Candidate Offers", path: "/candidate-offers" },
     { label: "Upload Jobs and Resumes", path: "/new-pdf" },
+    { label: "Waiting Facts", path: "/adminFacts" },
   ];
 
   return (
