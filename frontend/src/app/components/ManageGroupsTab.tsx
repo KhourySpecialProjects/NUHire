@@ -1114,8 +1114,8 @@ export function ManageGroupsTab() {
                       disabled={!selectedClass}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                         selectedClass
-                          ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
                       }`}
                     >
                       📥 Download CSV
@@ -1153,14 +1153,35 @@ export function ManageGroupsTab() {
               <div className="flex justify-center">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4">
                     {groups.map((group) => {
-                      // Check if there's a pending offer for this group
                       const groupOffer = pendingOffers.find(
                         o => o.groupId === group.group_id && o.classId === Number(selectedClass)
                       );
                       
+                      const acceptedOffer = acceptedOffers.find(
+                        o => o.groupId === group.group_id
+                      );
+                      
                       return (
                         <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px] relative">
-                          {/* Offer Overlay */}
+                          {acceptedOffer && (
+                            <div className="absolute inset-0 bg-green-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-green-400">
+                              <div className="text-center w-full">
+                                <h4 className="text-2xl font-bold text-green-800 mb-3">
+                                  ✓ Offer Accepted!
+                                </h4>
+                                <p className="text-lg font-semibold text-gray-800 mb-2">
+                                  Group {group.group_id} has hired:
+                                </p>
+                                <p className="text-2xl font-bold text-green-600">
+                                  {acceptedOffer.candidateName}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-4">
+                                  🎉 Congratulations! 🎉
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          
                           {groupOffer && (
                             <div className="absolute inset-0 bg-yellow-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-yellow-400">
                               <div className="text-center w-full">
@@ -1363,8 +1384,8 @@ export function ManageGroupsTab() {
                             </button>
                           </div>
                         </div>
-                      )}
-                    )}
+                      );
+                    })}
                   </div>
                 </div>
             </div>
