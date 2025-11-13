@@ -89,12 +89,13 @@ export default function JobDescriptionPage() {
       }
     };
     fetchUser();
-    if (!user) { 
-      return
-    };
-    updateProgress(user, "job_description");
 
   }, [router]);
+
+  useEffect(() => {
+    if (user)
+      updateProgress(user, "job_description");
+  }, [user]);
 
   useEffect(() => {
     if (!socket || !user?.email) return;
