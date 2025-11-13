@@ -1007,12 +1007,10 @@ export function ManageGroupsTab() {
       
       console.log("Socket response emitted");
 
-      // Remove from pending offers
       setPendingOffers(prev => 
         prev.filter(o => !(o.classId === classId && o.groupId === groupId && o.candidateId === candidateId))
       );
 
-      // If accepted, add to accepted offers and remove after 5 seconds
       if (accepted && candidateName) {
         setAcceptedOffers(prev => [...prev, { groupId, candidateName }]);
         setTimeout(() => {
@@ -1112,11 +1110,7 @@ export function ManageGroupsTab() {
                     <button
                       onClick={downloadCSV}
                       disabled={!selectedClass}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        selectedClass
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
-                      }`}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed}`}
                     >
                       📥 Download CSV
                     </button>
@@ -1162,10 +1156,7 @@ export function ManageGroupsTab() {
                       );
                       
                       return (
-                        <div 
-                          key={group.group_id} 
-                          className={`${acceptedOffer ? 'bg-green-50' : 'bg-white'} rounded-lg border ${acceptedOffer ? 'border-green-400 border-2' : 'border-gray-200'} shadow-sm p-6 flex flex-col h-full min-w-[400px] relative`}
-                        >
+                        <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px] relative">
                           {acceptedOffer && (
                             <div className="absolute inset-0 bg-green-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-green-400">
                               <div className="text-center w-full">

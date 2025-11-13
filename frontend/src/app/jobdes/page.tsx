@@ -89,6 +89,11 @@ export default function JobDescriptionPage() {
       }
     };
     fetchUser();
+    if (!user) { 
+      return
+    };
+    updateProgress(user, "job_description");
+
   }, [router]);
 
   useEffect(() => {
