@@ -532,64 +532,45 @@ export function ManageGroupsTab() {
 
     fetchAvailableGroups();
   }, [selectedClass]);
-
-  // Fetch accepted offers for the selected class
+    
   useEffect(() => {
-    const fetchAcceptedOffers = async () => {
-      if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
+      const fetchAcceptedOffers = async () => {
+        if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
 
-      try {
-        const offerPromises = availableGroups.map(async (groupId) => {
-          const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${selectedClass}`, {
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            const offers = await response.json();
-            return offers.filter((offer: any) => offer.status === 'accepted');
-          }
-          return [];
-        });
-
-        const allOffers = await Promise.all(offerPromises);
-        const flattenedOffers = allOffers.flat();
-        
-        // Fetch candidate details for each offer
-        const formattedOffersPromises = flattenedOffers.map(async (offer: any) => {
-          try {
-            const candidateResponse = await fetch(`${API_BASE_URL}/candidates/${offer.candidate_id}`, {
+        try {
+          const offerPromises = availableGroups.map(async (groupId) => {
+            const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${selectedClass}`, {
               credentials: 'include'
             });
             
-            if (candidateResponse.ok) {
-              const candidateData = await candidateResponse.json();
-              return {
-                groupId: offer.group_id,
-                candidateName: `${candidateData.f_name} ${candidateData.l_name}`
-              };
+            if (response.ok) {
+              const offers = await response.json();
+              return offers.filter((offer: any) => offer.status === 'accepted');
             }
-          } catch (error) {
-            console.error(`Error fetching candidate ${offer.candidate_id}:`, error);
-          }
+            return [];
+          });
+
+          const allOffers = await Promise.all(offerPromises);
+          const flattenedOffers = allOffers.flat();
           
-          // Fallback to candidate from state
-          const candidate = candidates.find(c => c.id === offer.candidate_id);
-          return {
-            groupId: offer.group_id,
-            candidateName: candidate ? candidate.name : `Candidate ${offer.candidate_id}`
-          };
-        });
+          // Format offers with candidate names from the candidates state
+          const formattedOffers = flattenedOffers.map((offer: any) => {
+            const candidate = candidates.find(c => c.id === offer.candidate_id);
+            return {
+              groupId: offer.group_id,
+              candidateName: candidate ? candidate.name : `Candidate ${offer.candidate_id}`
+            };
+          });
 
-        const formattedOffers = await Promise.all(formattedOffersPromises);
-        setAcceptedOffers(formattedOffers);
-      } catch (error) {
-        console.error('Error fetching accepted offers:', error);
-      }
-    };
+          setAcceptedOffers(formattedOffers);
+        } catch (error) {
+          console.error('Error fetching accepted offers:', error);
+        }
+      };
 
-    fetchAcceptedOffers();
-  }, [selectedClass, availableGroups, candidates]);
-
+      fetchAcceptedOffers();
+    }, [selectedClass, availableGroups, candidates]);
+    
   useEffect(() => {
     const fetchStudentsAndOrganize = async () => {
       if (!selectedClass) {
