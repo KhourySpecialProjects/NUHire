@@ -148,6 +148,10 @@ export function ManageGroupsTab() {
     fetchUser();
   }, [router]);
 
+  useEffect(() => {
+    console.log("acceptedoffers updated", acceptedOffers);
+  }, [acceptedOffers]);
+
   const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
     try {
       const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${groupId}/${classId}`, {
