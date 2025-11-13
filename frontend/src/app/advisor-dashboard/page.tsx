@@ -104,7 +104,7 @@ const Dashboard = () => {
               className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-72 h-72"
             >
               <span className="text-4xl mb-2">👥</span>
-              <span>Manage Groups and Jobs</span>
+              <span>Manage Groups</span>
             </Link>
             <Link 
               href="/new-pdf" 
