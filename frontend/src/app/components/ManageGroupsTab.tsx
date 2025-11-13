@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -532,45 +533,87 @@ export function ManageGroupsTab() {
 
     fetchAvailableGroups();
   }, [selectedClass]);
-    
+
+  // Fetch accepted offers for the selected class
   useEffect(() => {
-      const fetchAcceptedOffers = async () => {
-        if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
+    const fetchAcceptedOffers = async () => {
+      if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
 
-        try {
-          const offerPromises = availableGroups.map(async (groupId) => {
-            const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${selectedClass}`, {
-              credentials: 'include'
-            });
-            
-            if (response.ok) {
-              const offers = await response.json();
-              return offers.filter((offer: any) => offer.status === 'accepted');
-            }
-            return [];
+      try {
+        const offerPromises = availableGroups.map(async (groupId) => {
+          const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${selectedClass}`, {
+            credentials: 'include'
           });
-
-          const allOffers = await Promise.all(offerPromises);
-          const flattenedOffers = allOffers.flat();
           
-          // Format offers with candidate names from the candidates state
-          const formattedOffers = flattenedOffers.map((offer: any) => {
-            const candidate = candidates.find(c => c.id === offer.candidate_id);
-            return {
-              groupId: offer.group_id,
-              candidateName: candidate ? candidate.name : `Candidate ${offer.candidate_id}`
-            };
+          if (response.ok) {
+            const offers = await response.json();
+            return offers.filter((offer: any) => offer.status === 'accepted');
+          }
+          return [];
+        });
+
+        const allOffers = await Promise.all(offerPromises);
+        const flattenedOffers = allOffers.flat();
+        
+        // Format offers with candidate names from the candidates state
+        const formattedOffers = flattenedOffers.map((offer: any) => {
+          const candidate = candidates.find(c => c.id === offer.candidate_id);
+          return {
+            groupId: offer.group_id,
+            candidateName: candidate ? candidate.name : `Candidate ${offer.candidate_id}`
+          };
+        });
+
+        setAcceptedOffers(formattedOffers);
+      } catch (error) {
+        console.error('Error fetching accepted offers:', error);
+      }
+    };
+
+    fetchAcceptedOffers();
+  }, [selectedClass, availableGroups, candidates]);
+
+  // Fetch pending offers for the selected class
+  useEffect(() => {
+    const fetchPendingOffers = async () => {
+      if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
+
+      try {
+        const offerPromises = availableGroups.map(async (groupId) => {
+          const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${selectedClass}`, {
+            credentials: 'include'
           });
+          
+          if (response.ok) {
+            const offers = await response.json();
+            return offers.filter((offer: any) => offer.status === 'pending');
+          }
+          return [];
+        });
 
-          setAcceptedOffers(formattedOffers);
-        } catch (error) {
-          console.error('Error fetching accepted offers:', error);
-        }
-      };
+        const allOffers = await Promise.all(offerPromises);
+        const flattenedOffers = allOffers.flat();
+        
+        // Format offers with candidate names from the candidates state
+        const formattedOffers = flattenedOffers.map((offer: any) => {
+          const candidate = candidates.find(c => c.id === offer.candidate_id);
+          return {
+            classId: Number(selectedClass),
+            groupId: offer.group_id,
+            candidateId: offer.candidate_id,
+            candidateName: candidate ? candidate.name : `Candidate ${offer.candidate_id}`
+          };
+        });
 
-      fetchAcceptedOffers();
-    }, [selectedClass, availableGroups, candidates]);
-    
+        setPendingOffers(formattedOffers);
+      } catch (error) {
+        console.error('Error fetching pending offers:', error);
+      }
+    };
+
+    fetchPendingOffers();
+  }, [selectedClass, availableGroups, candidates]);
+
   useEffect(() => {
     const fetchStudentsAndOrganize = async () => {
       if (!selectedClass) {
