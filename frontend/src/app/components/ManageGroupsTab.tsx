@@ -368,7 +368,7 @@ export function ManageGroupsTab() {
       console.log('Progress updated event received:', data);
       console.log('Currently selected class:', selectedClass);
       
-      if (data.crn === selectedClass) {
+      if (data.crn.toString() === selectedClass) {
         try {
           // Use the step from the socket event directly
           const progress = data.step;
@@ -1105,8 +1105,8 @@ export function ManageGroupsTab() {
                       disabled={!selectedClass}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                         selectedClass
-                          ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
                       }`}
                     >
                       📥 Download CSV
@@ -1508,11 +1508,9 @@ export function ManageGroupsTab() {
               <button
                 onClick={sendPopupToGroup}
                 disabled={isSendingPopup || !popupHeadline || !popupMessage}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                className={`flex-1 bg-northeasternRed text-white py-2 px-4 rounded-lg hover:bg-red-700 ${
                   isSendingPopup || !popupHeadline || !popupMessage
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-purple-600 text-white hover:bg-purple-700'
-                }`}
+                  ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isSendingPopup ? 'Sending...' : 'Send Popup'}
               </button>
