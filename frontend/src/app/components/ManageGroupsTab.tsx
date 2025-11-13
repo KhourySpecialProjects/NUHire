@@ -79,6 +79,7 @@ export function ManageGroupsTab() {
   const [isSendingPopup, setIsSendingPopup] = useState(false);
   const [pendingOffers, setPendingOffers] = useState<{classId: number, groupId: number, candidateId: number, candidateName?: string}[]>([]);
   const [candidates, setCandidates] = useState<{id: number, name: string}[]>([]);
+  const [acceptedOffers, setAcceptedOffers] = useState<{groupId: number, candidateName: string}[]>([]);
 
   const presetPopups = [
     {
@@ -368,7 +369,7 @@ export function ManageGroupsTab() {
       console.log('Progress updated event received:', data);
       console.log('Currently selected class:', selectedClass);
       
-      if (data.crn.toString() === selectedClass) {
+      if (data.crn === selectedClass) {
         try {
           // Use the step from the socket event directly
           const progress = data.step;
@@ -1011,6 +1012,14 @@ export function ManageGroupsTab() {
         prev.filter(o => !(o.classId === classId && o.groupId === groupId && o.candidateId === candidateId))
       );
 
+      // If accepted, add to accepted offers and remove after 5 seconds
+      if (accepted && candidateName) {
+        setAcceptedOffers(prev => [...prev, { groupId, candidateName }]);
+        setTimeout(() => {
+          setAcceptedOffers(prev => prev.filter(o => o.groupId !== groupId));
+        }, 5000);
+      }
+
       const candidateDisplayName = candidateName || `Candidate ${candidateId}`;
       setPopup({
         headline: "Success",
@@ -1105,8 +1114,8 @@ export function ManageGroupsTab() {
                       disabled={!selectedClass}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                         selectedClass
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                     >
                       📥 Download CSV
@@ -1510,7 +1519,8 @@ export function ManageGroupsTab() {
                 disabled={isSendingPopup || !popupHeadline || !popupMessage}
                 className={`flex-1 bg-northeasternRed text-white py-2 px-4 rounded-lg hover:bg-red-700 ${
                   isSendingPopup || !popupHeadline || !popupMessage
-                  ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    ? 'opacity-50 cursor-not-allowed' : ''}
+                }`}
               >
                 {isSendingPopup ? 'Sending...' : 'Send Popup'}
               </button>
