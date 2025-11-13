@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -375,10 +376,8 @@ export function ManageGroupsTab() {
       
       if (data.crn.toString() === selectedClass) {
         try {
-          // Use the step from the socket event directly
           const progress = data.step;
           
-          // Optionally fetch the job assignment if needed
           const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${data.group_id}/${selectedClass}`, {
             credentials: 'include'
           });
@@ -423,14 +422,11 @@ export function ManageGroupsTab() {
     const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
       console.log("Received offer request:", data);
       
-      // Only add offer if it's for the currently selected class
       if (selectedClass && Number(selectedClass) === data.classId) {
-        // Fetch candidate name
         const candidate = candidates.find(c => c.id === data.candidateId);
         const candidateName = candidate ? candidate.name : `Candidate ${data.candidateId}`;
         
         setPendingOffers(prev => {
-          // Check if offer already exists
           const exists = prev.some(
             o => o.classId === data.classId && o.groupId === data.groupId && o.candidateId === data.candidateId
           );
@@ -443,7 +439,6 @@ export function ManageGroupsTab() {
     const onResponse = (data: { classId: number; groupId: number; candidateId: number; accepted: boolean }) => {
       console.log("Received offer response:", data);
       
-      // Remove the offer from pending offers
       setPendingOffers(prev => 
         prev.filter(o => !(o.classId === data.classId && o.groupId === data.groupId && o.candidateId === data.candidateId))
       );
@@ -537,6 +532,44 @@ export function ManageGroupsTab() {
 
     fetchAvailableGroups();
   }, [selectedClass]);
+
+  // Fetch accepted offers for the selected class
+  useEffect(() => {
+    const fetchAcceptedOffers = async () => {
+      if (!selectedClass || availableGroups.length === 0) return;
+
+      try {
+        const offerPromises = availableGroups.map(async (groupId) => {
+          const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${selectedClass}`, {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const offers = await response.json();
+            return offers.filter((offer: any) => offer.status === 'accepted');
+          }
+          return [];
+        });
+
+        const allOffers = await Promise.all(offerPromises);
+        const flattenedOffers = allOffers.flat();
+        
+        const formattedOffers = flattenedOffers.map((offer: any) => {
+          const candidate = candidates.find(c => c.id === offer.candidate_id);
+          return {
+            groupId: offer.group_id,
+            candidateName: candidate ? candidate.name : `Candidate ${offer.candidate_id}`
+          };
+        });
+
+        setAcceptedOffers(formattedOffers);
+      } catch (error) {
+        console.error('Error fetching accepted offers:', error);
+      }
+    };
+
+    fetchAcceptedOffers();
+  }, [selectedClass, availableGroups, candidates]);
 
   useEffect(() => {
     const fetchStudentsAndOrganize = async () => {
@@ -888,7 +921,6 @@ export function ManageGroupsTab() {
     setSelectedGroupForPopup(groupId);
     setSendPopupModalOpen(true);
     
-    // Fetch candidates for this group
     try {
       const response = await fetch(`${API_BASE_URL}/candidates/by-groups/${selectedClass}/${groupId}`, {
         credentials: 'include'
@@ -1017,9 +1049,6 @@ export function ManageGroupsTab() {
 
       if (accepted && candidateName) {
         setAcceptedOffers(prev => [...prev, { groupId, candidateName }]);
-        setTimeout(() => {
-          setAcceptedOffers(prev => prev.filter(o => o.groupId !== groupId));
-        }, 5000);
       }
 
       const candidateDisplayName = candidateName || `Candidate ${candidateId}`;
@@ -1039,7 +1068,7 @@ export function ManageGroupsTab() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
+      <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
         <div className="max-w-7xl mx-auto p-4">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-center h-40">
@@ -1054,7 +1083,7 @@ export function ManageGroupsTab() {
 
   if (!user) {
     return (
-      <div className="flex flex-col h-full overflow-auto bg-northeasternWhite font-rubik">
+      <div className="flex flex-col h-full overflow-auto bg-gray-50 font-sans">
         <div className="w-full p-4">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full">
             <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
@@ -1066,7 +1095,7 @@ export function ManageGroupsTab() {
   }
 
   return (
-    <div className="bg-northeasternWhite font-rubik">
+    <div className="bg-gray-50 font-sans">
       <div className="w-full p-4">
         <div className="bg-white rounded-lg shadow-lg p-6 w-full">
           <div className="flex justify-between items-center mb-6">
@@ -1079,7 +1108,7 @@ export function ManageGroupsTab() {
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     isCreatingGroup
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
+                      : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'
                   }`}
                 >
                   {isCreatingGroup ? (
@@ -1099,7 +1128,7 @@ export function ManageGroupsTab() {
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                         isStartingAll || groups.every(g => g.isStarted)
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed'
+                          : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'
                       }`}
                     >
                       {isStartingAll ? (
@@ -1114,7 +1143,7 @@ export function ManageGroupsTab() {
                     <button
                       onClick={downloadCSV}
                       disabled={!selectedClass}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors bg-northeasternRed text-northeasternWhite hover:bg-northeasternWhite hover:text-northeasternRed}`}
+                      className="px-4 py-2 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600"
                     >
                       📥 Download CSV
                     </button>
@@ -1161,7 +1190,7 @@ export function ManageGroupsTab() {
                       
                       return (
                         <div key={group.group_id} className={`bg-white rounded-lg shadow-sm p-6 flex flex-col h-full min-w-[400px] relative ${
-                          groupOffer ? 'border-4 border-green-500' : 'border border-gray-200'
+                          acceptedOffer ? 'border-4 border-green-500' : groupOffer ? 'border-4 border-yellow-500' : 'border border-gray-200'
                         }`}>
                           {acceptedOffer && (
                             <div className="absolute inset-0 bg-green-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-green-400">
@@ -1191,7 +1220,7 @@ export function ManageGroupsTab() {
                                 <p className="text-lg font-semibold text-gray-800 mb-2">
                                   Group {group.group_id} wants to offer:
                                 </p>
-                                <p className="text-xl font-bold text-northeasternRed mb-4">
+                                <p className="text-xl font-bold text-red-600 mb-4">
                                   {groupOffer.candidateName}
                                 </p>
                                 <p className="text-sm text-gray-600 mb-6">
@@ -1344,7 +1373,7 @@ export function ManageGroupsTab() {
                                     setSelectedGroupForJob(group.group_id);
                                     setAssignJobModalOpen(true);
                                   }}
-                                  className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700"
+                                  className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-red-600 text-white hover:bg-red-700"
                                 >
                                   💼 Assign Job
                                 </button>
@@ -1353,7 +1382,7 @@ export function ManageGroupsTab() {
                                   disabled={group.progress !== 'interview'}
                                   className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                                     group.progress === 'interview'
-                                      ? 'w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700'
+                                      ? 'bg-red-600 text-white hover:bg-red-700'
                                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                   }`}
                                   title={group.progress !== 'interview' ? 'Only available during interview stage' : 'Send popup to this group'}
@@ -1394,7 +1423,7 @@ export function ManageGroupsTab() {
           {selectedClass && isLoadingGroups && (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-northeasternRed mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-red-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading group information...</p>
               </div>
             </div>
@@ -1417,7 +1446,6 @@ export function ManageGroupsTab() {
         </div>
       </div>
 
-      {/* Assign Job Modal */}
       {assignJobModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -1440,7 +1468,7 @@ export function ManageGroupsTab() {
               <button
                 onClick={assignJobToGroup}
                 disabled={isAssigningJob || !selectedJobId}
-                className={`flex-1 bg-northeasternRed text-white py-2 px-4 rounded-lg hover:bg-red-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isAssigningJob ? 'Assigning...' : 'Assign Job'}
               </button>
@@ -1459,7 +1487,6 @@ export function ManageGroupsTab() {
         </div>
       )}
 
-      {/* Send Popup Modal */}
       {sendPopupModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-[500px] max-h-[90vh] overflow-y-auto">
