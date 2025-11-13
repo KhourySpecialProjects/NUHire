@@ -1026,16 +1026,56 @@ export function ManageGroupsTab() {
     }
   };
 
-  const respondToOffer = async (
+const respondToOffer = async (
     classId: number, 
     groupId: number, 
     candidateId: number, 
     accepted: boolean, 
-    candidateName?: string
+    candidateName?: string,
+    offerId?: number
   ) => {
     try {
       console.log(`Responding to offer: ${accepted ? 'ACCEPT' : 'REJECT'}`);
       
+      // First, fetch the offer ID if not provided
+      let actualOfferId = offerId;
+      if (!actualOfferId) {
+        const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${classId}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const offers = await response.json();
+          const pendingOffer = offers.find((offer: any) => 
+            offer.candidate_id === candidateId && offer.status === 'pending'
+          );
+          if (pendingOffer) {
+            actualOfferId = pendingOffer.id;
+          }
+        }
+      }
+
+      if (!actualOfferId) {
+        throw new Error('Offer ID not found');
+      }
+
+      // Update offer status via API
+      const updateResponse = await fetch(`${API_BASE_URL}/offers/${actualOfferId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: accepted ? 'accepted' : 'rejected'
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update offer status');
+      }
+
+      // Emit socket event
       if (!socket) {
         throw new Error('Socket not connected');
       }
@@ -1044,6 +1084,7 @@ export function ManageGroupsTab() {
       
       console.log("Socket response emitted");
 
+      // Update local state
       setPendingOffers(prev => 
         prev.filter(o => !(o.classId === classId && o.groupId === groupId && o.candidateId === candidateId))
       );
