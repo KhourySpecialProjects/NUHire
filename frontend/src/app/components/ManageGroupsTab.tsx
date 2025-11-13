@@ -546,6 +546,7 @@ export function ManageGroupsTab() {
           
           if (response.ok) {
             const offers = await response.json();
+            console.log(`Offers for group ${groupId}:`, offers);
             return offers.filter((offer: any) => offer.status === 'accepted');
           }
           return [];
