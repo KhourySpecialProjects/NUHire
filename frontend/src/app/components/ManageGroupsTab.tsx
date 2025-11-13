@@ -369,7 +369,7 @@ export function ManageGroupsTab() {
       console.log('Progress updated event received:', data);
       console.log('Currently selected class:', selectedClass);
       
-      if (data.crn === selectedClass) {
+      if (data.crn.toString() === selectedClass) {
         try {
           // Use the step from the socket event directly
           const progress = data.step;
@@ -1162,7 +1162,10 @@ export function ManageGroupsTab() {
                       );
                       
                       return (
-                        <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px] relative">
+                        <div 
+                          key={group.group_id} 
+                          className={`${acceptedOffer ? 'bg-green-50' : 'bg-white'} rounded-lg border ${acceptedOffer ? 'border-green-400 border-2' : 'border-gray-200'} shadow-sm p-6 flex flex-col h-full min-w-[400px] relative`}
+                        >
                           {acceptedOffer && (
                             <div className="absolute inset-0 bg-green-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-green-400">
                               <div className="text-center w-full">
