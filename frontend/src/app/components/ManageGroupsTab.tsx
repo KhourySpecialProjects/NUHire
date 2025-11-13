@@ -1156,7 +1156,9 @@ export function ManageGroupsTab() {
                       );
                       
                       return (
-                        <div key={group.group_id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col h-full min-w-[400px] relative">
+                        <div key={group.group_id} className={`bg-white rounded-lg shadow-sm p-6 flex flex-col h-full min-w-[400px] relative ${
+                          groupOffer ? 'border-4 border-green-500' : 'border border-gray-200'
+                        }`}>
                           {acceptedOffer && (
                             <div className="absolute inset-0 bg-green-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-green-400">
                               <div className="text-center w-full">
