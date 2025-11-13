@@ -18,7 +18,7 @@ export default function SignupPage() {
         </button>
       </div>
 
-      <p>Already have an account? <Link href="/login"> Click here!</Link></p>
+      <p>Already have an account? <Link href="/"> Click here!</Link></p>
     </div>
   );
 }

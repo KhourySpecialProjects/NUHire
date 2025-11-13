@@ -241,9 +241,9 @@ const checkExistingOffer = async () => {
           setUser(userData);
           updateProgress(userData, "offer");
         }
-        else router.push("/login");
+        else router.push("/");
       } catch (err) {
-        router.push("/login");
+        router.push("/");
       } finally {
         setLoading(false);
       }

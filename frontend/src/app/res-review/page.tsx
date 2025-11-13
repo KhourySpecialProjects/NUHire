@@ -126,11 +126,11 @@ export default function ResumesPage() {
           updateProgress(userData, "res_1");
         } else {
           setUser(null);
-          router.push("/login");
+          router.push("/");
         }
       } catch (error) {
         console.error("Error fetching user:", error);
-        router.push("/login");
+        router.push("/");
       } finally {
         setLoading(false);
       }

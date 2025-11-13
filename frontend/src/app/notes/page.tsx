@@ -36,9 +36,9 @@ const NotesPage: React.FC = () => {
         });
         const userData = await response.json();
         if (response.ok) setUser(userData);
-        else router.push("/login");
+        else router.push("/");
       } catch (err) {
-        router.push("/login");
+        router.push("/");
       } finally {
         setLoading(false);
       }

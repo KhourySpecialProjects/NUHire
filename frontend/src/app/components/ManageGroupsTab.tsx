@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -81,6 +80,7 @@ export function ManageGroupsTab() {
   const [pendingOffers, setPendingOffers] = useState<{classId: number, groupId: number, candidateId: number, candidateName?: string}[]>([]);
   const [candidates, setCandidates] = useState<{id: number, name: string}[]>([]);
   const [acceptedOffers, setAcceptedOffers] = useState<{groupId: number, candidateName: string}[]>([]);
+  const [dismissedOffers, setDismissedOffers] = useState<Set<number>>(new Set());
 
   const presetPopups = [
     {
@@ -536,7 +536,7 @@ export function ManageGroupsTab() {
   // Fetch accepted offers for the selected class
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
-      if (!selectedClass || availableGroups.length === 0) return;
+      if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
 
       try {
         const offerPromises = availableGroups.map(async (groupId) => {
@@ -546,7 +546,6 @@ export function ManageGroupsTab() {
           
           if (response.ok) {
             const offers = await response.json();
-            console.log(`Offers for group ${groupId}:`, offers);
             return offers.filter((offer: any) => offer.status === 'accepted');
           }
           return [];
@@ -555,7 +554,25 @@ export function ManageGroupsTab() {
         const allOffers = await Promise.all(offerPromises);
         const flattenedOffers = allOffers.flat();
         
-        const formattedOffers = flattenedOffers.map((offer: any) => {
+        // Fetch candidate details for each offer
+        const formattedOffersPromises = flattenedOffers.map(async (offer: any) => {
+          try {
+            const candidateResponse = await fetch(`${API_BASE_URL}/candidates/${offer.candidate_id}`, {
+              credentials: 'include'
+            });
+            
+            if (candidateResponse.ok) {
+              const candidateData = await candidateResponse.json();
+              return {
+                groupId: offer.group_id,
+                candidateName: `${candidateData.f_name} ${candidateData.l_name}`
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching candidate ${offer.candidate_id}:`, error);
+          }
+          
+          // Fallback to candidate from state
           const candidate = candidates.find(c => c.id === offer.candidate_id);
           return {
             groupId: offer.group_id,
@@ -563,6 +580,7 @@ export function ManageGroupsTab() {
           };
         });
 
+        const formattedOffers = await Promise.all(formattedOffersPromises);
         setAcceptedOffers(formattedOffers);
       } catch (error) {
         console.error('Error fetching accepted offers:', error);
@@ -1026,7 +1044,7 @@ export function ManageGroupsTab() {
     }
   };
 
-const respondToOffer = async (
+  const respondToOffer = async (
     classId: number, 
     groupId: number, 
     candidateId: number, 
@@ -1230,12 +1248,21 @@ const respondToOffer = async (
                         o => o.groupId === group.group_id
                       );
                       
+                      const showAcceptedOverlay = acceptedOffer && !dismissedOffers.has(group.group_id);
+                      
                       return (
                         <div key={group.group_id} className={`bg-white rounded-lg shadow-sm p-6 flex flex-col h-full min-w-[400px] relative ${
                           acceptedOffer ? 'border-4 border-green-500' : groupOffer ? 'border-4 border-yellow-500' : 'border border-gray-200'
                         }`}>
-                          {acceptedOffer && (
+                          {showAcceptedOverlay && (
                             <div className="absolute inset-0 bg-green-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-green-400">
+                              <button
+                                onClick={() => setDismissedOffers(prev => new Set(prev).add(group.group_id))}
+                                className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-2xl font-bold"
+                                title="Dismiss"
+                              >
+                                ×
+                              </button>
                               <div className="text-center w-full">
                                 <h4 className="text-2xl font-bold text-green-800 mb-3">
                                   ✓ Offer Accepted!
@@ -1432,6 +1459,22 @@ const respondToOffer = async (
                                   📢 Send Popup
                                 </button>
                               </>
+                            )}
+                            {acceptedOffer && (
+                              <button
+                                onClick={() => setDismissedOffers(prev => {
+                                  const newSet = new Set(prev);
+                                  if (newSet.has(group.group_id)) {
+                                    newSet.delete(group.group_id);
+                                  } else {
+                                    newSet.add(group.group_id);
+                                  }
+                                  return newSet;
+                                })}
+                                className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                              >
+                                {dismissedOffers.has(group.group_id) ? '👁️ Show Hired Info' : '🎉 View Hired Candidate'}
+                              </button>
                             )}
                             <button
                               onClick={() => startGroup(group.group_id)}

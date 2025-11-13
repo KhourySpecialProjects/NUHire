@@ -102,11 +102,11 @@ export default function ResReviewGroup() {
           updateProgress(userData, "res_2");
         } else {
           setUser(null);
-          router.push("/login"); // Redirect to login if unauthorized
+          router.push("/"); // Redirect to login if unauthorized
         }
       } catch (error) {
         console.error("Error fetching user:", error);
-        router.push("/login"); // Redirect on error
+        router.push("/"); // Redirect on error
       } finally {
         setLoading(false);
       }
