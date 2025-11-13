@@ -1347,7 +1347,7 @@ export function ManageGroupsTab() {
                                   disabled={group.progress !== 'interview'}
                                   className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                                     group.progress === 'interview'
-                                      ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                      ? 'w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-northeasternRed text-white hover:bg-red-700'
                                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                   }`}
                                   title={group.progress !== 'interview' ? 'Only available during interview stage' : 'Send popup to this group'}
