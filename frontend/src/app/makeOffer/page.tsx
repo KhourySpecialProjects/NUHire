@@ -101,7 +101,7 @@ export default function MakeOffer() {
       setAllRejected(true);
       setPopup({
         headline: "All Candidates Rejected",
-        message: "Unfortunately, all four candidates have been rejected by the advisor. You will need to restart the hiring process from the beginning."
+        message: "Unfortunately, all four candidates have been rejected by the advisor. In the real world you would have to restart the hiring process from the beginning."
       });
     }
   }, [sentIn, interviewsWithVideos, allRejected]);
@@ -757,20 +757,6 @@ export default function MakeOffer() {
   };
 
   const completeMakeOffer = () => {
-    if (allRejected) {
-      // Clear localStorage and restart from job description
-      localStorage.removeItem('makeOffer_existingOffer');
-      localStorage.removeItem('makeOffer_acceptedOffer');
-      localStorage.removeItem('makeOffer_sentIn');
-      localStorage.removeItem('makeOffer_offerPending');
-      localStorage.removeItem('makeOffer_checkedState');
-      localStorage.removeItem('makeOffer_offerConfirmations');
-      
-      updateProgress(user!, "job_description");
-      localStorage.setItem("progress", "job_description");
-      window.location.href = "/jobdes";
-      return;
-    }
 
     const hasAcceptedOffer = Object.values(sentIn).some(status => status === true);
     
@@ -956,12 +942,12 @@ export default function MakeOffer() {
                     </p>
                   </div>
 
-                  
+                  <a
                     href={`${API_BASE_URL}/${interview.resume_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`text-navy hover:underline ${isRejected ? "pointer-events-none opacity-50" : ""}`}
-                  <a>
+                  >
                     View / Download Resume
                   </a>
 
@@ -1071,7 +1057,7 @@ export default function MakeOffer() {
             }`}
             disabled={!acceptedOffer && !allRejected}
           >
-            {allRejected ? "Restart Process: Job Description →" : "Next: Employer Panel →"}
+            {allRejected ? "Next: Employer Panel →" : "Next: Employer Panel →"}
           </button>
         </footer>
       </div>
