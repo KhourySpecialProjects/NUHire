@@ -262,8 +262,8 @@ CREATE TABLE `Progress` (
   `crn` int NOT NULL,
   `group_id` int NOT NULL,
   `step` enum('none','job_description','res_1','res_2','interview','offer','employer') DEFAULT NULL,
-  `email` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`crn`,`group_id`),
+  `email` varchar(45) NOT NULL,
+  PRIMARY KEY (`email`),
   UNIQUE KEY `email_UNIQUE` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -412,4 +412,4 @@ CREATE TABLE `WaitingFacts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-10  9:08:26
+-- Dump completed on 2025-11-17 16:15:33
