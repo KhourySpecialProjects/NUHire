@@ -419,8 +419,7 @@ export function ManageGroupsTab() {
     if (!socket || !user || user.affiliation !== 'admin') return;
 
     socket.emit("adminOnline", { adminEmail: user.email });
-
-    const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
+    const onRequest = (data: { classId: number; groupId: number; candidateId: number, firstName: string, lastName: string }) => {
       console.log("Received offer request:", data);
       
       if (selectedClass && Number(selectedClass) === data.classId) {

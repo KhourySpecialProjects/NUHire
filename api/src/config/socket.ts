@@ -123,24 +123,54 @@ export function initializeSocketHandlers(io: SocketIOServer, db: Connection): Re
     socket.on('makeOfferRequest', ({ classId, groupId, candidateId }: SocketEvents['makeOfferRequest']) => {
       console.log(`Student in class ${classId}, group ${groupId} wants to offer candidate ${candidateId}`);
 
-      db.query('SELECT admin_email FROM Moderator WHERE crn = ?', [classId], (err, moderators: any[]) => {
-        console.log('Moderator query result:', moderators);
-        if (!err && moderators.length > 0) {
-          moderators.forEach(({ admin_email }) => {
-            io.to(admin_email).emit('makeOfferRequest', {
-              classId,
-              groupId,
-              candidateId
-            });
-            console.log(`Notified ${admin_email} about offer request from group ${groupId}`);
-          });
-        } else {
-          console.log('No assigned admin found for class', classId, 'or database error:', err);
-        }
-      });
+      // First, fetch the candidate information using resume_id
+      db.query(
+        'SELECT f_name, l_name FROM Candidates WHERE resume_id = ?', 
+        [candidateId], 
+        (err, candidates: any[]) => {
+          if (err) {
+            console.error('Error fetching candidate info:', err);
+            return;
+          }
 
-      const roomId = `group_${groupId}_class_${classId}`;
-      io.to(roomId).emit('groupMemberOffer');
+          const candidateName = candidates.length > 0 
+            ? `${candidates[0].f_name} ${candidates[0].l_name}`
+            : `Candidate #${candidateId}`;
+          
+          const firstName = candidates.length > 0 ? candidates[0].f_name : '';
+          const lastName = candidates.length > 0 ? candidates[0].l_name : '';
+
+          console.log(`Candidate name: ${candidateName}`);
+
+          // Then fetch moderators and emit with candidate info
+          db.query('SELECT admin_email FROM Moderator WHERE crn = ?', [classId], (err, moderators: any[]) => {
+            console.log('Moderator query result:', moderators);
+            if (!err && moderators.length > 0) {
+              moderators.forEach(({ admin_email }) => {
+                io.to(admin_email).emit('makeOfferRequest', {
+                  classId,
+                  groupId,
+                  candidateId,
+                  candidateName,
+                  firstName,
+                  lastName
+                });
+                console.log(`Notified ${admin_email} about offer request for ${candidateName} from group ${groupId}`);
+              });
+            } else {
+              console.log('No assigned admin found for class', classId, 'or database error:', err);
+            }
+          });
+
+          const roomId = `group_${groupId}_class_${classId}`;
+          io.to(roomId).emit('groupMemberOffer', {
+            candidateId,
+            candidateName,
+            firstName,
+            lastName
+          });
+        }
+      );
     });
 
     socket.on('makeOfferResponse', ({ classId, groupId, candidateId, accepted }: SocketEvents['makeOfferResponse']) => {
