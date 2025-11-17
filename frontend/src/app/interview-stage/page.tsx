@@ -717,6 +717,7 @@ const completeInterview = () => {
           />
         )}
       <Navbar />
+      <div className="mt-6"/>
       <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
         Interview Page
       </div>

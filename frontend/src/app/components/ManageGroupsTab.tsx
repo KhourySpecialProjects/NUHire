@@ -494,6 +494,7 @@ export function ManageGroupsTab() {
             id: candidate.id || candidate.resume_id,
             name: `${candidate.f_name} ${candidate.l_name}`
           }));
+          console.log("the cnaddidate", formattedCandidates);
           setCandidates(formattedCandidates);
         }
       } catch (error) {
