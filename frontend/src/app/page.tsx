@@ -81,7 +81,7 @@ export default function Home() {
       <footer className="w-full flex justify-center p-2 bg-navy/90 backdrop-blur-sm shadow-md font-rubik text-2xl fixed bottom-0 z-20">
         <a
           className="flex items-center text-wood hover:text-blue-300 transition-colors duration-200"
-          href="https://discord.gg/XNjg2VMR"
+          href="https://discord.com/invite/jyvzqyJHy6"
           target="_blank"
           rel="noopener noreferrer"
         >

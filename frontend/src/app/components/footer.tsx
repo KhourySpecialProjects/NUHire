@@ -7,7 +7,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="text-center p-5 bg-northeasternBlack text-northeasternRed">
       <div className="flex items-center justify-center font-rubik font-extrabold">
-        <Link href="https://discord.gg/XNjg2VMR" className="flex items-center space-x-2 text-northeasternRed">
+        <Link href="https://discord.com/invite/jyvzqyJHy6" className="flex items-center space-x-2 text-northeasternRed">
           <FaDiscord size={24} />
           <span>Join our Discord</span>
         </Link>
