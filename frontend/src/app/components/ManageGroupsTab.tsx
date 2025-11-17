@@ -563,7 +563,7 @@ export function ManageGroupsTab() {
             candidateName: candidate ? candidate.name : `Candidate ${offer.candidate_id}`
           };
         });
-
+        console.log("offers changed",formattedOffers)
         setAcceptedOffers(formattedOffers);
       } catch (error) {
         console.error('Error fetching accepted offers:', error);
@@ -1133,6 +1133,7 @@ export function ManageGroupsTab() {
 
       if (accepted && candidateName) {
         setAcceptedOffers(prev => [...prev, { groupId, candidateName }]);
+        console.log("offer accepted for", candidateName)
       }
 
       const candidateDisplayName = candidateName || `Candidate ${candidateId}`;
