@@ -67,6 +67,7 @@ export default function MakeOffer() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [sentIn, setSentIn] = useState<(true | false | 'none')[]>(['none', 'none', 'none', 'none']);
   const [videosLoading, setVideosLoading] = useState(true);
+  const [allRejected, setAllRejected] = useState(false);
   
   const offerInstructions = [
     "Review everything about the candidates you know.",
@@ -87,6 +88,23 @@ export default function MakeOffer() {
   const [existingOffer, setExistingOffer] = useState<Offer | null>(null);
   const [ableToMakeOffer, setAbleToMakeOffer] = useState(true);
   const [checkedStateRestored, setCheckedStateRestored] = useState(false);
+
+  // Check if all candidates are rejected
+  useEffect(() => {
+    const totalCandidates = interviewsWithVideos.length;
+    if (totalCandidates === 0) return;
+
+    const rejectedCount = sentIn.filter(status => status === false).length;
+    const hasAllRejected = rejectedCount === totalCandidates && rejectedCount > 0;
+    
+    if (hasAllRejected && !allRejected) {
+      setAllRejected(true);
+      setPopup({
+        headline: "All Candidates Rejected",
+        message: "Unfortunately, all four candidates have been rejected by the advisor. You will need to restart the hiring process from the beginning."
+      });
+    }
+  }, [sentIn, interviewsWithVideos, allRejected]);
 
   const checkExistingOffer = async () => {
     if (!user?.group_id || !user?.class) return;
@@ -739,13 +757,27 @@ export default function MakeOffer() {
   };
 
   const completeMakeOffer = () => {
+    if (allRejected) {
+      // Clear localStorage and restart from job description
+      localStorage.removeItem('makeOffer_existingOffer');
+      localStorage.removeItem('makeOffer_acceptedOffer');
+      localStorage.removeItem('makeOffer_sentIn');
+      localStorage.removeItem('makeOffer_offerPending');
+      localStorage.removeItem('makeOffer_checkedState');
+      localStorage.removeItem('makeOffer_offerConfirmations');
+      
+      updateProgress(user!, "job_description");
+      localStorage.setItem("progress", "job_description");
+      window.location.href = "/jobdes";
+      return;
+    }
+
     const hasAcceptedOffer = Object.values(sentIn).some(status => status === true);
-    const allRejected = Object.values(sentIn).every(status => status === false);
     
     if (!hasAcceptedOffer && !allRejected) {
       setPopup({
         headline: "Action Required",
-        message: "You must have either an accepted offer or all offers rejected to proceed.",
+        message: "You must have an accepted offer to proceed.",
       });
       return;
     }
@@ -824,9 +856,21 @@ export default function MakeOffer() {
                 {existingOffer.status === 'rejected' && 'Offer Rejected'}
               </h3>
               <p>
-                {existingOffer.status === 'pending' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' is awaiting advisor approval.'}
-                {existingOffer.status === 'accepted' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' has been accepted! Congratulations!'}
-                {existingOffer.status === 'rejected' && 'Your offer for Candidate ' + existingOffer.candidate_id + ' was rejected. You may select a different candidate.'}
+                {existingOffer.status === 'pending' && `Your offer for Candidate ${existingOffer.candidate_id} is awaiting advisor approval.`}
+                {existingOffer.status === 'accepted' && `Your offer for Candidate ${existingOffer.candidate_id} has been accepted! Congratulations!`}
+                {existingOffer.status === 'rejected' && `Your offer for Candidate ${existingOffer.candidate_id} was rejected. You may select a different candidate.`}
+              </p>
+            </div>
+          )}
+
+          {allRejected && (
+            <div className="mb-6 p-4 rounded-lg text-center bg-red-100 border-2 border-red-500 text-red-900">
+              <h3 className="font-bold mb-2 text-xl">All Candidates Rejected</h3>
+              <p className="mb-2">
+                Unfortunately, all four candidates have been rejected by the advisor.
+              </p>
+              <p className="font-semibold">
+                You will need to restart the hiring process from the Job Description stage.
               </p>
             </div>
           )}
@@ -912,12 +956,12 @@ export default function MakeOffer() {
                     </p>
                   </div>
 
-                  <a
+                  
                     href={`${API_BASE_URL}/${interview.resume_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`text-navy hover:underline ${isRejected ? "pointer-events-none opacity-50" : ""}`}
-                  >
+                  <a>
                     View / Download Resume
                   </a>
 
@@ -1021,13 +1065,13 @@ export default function MakeOffer() {
           <button
             onClick={completeMakeOffer}
             className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md font-rubik transition duration-300 ${
-              !acceptedOffer
+              !acceptedOffer && !allRejected
                 ? "cursor-not-allowed opacity-50"
                 : "hover:bg-blue-400"
             }`}
-            disabled={!acceptedOffer}
+            disabled={!acceptedOffer && !allRejected}
           >
-            Next: Employer Panel →
+            {allRejected ? "Restart Process: Job Description →" : "Next: Employer Panel →"}
           </button>
         </footer>
       </div>
