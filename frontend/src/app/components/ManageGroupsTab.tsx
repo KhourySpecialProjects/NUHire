@@ -419,12 +419,13 @@ export function ManageGroupsTab() {
     if (!socket || !user || user.affiliation !== 'admin') return;
 
     socket.emit("adminOnline", { adminEmail: user.email });
+
     const onRequest = (data: { classId: number; groupId: number; candidateId: number, firstName: string, lastName: string }) => {
       console.log("Received offer request:", data);
       
       if (selectedClass && Number(selectedClass) === data.classId) {
         const candidate = candidates.find(c => c.id === data.candidateId);
-        const candidateName = candidate ? candidate.name : `Candidate ${data.candidateId}`;
+        const candidateName = data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : (candidate ? candidate.name : `Candidate ${data.candidateId}`);
         
         setPendingOffers(prev => {
           const exists = prev.some(
