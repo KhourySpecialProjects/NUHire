@@ -72,7 +72,7 @@ export default function MakeOffer() {
   const offerInstructions = [
     "Review everything about the candidates you know.",
     "Discuss as a team which person is getting the job offer.",
-    "Make the offer and wait for your advisor's decision."
+    "Make the offer and wait for the candidate's decision."
   ];  
   const [groupSize, setGroupSize] = useState(4);
   const selectedCandidateId = Object.entries(checkedState)

@@ -420,19 +420,23 @@ export function ManageGroupsTab() {
 
     socket.emit("adminOnline", { adminEmail: user.email });
 
-    const onRequest = (data: { classId: number; groupId: number; candidateId: number, firstName: string, lastName: string }) => {
-      console.log("Received offer request:", data);
+    const onRequest = ( {classId, groupId, candidateId, firstName, lastName }: {classId: number; groupId: number; candidateId: number; firstName: string; lastName: string;}) => {
       
-      if (selectedClass && Number(selectedClass) === data.classId) {
-        const candidate = candidates.find(c => c.id === data.candidateId);
-        const candidateName = data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : (candidate ? candidate.name : `Candidate ${data.candidateId}`);
+      if (selectedClass && Number(selectedClass) === classId) {
+        const candidate = candidates.find(c => c.id === candidateId);
+        const candidateName = firstName && lastName ? `${firstName} ${lastName}` : (candidate ? candidate.name : `Candidate ${candidateId}`);
         
         setPendingOffers(prev => {
           const exists = prev.some(
-            o => o.classId === data.classId && o.groupId === data.groupId && o.candidateId === data.candidateId
+            o => o.classId === classId && o.groupId === groupId && o.candidateId === candidateId
           );
           if (exists) return prev;
-          return [...prev, { ...data, candidateName }];
+        return [...prev, { 
+                  classId, 
+                  groupId, 
+                  candidateId, 
+                  candidateName 
+                }];        
         });
       }
     };
