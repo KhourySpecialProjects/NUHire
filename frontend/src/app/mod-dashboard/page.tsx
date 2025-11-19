@@ -7,11 +7,17 @@ import Footer from "../components/footer";
 import Slideshow from "../components/slideshow";
 import { io } from "socket.io-client";
 import Popup from "../components/popup";
+import { useRouter } from "next/navigation";
 
 interface ModeratorInfo {
   id: number;
   crn: number;
   admin_email: string;
+}
+
+interface User {
+  email: string;
+  affiliation: string;
 }
 
 const ModDashboard = () => {
@@ -23,14 +29,73 @@ const ModDashboard = () => {
   const [deletingCRN, setDeletingCRN] = useState<number | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [crnToDelete, setCrnToDelete] = useState<number | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
 
-  const socket = io(API_BASE_URL)
+  const socket = io(API_BASE_URL);
+
+  // Check authentication and admin status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/user`, { 
+          credentials: 'include' 
+        });
+        
+        if (!response.ok) {
+          setPopup({ 
+            headline: 'Unauthorized', 
+            message: 'Please log in to access this page.' 
+          });
+          setTimeout(() => router.push('/'), 2000);
+          return;
+        }
+
+        const userData = await response.json();
+        
+        if (userData.affiliation !== 'admin') {
+          setPopup({ 
+            headline: 'Access Denied', 
+            message: 'Only administrators can access this page.' 
+          });
+          setTimeout(() => router.push('/'), 2000);
+          return;
+        }
+
+        setUser(userData);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setPopup({ 
+          headline: 'Error', 
+          message: 'Failed to verify authentication.' 
+        });
+        setTimeout(() => router.push('/'), 2000);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   useEffect(() => {
+    // Only fetch CRNs if user is authenticated and is admin
+    if (!user || user.affiliation !== 'admin') {
+      setLoading(false);
+      return;
+    }
+
     const fetchCRNs = async () => {
       try {
         console.log("Fetching CRNs from API line 30");
-        const response = await fetch(`${API_BASE_URL}/moderator/crns`);
+        const response = await fetch(`${API_BASE_URL}/moderator/crns`, {
+          credentials: 'include'
+        });
+        
+        if (response.status === 401 || response.status === 403) {
+          setPopup({ headline: "Unauthorized", message: "You don't have permission to access this data." });
+          setTimeout(() => router.push('/'), 2000);
+          return;
+        }
+        
         if (response.ok) {
           const data = await response.json();
           setInfo(data);
@@ -43,8 +108,9 @@ const ModDashboard = () => {
         setLoading(false);
       }
     };
+    
     fetchCRNs();
-  }, [submitting, deletingCRN]);
+  }, [submitting, deletingCRN, user, router]);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -58,11 +124,18 @@ const ModDashboard = () => {
       const res = await fetch(`${API_BASE_URL}/moderator/crns`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           admin_email: form.admin_email,
           crn: Number(form.crn),
         }),
       });
+      
+      if (res.status === 401 || res.status === 403) {
+        setPopup({ headline: "Unauthorized", message: "You don't have permission to perform this action." });
+        return;
+      }
+      
       if (res.status === 409) {
         setPopup({ headline: "Duplicate", message: "This CRN already exists." });
       } else if (res.ok) {
@@ -98,6 +171,12 @@ const ModDashboard = () => {
         method: "DELETE",
         credentials: "include",
       });
+      
+      if (res.status === 401 || res.status === 403) {
+        setPopup({ headline: "Unauthorized", message: "You don't have permission to perform this action." });
+        return;
+      }
+      
       if (res.ok) {
         setPopup({ headline: "Success", message: "CRN deleted!" });
         socket.emit("moderatorClassDeleted", {
@@ -125,6 +204,10 @@ const ModDashboard = () => {
     );
   }  
   
+  // Don't render page content if not authenticated or not admin
+  if (!user || user.affiliation !== 'admin') {
+    return null; // Popup will show and redirect
+  }
 
   return (
     <div className="flex flex-col min-h-screen font-rubik relative overflow-hidden">
