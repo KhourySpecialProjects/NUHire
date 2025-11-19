@@ -160,7 +160,7 @@ export default function JobDescriptionPage() {
         console.log("Found job assignment:", jobTitle);
 
         // Then fetch the PDF file using the job title
-        const response = await fetch(`${API_BASE_URL}/jobs/title?title=${encodeURIComponent(jobTitle)}&class_id=${user.class}`, {
+      const response = await fetch(`${API_BASE_URL}/jobs/title?title=${encodeURIComponent(jobTitle)}&class_id=${user.class}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include"
