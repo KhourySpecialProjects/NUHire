@@ -202,23 +202,11 @@ const ModDashboard = () => {
       setDeletingCRN(null);
       setCrnToDelete(null);
     }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-sand">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
-          <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto"></div>
-        </div>
-      </div>
-    );
-  }  
+  }; 
   
-  // Don't render page content if not authenticated or not admin
-  if (!user || user.affiliation !== 'admin') {
-    return null; // Popup will show and redirect
-  }
+  // if (!user || user.affiliation !== 'admin') {
+  //   return null; 
+  // }
 
   return (
     <div className="flex flex-col min-h-screen font-rubik relative overflow-hidden">

@@ -142,6 +142,7 @@ export class ResumeController {
         r.id, 
         r.title, 
         r.file_path,
+        r.class_id,
         c.f_name as first_name,
         c.l_name as last_name,
         c.interview
