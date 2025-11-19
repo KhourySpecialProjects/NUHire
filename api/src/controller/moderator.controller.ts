@@ -34,7 +34,6 @@ export class ModeratorController {
         { title: 'Carbonite', file_path: 'uploads/jobdescription/carbonite-jobdes.pdf' },
         { title: 'Cygilant', file_path: 'uploads/jobdescription/Cygilant Security Research Job Description.pdf' },
         { title: 'Motionlogic', file_path: 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf' },
-        { title: 'Sample', file_path: 'uploads/jobdescription/sample-job-description.pdf' },
         { title: 'Source One', file_path: 'uploads/jobdescription/SourceOneJobDescription.pdf' },
         { title: 'Two Six Labs', file_path: 'uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf' }
       ];
