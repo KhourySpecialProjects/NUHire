@@ -280,7 +280,7 @@ export default function ResReviewGroup() {
 
   const fetchResumes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf`, {  credentials: "include"});
+      const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${user?.class}`, { credentials: "include" });
       const data: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await response.json();
 
       console.log("Raw resume data from API:", data);
@@ -312,7 +312,7 @@ export default function ResReviewGroup() {
 
   useEffect(() => {
     fetchResumes();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const fetchData = async () => {
