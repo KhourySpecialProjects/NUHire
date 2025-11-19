@@ -256,9 +256,9 @@ export default function ResumesPage() {
   }, [socket, totalDecisions, user]);
 
 
-  const fetchResumes = async () => {
+  const fetchResumes = async (userClass: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf`, {  credentials: "include"});
+      const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
       const data = await response.json();
       setResumesList(data);
     } catch (error) {
@@ -267,8 +267,10 @@ export default function ResumesPage() {
   };
 
   useEffect(() => {
-    fetchResumes();
-  }, []);
+    if (user?.class) {
+      fetchResumes(user.class);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!showInstructions) {
