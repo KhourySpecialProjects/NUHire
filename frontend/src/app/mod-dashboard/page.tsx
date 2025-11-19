@@ -37,7 +37,7 @@ const ModDashboard = () => {
   useEffect(() => {
     const checkModeratorAuth = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/moderator-verify`, { 
+        const response = await fetch(`${API_BASE_URL}/auth/verify-moderator`, { 
           credentials: 'include' 
         });
               
