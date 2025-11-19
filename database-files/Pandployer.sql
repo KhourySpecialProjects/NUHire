@@ -165,7 +165,6 @@ CREATE TABLE `job_descriptions` (
   `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `class_id` int NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `file_path_UNIQUE` (`file_path`),
   UNIQUE KEY `title_class_unique` (`title`,`class_id`),
   KEY `job_descriptions_class_fk_idx` (`class_id`),
   CONSTRAINT `job_descriptions_class_fk` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
@@ -328,7 +327,6 @@ CREATE TABLE `Resume_pdfs` (
   `id` int NOT NULL AUTO_INCREMENT,
   `class_id` int NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `file_path_UNIQUE` (`file_path`),
   UNIQUE KEY `title_class_unique` (`title`,`class_id`),
   KEY `resume_pdfs_class_fk_idx` (`class_id`),
   CONSTRAINT `resume_pdfs_class_fk` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
@@ -423,4 +421,4 @@ CREATE TABLE `WaitingFacts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-19 10:26:32
+-- Dump completed on 2025-11-19 11:04:43
