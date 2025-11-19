@@ -34,53 +34,50 @@ const ModDashboard = () => {
 
   const socket = io(API_BASE_URL);
 
-  // mod-dashboard/page.tsx
   useEffect(() => {
-      const checkModeratorAuth = async () => {
-          try {
-              const response = await fetch(`${API_BASE_URL}/auth/moderator-verify`, { 
-                  credentials: 'include' 
-              });
+    const checkModeratorAuth = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/moderator-verify`, { 
+          credentials: 'include' 
+        });
               
-              if (!response.ok) {
-                  setPopup({ 
-                      headline: 'Unauthorized', 
-                      message: 'Please log in to access this page.' 
-                  });
-                  setTimeout(() => router.push('/mod-signin'), 2000);
-                  return;
-              }
+        if (!response.ok) {
+          setPopup({ 
+            headline: 'Unauthorized', 
+            message: 'Please log in to access this page.' 
+          });
+          setTimeout(() => router.push('/mod-signin'), 2000);
+          return;
+        }
 
-              const data = await response.json();
+        const data = await response.json();
               
-              if (!data.authenticated) {
-                  setPopup({ 
-                      headline: 'Unauthorized', 
-                      message: 'Please log in to access this page.' 
-                  });
-                  setTimeout(() => router.push('/mod-signin'), 2000);
-                  return;
-              }
+        if (!data.authenticated) {
+          setPopup({ 
+            headline: 'Unauthorized', 
+            message: 'Please log in to access this page.' 
+          });
+          setTimeout(() => router.push('/mod-signin'), 2000);
+          return;
+        }
 
-              setUser(data); // Set moderator info
-              setLoading(false);
-          } catch (error) {
-              console.error('Error checking authentication:', error);
-              setPopup({ 
-                  headline: 'Error', 
-                  message: 'Failed to verify authentication.' 
-              });
-              setTimeout(() => router.push('/moderator-signin'), 2000);
-          }
-      };
+        setUser({ email: 'moderator', affiliation: 'admin' });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setPopup({ 
+          headline: 'Error', 
+          message: 'Failed to verify authentication.' 
+        });
+        setTimeout(() => router.push('/mod-signin'), 2000);
+      }
+    };
 
-      checkModeratorAuth();
+    checkModeratorAuth();
   }, [router]);
 
   useEffect(() => {
-    // Only fetch CRNs if user is authenticated and is admin
-    if (!user || user.affiliation !== 'admin') {
-      setLoading(false);
+    if (!user) {
       return;
     }
 
@@ -90,13 +87,13 @@ const ModDashboard = () => {
         const response = await fetch(`${API_BASE_URL}/moderator/crns`, {
           credentials: 'include'
         });
-        
+              
         if (response.status === 401 || response.status === 403) {
           setPopup({ headline: "Unauthorized", message: "You don't have permission to access this data." });
-          setTimeout(() => router.push('/'), 2000);
+          setTimeout(() => router.push('/mod-signin'), 2000);
           return;
         }
-        
+              
         if (response.ok) {
           const data = await response.json();
           setInfo(data);
@@ -105,13 +102,26 @@ const ModDashboard = () => {
         }
       } catch (error) {
         setPopup({ headline: "Error", message: "Failed to fetch CRNs." });
-      } finally {
-        setLoading(false);
-      }
+        }
     };
-    
+      
     fetchCRNs();
   }, [submitting, deletingCRN, user, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    );
+  }  
+
+  if (!user) {
+    return null; 
+  }
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
