@@ -19,7 +19,7 @@ export default function ModeratorSignIn() {
         body: JSON.stringify({ username, password }),
     });
     if (res.ok) {
-        router.push("/mod-dashboard"); 
+      window.location.href = `${API_BASE_URL}/auth/keycloak`;
     } else {
         setPopup({ headline: "Login Failed", message: "Invalid username or password." });
     }
