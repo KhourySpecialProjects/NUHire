@@ -133,7 +133,6 @@ export class AuthController {
       password === process.env.MODERATOR_PASSWORD) {
 
       req.session.isModerator = true;
-      req.session.moderatorEmail = username;
       console.log('req.session:', req.session);
 
       res.status(200).json({ success: true });
@@ -144,10 +143,8 @@ export class AuthController {
 
   verifyModerator = (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (req.session.isModerator) {
-      console.log('Moderator verified:', req.session.moderatorEmail);
       res.status(200).json({ 
         authenticated: true,
-        email: req.session.moderatorEmail 
       });
     } else {
       res.status(401).json({ authenticated: false });

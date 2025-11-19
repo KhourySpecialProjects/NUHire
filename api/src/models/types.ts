@@ -22,7 +22,6 @@ export interface AuthRequest extends Request {
   session: Session & { 
     passport?: { user?: number | string };
     isModerator?: boolean;
-    moderatorEmail?: string;
   };
 }
 // Resume Types
