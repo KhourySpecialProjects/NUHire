@@ -10,7 +10,7 @@ export default (db: Connection): Router => {
 
   router.get('/', requireAuth, resumeController.getAllResumePdfs);
   router.post('/', requireAuth, resumeController.createResumePdf);
-  router.delete('/:file_path', requireAuth, resumeController.deleteResumePdf);
+  router.delete('/:file_path', requireAuth, resumeController.deleteResumeFile);
   router.get('/resumes/:fileName',requireAuth, resumeController.getResumeFile);
   router.get('/id/:id', requireAuth, resumeController.getResumePdfById);
 
