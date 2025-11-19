@@ -11,15 +11,17 @@ export default function ModeratorSignIn() {
   const [password, setPassword] = useState("");
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const router = useRouter();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch(`${API_BASE_URL}/auth/moderator-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Add this to receive cookies
         body: JSON.stringify({ username, password }),
     });
     if (res.ok) {
-      window.location.href = `${API_BASE_URL}/auth/keycloak`;
+        router.push("/mod-dashboard"); 
     } else {
         setPopup({ headline: "Login Failed", message: "Invalid username or password." });
     }

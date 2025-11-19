@@ -12,6 +12,7 @@ export default (db: Connection): Router => {
   router.get('/user', authController.getAuthenticatedUser);
   router.post('/logout', authController.logout);
   router.post('/moderator-login', authController.moderatorLogin);
+  router.get('/verify-moderator', authController.verifyModerator);
 
   return router;
 };

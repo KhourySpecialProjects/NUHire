@@ -128,15 +128,27 @@ export class AuthController {
 
   moderatorLogin = (req: AuthRequest, res: Response): void => {
     const { username, password } = req.body;
+        
+    if (username === process.env.MODERATOR_USERNAME && 
+      password === process.env.MODERATOR_PASSWORD) {
 
-    if (
-      username === process.env.MODERATOR_USERNAME &&
-      password === process.env.MODERATOR_PASSWORD
-    ) {
-      res.json({ success: true });
-      return;
+      req.session.isModerator = true;
+      req.session.moderatorEmail = username;
+
+      res.status(200).json({ success: true });
+    } else {
+      res.status(401).json({ error: 'Invalid credentials' });
     }
+  };
 
-    res.status(401).json({ success: false, message: 'Invalid credentials' });
+  verifyModerator = (req: AuthRequest, res: Response, next: NextFunction): void => {
+    if (req.session.isModerator) {
+      res.status(200).json({ 
+        authenticated: true,
+        email: req.session.moderatorEmail 
+      });
+    } else {
+      res.status(401).json({ authenticated: false });
+    }
   };
 }

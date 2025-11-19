@@ -19,9 +19,12 @@ export interface User {
 
 export interface AuthRequest extends Request {
   user?: User;
-  session: Session & { passport?: { user?: number | string } };
+  session: Session & { 
+    passport?: { user?: number | string };
+    isModerator?: boolean;
+    moderatorEmail?: string;
+  };
 }
-
 // Resume Types
 export interface Resume {
   student_id: number;

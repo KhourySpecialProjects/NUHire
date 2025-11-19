@@ -34,46 +34,47 @@ const ModDashboard = () => {
 
   const socket = io(API_BASE_URL);
 
-  // Check authentication and admin status
+  // mod-dashboard/page.tsx
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { 
-          credentials: 'include' 
-        });
-        
-        if (!response.ok) {
-          setPopup({ 
-            headline: 'Unauthorized', 
-            message: 'Please log in to access this page.' 
-          });
-          setTimeout(() => router.push('/'), 2000);
-          return;
-        }
+      const checkModeratorAuth = async () => {
+          try {
+              const response = await fetch(`${API_BASE_URL}/auth/moderator-verify`, { 
+                  credentials: 'include' 
+              });
+              
+              if (!response.ok) {
+                  setPopup({ 
+                      headline: 'Unauthorized', 
+                      message: 'Please log in to access this page.' 
+                  });
+                  setTimeout(() => router.push('/moderator-signin'), 2000);
+                  return;
+              }
 
-        const userData = await response.json();
-        
-        if (userData.affiliation !== 'admin') {
-          setPopup({ 
-            headline: 'Access Denied', 
-            message: 'Only administrators can access this page.' 
-          });
-          setTimeout(() => router.push('/'), 2000);
-          return;
-        }
+              const data = await response.json();
+              
+              if (!data.authenticated) {
+                  setPopup({ 
+                      headline: 'Unauthorized', 
+                      message: 'Please log in to access this page.' 
+                  });
+                  setTimeout(() => router.push('/moderator-signin'), 2000);
+                  return;
+              }
 
-        setUser(userData);
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        setPopup({ 
-          headline: 'Error', 
-          message: 'Failed to verify authentication.' 
-        });
-        setTimeout(() => router.push('/'), 2000);
-      }
-    };
+              setUser(data); // Set moderator info
+              setLoading(false);
+          } catch (error) {
+              console.error('Error checking authentication:', error);
+              setPopup({ 
+                  headline: 'Error', 
+                  message: 'Failed to verify authentication.' 
+              });
+              setTimeout(() => router.push('/moderator-signin'), 2000);
+          }
+      };
 
-    checkAuth();
+      checkModeratorAuth();
   }, [router]);
 
   useEffect(() => {
