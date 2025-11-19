@@ -47,7 +47,7 @@ const ModDashboard = () => {
                       headline: 'Unauthorized', 
                       message: 'Please log in to access this page.' 
                   });
-                  setTimeout(() => router.push('/moderator-signin'), 2000);
+                  setTimeout(() => router.push('/mod-signin'), 2000);
                   return;
               }
 
@@ -58,7 +58,7 @@ const ModDashboard = () => {
                       headline: 'Unauthorized', 
                       message: 'Please log in to access this page.' 
                   });
-                  setTimeout(() => router.push('/moderator-signin'), 2000);
+                  setTimeout(() => router.push('/mod-signin'), 2000);
                   return;
               }
 
