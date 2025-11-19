@@ -84,24 +84,59 @@ export class JobController {
   };
 
   deleteJobFile = (req: AuthRequest, res: Response): void => {
-    const fileName = req.params.fileName;
-    const filePath = path.join(__dirname, '../../uploads/jobdescription', fileName);
+  const fileName = req.params.fileName;
+  const classId = req.query.class_id;
+  
+  if (!classId) {
+    res.status(400).json({ error: 'class_id is required' });
+    return;
+  }
 
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+  const filePath = path.join(__dirname, '../../uploads/jobdescription', fileName);
 
-      this.db.query('DELETE FROM job_descriptions WHERE file_path = ?', [`uploads/jobdescription/${fileName}`], (err) => {
-        if (err) {
-          console.error('Database deletion error:', err);
-          res.status(500).json({ error: 'Database deletion failed' });
-          return;
+  this.db.query(
+    'DELETE FROM job_descriptions WHERE file_path = ? AND class_id = ?', 
+    [`uploads/jobdescription/${fileName}`, classId], 
+    (err, result: any) => {
+      if (err) {
+        console.error('Database deletion error:', err);
+        res.status(500).json({ error: 'Database deletion failed' });
+        return;
+      }
+      
+      if (result.affectedRows === 0) {
+        res.status(404).json({ error: 'Job description not found for this class' });
+        return;
+      }
+
+      this.db.query(
+        'SELECT COUNT(*) as count FROM job_descriptions WHERE file_path = ?',
+        [`uploads/jobdescription/${fileName}`],
+        (err, results: any[]) => {
+          if (err) {
+            console.error('Error checking file usage:', err);
+            res.json({ 
+              message: `Database entry deleted successfully for class ${classId}. Physical file not removed.` 
+            });
+            return;
+          }
+
+          if (results[0].count === 0 && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            res.json({ 
+              message: `File "${fileName}" and database entry deleted successfully.` 
+            });
+          } else {
+            res.json({ 
+              message: `Database entry deleted for class ${classId}. File still in use by other classes.` 
+            });
+          }
         }
-        res.json({ message: `File "${fileName}" deleted successfully.` });
-      });
-    } else {
-      res.status(404).send(`File "${fileName}" not found.`);
+      );
     }
-  };
+  );
+};
+
 
   updateJob = async (req: AuthRequest, res: Response): Promise<void> => {
     const { job_group_id, class_id, job } = req.body;

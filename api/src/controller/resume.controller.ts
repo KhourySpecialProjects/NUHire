@@ -161,21 +161,21 @@ export class ResumeController {
   };
 
   createResumePdf = (req: AuthRequest, res: Response): void => {
-    const { resTitle, filePath, f_name, l_name, vid } = req.body;
+    const { resTitle, filePath, f_name, l_name, vid, class_id } = req.body;
 
-    if (!resTitle || !filePath || !f_name || !l_name || !vid) {
-      res.status(400).json({ error: 'Missing fields' });
+    if (!resTitle || !filePath || !f_name || !l_name || !vid || !class_id) {
+      res.status(400).json({ error: 'Missing fields (resTitle, filePath, f_name, l_name, vid, class_id required)' });
       return;
     }
 
-    const resumeSql = 'INSERT INTO Resume_pdfs (title, file_path) VALUES (?, ?)';
-    this.db.query(resumeSql, [resTitle, filePath], (err, resumeResult: any) => {
+    const resumeSql = 'INSERT INTO Resume_pdfs (title, file_path, class_id) VALUES (?, ?, ?)';
+    this.db.query(resumeSql, [resTitle, filePath, class_id], (err, resumeResult: any) => {
       if (err) {
         console.error('Error inserting resume:', err);
 
         if (err.code === 'ER_DUP_ENTRY') {
           res.status(409).json({
-            error: 'A resume with this file already exists. Please choose a different file.'
+            error: 'A resume with this title already exists in this class. Please choose a different title.'
           });
           return;
         }
@@ -202,15 +202,96 @@ export class ResumeController {
     });
   };
 
-  deleteResumePdf = (req: AuthRequest, res: Response): void => {
-    const { file_path } = req.params;
-    this.db.query('DELETE FROM Resume_pdfs WHERE file_path = ?', [file_path], (err) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
+  deleteResumeFile = (req: AuthRequest, res: Response): void => {
+    const fileName = req.params.fileName;
+    const classId = req.query.class_id;
+    
+    if (!classId) {
+      res.status(400).json({ error: 'class_id is required' });
+      return;
+    }
+
+    const filePath = path.join(__dirname, '../../uploads/resumes', fileName);
+
+    this.db.query(
+      'SELECT id FROM Resume_pdfs WHERE file_path = ? AND class_id = ?', 
+      [`uploads/resumes/${fileName}`, classId], 
+      (err, resumeResults: any[]) => {
+        if (err) {
+          console.error('Database lookup error:', err);
+          res.status(500).json({ error: 'Database lookup failed' });
+          return;
+        }
+
+        if (resumeResults.length === 0) {
+          res.status(404).json({ error: 'Resume not found in database for this class' });
+          return;
+        }
+
+        const resumeId = resumeResults[0].id;
+
+        // Delete candidates associated with this resume (CASCADE should handle this, but being explicit)
+        this.db.query('DELETE FROM Candidates WHERE resume_id = ?', [resumeId], (err, candidateResult: any) => {
+          if (err) {
+            console.error('Candidate deletion error:', err);
+            res.status(500).json({ error: 'Candidate deletion failed' });
+            return;
+          }
+
+          console.log(`Deleted ${candidateResult.affectedRows} candidate(s) for resume ID ${resumeId}`);
+
+          // Delete the resume entry for this specific class
+          this.db.query(
+            'DELETE FROM Resume_pdfs WHERE id = ? AND class_id = ?', 
+            [resumeId, classId], 
+            (err, resumeResult: any) => {
+              if (err) {
+                console.error('Resume deletion error:', err);
+                res.status(500).json({ error: 'Resume deletion failed' });
+                return;
+              }
+
+              console.log(`Deleted resume: ${fileName}, Resume ID: ${resumeId} for class ${classId}`);
+
+              // Check if this file is still used by other classes
+              this.db.query(
+                'SELECT COUNT(*) as count FROM Resume_pdfs WHERE file_path = ?',
+                [`uploads/resumes/${fileName}`],
+                (err, results: any[]) => {
+                  if (err) {
+                    console.error('Error checking file usage:', err);
+                    res.json({
+                      message: `Resume and candidate deleted for class ${classId}. Physical file not removed.`,
+                      deletedResume: resumeResult.affectedRows > 0,
+                      deletedCandidate: candidateResult.affectedRows > 0
+                    });
+                    return;
+                  }
+
+                  // Only delete the physical file if no other classes are using it
+                  if (results[0].count === 0 && fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                    res.json({
+                      message: `File "${fileName}", resume, and associated candidate deleted successfully.`,
+                      deletedResume: resumeResult.affectedRows > 0,
+                      deletedCandidate: candidateResult.affectedRows > 0,
+                      deletedPhysicalFile: true
+                    });
+                  } else {
+                    res.json({
+                      message: `Resume and candidate deleted for class ${classId}. File still in use by other classes.`,
+                      deletedResume: resumeResult.affectedRows > 0,
+                      deletedCandidate: candidateResult.affectedRows > 0,
+                      deletedPhysicalFile: false
+                    });
+                  }
+                }
+              );
+            }
+          );
+        });
       }
-      res.json({ message: 'Resume deleted successfully' });
-    });
+    );
   };
 
   getResumeFile = (req: AuthRequest, res: Response): void => {
@@ -236,54 +317,4 @@ export class ResumeController {
     });
   };
 
-  deleteResumeFile = (req: AuthRequest, res: Response): void => {
-    const fileName = req.params.fileName;
-    const filePath = path.join(__dirname, '../../uploads/resumes', fileName);
-
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-
-      this.db.query('SELECT id FROM Resume_pdfs WHERE file_path = ?', [`uploads/resumes/${fileName}`], (err, resumeResults: any[]) => {
-        if (err) {
-          console.error('Database lookup error:', err);
-          res.status(500).json({ error: 'Database lookup failed' });
-          return;
-        }
-
-        if (resumeResults.length === 0) {
-          res.status(404).json({ error: 'Resume not found in database' });
-          return;
-        }
-
-        const resumeId = resumeResults[0].id;
-
-        this.db.query('DELETE FROM Candidates WHERE resume_id = ?', [resumeId], (err, candidateResult: any) => {
-          if (err) {
-            console.error('Candidate deletion error:', err);
-            res.status(500).json({ error: 'Candidate deletion failed' });
-            return;
-          }
-
-          console.log(`Deleted ${candidateResult.affectedRows} candidate(s) for resume ID ${resumeId}`);
-
-          this.db.query('DELETE FROM Resume_pdfs WHERE file_path = ?', [`uploads/resumes/${fileName}`], (err, resumeResult: any) => {
-            if (err) {
-              console.error('Resume deletion error:', err);
-              res.status(500).json({ error: 'Resume deletion failed' });
-              return;
-            }
-
-            console.log(`Deleted resume: ${fileName}, Resume ID: ${resumeId}`);
-            res.json({
-              message: `File "${fileName}" and associated candidate deleted successfully.`,
-              deletedResume: resumeResult.affectedRows > 0,
-              deletedCandidate: candidateResult.affectedRows > 0
-            });
-          });
-        });
-      });
-    } else {
-      res.status(404).send(`File "${fileName}" not found.`);
-    }
-  };
 }

@@ -233,15 +233,15 @@ const Upload = () => {
     }
   };
 
-  const deleteResume = async (filePath: string) => {
+  const deleteResume = async (resumeId: number, filePath: string, classId: number) => {
     const fileName = filePath.split("/").pop(); 
     
     try {
-      const response = await fetch(`${API_BASE_URL}/delete/resume/${fileName}`, {
+      const response = await fetch(`${API_BASE_URL}/delete/resume/${fileName}?class_id=${classId}`, {
         method: "DELETE",
         credentials: "include"
       });
-  
+
       if (!response.ok) {
         throw new Error(`Error: ${await response.text()}`);
       }
@@ -254,15 +254,15 @@ const Upload = () => {
     }
   };
 
-  const deleteJob = async (filePath: string) => {
+  const deleteJob = async (jobId: number, filePath: string, classId: number) => {
     const fileName = filePath.split("/").pop();
     
     try {
-      const response = await fetch(`${API_BASE_URL}/delete/job/${fileName}`, {
+      const response = await fetch(`${API_BASE_URL}/delete/job/${fileName}?class_id=${classId}`, {
         method: "DELETE",
         credentials: "include"
       });
-  
+
       if (!response.ok) {
         throw new Error(`Error: ${await response.text()}`);
       }
@@ -507,7 +507,7 @@ const Upload = () => {
                           </a>
                         </div>
                         <button 
-                          onClick={() => deleteJob(job.file_path)} 
+                          onClick={() => deleteJob(job.id, job.file_path, job.class_id)} 
                           className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
                           Delete
                         </button>
@@ -616,7 +616,7 @@ const Upload = () => {
                             </div>
                           </div>
                           <button 
-                            onClick={() => deleteResume(resume.file_path)} 
+                            onClick={() => deleteResume(resume.id, resume.file_path, resume.class_id)} 
                             className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200 ml-2">
                             Delete
                           </button>
