@@ -142,12 +142,17 @@ export class AuthController {
   };
 
   verifyModerator = (req: AuthRequest, res: Response, next: NextFunction): void => {
+    console.log('🔍 Verify Moderator - Session ID:', req.sessionID);
+    console.log('🔍 Verify Moderator - Session:', req.session);
+    console.log('🔍 Verify Moderator - isModerator:', req.session.isModerator);
+    
     if (req.session.isModerator) {
       res.status(200).json({ 
         authenticated: true,
       });
     } else {
+      console.log('❌ Moderator not authenticated');
       res.status(401).json({ authenticated: false });
     }
-  };
+};
 }
