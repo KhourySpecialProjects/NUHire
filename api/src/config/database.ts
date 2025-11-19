@@ -86,43 +86,7 @@ export class DatabaseService {
   private async initializeDatabase(): Promise<void> {
     const queries = [
       "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`) VALUES ('labit.z@northeastern.edu', 1)",
-      "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Carbonite', 'uploads/jobdescription/carbonite-jobdes.pdf')",
-      "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Cygilant', 'uploads/jobdescription/Cygilant Security Research Job Description.pdf')",
-      "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Motionlogic', 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf')",
-      "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Sample', 'uploads/jobdescription/sample-job-description.pdf')",
-      "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Source One', 'uploads/jobdescription/SourceOneJobDescription.pdf')",
-      "INSERT IGNORE INTO `job_descriptions` (`title`, `file_path`) VALUES ('Two Six Labs', 'uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample1', 'uploads/resumes/sample1.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample2', 'uploads/resumes/sample2.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample3', 'uploads/resumes/sample3.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample4', 'uploads/resumes/sample4.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample5', 'uploads/resumes/sample5.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample6', 'uploads/resumes/sample6.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample7', 'uploads/resumes/sample7.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample8', 'uploads/resumes/sample8.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample9', 'uploads/resumes/sample9.pdf')",
-      "INSERT IGNORE INTO `Resume_pdfs` (`title`, `file_path`) VALUES ('sample10', 'uploads/resumes/sample10.pdf')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (1, 'https://www.youtube.com/embed/aA7k6WM4_7A?si=ahwZZpSKUow0-dG2', 'Aisha', 'Patel')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (2, 'https://www.youtube.com/embed/4d6v7p0N9Sg?si=nax_IkG0gk3zNae-', 'Casey', 'Fisch')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (3, 'https://www.youtube.com/embed/typ4aN11feI?si=7jFsNwhB9ZkKyuo9', 'Ethan', 'Martinez')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (4, 'https://www.youtube.com/embed/ySKRfElNPCY?si=2B1cl7djMtE1GLJL', 'Jason', 'Jones')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (5, 'https://www.youtube.com/embed/_KGOo1WGKZU?si=aTLlkNgS7di69Sga', 'Lucas', 'Nyugen')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (6, 'https://www.youtube.com/embed/AhJrqbDTn1Y?si=_XjOXZJBzSvpN_aM', 'Maya', 'Collins')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (7, 'https://www.youtube.com/embed/1dIhJmX4uLo?si=aAna0LIIsxRu8E0K', 'Paula', 'McCartney')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (8, 'https://www.youtube.com/embed/cnIv3Zf5nJo?si=aa3ObgHLN5BBP-tp', 'Alex', 'Johnson')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (9, 'https://www.youtube.com/embed/0aVcquEhOtQ?si=gzDkWve3Izy9uTFx', 'Jordan', 'Lee')",
-      "INSERT IGNORE INTO `Candidates` (`resume_id`, `interview`, `f_name`, `l_name`) VALUES (10, 'https://www.youtube.com/embed/HS3ShcKt288?si=uWmWIVKtNJRvqSu_', 'Zhiyuan', 'Yang')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (1, 'Interview1', 'https://www.youtube.com/embed/aA7k6WM4_7A?si=ahwZZpSKUow0-dG2')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (2, 'Interview2', 'https://www.youtube.com/embed/4d6v7p0N9Sg?si=nax_IkG0gk3zNae-')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (3, 'Interview3', 'https://www.youtube.com/embed/typ4aN11feI?si=7jFsNwhB9ZkKyuo9')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (4, 'Interview5', 'https://www.youtube.com/embed/ySKRfElNPCY?si=2B1cl7djMtE1GLJL')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (5, 'Interview5', 'https://www.youtube.com/embed/_KGOo1WGKZU?si=aTLlkNgS7di69Sga')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (6, 'Interview6', 'https://www.youtube.com/embed/AhJrqbDTn1Y?si=_XjOXZJBzSvpN_aM')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (7, 'Interview7', 'https://www.youtube.com/embed/1dIhJmX4uLo?si=aAna0LIIsxRu8E0K')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (8, 'Interview8', 'https://www.youtube.com/embed/cnIv3Zf5nJo?si=aa3ObgHLN5BBP-tp')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (9, 'Interview9', 'https://www.youtube.com/embed/0aVcquEhOtQ?si=gzDkWve3Izy9uTFx')",
-      "INSERT IGNORE INTO `Interview_vids` (`resume_id`, `title`, `video_path`) VALUES (10, 'Interview10', 'https://www.youtube.com/embed/HS3ShcKt288?si=uWmWIVKtNJRvqSu_')"
-    ];
+     ];
 
     for (const query of queries) {
       try {

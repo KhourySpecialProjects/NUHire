@@ -30,7 +30,8 @@ CREATE TABLE `Candidates` (
   `l_name` varchar(45) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `resume_id_UNIQUE` (`resume_id`),
-  KEY `resume_id` (`resume_id`)
+  KEY `resume_id` (`resume_id`),
+  CONSTRAINT `fk_candidates_resume` FOREIGN KEY (`resume_id`) REFERENCES `Resume_pdfs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -81,7 +82,9 @@ CREATE TABLE `Interview_vids` (
   `resume_id` int NOT NULL,
   `video_path` varchar(255) NOT NULL,
   `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_interview_vids_resume` (`resume_id`),
+  CONSTRAINT `fk_interview_vids_resume` FOREIGN KEY (`resume_id`) REFERENCES `Resume_pdfs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -141,8 +144,10 @@ CREATE TABLE `Job_Assignment` (
   `class` int NOT NULL,
   `job` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`group`,`class`),
+  KEY `job_fk_idx` (`class`,`job`),
   KEY `job_idx` (`job`),
-  CONSTRAINT `job` FOREIGN KEY (`job`) REFERENCES `job_descriptions` (`title`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `job_class_idx` (`job`,`class`),
+  CONSTRAINT `job_fk` FOREIGN KEY (`job`, `class`) REFERENCES `job_descriptions` (`title`, `class_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -158,10 +163,13 @@ CREATE TABLE `job_descriptions` (
   `title` varchar(255) NOT NULL,
   `file_path` varchar(255) NOT NULL,
   `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `class_id` int NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `title_UNIQUE` (`title`),
-  UNIQUE KEY `file_path_UNIQUE` (`file_path`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `file_path_UNIQUE` (`file_path`),
+  UNIQUE KEY `title_class_unique` (`title`,`class_id`),
+  KEY `job_descriptions_class_fk_idx` (`class_id`),
+  CONSTRAINT `job_descriptions_class_fk` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -318,9 +326,12 @@ CREATE TABLE `Resume_pdfs` (
   `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `title` varchar(255) NOT NULL,
   `id` int NOT NULL AUTO_INCREMENT,
+  `class_id` int NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `name_UNIQUE` (`title`),
-  UNIQUE KEY `file_path_UNIQUE` (`file_path`)
+  UNIQUE KEY `file_path_UNIQUE` (`file_path`),
+  UNIQUE KEY `title_class_unique` (`title`,`class_id`),
+  KEY `resume_pdfs_class_fk_idx` (`class_id`),
+  CONSTRAINT `resume_pdfs_class_fk` FOREIGN KEY (`class_id`) REFERENCES `Moderator` (`crn`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -412,4 +423,4 @@ CREATE TABLE `WaitingFacts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-17 16:15:33
+-- Dump completed on 2025-11-19 10:26:32

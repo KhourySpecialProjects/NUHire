@@ -130,6 +130,13 @@ export class ResumeController {
   };
 
   getAllResumePdfs = (req: AuthRequest, res: Response): void => {
+    const { class_id } = req.query; // Get class_id from query params
+    
+    if (!class_id) {
+      res.status(400).json({ error: 'class_id is required' });
+      return;
+    }
+
     const query = `
       SELECT 
         r.id, 
@@ -140,10 +147,11 @@ export class ResumeController {
         c.interview
       FROM Resume_pdfs r
       LEFT JOIN Candidates c ON r.id = c.resume_id
+      WHERE r.class_id = ?
       ORDER BY r.id DESC
     `;
 
-    this.db.query(query, (err, results) => {
+    this.db.query(query, [class_id], (err, results) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;

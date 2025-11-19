@@ -12,26 +12,37 @@ export class JobController {
   constructor(private db: Connection, private io: any, private onlineStudents: Record<string, string>) {}
 
   getAllJobs = (req: AuthRequest, res: Response): void => {
-    this.db.query('SELECT * FROM job_descriptions', (err, results) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
+    const { class_id } = req.query; // Get class_id from query params
+    
+    if (!class_id) {
+      res.status(400).json({ error: 'class_id is required' });
+      return;
+    }
+    
+    this.db.query(
+      'SELECT * FROM job_descriptions WHERE class_id = ?', 
+      [class_id], 
+      (err, results) => {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json(results);
       }
-      res.json(results);
-    });
+    );
   };
 
   createJob = async (req: AuthRequest, res: Response): Promise<void> => {
-    const { title, filePath } = req.body;
+    const { title, filePath, class_id } = req.body; // Add class_id
 
-    if (!title || !filePath) {
-      res.status(400).json({ error: 'Missing title or filePath' });
+    if (!title || !filePath || !class_id) {
+      res.status(400).json({ error: 'Missing title, filePath, or class_id' });
       return;
     }
 
     try {
-      const sql = 'INSERT INTO job_descriptions (title, file_path) VALUES (?, ?)';
-      this.db.query(sql, [title, filePath], (err) => {
+      const sql = 'INSERT INTO job_descriptions (title, file_path, class_id) VALUES (?, ?, ?)';
+      this.db.query(sql, [title, filePath, class_id], (err) => {
         if (err) {
           console.error('Error inserting into DB:', err);
           res.status(500).json({ error: 'Database error' });
@@ -46,26 +57,30 @@ export class JobController {
   };
 
   getJobByTitle = (req: AuthRequest, res: Response): void => {
-    const { title } = req.query;
+    const { title, class_id } = req.query; // Add class_id
 
-    if (!title) {
-      res.status(400).json({ error: 'Title is required' });
+    if (!title || !class_id) {
+      res.status(400).json({ error: 'Title and class_id are required' });
       return;
     }
 
-    this.db.query('SELECT * FROM job_descriptions WHERE title = ?', [title], (err, results: any[]) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
+    this.db.query(
+      'SELECT * FROM job_descriptions WHERE title = ? AND class_id = ?', 
+      [title, class_id], 
+      (err, results: any[]) => {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
 
-      if (results.length === 0) {
-        res.status(404).json({ error: 'Job description not found' });
-        return;
-      }
+        if (results.length === 0) {
+          res.status(404).json({ error: 'Job description not found' });
+          return;
+        }
 
-      res.json(results[0]);
-    });
+        res.json(results[0]);
+      }
+    );
   };
 
   deleteJobFile = (req: AuthRequest, res: Response): void => {

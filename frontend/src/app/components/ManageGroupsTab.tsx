@@ -654,12 +654,13 @@ export function ManageGroupsTab() {
     fetchStudentsAndOrganize();
   }, [selectedClass, availableGroups]);
 
+// Change around line 657-677:
   useEffect(() => {
     const fetchJobs = async () => {
-      if (!assignJobModalOpen) return;
+      if (!assignJobModalOpen || !selectedClass) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/jobs`, {
+        const response = await fetch(`${API_BASE_URL}/jobs?class_id=${selectedClass}`, {
           credentials: 'include'
         });
         
@@ -676,7 +677,7 @@ export function ManageGroupsTab() {
     };
 
     fetchJobs();
-  }, [assignJobModalOpen]);
+  }, [assignJobModalOpen, selectedClass]); // Add selectedClass dependency
 
   const handleClassChange = (classId: string) => {
     const hasAccess = classes.some(cls => cls.crn.toString() === classId);
