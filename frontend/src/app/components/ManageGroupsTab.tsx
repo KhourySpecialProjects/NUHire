@@ -679,6 +679,59 @@ export function ManageGroupsTab() {
     fetchJobs();
   }, [assignJobModalOpen, selectedClass]); // Add selectedClass dependency
 
+
+  const assignJobToAllGroups = async () => {
+    if (!selectedJobId || !selectedClass) {
+      setPopup({ headline: 'Error', message: 'Please select a job first.' });
+      return;
+    }
+
+    setIsAssigningJob(true);
+
+    try {
+      const selectedJob = availableJobs.find(job => job.id === selectedJobId);
+      
+      if (!selectedJob) {
+        setPopup({ headline: 'Error', message: 'Selected job not found.' });
+        setIsAssigningJob(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/groups/assign-job-to-all`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          class_id: selectedClass,
+          job_title: selectedJob.title
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        await refreshGroupsAndStudents();
+
+        setPopup({ 
+          headline: 'Success', 
+          message: `Job "${selectedJob.title}" assigned to all ${result.groups_updated} groups successfully!` 
+        });
+        setAssignJobModalOpen(false);
+        setSelectedGroupForJob(null);
+        setSelectedJobId(null);
+      } else {
+        const errorData = await response.json();
+        setPopup({ headline: 'Error', message: `Failed to assign job: ${errorData.error || 'Unknown error'}` });
+      }
+    } catch (error) {
+      console.error('Error assigning job to all groups:', error);
+      setPopup({ headline: 'Error', message: 'Failed to assign job to all groups. Please try again.' });
+    } finally {
+      setIsAssigningJob(false);
+    }
+  };
+
   const handleClassChange = (classId: string) => {
     const hasAccess = classes.some(cls => cls.crn.toString() === classId);
     
@@ -1235,6 +1288,20 @@ export function ManageGroupsTab() {
                       )}
                     </button>
                     <button
+                      onClick={() => {
+                        setSelectedGroupForJob(null);
+                        setAssignJobModalOpen(true);
+                      }}
+                      disabled={availableGroups.filter(g => g !== -1).length === 0}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        availableGroups.filter(g => g !== -1).length === 0
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'
+                      }`}
+                    >
+                      💼 Assign Job to All Groups
+                    </button>
+                    <button
                       onClick={downloadCSV}
                       disabled={!selectedClass}
                       className="px-4 py-2 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600"
@@ -1568,7 +1635,11 @@ export function ManageGroupsTab() {
       {assignJobModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Assign Job to Group {selectedGroupForJob}</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {selectedGroupForJob 
+                ? `Assign Job to Group ${selectedGroupForJob}` 
+                : 'Assign Job to All Groups'}
+            </h3>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Job:
             </label>
@@ -1577,15 +1648,21 @@ export function ManageGroupsTab() {
               onChange={e => setSelectedJobId(parseInt(e.target.value))}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
             >
+              <option value="">-- Select a Job --</option>
               {availableJobs.map((job) => (
                 <option key={job.id} value={job.id}>
                   {job.title}
                 </option>
               ))}
             </select>
+            {!selectedGroupForJob && (
+              <p className="text-sm text-gray-600 mb-4">
+                This will assign the selected job to all {availableGroups.filter(g => g !== -1).length} groups in this class.
+              </p>
+            )}
             <div className="flex space-x-3">
               <button
-                onClick={assignJobToGroup}
+                onClick={selectedGroupForJob ? assignJobToGroup : assignJobToAllGroups}
                 disabled={isAssigningJob || !selectedJobId}
                 className={`flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 ${isAssigningJob ? 'opacity-50 cursor-not-allowed' : ''}`}
               >

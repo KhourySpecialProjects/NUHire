@@ -654,4 +654,60 @@ export class GroupController {
       res.json({ progress: leftmostStep });
     });
   };
+
+  assignJobToAllGroups = async (req: AuthRequest, res: Response): Promise<void> => {
+    const { class_id, job_title } = req.body;
+
+    console.log('Assigning job to all groups in class:', { class_id, job_title });
+
+    if (!class_id || !job_title) {
+      res.status(400).json({
+        error: 'Missing required fields: class_id, job_title'
+      });
+      return;
+    }
+
+    try {
+      const promiseDb = this.db.promise();
+
+      // Get all groups for the class (excluding ungrouped -1)
+      const [groupsResult] = await promiseDb.query(
+        'SELECT DISTINCT group_id FROM `GroupsInfo` WHERE class_id = ? ORDER BY group_id',
+        [class_id]
+      ) as any[];
+
+      if (groupsResult.length === 0) {
+        res.status(404).json({ error: 'No groups found for this class' });
+        return;
+      }
+
+      const groupIds = groupsResult.map((group: any) => group.group_id);
+      console.log(`Found ${groupIds.length} groups for class ${class_id}:`, groupIds);
+
+      // Update job assignment for all groups
+      const updatePromises = groupIds.map((groupId: number) => {
+        return promiseDb.query(
+          `INSERT INTO Progress (crn, group_id, job) 
+          VALUES (?, ?, ?) 
+          ON DUPLICATE KEY UPDATE job = VALUES(job)`,
+          [class_id, groupId, job_title]
+        );
+      });
+
+      await Promise.all(updatePromises);
+
+      console.log(`✅ Successfully assigned job "${job_title}" to ${groupIds.length} groups in class ${class_id}`);
+
+      res.json({
+        message: 'Job assigned to all groups successfully',
+        class_id: parseInt(class_id),
+        job_title,
+        groups_updated: groupIds.length,
+        group_ids: groupIds
+      });
+    } catch (error) {
+      console.error('Error assigning job to all groups:', error);
+      res.status(500).json({ error: 'Failed to assign job to all groups' });
+    }
+  };
 }
