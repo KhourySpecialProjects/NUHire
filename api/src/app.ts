@@ -82,7 +82,7 @@ export class App {
     this.app.use(session({
       secret: process.env.SESSION_SECRET!,
       resave: false,
-      saveUninitialized: false,
+      saveUninitialized: true,
       store: this.sessionStore,
       cookie: {
         secure: true,
@@ -136,7 +136,7 @@ export class App {
 
   public listen(port: number): void {
     this.server.listen(port, () => {
-      console.log(`🚀 Server running on http://localhost:${port}`);
+      console.log(`🚀 Server running`);
     });
   }
 }
