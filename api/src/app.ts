@@ -60,11 +60,23 @@ export class App {
       allowedHeaders: ['Content-Type', 'Authorization']
     }));
 
+    // CREATE SESSION STORE FIRST
+    const url = new URL(process.env.DATABASE_URL!);
+    const SessionStore = MySQLStore(session);
+    this.sessionStore = new SessionStore({
+      host: url.hostname,
+      port: parseInt(url.port) || 3306,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.slice(1)
+    });
+
+    // THEN CONFIGURE SESSION WITH THE STORE
     this.app.use(session({
       secret: process.env.SESSION_SECRET!,
       resave: false,
-      saveUninitialized: false, 
-      store: this.sessionStore,
+      saveUninitialized: true,  // Change to true
+      store: this.sessionStore,  // Now this.sessionStore exists!
       cookie: {
         secure: true,
         httpOnly: true,
@@ -80,18 +92,6 @@ export class App {
     // View engine setup
     this.app.set('view engine', 'ejs');
     this.app.set('views', path.join(__dirname, '../views'));
-    this.app.set('trust proxy', 1);
-
-    // Session configuration
-    const url = new URL(process.env.DATABASE_URL!);
-    const SessionStore = MySQLStore(session);
-    this.sessionStore = new SessionStore({
-      host: url.hostname,
-      port: parseInt(url.port) || 3306,
-      user: url.username,
-      password: url.password,
-      database: url.pathname.slice(1)
-    });
 
     // Passport initialization
     this.app.use(passport.initialize());
