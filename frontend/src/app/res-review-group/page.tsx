@@ -278,30 +278,42 @@ export default function ResReviewGroup() {
     };
   }, []);
 
-  const fetchResumes = async () => {
+  const fetchResumes = async (userClass: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${user?.class}`, { credentials: "include" });
+      console.log("📄 [FETCH-RESUMES] Fetching resumes for class:", userClass);
+      const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
       const data: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await response.json();
 
-      console.log("Raw resume data from API:", data);
-      console.log("First resume item:", data[0]);
+      console.log("📄 [FETCH-RESUMES] Raw resume data from API:", data);
+      console.log("📄 [FETCH-RESUMES] Number of resumes:", data.length);
+      
+      data.forEach((resume, index) => {
+        console.log(`📄 [FETCH-RESUMES] Resume ${index}:`, {
+          id: resume.id,
+          title: resume.title,
+          first_name: resume.first_name,
+          last_name: resume.last_name,
+          file_path: resume.file_path
+        });
+      });
     
       const formatted: Resume[] = data.map(item => ({
-      resume_number: item.id,
-      file_path: item.file_path,
-      checked: checkedState[item.id] || false,
-      vote: voteCounts[item.id]
-        ? voteCounts[item.id].yes > voteCounts[item.id].no
-          ? "yes"
-          : "no"
-        : "unanswered",
-      first_name: item.first_name,
-      last_name: item.last_name
-    }));
+        resume_number: item.id,
+        file_path: item.file_path,
+        checked: checkedState[item.id] || false,
+        vote: voteCounts[item.id]
+          ? voteCounts[item.id].yes > voteCounts[item.id].no
+            ? "yes"
+            : "no"
+          : "unanswered",
+        first_name: item.first_name,
+        last_name: item.last_name
+      }));
 
+      console.log("📄 [FETCH-RESUMES] Formatted resumes:", formatted);
       setResumes(formatted);
     } catch (error) {
-      console.error("Error fetching resumes:", error);
+      console.error("❌ [FETCH-RESUMES] Error fetching resumes:", error);
     }
   };
 
@@ -311,23 +323,38 @@ export default function ResReviewGroup() {
   };
 
   useEffect(() => {
-    fetchResumes();
+    if (user?.class) {
+      fetchResumes(user.class);
+    }
   }, [user]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (!user || !user.class) return;
+        if (!user || !user.class) {
+          console.log("⚠️ [FETCH-VOTES] User or class not available yet");
+          return;
+        }
 
-        // Update the endpoint to include class filtering
+        console.log("📊 [FETCH-VOTES] Fetching vote data for group:", user.group_id, "class:", user.class);
+        
         const response = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, {  credentials: "include"});
         const data: ResumeData[] = await response.json();
 
-        const voteData: { [key: number]: VoteData } = {};
-        const checkboxData: { [key: number]: boolean } = {};  // New state tracking checkboxes
+        console.log("📊 [FETCH-VOTES] Raw data from backend:", data);
+        console.log("📊 [FETCH-VOTES] Number of vote records:", data.length);
 
-        data.forEach((resume) => {
+        const voteData: { [key: number]: VoteData } = {};
+        const checkboxData: { [key: number]: boolean } = {};
+
+        data.forEach((resume, index) => {
           const { resume_number, vote, checked } = resume;
+          
+          console.log(`📊 [FETCH-VOTES] Processing record ${index}:`, {
+            resume_number,
+            vote,
+            checked
+          });
 
           if (!voteData[resume_number]) {
             voteData[resume_number] = { yes: 0, no: 0, undecided: 0 };
@@ -335,19 +362,25 @@ export default function ResReviewGroup() {
 
           if (vote === "yes") {
             voteData[resume_number].yes += 1;
+            console.log(`✅ [FETCH-VOTES] Resume ${resume_number}: Added YES vote (total: ${voteData[resume_number].yes})`);
           } else if (vote === "no") {
             voteData[resume_number].no += 1;
+            console.log(`❌ [FETCH-VOTES] Resume ${resume_number}: Added NO vote (total: ${voteData[resume_number].no})`);
           } else if (vote === "unanswered") {
             voteData[resume_number].undecided += 1;
+            console.log(`⏭️ [FETCH-VOTES] Resume ${resume_number}: Added UNANSWERED vote (total: ${voteData[resume_number].undecided})`);
           }
 
-          checkboxData[resume_number] = checked;  // Store checkbox state
+          checkboxData[resume_number] = checked;
         });
 
+        console.log("📊 [FETCH-VOTES] Final vote counts:", voteData);
+        console.log("📊 [FETCH-VOTES] Final checkbox states:", checkboxData);
+
         setVoteCounts(voteData);
-        setCheckedState(checkboxData);  // Load checkboxes
+        setCheckedState(checkboxData);
       } catch (error) {
-        console.error("Error fetching resume data:", error);
+        console.error("❌ [FETCH-VOTES] Error fetching resume data:", error);
       }
     };
     
@@ -355,7 +388,6 @@ export default function ResReviewGroup() {
       fetchData();
     }
   }, [user]);
-
   const handleCheckboxChange = (resumeNumber: number) => {
     if (!socket || !isConnected) {
       console.warn("Socket not connected. Checkbox state not sent.");

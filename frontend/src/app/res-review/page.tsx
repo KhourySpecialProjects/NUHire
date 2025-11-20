@@ -288,59 +288,75 @@ export default function ResumesPage() {
     }
   }, [currentResumeIndex, showInstructions]);
 
-  const sendVoteToBackend = async (vote: "yes" | "no" | "unanswered") => {
-    if (!user || !user.id || !user.group_id || !user.class) {
-      console.error("Missing user data:", {
-        hasUser: !!user,
-        hasId: !!user?.id,
-        hasGroupId: !!user?.group_id,
-        hasClass: !!user?.class,
-        userValue: user
-      });
-      return;
-    }
-
-    if (timeSpent < 0) {
-      console.error("Invalid time spent:", timeSpent);
-      return;
-    }
-
-    if (currentResumeIndex < 0) {
-      console.error("Invalid resume index:", currentResumeIndex);
-      return;
-    }
-
-    const voteData = {
-      student_id: user.id,
-      group_id: user.group_id,
-      class: user.class,
-      timespent: timeSpent,
-      resume_number: resumesList[currentResumeIndex]?.id || (currentResumeIndex + 1), // ✅ FIX: Use actual resume ID
-      vote: vote,
-    };
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/resume/vote`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(voteData),
-        credentials: "include"
-      });
-
-      console.log("Response status:", response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response from backend:", errorData);
-        throw new Error("Failed to save vote");
+    const sendVoteToBackend = async (vote: "yes" | "no" | "unanswered") => {
+      console.log("🗳️ [VOTE] Starting sendVoteToBackend");
+      console.log("🗳️ [VOTE] Current resume index:", currentResumeIndex);
+      console.log("🗳️ [VOTE] Resume at index:", resumesList[currentResumeIndex]);
+      console.log("🗳️ [VOTE] Vote type:", vote);
+      
+      if (!user || !user.id || !user.group_id || !user.class) {
+        console.error("❌ [VOTE] Missing user data:", {
+          hasUser: !!user,
+          hasId: !!user?.id,
+          hasGroupId: !!user?.group_id,
+          hasClass: !!user?.class,
+          userValue: user
+        });
+        return;
       }
-      console.log("Vote saved successfully");
-    } catch (error) {
-      console.error("Error sending vote to backend:", error);
-    }
-  };
+
+      if (timeSpent < 0) {
+        console.error("❌ [VOTE] Invalid time spent:", timeSpent);
+        return;
+      }
+
+      if (currentResumeIndex < 0) {
+        console.error("❌ [VOTE] Invalid resume index:", currentResumeIndex);
+        return;
+      }
+
+      const resumeId = resumesList[currentResumeIndex]?.id;
+      const fallbackId = currentResumeIndex + 1;
+      
+      console.log("🗳️ [VOTE] Resume ID from list:", resumeId);
+      console.log("🗳️ [VOTE] Fallback ID:", fallbackId);
+      console.log("🗳️ [VOTE] Will use ID:", resumeId || fallbackId);
+
+      const voteData = {
+        student_id: user.id,
+        group_id: user.group_id,
+        class: user.class,
+        timespent: timeSpent,
+        resume_number: resumeId || fallbackId,
+        vote: vote,
+      };
+
+      console.log("🗳️ [VOTE] Sending vote data to backend:", voteData);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/resume/vote`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(voteData),
+          credentials: "include"
+        });
+
+        console.log("✅ [VOTE] Response status:", response.status, response.statusText);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("❌ [VOTE] Error response from backend:", errorData);
+          throw new Error("Failed to save vote");
+        }
+        
+        const responseData = await response.json();
+        console.log("✅ [VOTE] Vote saved successfully:", responseData);
+      } catch (error) {
+        console.error("❌ [VOTE] Error sending vote to backend:", error);
+      }
+    };
 
   const nextResume = () => {
     if (currentResumeIndex < resumesList.length - 1) {
@@ -385,13 +401,18 @@ export default function ResumesPage() {
   }, [timeRemaining, showInstructions]);
 
   const handleAccept = () => {
+    console.log("✅ [ACTION] handleAccept called");
+    console.log("✅ [ACTION] maxDecisions:", maxDecisions);
+    console.log("✅ [ACTION] loading:", loading);
+    console.log("✅ [ACTION] resumeLoading:", resumeLoading);
+    
     if (maxDecisions) return;
     if (!user || loading || resumeLoading) {
-      console.warn("User data not ready or resume still loading, skipping vote");
+      console.warn("⚠️ [ACTION] User data not ready or resume still loading, skipping vote");
       return;
     }
     
-    console.log("About to call sendVoteToBackend with 'yes'");
+    console.log("✅ [ACTION] About to call sendVoteToBackend with 'yes'");
     sendVoteToBackend("yes");
     setAccepted((prev) => prev + 1);
     setResumes((prev) => prev + 1);
@@ -399,23 +420,28 @@ export default function ResumesPage() {
   };
 
   const handleReject = () => {
+    console.log("❌ [ACTION] handleReject called");
     if (maxDecisions) return;
     if (!user || loading || resumeLoading) {
-      console.warn("User data not ready or resume still loading, skipping vote");
+      console.warn("⚠️ [ACTION] User data not ready or resume still loading, skipping vote");
       return;
     }
+    console.log("❌ [ACTION] About to call sendVoteToBackend with 'no'");
     sendVoteToBackend("no");
     setRejected((prev) => prev + 1);
     setResumes((prev) => prev + 1);
     nextResume();
   };
 
+
   const handleNoResponse = () => {
+    console.log("⏭️ [ACTION] handleNoResponse called");
     if (maxDecisions) return;
     if (!user || loading || resumeLoading) {
-      console.warn("User data not ready or resume still loading, skipping vote");
+      console.warn("⚠️ [ACTION] User data not ready or resume still loading, skipping vote");
       return;
     }
+    console.log("⏭️ [ACTION] About to call sendVoteToBackend with 'unanswered'");
     sendVoteToBackend("unanswered");
     setNoResponse((prev) => prev + 1);
     nextResume();

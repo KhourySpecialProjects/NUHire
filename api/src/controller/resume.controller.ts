@@ -25,8 +25,17 @@ export class ResumeController {
   submitVote = (req: AuthRequest, res: Response): void => {
     const { student_id, group_id, class: classId, timespent, resume_number, vote } = req.body;
 
+    console.log('🗳️ [BACKEND-VOTE] Received vote submission:', {
+      student_id,
+      group_id,
+      class: classId,
+      timespent,
+      resume_number,
+      vote
+    });
+
     if (!student_id || !group_id || !classId || !resume_number || timespent === undefined || timespent === null || !vote) {
-      console.log('Validation failed. Received data:', { student_id, group_id, classId, timespent, resume_number, vote });
+      console.log('❌ [BACKEND-VOTE] Validation failed. Received data:', { student_id, group_id, classId, timespent, resume_number, vote });
       res.status(400).json({
         error: 'student_id, group_id, class, resume_number, timespent, and vote are required'
       });
@@ -37,18 +46,21 @@ export class ResumeController {
       VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE timespent = VALUES(timespent), vote = VALUES(vote);`;
 
+    console.log('🗳️ [BACKEND-VOTE] Executing query with params:', [student_id, group_id, classId, timespent, resume_number, vote]);
+
     this.db.query(query, [student_id, group_id, classId, timespent, resume_number, vote], (err, result) => {
       if (err) {
-        console.error('Error saving vote:', err);
+        console.error('❌ [BACKEND-VOTE] Error saving vote:', err);
         res.status(500).json({ error: 'Database error' });
         return;
       }
 
-      console.log(`Vote recorded for resume ${resume_number} by student ${student_id} in group ${group_id}, class ${classId}`);
+      console.log(`✅ [BACKEND-VOTE] Vote recorded for resume ${resume_number} by student ${student_id} in group ${group_id}, class ${classId}`);
+      console.log(`✅ [BACKEND-VOTE] Database result:`, result);
       res.status(200).json({ message: 'Resume review updated successfully' });
     });
   };
-
+  
   getResumesByStudent = (req: AuthRequest, res: Response): void => {
     const { student_id } = req.params;
     this.db.query('SELECT * FROM Resume WHERE student_id = ?', [student_id], (err, results) => {
@@ -74,6 +86,8 @@ export class ResumeController {
   getResumesByGroup = (req: AuthRequest, res: Response): void => {
     const { group_id } = req.params;
     const { class: studentClass } = req.query;
+
+    console.log('📊 [BACKEND-GET-VOTES] Fetching votes for group:', group_id, 'class:', studentClass);
 
     if (!studentClass) {
       res.status(400).json({ error: 'class query parameter is required' });
@@ -101,15 +115,21 @@ export class ResumeController {
 
     this.db.query(getAllResumesQuery, [studentClass], (err1, allResumes: any[]) => {
       if (err1) {
+        console.error('❌ [BACKEND-GET-VOTES] Error fetching all resumes:', err1);
         res.status(500).json({ error: err1.message });
         return;
       }
 
+      console.log('📊 [BACKEND-GET-VOTES] All resumes for class:', allResumes);
+
       this.db.query(getVotesQuery, [group_id, studentClass], (err2, votes: any[]) => {
         if (err2) {
+          console.error('❌ [BACKEND-GET-VOTES] Error fetching votes:', err2);
           res.status(500).json({ error: err2.message });
           return;
         }
+
+        console.log('📊 [BACKEND-GET-VOTES] Actual votes from Resume table:', votes);
 
         const resumeMap = new Map();
         
@@ -123,6 +143,7 @@ export class ResumeController {
 
         votes.forEach(v => {
           const existing = resumeMap.get(v.resume_number) || { resume_number: v.resume_number };
+          console.log(`📊 [BACKEND-GET-VOTES] Merging vote for resume ${v.resume_number}:`, v);
           resumeMap.set(v.resume_number, {
             ...existing,
             vote: v.vote,
@@ -130,7 +151,9 @@ export class ResumeController {
           });
         });
 
-        res.json(Array.from(resumeMap.values()));
+        const result = Array.from(resumeMap.values());
+        console.log('📊 [BACKEND-GET-VOTES] Final merged result:', result);
+        res.json(result);
       });
     });
   };
