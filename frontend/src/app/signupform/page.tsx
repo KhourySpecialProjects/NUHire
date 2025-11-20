@@ -67,6 +67,10 @@ export default function SignupDetails() {
           { method: 'GET', credentials: 'include' }
         );
         
+console.log('Response status:', checkRes.status);
+console.log('Response ok:', checkRes.ok);
+console.log('Response type:', checkRes.type);
+
         if (!checkRes.ok) {
           setMessage('Error checking your registration status.');
           setSubmitting(false);

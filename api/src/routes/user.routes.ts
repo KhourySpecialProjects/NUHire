@@ -17,7 +17,7 @@ export default (db: Connection, io: SocketIOServer): Router => {
   router.post('/update-currentpage', requireAuth, userController.updateCurrentPage);
   router.post('/update-user-class', requireAuth, userController.updateUserClass);
   router.post('/update-seen', requireAuth, userController.updateUserSeen);
-  router.get('/check/:email', requireAuth, userController.check);
+  router.get('/check/:email', userController.check);
 
   return router;
 };
