@@ -693,6 +693,9 @@ export function ManageGroupsTab() {
     if (classId !== '') {
       setIsLoadingGroups(true);
     }
+    setAvailableGroups([]);
+    setGroups([]);
+    setStudents([]);
     setSelectedClass(classId);
   };
 
