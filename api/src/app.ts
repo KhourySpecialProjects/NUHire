@@ -81,7 +81,8 @@ export class App {
         secure: true,
         httpOnly: true,
         sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000,
+        partitioned: true
       }
     }));
 
