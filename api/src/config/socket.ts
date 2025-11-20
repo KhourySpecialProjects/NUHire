@@ -215,55 +215,74 @@ export function initializeSocketHandlers(io: SocketIOServer, db: Connection): Re
 
       console.log(`Student ${studentEmail} completed res-review in group ${groupId}`);
 
-      db.query("SELECT f_name, l_name, email, current_page FROM Users WHERE group_id = ? AND affiliation = 'student'", [groupId], (err, groupMembers: any[]) => {
-        if (err) {
-          console.error('Error fetching group members:', err);
+      db.query("SELECT class FROM Users WHERE email = ?", [studentEmail], (err, studentData: any[]) => {
+        if (err || !studentData.length) {
+          console.error('Error fetching student class:', err);
           return;
         }
 
-        console.log(`Group ${groupId} has ${groupMembers.length} members`);
+        const studentClass = studentData[0].class;
+        console.log(`Student ${studentEmail} is in class ${studentClass}`);
 
-        if (!(global as any).completedResReview) {
-          (global as any).completedResReview = {};
-        }
-        if (!(global as any).completedResReview[groupId]) {
-          (global as any).completedResReview[groupId] = new Set();
-        }
-
-        const wasAlreadyCompleted = (global as any).completedResReview[groupId].has(studentEmail);
-        (global as any).completedResReview[groupId].add(studentEmail);
-
-        if (wasAlreadyCompleted) {
-          console.log(`Student ${studentEmail} already marked as completed, ignoring duplicate`);
-          return;
-        }
-
-        const completedCount = (global as any).completedResReview[groupId].size;
-        const totalCount = groupMembers.length;
-        const allCompleted = completedCount >= totalCount;
-
-        console.log(`Group ${groupId} completion: ${completedCount}/${totalCount} completed by: ${Array.from((global as any).completedResReview[groupId]).join(', ')}`);
-
-        if (allCompleted) {
-          console.log(`🎉 All members in group ${groupId} have completed res-review! Notifying group members.`);
-
-          groupMembers.forEach(member => {
-            const memberSocketId = onlineStudents[member.email];
-            if (memberSocketId) {
-              console.log(`Sending groupCompletedResReview to ${member.email}`);
-              io.to(memberSocketId).emit('groupCompletedResReview', {
-                groupId,
-                completedCount,
-                totalCount,
-                message: 'All group members have completed their individual resume reviews!'
-              });
-            } else {
-              console.log(`Member ${member.email} is not online`);
+        db.query(
+          "SELECT f_name, l_name, email, current_page FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'", 
+          [groupId, studentClass], 
+          (err, groupMembers: any[]) => {
+            if (err) {
+              console.error('Error fetching group members:', err);
+              return;
             }
-          });
-        } else {
-          console.log(`Group ${groupId} still waiting for ${totalCount - completedCount} more members to complete`);
-        }
+
+            console.log(`Group ${groupId} in class ${studentClass} has ${groupMembers.length} members`);
+
+            if (!(global as any).completedResReview) {
+              (global as any).completedResReview = {};
+            }
+            
+            const groupKey = `${groupId}_${studentClass}`;
+            if (!(global as any).completedResReview[groupKey]) {
+              (global as any).completedResReview[groupKey] = new Set();
+            }
+
+            const wasAlreadyCompleted = (global as any).completedResReview[groupKey].has(studentEmail);
+            (global as any).completedResReview[groupKey].add(studentEmail);
+
+            if (wasAlreadyCompleted) {
+              console.log(`Student ${studentEmail} already marked as completed, ignoring duplicate`);
+              return;
+            }
+
+            const completedCount = (global as any).completedResReview[groupKey].size;
+            const totalCount = groupMembers.length;
+            const allCompleted = completedCount >= totalCount;
+
+            console.log(`Group ${groupId} in class ${studentClass} completion: ${completedCount}/${totalCount} completed by: ${Array.from((global as any).completedResReview[groupKey]).join(', ')}`);
+
+            if (allCompleted) {
+              console.log(`🎉 All members in group ${groupId}, class ${studentClass} have completed res-review! Notifying group members.`);
+
+              groupMembers.forEach(member => {
+                const memberSocketId = onlineStudents[member.email];
+                if (memberSocketId) {
+                  console.log(`Sending groupCompletedResReview to ${member.email}`);
+                  io.to(memberSocketId).emit('groupCompletedResReview', {
+                    groupId,
+                    classId: studentClass,
+                    completedCount,
+                    totalCount,
+                    message: 'All group members have completed their individual resume reviews!'
+                  });
+                } else {
+                  console.log(`Student ${member.email} is not online`);
+                }
+              });
+
+              delete (global as any).completedResReview[groupKey];
+            } else {
+              console.log(`Group ${groupId} in class ${studentClass} still waiting for ${totalCount - completedCount} more members to complete`);
+            }
+          }
+        );
       });
     });
 
