@@ -14,6 +14,7 @@ export default (db: Connection, io: SocketIOServer, onlineStudents: Record<strin
   router.get('/title', requireAuth, jobController.getJobByTitle);
   router.post('/update-job', requireAuth, jobController.updateJob);
   router.get('/assignment/:groupId/:classId', requireAuth, jobController.getJobAssignment);
+  router.post('/assign-job-to-all', requireAuth, jobController.assignJobToAllGroups);
 
   return router;
 };

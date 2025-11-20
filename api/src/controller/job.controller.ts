@@ -137,6 +137,138 @@ export class JobController {
   );
 };
 
+  assignJobToAllGroups = async (req: AuthRequest, res: Response): Promise<void> => {
+    const { class_id, job_title } = req.body;
+
+    console.log('Assigning job to all groups in class:', { class_id, job_title });
+
+    if (!class_id || !job_title) {
+      res.status(400).json({
+        error: 'Missing required fields: class_id, job_title'
+      });
+      return;
+    }
+
+    const classIdInt = parseInt(class_id);
+    if (isNaN(classIdInt) || classIdInt <= 0) {
+      console.log('❌ Invalid class_id:', class_id);
+      res.status(400).json({ error: 'class_id must be a valid positive integer.' });
+      return;
+    }
+
+    try {
+      const promiseDb = this.db.promise();
+
+      // Get all groups for the class
+      const [groupsResult] = await promiseDb.query(
+        'SELECT DISTINCT group_id FROM `GroupsInfo` WHERE class_id = ? ORDER BY group_id',
+        [class_id]
+      ) as any[];
+
+      if (groupsResult.length === 0) {
+        res.status(404).json({ error: 'No groups found for this class' });
+        return;
+      }
+
+      const groupIds = groupsResult.map((group: any) => group.group_id);
+      console.log(`Found ${groupIds.length} groups for class ${class_id}:`, groupIds);
+
+      await promiseDb.query('START TRANSACTION');
+
+      // Process each group
+      for (const groupId of groupIds) {
+        // Insert/update job assignment
+        await promiseDb.query(
+          `INSERT INTO Job_Assignment (\`group\`, \`class\`, job)
+          VALUES (?, ?, ?)
+          ON DUPLICATE KEY UPDATE job = VALUES(job)`,
+          [groupId, class_id, job_title]
+        );
+
+        // Update students' current page
+        await promiseDb.query(
+          "UPDATE Users SET `current_page` = 'jobdes' WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+          [groupId, class_id]
+        );
+
+        // Update progress
+        await promiseDb.query(
+          "UPDATE Progress SET step = 'job_description' WHERE crn = ? AND group_id = ?",
+          [class_id, groupId]
+        );
+
+        // Clear all related data for this group
+        await promiseDb.query('DELETE FROM InterviewPage WHERE class = ? AND group_id = ?', [class_id, groupId]);
+        await promiseDb.query('DELETE FROM MakeOfferPage WHERE class = ? AND group_id = ?', [class_id, groupId]);
+        await promiseDb.query('DELETE FROM Resume WHERE class = ? AND group_id = ?', [class_id, groupId]);
+        await promiseDb.query('DELETE FROM Resumepage2 WHERE class = ? AND group_id = ?', [class_id, groupId]);
+        await promiseDb.query('DELETE FROM Offer_Status WHERE class = ? AND group_id = ?', [class_id, groupId]);
+        await promiseDb.query('DELETE FROM Interview_Status WHERE class = ? AND group_id = ?', [class_id, groupId]);
+        await promiseDb.query('DELETE FROM InterviewPopup WHERE class = ? AND group_id = ?', [class_id, groupId]);
+
+        // Get students in this group and clear their data
+        const [students] = await promiseDb.query(
+          "SELECT email FROM Users WHERE group_id = ? AND class = ? AND affiliation = 'student'",
+          [groupId, class_id]
+        ) as any[];
+
+        const emails = students.map(({ email }: any) => email);
+
+        if (emails.length > 0) {
+          const placeholders = emails.map(() => '?').join(',');
+          await promiseDb.query(
+            `DELETE rp FROM Resumepage rp
+            JOIN Users u ON rp.student_id = u.id
+            WHERE u.email IN (${placeholders}) AND u.class = ? AND u.group_id = ?`,
+            [...emails, class_id, groupId]
+          );
+
+          await promiseDb.query(`DELETE FROM Notes WHERE user_email IN (${placeholders})`, emails);
+        }
+
+        // Reset completedResReview tracking for this group
+        const groupKey = `${groupId}_${class_id}`;
+        if ((global as any).completedResReview && (global as any).completedResReview[groupKey]) {
+          (global as any).completedResReview[groupKey] = new Set();
+          console.log(`Reset completedResReview for group ${groupId}, class ${class_id}`);
+        }
+
+        // Emit socket event to this group
+        const roomID = `group_${groupId}_class_${class_id}`;
+        this.io.to(roomID).emit('jobUpdated', {
+          job: job_title,
+        });
+      }
+
+      await promiseDb.query('COMMIT');
+
+      console.log(`✅ Successfully assigned job "${job_title}" to ${groupIds.length} groups in class ${class_id}`);
+
+      res.json({
+        message: 'Job assigned to all groups successfully',
+        class_id: classIdInt,
+        job_title,
+        groups_updated: groupIds.length,
+        group_ids: groupIds,
+        cleared_tables: [
+          'InterviewPage', 'MakeOfferPage', 'Resume', 'Resumepage',
+          'Resumepage2', 'Offer_Status', 'Interview_Status', 'InterviewPopup', 'Notes'
+        ]
+      });
+    } catch (error: any) {
+      try {
+        await this.db.promise().query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Rollback failed:', rollbackError);
+      }
+
+      console.error('Error assigning job to all groups:', error);
+      res.status(500).json({
+        error: 'Database error occurred while assigning job to all groups',
+        details: error.message
+      });
+    }
+  };
 
   updateJob = async (req: AuthRequest, res: Response): Promise<void> => {
     const { job_group_id, class_id, job } = req.body;
