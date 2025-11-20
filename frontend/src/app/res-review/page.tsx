@@ -26,8 +26,15 @@ export default function ResumesPage() {
   const socket = useSocket();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [resumes, setResumes] = useState(0);
-  const [resumesList, setResumesList] = useState<{ file_path: string }[]>([]);
-  const [accepted, setAccepted] = useState(0);
+  const [resumesList, setResumesList] = useState<{ 
+    id: number; 
+    file_path: string; 
+    first_name: string; 
+    last_name: string;
+    title: string;
+    interview: string;
+  }[]>([]); 
+ const [accepted, setAccepted] = useState(0);
   const [rejected, setRejected] = useState(0);
   const [noResponse, setNoResponse] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(30);
@@ -308,7 +315,7 @@ export default function ResumesPage() {
       group_id: user.group_id,
       class: user.class,
       timespent: timeSpent,
-      resume_number: currentResumeIndex + 1,
+      resume_number: resumesList[currentResumeIndex]?.id || (currentResumeIndex + 1), // ✅ FIX: Use actual resume ID
       vote: vote,
     };
 
