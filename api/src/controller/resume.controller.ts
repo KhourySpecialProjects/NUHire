@@ -75,25 +75,63 @@ export class ResumeController {
     const { group_id } = req.params;
     const { class: studentClass } = req.query;
 
-    let query = 'SELECT * FROM Resume WHERE group_id = ?';
-    let params: any[] = [group_id];
-
-    if (studentClass) {
-      query = `
-        SELECT r.* 
-        FROM Resume r
-        JOIN Users u ON r.student_id = u.id
-        WHERE r.group_id = ? AND u.class = ?
-      `;
-      params = [group_id, studentClass];
+    if (!studentClass) {
+      res.status(400).json({ error: 'class query parameter is required' });
+      return;
     }
 
-    this.db.query(query, params, (err, results) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
+    const getAllResumesQuery = `
+      SELECT DISTINCT
+        r.id as resume_number,
+        'unanswered' as vote,
+        0 as checked
+      FROM Resume_pdfs r
+      WHERE r.class_id = ?
+    `;
+
+    const getVotesQuery = `
+      SELECT 
+        res.resume_number,
+        res.vote,
+        res.checked
+      FROM Resume res
+      JOIN Users u ON res.student_id = u.id
+      WHERE res.group_id = ? AND u.class = ?
+    `;
+
+    this.db.query(getAllResumesQuery, [studentClass], (err1, allResumes: any[]) => {
+      if (err1) {
+        res.status(500).json({ error: err1.message });
         return;
       }
-      res.json(results);
+
+      this.db.query(getVotesQuery, [group_id, studentClass], (err2, votes: any[]) => {
+        if (err2) {
+          res.status(500).json({ error: err2.message });
+          return;
+        }
+
+        const resumeMap = new Map();
+        
+        allResumes.forEach(r => {
+          resumeMap.set(r.resume_number, {
+            resume_number: r.resume_number,
+            vote: 'unanswered',
+            checked: 0
+          });
+        });
+
+        votes.forEach(v => {
+          const existing = resumeMap.get(v.resume_number) || { resume_number: v.resume_number };
+          resumeMap.set(v.resume_number, {
+            ...existing,
+            vote: v.vote,
+            checked: v.checked
+          });
+        });
+
+        res.json(Array.from(resumeMap.values()));
+      });
     });
   };
 
