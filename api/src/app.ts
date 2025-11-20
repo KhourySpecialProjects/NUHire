@@ -51,12 +51,26 @@ export class App {
   }
 
   private initializeMiddleware(): void {
-    // CORS configuration
+    this.app.set("trust proxy", 1);
+
     this.app.use(cors({
-      origin: 'https://nuhire-wgez.onrender.com',
+      origin: "https://nuhire-wgez.onrender.com",
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization']
+    }));
+
+    this.app.use(session({
+      secret: process.env.SESSION_SECRET!,
+      resave: false,
+      saveUninitialized: false, 
+      store: this.sessionStore,
+      cookie: {
+        secure: true,
+        httpOnly: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000
+      }
     }));
 
     // Body parser
@@ -78,19 +92,6 @@ export class App {
       password: url.password,
       database: url.pathname.slice(1)
     });
-
-    this.app.use(session({
-      secret: process.env.SESSION_SECRET!,
-      resave: false,
-      saveUninitialized: true,
-      store: this.sessionStore,
-      cookie: {
-        secure: true,
-        httpOnly: true,
-        sameSite: 'none',
-        maxAge: 24 * 60 * 60 * 1000
-      }
-    }));
 
     // Passport initialization
     this.app.use(passport.initialize());
