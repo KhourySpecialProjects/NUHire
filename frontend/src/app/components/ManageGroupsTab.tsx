@@ -697,7 +697,7 @@ export function ManageGroupsTab() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/groups/assign-job-to-all`, {
+      const response = await fetch(`${API_BASE_URL}/jobs/assign-job-to-all`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
