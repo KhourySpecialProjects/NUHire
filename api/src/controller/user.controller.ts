@@ -277,6 +277,14 @@ createUser = async (req: AuthRequest, res: Response): Promise<void> => {
   };
 
   check = async (req: AuthRequest, res: Response): Promise<void> => {
+  console.log('=== CHECK ENDPOINT DEBUG ===');
+  console.log('Session ID:', req.sessionID);
+  console.log('Session:', req.session);
+  console.log('Is Authenticated:', req.isAuthenticated ? req.isAuthenticated() : 'N/A');
+  console.log('Cookies:', req.headers.cookie);
+  console.log('User:', req.user);
+  console.log('===========================');
+  
     try {
       const { email } = req.params;
       console.log("Check endpoint hit with email:", email);
