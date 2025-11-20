@@ -60,6 +60,8 @@ export default function SignupDetails() {
       return;
     }
 
+            console.log('Document cookies:', document.cookie);
+
     if (affiliation === 'student') {
       try {
         const checkRes = await fetch(
