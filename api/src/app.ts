@@ -75,15 +75,17 @@ export class App {
     this.app.use(session({
       secret: process.env.SESSION_SECRET!,
       resave: false,
-      saveUninitialized: true,  // Change to true
-      store: this.sessionStore,  // Now this.sessionStore exists!
+      saveUninitialized: false,  // Change back to false - important!
+      store: this.sessionStore,
       cookie: {
         secure: true,
         httpOnly: true,
-        sameSite: "none",
+        sameSite: "lax",
         maxAge: 24 * 60 * 60 * 1000,
-        partitioned: true
-      }
+      },
+      // Add these:
+      name: 'sessionId',  // Custom name helps with some browsers
+      rolling: true,      // Reset cookie expiration on each request
     }));
 
     // Body parser
