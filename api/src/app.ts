@@ -75,7 +75,7 @@ export class App {
     this.app.use(session({
       secret: process.env.SESSION_SECRET!,
       resave: false,
-      saveUninitialized: false,  // Change back to false - important!
+      saveUninitialized: false,
       store: this.sessionStore,
       cookie: {
         secure: true,
