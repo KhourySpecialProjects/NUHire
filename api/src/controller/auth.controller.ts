@@ -17,16 +17,36 @@ export class AuthController {
   handleKeycloakCallback = [
     (req: AuthRequest, res: Response, next: NextFunction) => {
       console.log('🔄 Starting Keycloak callback processing...');
-      console.log('🍪 Incoming cookies:', req.headers.cookie);
-      console.log('📦 Session ID at start:', req.sessionID);
-      console.log('🔐 Is already authenticated?', req.isAuthenticated ? req.isAuthenticated() : false);
+      console.log('🔍 Query params:', req.query);
       
-      // Only block if BOTH authenticated AND user exists (meaning passport already ran)
-      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-        console.log('⚠️ Duplicate callback detected - user already authenticated');
-        // Don't redirect to dashboard - let the logic below handle the proper redirect
-        // Just skip passport.authenticate and jump to the final handler
-        return next('route'); // This skips passport.authenticate and goes to your redirect logic
+      // If no OAuth code parameter, this is not a legitimate callback
+      if (!req.query.code) {
+        console.log('⚠️ No OAuth code - this is a duplicate/invalid callback');
+        const FRONT_URL = process.env.REACT_APP_FRONT_URL;
+        
+        // If authenticated, check their role and redirect appropriately
+        if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+          const user = req.user;
+          
+          this.db.query('SELECT * FROM Users WHERE email = ?', [user.email], (err, results: any[]) => {
+            if (err || results.length === 0) {
+              res.redirect(`${FRONT_URL}/dashboard`);
+              return;
+            }
+            
+            const dbUser = results[0];
+            const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
+            
+            if (dbUser.affiliation === 'admin') {
+              res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
+            } else {
+              res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+            }
+          });
+        } else {
+          res.redirect(`${FRONT_URL}/?error=invalid_callback`);
+        }
+        return;
       }
       
       next();
@@ -60,7 +80,6 @@ export class AuthController {
 
       console.log(`This is the profile info from Keycloak: ${email}, ${firstName}, ${lastName}`);
 
-      // Your existing database logic with all the redirects
       this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
         if (err) {
           console.error('Database error:', err);
@@ -73,19 +92,16 @@ export class AuthController {
 
           const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
           
-          // Admin check
           if (dbUser.affiliation === 'admin') {
             res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
             return;
           }
 
-          // Check if user needs to complete signup
           if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null || dbUser.affiliation === 'none') {
             res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
             return;
           }
 
-          // Check if group is started
           const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
           
           this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
