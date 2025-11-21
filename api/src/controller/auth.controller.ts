@@ -188,4 +188,51 @@ export class AuthController {
       res.status(401).json({ authenticated: false });
     }
   };
+
+  handlePostSignupRedirect = (req: AuthRequest, res: Response): void => {
+    const FRONT_URL = process.env.REACT_APP_FRONT_URL;
+    
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      res.redirect(`${FRONT_URL}/?error=not_authenticated`);
+      return;
+    }
+
+    const user = req.user;
+    const email = user.email;
+
+    this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
+      if (err || results.length === 0) {
+        res.redirect(`${FRONT_URL}/?error=user_not_found`);
+        return;
+      }
+
+      const dbUser = results[0];
+      const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
+
+      if (dbUser.affiliation === 'admin') {
+        res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
+        return;
+      }
+
+      // Check if group is started for students
+      const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
+      
+      this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
+        if (startErr || startResults.length === 0) {
+          res.redirect(`${FRONT_URL}/waitingGroup`);
+          return;
+        }
+
+        if (startResults[0].started === 1) {
+          if (dbUser.seen === 1) {
+            res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+          } else {
+            res.redirect(`${FRONT_URL}/about`);
+          }
+        } else {
+          res.redirect(`${FRONT_URL}/waitingGroup`);
+        }
+      });
+    });
+  };
 }

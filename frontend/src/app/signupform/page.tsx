@@ -170,9 +170,8 @@ console.log('Response type:', checkRes.type);
 
       if (response.ok) {
         setMessage('User added successfully!');
-        console.log('User added successfully:', user, 'redirecting to Keycloak...');
         setTimeout(() => {
-          window.location.href = `${API_BASE_URL}/auth/keycloak`;
+          window.location.href = `${API_BASE_URL}/auth/post-signup-redirect`;
         }, 1500);
       } else {
         const errorData = await response.json();

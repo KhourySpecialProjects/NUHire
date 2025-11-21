@@ -13,6 +13,7 @@ export default (db: Connection): Router => {
   router.post('/logout', authController.logout);
   router.post('/moderator-login', authController.moderatorLogin);
   router.get('/verify-moderator', authController.verifyModerator);
+  router.get('/post-signup-redirect', authController.handlePostSignupRedirect);
 
   return router;
 };

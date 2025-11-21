@@ -12,7 +12,7 @@ export default (db: Connection): Router => {
   router.get('/crns', moderatorController.getAllModeratorCRNs);
   router.delete('/crns/:crn', moderatorController.deleteModeratorCRN);
   router.get('/crns/:crn', requireAuth, moderatorController.getModeratorCRN);
-  router.get('/classes/:email', requireAuth, moderatorController.getModeratorClasses);
+  router.get('/classes/:email', moderatorController.getModeratorClasses);
   router.get('/classes-full/:email', requireAuth, moderatorController.getModeratorClassesFull);
   router.post('/update-groups', requireAuth, moderatorController.updateGroups);
   router.post('/add-student', requireAuth, moderatorController.addStudent);
