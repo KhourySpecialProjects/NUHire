@@ -68,28 +68,69 @@ export class AuthController {
         return;
       }
 
-      // Helper function to explicitly set cookie and redirect (for Safari)
-      const setCookieAndRedirect = (redirectUrl: string) => {
+      // Helper to send intermediate HTML page for Safari compatibility
+      const sendIntermediatePage = (finalDestination: string) => {
         req.session.save((saveErr) => {
           if (saveErr) {
             console.error('Session save error:', saveErr);
           }
           
-          // Explicitly set cookie in response header for Safari
-          res.cookie('connect.sid', req.sessionID, {
-            maxAge: 86400000,
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/'
-          });
+          console.log('🍪 Sending intermediate page with session:', req.sessionID);
           
-          console.log('🍪 Explicitly setting cookie:', req.sessionID);
-          res.redirect(redirectUrl);
+          const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>Redirecting...</title>
+              <meta charset="UTF-8">
+              <style>
+                body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  min-height: 100vh;
+                  margin: 0;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                }
+                .container {
+                  text-align: center;
+                  color: white;
+                }
+                .spinner {
+                  border: 4px solid rgba(255,255,255,0.3);
+                  border-top: 4px solid white;
+                  border-radius: 50%;
+                  width: 40px;
+                  height: 40px;
+                  animation: spin 1s linear infinite;
+                  margin: 20px auto;
+                }
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h2>Setting up your session...</h2>
+                <div class="spinner"></div>
+                <p>You will be redirected shortly.</p>
+              </div>
+              <script>
+                setTimeout(function() {
+                  window.location.href = '${finalDestination}';
+                }, 1000);
+              </script>
+            </body>
+            </html>
+          `;
+          
+          res.send(html);
         });
       };
 
-      // Regenerate session to ensure clean state and proper cookie setting
       req.session.regenerate((err) => {
         if (err) {
           console.error('Session regeneration error:', err);
@@ -97,7 +138,6 @@ export class AuthController {
           return;
         }
 
-        // Re-login the user after regeneration
         req.login(user, (loginErr) => {
           if (loginErr) {
             console.error('Login error:', loginErr);
@@ -116,7 +156,7 @@ export class AuthController {
           this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
             if (err) {
               console.error('Database error:', err);
-              setCookieAndRedirect(`${FRONT_URL}/?error=db_error`);
+              sendIntermediatePage(`${FRONT_URL}/?error=db_error`);
               return;
             }
 
@@ -125,12 +165,12 @@ export class AuthController {
               const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
 
               if (dbUser.affiliation === 'admin') {
-                setCookieAndRedirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
+                sendIntermediatePage(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
                 return;
               }
 
               if (!dbUser.f_name || !dbUser.l_name || dbUser.affiliation === 'none') {
-                setCookieAndRedirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
+                sendIntermediatePage(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
                 return;
               }
 
@@ -139,7 +179,7 @@ export class AuthController {
               this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
                 if (startErr) {
                   console.error('Error checking group start status:', startErr);
-                  setCookieAndRedirect(`${FRONT_URL}/waitingGroup`);
+                  sendIntermediatePage(`${FRONT_URL}/waitingGroup`);
                   return;
                 }
 
@@ -147,16 +187,16 @@ export class AuthController {
 
                 if (startResults.length > 0 && startResults[0].started === 1) {
                   if (dbUser.seen === 1) {
-                    setCookieAndRedirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+                    sendIntermediatePage(`${FRONT_URL}/dashboard?name=${fullName}`);
                   } else {
-                    setCookieAndRedirect(`${FRONT_URL}/about`);
+                    sendIntermediatePage(`${FRONT_URL}/about`);
                   }
                 } else {
-                  setCookieAndRedirect(`${FRONT_URL}/waitingGroup`);
+                  sendIntermediatePage(`${FRONT_URL}/waitingGroup`);
                 }
               });
             } else {
-              setCookieAndRedirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
+              sendIntermediatePage(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
             }
           });
         });
