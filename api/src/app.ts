@@ -75,14 +75,14 @@ export class App {
     this.app.use(session({
       secret: process.env.SESSION_SECRET!,
       resave: false,
-      saveUninitialized: false,
-      store: this.sessionStore,
+      saveUninitialized: true,  // Change to true
+      store: this.sessionStore,  // Now this.sessionStore exists!
       cookie: {
         secure: true,
         httpOnly: true,
         sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000,
-      },
+        maxAge: 24 * 60 * 60 * 1000
+      }
     }));
 
     // Body parser
