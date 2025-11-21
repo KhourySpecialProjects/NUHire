@@ -113,15 +113,22 @@ export class AuthController {
 
             console.log('seen group results:', dbUser);
 
-            if (startResults.length > 0 && startResults[0].started === 1) {
-              if (dbUser.seen === 1) {
-                res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
-              } else {
-                res.redirect(`${FRONT_URL}/about`);
+            // Force session save before redirect
+            req.session.save((err) => {
+              if (err) {
+                console.error('Session save error:', err);
               }
-            } else {
-              res.redirect(`${FRONT_URL}/waitingGroup`);
-            }
+              
+              if (startResults.length > 0 && startResults[0].started === 1) {
+                if (dbUser.seen === 1) {
+                  res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+                } else {
+                  res.redirect(`${FRONT_URL}/about`);
+                }
+              } else {
+                res.redirect(`${FRONT_URL}/waitingGroup`);
+              }
+            });
           });
         } else {
           res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
