@@ -68,6 +68,27 @@ export class AuthController {
         return;
       }
 
+      // Helper function to explicitly set cookie and redirect (for Safari)
+      const setCookieAndRedirect = (redirectUrl: string) => {
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Session save error:', saveErr);
+          }
+          
+          // Explicitly set cookie in response header for Safari
+          res.cookie('connect.sid', req.sessionID, {
+            maxAge: 86400000,
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/'
+          });
+          
+          console.log('🍪 Explicitly setting cookie:', req.sessionID);
+          res.redirect(redirectUrl);
+        });
+      };
+
       // Regenerate session to ensure clean state and proper cookie setting
       req.session.regenerate((err) => {
         if (err) {
@@ -95,7 +116,7 @@ export class AuthController {
           this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
             if (err) {
               console.error('Database error:', err);
-              res.redirect(`${FRONT_URL}/?error=db_error`);
+              setCookieAndRedirect(`${FRONT_URL}/?error=db_error`);
               return;
             }
 
@@ -104,12 +125,12 @@ export class AuthController {
               const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
 
               if (dbUser.affiliation === 'admin') {
-                req.session.save(() => res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`));
+                setCookieAndRedirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
                 return;
               }
 
               if (!dbUser.f_name || !dbUser.l_name || dbUser.affiliation === 'none') {
-                req.session.save(() => res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`));
+                setCookieAndRedirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
                 return;
               }
 
@@ -118,7 +139,7 @@ export class AuthController {
               this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
                 if (startErr) {
                   console.error('Error checking group start status:', startErr);
-                  req.session.save(() => res.redirect(`${FRONT_URL}/waitingGroup`));
+                  setCookieAndRedirect(`${FRONT_URL}/waitingGroup`);
                   return;
                 }
 
@@ -126,16 +147,16 @@ export class AuthController {
 
                 if (startResults.length > 0 && startResults[0].started === 1) {
                   if (dbUser.seen === 1) {
-                    req.session.save(() => res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`));
+                    setCookieAndRedirect(`${FRONT_URL}/dashboard?name=${fullName}`);
                   } else {
-                    req.session.save(() => res.redirect(`${FRONT_URL}/about`));
+                    setCookieAndRedirect(`${FRONT_URL}/about`);
                   }
                 } else {
-                  req.session.save(() => res.redirect(`${FRONT_URL}/waitingGroup`));
+                  setCookieAndRedirect(`${FRONT_URL}/waitingGroup`);
                 }
               });
             } else {
-              req.session.save(() => res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`));
+              setCookieAndRedirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
             }
           });
         });
@@ -144,15 +165,16 @@ export class AuthController {
   ];
 
   getAuthenticatedUser = (req: AuthRequest, res: Response): void => {
-    if (req.sessionID && !req.session.passport) {
-      console.log('❌ Session exists but no passport data - authentication expired');
-      res.redirect('/auth/keycloak');
-      return;
-    }
+    console.log('=== GET AUTH USER DEBUG ===');
+    console.log('Session ID:', req.sessionID);
+    console.log('Session:', req.session);
+    console.log('Is Authenticated:', req.isAuthenticated ? req.isAuthenticated() : 'N/A');
+    console.log('User:', req.user);
+    console.log('===========================');
 
     if (!req.isAuthenticated || !req.isAuthenticated()) {
-      console.log('❌ User not authenticated - redirecting to sign in');
-      res.redirect('/auth/keycloak');
+      console.log('❌ User not authenticated');
+      res.status(401).json({ error: 'Not authenticated' });
       return;
     }
 

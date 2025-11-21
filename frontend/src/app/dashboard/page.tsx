@@ -140,27 +140,37 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-
-        if (response.ok) {
-          setUser(userData);
-          
-          // Fetch job description for this user
-          await fetchJobDescription(userData);
-          
-          // Fetch actual progress from database instead of assuming "none"
-          const currentProgress = await fetchProgress(userData);
-          
-          // Set progress to what's actually in the database
-          setProgress(currentProgress);
-          localStorage.setItem("progress", currentProgress);
-          
-          
-        } else {
-          setUser(null);
-          router.push("/"); 
+        const response = await fetch(`${API_BASE_URL}/auth/user`, { 
+          credentials: "include" 
+        });
+        
+        if (response.status === 401) {
+          // Not authenticated - redirect to login from frontend
+          console.log('Not authenticated, redirecting to login...');
+          window.location.href = `${API_BASE_URL}/auth/keycloak`;
+          return;
         }
+        
+        if (!response.ok) {
+          console.error('Error response:', response.status);
+          setUser(null);
+          router.push("/");
+          return;
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+        
+        // Fetch job description for this user
+        await fetchJobDescription(userData);
+        
+        // Fetch actual progress from database
+        const currentProgress = await fetchProgress(userData);
+        
+        // Set progress to what's actually in the database
+        setProgress(currentProgress);
+        localStorage.setItem("progress", currentProgress);
+        
       } catch (error) {
         console.error("Error fetching user:", error);
         router.push("/"); 
@@ -170,7 +180,7 @@ const Dashboard = () => {
     };
 
     fetchUser();
-  }, [router]);
+  }, [router, fetchJobDescription, fetchProgress]);
 
   useEffect(() => {
     if (!socket || !user) return;
