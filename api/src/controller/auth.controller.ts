@@ -14,25 +14,34 @@ export class AuthController {
     passport.authenticate('keycloak')(req, res, next);
   };
 
-  handleKeycloakCallback = [
-    (req: AuthRequest, res: Response, next: NextFunction) => {
-      console.log('🔄 Starting Keycloak callback processing...');
-      next();
-    },
-    passport.authenticate('keycloak', {
-      failureRedirect: `${process.env.REACT_APP_FRONT_URL}/?error=auth_failed`,
-      failureFlash: false
-    }),
-    (req: AuthRequest, res: Response) => {
+handleKeycloakCallback = [
+  (req: AuthRequest, res: Response, next: NextFunction) => {
+    console.log('🔄 Starting Keycloak callback processing...');
+    console.log('🍪 Incoming cookies:', req.headers.cookie);
+    console.log('📦 Session ID at start:', req.sessionID);
+    next();
+  },
+  passport.authenticate('keycloak', {
+    failureRedirect: `${process.env.REACT_APP_FRONT_URL}/?error=auth_failed`,
+    failureFlash: false
+  }),
+  (req: AuthRequest, res: Response) => {
+    // ADD THIS CRITICAL DEBUGGING
+    console.log('✅ Auth succeeded!');
+    console.log('📦 Session ID after auth:', req.sessionID);
+    console.log('👤 User object:', req.user);
+    console.log('🔐 Is Authenticated:', req.isAuthenticated());
+    console.log('💾 Session data:', req.session);
+    console.log('🍪 Set-Cookie header:', res.getHeader('set-cookie'));
 
-      const user = req.user;
-      const FRONT_URL = process.env.REACT_APP_FRONT_URL;
+    const user = req.user;
+    const FRONT_URL = process.env.REACT_APP_FRONT_URL;
 
-      if (!user || !user.email) {
-        console.error('No user or email found after authentication');
-        res.redirect(`${FRONT_URL}/?error=no_user`);
-        return;
-      }
+    if (!user || !user.email) {
+      console.error('❌ No user or email found after authentication');
+      res.redirect(`${FRONT_URL}/?error=no_user`);
+      return;
+    }
 
       const email = user.email;
       const prof = user.keycloakProfile;

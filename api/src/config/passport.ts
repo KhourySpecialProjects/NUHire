@@ -85,7 +85,8 @@ export function configurePassport(db: Connection): void {
   );
 
   passport.serializeUser((user: any, done) => {
-    done(null, user.id);
+    console.log('✅ SERIALIZING USER:', user);
+    done(null, user.id); // or whatever identifier you use
   });
 
   passport.deserializeUser(async (id: string, done) => {
