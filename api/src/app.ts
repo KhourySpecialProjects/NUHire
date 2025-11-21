@@ -80,12 +80,9 @@ export class App {
       cookie: {
         secure: true,
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
         maxAge: 24 * 60 * 60 * 1000,
       },
-      // Add these:
-      name: 'sessionId',  // Custom name helps with some browsers
-      rolling: true,      // Reset cookie expiration on each request
     }));
 
     // Body parser
