@@ -14,34 +14,43 @@ export class AuthController {
     passport.authenticate('keycloak')(req, res, next);
   };
 
-handleKeycloakCallback = [
-  (req: AuthRequest, res: Response, next: NextFunction) => {
-    console.log('🔄 Starting Keycloak callback processing...');
-    console.log('🍪 Incoming cookies:', req.headers.cookie);
-    console.log('📦 Session ID at start:', req.sessionID);
-    next();
-  },
-  passport.authenticate('keycloak', {
-    failureRedirect: `${process.env.REACT_APP_FRONT_URL}/?error=auth_failed`,
-    failureFlash: false
-  }),
-  (req: AuthRequest, res: Response) => {
-    // ADD THIS CRITICAL DEBUGGING
-    console.log('✅ Auth succeeded!');
-    console.log('📦 Session ID after auth:', req.sessionID);
-    console.log('👤 User object:', req.user);
-    console.log('🔐 Is Authenticated:', req.isAuthenticated());
-    console.log('💾 Session data:', req.session);
-    console.log('🍪 Set-Cookie header:', res.getHeader('set-cookie'));
+  handleKeycloakCallback = [
+    (req: AuthRequest, res: Response, next: NextFunction) => {
+      console.log('🔄 Starting Keycloak callback processing...');
+      console.log('🍪 Incoming cookies:', req.headers.cookie);
+      console.log('📦 Session ID at start:', req.sessionID);
+      console.log('🔐 Is already authenticated?', req.isAuthenticated ? req.isAuthenticated() : false);
+      
+      // Only block if BOTH authenticated AND user exists (meaning passport already ran)
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        console.log('⚠️ Duplicate callback detected - user already authenticated');
+        // Don't redirect to dashboard - let the logic below handle the proper redirect
+        // Just skip passport.authenticate and jump to the final handler
+        return next('route'); // This skips passport.authenticate and goes to your redirect logic
+      }
+      
+      next();
+    },
+    passport.authenticate('keycloak', {
+      failureRedirect: `${process.env.REACT_APP_FRONT_URL}/?error=auth_failed`,
+      failureFlash: false
+    }),
+    (req: AuthRequest, res: Response) => {
+      console.log('✅ Auth succeeded!');
+      console.log('📦 Session ID after auth:', req.sessionID);
+      console.log('👤 User object:', req.user);
+      console.log('🔐 Is Authenticated:', req.isAuthenticated());
+      console.log('💾 Session data:', req.session);
+      console.log('🍪 Set-Cookie header:', res.getHeader('set-cookie'));
 
-    const user = req.user;
-    const FRONT_URL = process.env.REACT_APP_FRONT_URL;
+      const user = req.user;
+      const FRONT_URL = process.env.REACT_APP_FRONT_URL;
 
-    if (!user || !user.email) {
-      console.error('❌ No user or email found after authentication');
-      res.redirect(`${FRONT_URL}/?error=no_user`);
-      return;
-    }
+      if (!user || !user.email) {
+        console.error('❌ No user or email found after authentication');
+        res.redirect(`${FRONT_URL}/?error=no_user`);
+        return;
+      }
 
       const email = user.email;
       const prof = user.keycloakProfile;
@@ -51,6 +60,7 @@ handleKeycloakCallback = [
 
       console.log(`This is the profile info from Keycloak: ${email}, ${firstName}, ${lastName}`);
 
+      // Your existing database logic with all the redirects
       this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
         if (err) {
           console.error('Database error:', err);
@@ -62,19 +72,20 @@ handleKeycloakCallback = [
           const dbUser = results[0];
 
           const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
+          
           // Admin check
           if (dbUser.affiliation === 'admin') {
             res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
             return;
           }
 
-          // Check if user needs to complete signup (missing names only)
+          // Check if user needs to complete signup
           if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null || dbUser.affiliation === 'none') {
             res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
             return;
           }
 
-          // User has group - check if group is started
+          // Check if group is started
           const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
           
           this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
