@@ -14,102 +14,94 @@ export class AuthController {
     passport.authenticate('keycloak')(req, res, next);
   };
 
-  handleKeycloakCallback = [
-    (req: AuthRequest, res: Response, next: NextFunction) => {
-        console.log('🔄 Starting Keycloak callback processing...');
-        console.log('🍪 Incoming cookies:', req.headers.cookie);
-        console.log('📦 Session ID at start:', req.sessionID);
-        
-        // Check if already authenticated - prevent double callback
-        if (req.isAuthenticated && req.isAuthenticated()) {
-          console.log('⚠️ Already authenticated, skipping passport.authenticate');
-          res.redirect(`${process.env.REACT_APP_FRONT_URL}/dashboard`);
+handleKeycloakCallback = [
+  (req: AuthRequest, res: Response, next: NextFunction) => {
+    console.log('🔄 Starting Keycloak callback processing...');
+    console.log('🍪 Incoming cookies:', req.headers.cookie);
+    console.log('📦 Session ID at start:', req.sessionID);
+    next();
+  },
+  passport.authenticate('keycloak', {
+    failureRedirect: `${process.env.REACT_APP_FRONT_URL}/?error=auth_failed`,
+    failureFlash: false
+  }),
+  (req: AuthRequest, res: Response) => {
+    // ADD THIS CRITICAL DEBUGGING
+    console.log('✅ Auth succeeded!');
+    console.log('📦 Session ID after auth:', req.sessionID);
+    console.log('👤 User object:', req.user);
+    console.log('🔐 Is Authenticated:', req.isAuthenticated());
+    console.log('💾 Session data:', req.session);
+    console.log('🍪 Set-Cookie header:', res.getHeader('set-cookie'));
+
+    const user = req.user;
+    const FRONT_URL = process.env.REACT_APP_FRONT_URL;
+
+    if (!user || !user.email) {
+      console.error('❌ No user or email found after authentication');
+      res.redirect(`${FRONT_URL}/?error=no_user`);
+      return;
+    }
+
+      const email = user.email;
+      const prof = user.keycloakProfile;
+      const parts = prof.name.split(" ");
+      const firstName = parts[0];
+      const lastName = parts[1];
+
+      console.log(`This is the profile info from Keycloak: ${email}, ${firstName}, ${lastName}`);
+
+      this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
+        if (err) {
+          console.error('Database error:', err);
+          res.redirect(`${FRONT_URL}/?error=db_error`);
           return;
         }
-        
-        next();
-      },
-    passport.authenticate('keycloak', {
-      failureRedirect: `${process.env.REACT_APP_FRONT_URL}/?error=auth_failed`,
-      failureFlash: false
-    }),
-    (req: AuthRequest, res: Response) => {
-      // ADD THIS CRITICAL DEBUGGING
-      console.log('✅ Auth succeeded!');
-      console.log('📦 Session ID after auth:', req.sessionID);
-      console.log('👤 User object:', req.user);
-      console.log('🔐 Is Authenticated:', req.isAuthenticated());
-      console.log('💾 Session data:', req.session);
-      console.log('🍪 Set-Cookie header:', res.getHeader('set-cookie'));
 
-      const user = req.user;
-      const FRONT_URL = process.env.REACT_APP_FRONT_URL;
+        if (results.length > 0) {
+          const dbUser = results[0];
 
-      if (!user || !user.email) {
-        console.error('❌ No user or email found after authentication');
-        res.redirect(`${FRONT_URL}/?error=no_user`);
-        return;
-      }
-
-        const email = user.email;
-        const prof = user.keycloakProfile;
-        const parts = prof.name.split(" ");
-        const firstName = parts[0];
-        const lastName = parts[1];
-
-        console.log(`This is the profile info from Keycloak: ${email}, ${firstName}, ${lastName}`);
-
-        this.db.query('SELECT * FROM Users WHERE email = ?', [email], (err, results: any[]) => {
-          if (err) {
-            console.error('Database error:', err);
-            res.redirect(`${FRONT_URL}/?error=db_error`);
+          const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
+          // Admin check
+          if (dbUser.affiliation === 'admin') {
+            res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
             return;
           }
 
-          if (results.length > 0) {
-            const dbUser = results[0];
-
-            const fullName = encodeURIComponent(`${dbUser.f_name || ''} ${dbUser.l_name || ''}`.trim());
-            // Admin check
-            if (dbUser.affiliation === 'admin') {
-              res.redirect(`${FRONT_URL}/advisor-dashboard?name=${fullName}`);
-              return;
-            }
-
-            // Check if user needs to complete signup (missing names only)
-            if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null || dbUser.affiliation === 'none') {
-              res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
-              return;
-            }
-
-            // User has group - check if group is started
-            const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
-            
-            this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
-              if (startErr) {
-                console.error('Error checking group start status:', startErr);
-                res.redirect(`${FRONT_URL}/waitingGroup`);
-                return;
-              }
-
-              console.log('seen group results:', dbUser);
-
-              if (startResults.length > 0 && startResults[0].started === 1) {
-                if (dbUser.seen === 1) {
-                  res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
-                } else {
-                  res.redirect(`${FRONT_URL}/about`);
-                }
-              } else {
-                res.redirect(`${FRONT_URL}/waitingGroup`);
-              }
-            });
-          } else {
+          // Check if user needs to complete signup (missing names only)
+          if (!dbUser.f_name || !dbUser.l_name || dbUser.l_name === '' || dbUser.f_name === '' || dbUser.l_name === null || dbUser.f_name === null || dbUser.affiliation === 'none') {
             res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
+            return;
           }
-        });
-      }
-    ];
+
+          // User has group - check if group is started
+          const checkGroupStartedQuery = 'SELECT started FROM `GroupsInfo` WHERE class_id = ? AND group_id = ?';
+          
+          this.db.query(checkGroupStartedQuery, [dbUser.class, dbUser.group_id], (startErr, startResults: any[]) => {
+            if (startErr) {
+              console.error('Error checking group start status:', startErr);
+              res.redirect(`${FRONT_URL}/waitingGroup`);
+              return;
+            }
+
+            console.log('seen group results:', dbUser);
+
+            if (startResults.length > 0 && startResults[0].started === 1) {
+              if (dbUser.seen === 1) {
+                res.redirect(`${FRONT_URL}/dashboard?name=${fullName}`);
+              } else {
+                res.redirect(`${FRONT_URL}/about`);
+              }
+            } else {
+              res.redirect(`${FRONT_URL}/waitingGroup`);
+            }
+          });
+        } else {
+          res.redirect(`${FRONT_URL}/signupform?email=${encodeURIComponent(email)}&firstName=${firstName}&lastName=${lastName}`);
+        }
+      });
+    }
+  ];
 
   getAuthenticatedUser = (req: AuthRequest, res: Response): void => {
     if (req.sessionID && !req.session.passport) {
