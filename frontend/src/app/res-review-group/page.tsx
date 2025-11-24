@@ -501,7 +501,7 @@ export default function ResReviewGroup() {
                     isSelected ? 'border-blue-500 bg-blue-50' : 'border-northeasternRed'
                   }`}
                 >
-                  {/* Name and votes on same line */}
+                  {/* Name & votes on same line */}
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-navy">
                       {resume.first_name} {resume.last_name}
