@@ -181,7 +181,7 @@ export default function WaitingGroupPage() {
                   Waiting for Teacher
                 </h1>
                 <p className="text-xl text-northeasternBlack mb-4">
-                  Hello, `{user.f_name} {user.l_name}`!
+                  Hello, {user.f_name} {user.l_name}!
                 </p>
                 {user.class && (
                   <p className="text-lg text-navy mb-6">

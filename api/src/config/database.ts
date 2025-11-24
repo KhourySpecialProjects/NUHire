@@ -92,21 +92,71 @@ export class DatabaseService {
     });
   }
 
-  private async initializeDatabase(): Promise<void> {
-    const queries = [
-      "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`) VALUES ('labit.z@northeastern.edu', 1)",
-    ];
+private async initializeDatabase(): Promise<void> {
+  const crn = 1; // Default CRN for initialization
+  
+  const queries = [
+    "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`) VALUES ('labit.z@northeastern.edu', 1)",
+  ];
 
-    for (const query of queries) {
-      try {
-        await this.executeQuery(query);
-      } catch (error) {
-        console.error(`Error executing query: ${query.substring(0, 60)}...`, error);
-      }
+  // Execute initial queries
+  for (const query of queries) {
+    try {
+      await this.executeQuery(query);
+    } catch (error) {
+      console.error(`Error executing query: ${query.substring(0, 60)}...`, error);
     }
-
-    console.log('✅ Database initialization completed!');
   }
+
+  // Seed job descriptions
+  const jobDescriptions = [
+    { title: 'Carbonite', file_path: 'uploads/jobdescription/carbonite-jobdes.pdf' },
+    { title: 'Cygilant', file_path: 'uploads/jobdescription/Cygilant Security Research Job Description.pdf' },
+    { title: 'Motionlogic', file_path: 'uploads/jobdescription/QA Coop Motionlogic (Berlin, Germany).pdf' },
+    { title: 'Source One', file_path: 'uploads/jobdescription/SourceOneJobDescription.pdf' },
+    { title: 'Two Six Labs', file_path: 'uploads/jobdescription/Two Six Labs Data Visualization Co-op Job Description.pdf' }
+  ];
+
+  for (const job of jobDescriptions) {
+    try {
+      await this.executeQuery(
+        'INSERT IGNORE INTO job_descriptions (title, file_path, class_id) VALUES (?, ?, ?)',
+        [job.title, job.file_path, crn]
+      );
+      console.log(`✅ Seeded job description: ${job.title}`);
+    } catch (error) {
+      console.error(`Error seeding job description ${job.title}:`, error);
+    }
+  }
+
+  // Seed resume PDFs
+  const resumePdfs = [
+    { title: 'sample1', file_path: 'uploads/resumes/sample1.pdf' },
+    { title: 'sample2', file_path: 'uploads/resumes/sample2.pdf' },
+    { title: 'sample3', file_path: 'uploads/resumes/sample3.pdf' },
+    { title: 'sample4', file_path: 'uploads/resumes/sample4.pdf' },
+    { title: 'sample5', file_path: 'uploads/resumes/sample5.pdf' },
+    { title: 'sample6', file_path: 'uploads/resumes/sample6.pdf' },
+    { title: 'sample7', file_path: 'uploads/resumes/sample7.pdf' },
+    { title: 'sample8', file_path: 'uploads/resumes/sample8.pdf' },
+    { title: 'sample9', file_path: 'uploads/resumes/sample9.pdf' },
+    { title: 'sample10', file_path: 'uploads/resumes/sample10.pdf' }
+  ];
+
+  for (const resume of resumePdfs) {
+    try {
+      await this.executeQuery(
+        'INSERT IGNORE INTO Resume_pdfs (title, file_path, class_id) VALUES (?, ?, ?)',
+        [resume.title, resume.file_path, crn]
+      );
+      console.log(`✅ Seeded resume PDF: ${resume.title}`);
+    } catch (error) {
+      console.error(`Error seeding resume PDF ${resume.title}:`, error);
+    }
+  }
+
+  console.log('✅ Database initialization completed!');
+}
 
   private executeQuery(query: string, params: any[] = []): Promise<any> {
     return new Promise((resolve, reject) => {
