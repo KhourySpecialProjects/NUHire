@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 
 export class ResumeController {
-  constructor(private db: Connection) {}
+  constructor(private db: Connection, private io: any) {}
 
   getAllResumes = (req: AuthRequest, res: Response): void => {
     this.db.query('SELECT * FROM Resume', (err, results) => {
@@ -42,23 +42,42 @@ export class ResumeController {
       return;
     }
 
-    const query = `INSERT INTO Resume (student_id, group_id, class, timespent, resume_number, vote) 
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE timespent = VALUES(timespent), vote = VALUES(vote);`;
+    // First, get the old vote to send in socket event
+    this.db.query(
+      'SELECT vote FROM Resume WHERE student_id = ? AND resume_number = ? AND group_id = ? AND class = ?',
+      [student_id, resume_number, group_id, classId],
+      (err, results: any[]) => {
+        const oldVote = results && results.length > 0 ? results[0].vote : 'unanswered';
 
-    console.log('🗳️ [BACKEND-VOTE] Executing query with params:', [student_id, group_id, classId, timespent, resume_number, vote]);
+        const query = `INSERT INTO Resume (student_id, group_id, class, timespent, resume_number, vote) 
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE timespent = VALUES(timespent), vote = VALUES(vote);`;
 
-    this.db.query(query, [student_id, group_id, classId, timespent, resume_number, vote], (err, result) => {
-      if (err) {
-        console.error('❌ [BACKEND-VOTE] Error saving vote:', err);
-        res.status(500).json({ error: 'Database error' });
-        return;
+        console.log('🗳️ [BACKEND-VOTE] Executing query with params:', [student_id, group_id, classId, timespent, resume_number, vote]);
+
+        this.db.query(query, [student_id, group_id, classId, timespent, resume_number, vote], (err, result) => {
+          if (err) {
+            console.error('❌ [BACKEND-VOTE] Error saving vote:', err);
+            res.status(500).json({ error: 'Database error' });
+            return;
+          }
+
+          console.log(`✅ [BACKEND-VOTE] Vote recorded for resume ${resume_number} by student ${student_id} in group ${group_id}, class ${classId}`);
+          
+          // EMIT socket event to all group members
+          const roomId = `group_${group_id}_class_${classId}`;
+          this.io.to(roomId).emit('voteUpdated', {
+            resume_number,
+            oldVote,
+            newVote: vote,
+            student_id
+          });
+          console.log(`📡 [SOCKET] Emitted voteUpdated to room ${roomId}: Resume ${resume_number}, ${oldVote} -> ${vote}`);
+
+          res.status(200).json({ message: 'Resume review updated successfully' });
+        });
       }
-
-      console.log(`✅ [BACKEND-VOTE] Vote recorded for resume ${resume_number} by student ${student_id} in group ${group_id}, class ${classId}`);
-      console.log(`✅ [BACKEND-VOTE] Database result:`, result);
-      res.status(200).json({ message: 'Resume review updated successfully' });
-    });
+    );
   };
   
   getResumesByStudent = (req: AuthRequest, res: Response): void => {
