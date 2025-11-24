@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useSocket } from "./socketContext";
+import { useAuth } from "./AuthContext";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -8,15 +9,11 @@ interface Fact {
   fact: string;
 }
 
-interface User {
-  group_id?: number;
-  class_id?: number;
-}
 
 const Facts: React.FC = () => {
+  const {user, loading: userloading} = useAuth();
   const [facts, setFacts] = useState<Fact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
   const socket = useSocket();
 
   useEffect(() => { 
@@ -27,7 +24,7 @@ const Facts: React.FC = () => {
     console.log("Fetching facts...");
     console.log ("User in fetchFacts:", user);
 
-    const factsUrl = `${API_BASE_URL}/facts/get/${user?.class_id}`;
+    const factsUrl = `${API_BASE_URL}/facts/get/${user?.class}`;
     try {
       const factsRes = await fetch(factsUrl, { credentials: "include", method: "GET" });
       console.log("Facts response:", factsRes);
@@ -48,13 +45,13 @@ const Facts: React.FC = () => {
   };
 
  useEffect(() => {
-    if (!socket || !user?.class_id || !user?.group_id) return;
+    if (!socket || !user?.class || !user?.group_id) return;
 
     const handleNewFacts = () => {
       fetchFacts();
     };
 
-    const roomId = `class_${user.class_id}`;
+    const roomId = `class_${user.class}`;
     socket.emit("joinGroup", roomId);
 
     socket.on("factsUpdated", handleNewFacts);
@@ -64,29 +61,11 @@ const Facts: React.FC = () => {
     };
   }, [socket, user]);
 
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const userRes = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await userRes.json();
-        const newUser = { group_id: userData.group_id, class_id: userData.class };
-        setUser(newUser);
-        console.log("User data fetched:", userData);
-      } catch (error) {
-        console.error("Error fetching user or facts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
-
   useEffect(() => {
     fetchFacts();
   }, [user]);
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="p-4 text-center text-gray-500">
         Loading fun facts...
