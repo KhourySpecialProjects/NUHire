@@ -15,6 +15,7 @@ import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
 import { useSocket } from "../components/socketContext";
 import Facts from "../components/facts";
+import { useAuth } from "../components/AuthContext";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -34,7 +35,8 @@ export default function ResumesPage() {
     title: string;
     interview: string;
   }[]>([]); 
- const [accepted, setAccepted] = useState(0);
+  const { user , loading: userloading} = useAuth();
+  const [accepted, setAccepted] = useState(0);
   const [rejected, setRejected] = useState(0);
   const [noResponse, setNoResponse] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(30);
@@ -57,7 +59,6 @@ export default function ResumesPage() {
     email: string;
     class: number;
   }
-  const [user, setUser] = useState<User | null>(null);
   const [donePopup, setDonePopup] = useState(false);
   const totalDecisions = accepted + rejected + noResponse;
   const maxDecisions = totalDecisions >= 10;
@@ -119,32 +120,6 @@ export default function ResumesPage() {
       window.removeEventListener('showInstructions', handleShowInstructions);
     };
   }, []);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, {
-          credentials: "include",
-        });
-        const userData = await response.json();
-
-        if (response.ok) {
-          setUser(userData);
-          updateProgress(userData, "res_1");
-        } else {
-          setUser(null);
-          router.push("/");
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
 
   useEffect(() => {
     if (!socket || !user || !user.email) return;
@@ -447,7 +422,7 @@ export default function ResumesPage() {
     nextResume();
   };
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
