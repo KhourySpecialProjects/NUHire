@@ -7,6 +7,7 @@ import NavbarAdmin from "../components/navbar-admin";
 import AdminReactionPopup from "../components/adminReactionPopup";
 import { useSocket } from "../components/socketContext";
 import Popup from "../components/popup";
+import { useAuth } from "../components/AuthContext";
 
 interface User {
   id: number;
@@ -39,7 +40,7 @@ interface ClassInfo {
 }
 
 const Upload = () => {
-  const [user, setUser] = useState<User| null>(null);
+  const { user, loading: userloading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -108,29 +109,6 @@ const Upload = () => {
     // Small delay to ensure elements are rendered
     setTimeout(checkInitialScroll, 100);
   }, [jobs, resumes]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-
-        if (response.ok) {
-          setUser(userData);
-        } else {
-          setUser(null);
-          router.push("/");
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
 
   // Fetch classes when user is loaded
   useEffect(() => {
@@ -405,7 +383,7 @@ const Upload = () => {
     }
   };
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
