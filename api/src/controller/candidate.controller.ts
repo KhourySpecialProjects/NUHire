@@ -108,6 +108,7 @@ export class CandidateController {
         res.status(500).json({ error: err.message });
         return;
       }
+      console.log(`Fetched candidate with resume number ${resume_number}:`, results[0]);
       res.json(results[0]);
     });
   };
