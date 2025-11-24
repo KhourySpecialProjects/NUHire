@@ -8,7 +8,7 @@ import { Server as SocketIOServer } from 'socket.io';
 
 export default (db: Pool, io: SocketIOServer, onlineStudents: Record<string, string>): Router => {
   const router = Router();
-  const resumeController = new ResumeController(db);
+  const resumeController = new ResumeController(db, io);
   const jobController = new JobController(db, io, onlineStudents);
 
   router.delete('/resume/:fileName', requireAuth, resumeController.deleteResumeFile);
