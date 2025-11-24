@@ -90,7 +90,7 @@ const NotesPage: React.FC = () => {
     fetchNotes();
   }, [user?.email]);
 
-  if (userloading || loading) {
+  if (userloading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">

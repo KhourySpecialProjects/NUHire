@@ -65,7 +65,7 @@ const Facts: React.FC = () => {
     fetchFacts();
   }, [user]);
 
-  if (userloading || loading) {
+  if (userloading) {
     return (
       <div className="p-4 text-center text-gray-500">
         Loading fun facts...

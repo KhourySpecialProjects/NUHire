@@ -265,7 +265,7 @@ const handleSubmit = async () => {
     }
   };
 
-  if (userloading || loading) {
+  if (userloading) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
         <div className="max-w-4xl mx-auto p-4">
