@@ -3,41 +3,18 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Slideshow from "../components/slideshow"; 
+import { useAuth } from "../components/AuthContext";
 
 export default function InstructionsPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(true);
+  const { user, loading: userLoading } = useAuth();
   const router = useRouter();
-  const FRONT_URL = process.env.NEXT_PUBLIC_FRONT_URL;
   const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-
-        if (response.ok) {
-          setName(userData.f_name + " " + userData.l_name);
-          setEmail(userData.email); // Set the email from userData
-        } else {
-          setName("");
-          setEmail("");
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
-
   const updateUserSeeDash = async () => {
+    if (!user?.email) return false;
+    
     try {
-      console.log("Updating user-see-dash field for email:", email);
+      console.log("Updating user-see-dash field for email:", user.email);
       
       const response = await fetch(`${API_BASE_URL}/users/update-seen`, {
         method: "POST",
@@ -46,7 +23,7 @@ export default function InstructionsPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          email
+          email: user.email
         }),
       });
 
@@ -66,11 +43,14 @@ export default function InstructionsPage() {
   };
 
   const handleContinue = async () => {
+    if (!user) return;
+    
     await updateUserSeeDash();
-    window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(name)}`;
+    const fullName = `${user.name}`.trim();
+    window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(fullName)}`;
   };
 
-  if (loading) {
+  if (userLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
@@ -117,7 +97,7 @@ export default function InstructionsPage() {
         <button
           onClick={handleContinue}
           className="mt-10 mb-16 px-6 py-4 bg-navy text-sand border-4 border-navy rounded-md text-xl font-bold transition-opacity hover:opacity-60 active:opacity-30"
-          disabled={loading || !name}
+          disabled={userLoading || !user}
         >
           Continue to Dashboard
         </button>
