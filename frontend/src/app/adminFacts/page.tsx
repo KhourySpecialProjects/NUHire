@@ -13,7 +13,7 @@ export default function AdminFactsPage() {
   const [classes, setClasses] = useState<ModeratorClass[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [facts, setFacts] = useState(["", "", ""]);
-  
+  const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [currentFacts, setCurrentFacts] = useState<{ one: string; two: string; three: string } | null>(null);
   const socket = useSocket();
@@ -37,6 +37,8 @@ export default function AdminFactsPage() {
         }
       } catch (error) {
         setPopup({ headline: "Error", message: "Failed to fetch classes." });
+      } finally {
+        setLoading(false);
       }
     };
     fetchClasses();
