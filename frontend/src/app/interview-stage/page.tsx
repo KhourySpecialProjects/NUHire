@@ -10,6 +10,7 @@ import { useSocket } from "../components/socketContext";
 import RatingSlider from "../components/ratingSlider";
 import Popup from "../components/popup";
 import axios from "axios";
+import { useAuth } from "../components/AuthContext";
 import { useProgressManager } from "../components/progress";
 import Facts from "../components/facts";
 
@@ -39,7 +40,7 @@ export default function Interview() {
   useProgress();
   const socket = useSocket();
   const {updateProgress, fetchProgress} = useProgressManager();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: userloading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
@@ -198,36 +199,6 @@ export default function Interview() {
       setDonePopup(true);
     }
   }, [finished]);
-
-  // Fetch user data
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/auth/user`, { 
-          withCredentials: true,
-          timeout: 10000 // 10 second timeout
-        });
-        
-        
-        if (response.status === 200) {
-          setUser(response.data);
-          updateProgress(response.data, "interview");
-        } else {
-          setError('Authentication failed. Please log in again.');
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 3000);
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        setError('Failed to authenticate. Make sure the API server is running.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchUser();
-  }, []);
 
   // Send interview ratings to backend
   const sendResponseToBackend = async (
@@ -604,7 +575,7 @@ const completeInterview = () => {
   };
   
   // Loading state
-  if (loading) {
+   if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
