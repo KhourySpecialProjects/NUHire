@@ -46,7 +46,7 @@ export default function InstructionsPage() {
     if (!user) return;
     
     await updateUserSeeDash();
-    const fullName = `${user.name}`.trim();
+    const fullName = `${user.f_name} ${user.l_name}`.trim();
     window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(fullName)}`;
   };
 
