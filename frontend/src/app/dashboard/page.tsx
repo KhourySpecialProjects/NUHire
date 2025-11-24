@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 import Popup from "../components/popup";
 import Slideshow from "../components/slideshow";
 import { useProgressManager } from "../components/progress";
+import { useAuth } from "../components/AuthContext";
 import { useSocket } from "../components/socketContext";
 
 interface User {
@@ -71,18 +72,15 @@ const Dashboard = () => {
     },
   ];
 
-  // State declarations - MUST come before any functions that use them
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [progress, setProgress] = useState<string>("none"); 
   const [jobDescription, setJobDescription] = useState<string | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
   const [flipped, setFlipped] = useState(Array(steps.length).fill(false));
+  const { user, loading: userloading } = useAuth();
 
-  // Wrap fetchJobDescription in useCallback to prevent recreating on every render
-  const fetchJobDescription = useCallback(async (user: User) => {
-    if (!user?.group_id || !user?.class) {
+  const fetchJobDescription = useCallback(async (userData: typeof user) => {
+    if (!userData?.group_id || !userData?.class) {
       setJobDescription(null);
       setJobLoading(false);
       return;
@@ -90,13 +88,12 @@ const Dashboard = () => {
 
     try {
       setJobLoading(true);
-      const response = await fetch(`${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`, {credentials: "include"});
+      const response = await fetch(`${API_BASE_URL}/jobs/assignment/${userData.group_id}/${userData.class}`, {credentials: "include"});
       
       if (response.ok) {
         const data = await response.json();
         setJobDescription(data.job);
       } else if (response.status === 404) {
-        // No job assignment found
         setJobDescription(null);
       } else {
         console.error("Error fetching job description:", response.statusText);
@@ -108,79 +105,42 @@ const Dashboard = () => {
     } finally {
       setJobLoading(false);
     }
-  }, []); // Empty dependency array since it doesn't depend on external values
+  }, []);
 
-  // Wrap refreshDashboardUI in useCallback
   const refreshDashboardUI = useCallback(async () => {
+    if (!user) return;
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-      const userData = await response.json();
-      if (response.ok) {
-        setUser(userData);
-        
-        // Refresh job description
-        await fetchJobDescription(userData);
-        
-        // Fetch current progress from server instead of localStorage
-        const currentProgress = await fetchProgress(userData);
-        
-        setProgress(currentProgress);
-        localStorage.setItem("progress", currentProgress);
-        
-        setFlipped(Array(steps.length).fill(false));
-      }
-      else {
-        console.error("Error refreshing dashboard UI:");
-      }
+      // Refresh job description
+      await fetchJobDescription(user);
+      
+      // Fetch current progress from server
+      const currentProgress = await fetchProgress(user);
+      
+      setProgress(currentProgress);
+      localStorage.setItem("progress", currentProgress);
+      
+      setFlipped(Array(steps.length).fill(false));
     } catch (error) {
       console.error("Error refreshing dashboard UI:", error);
     }
-  }, []);
+  }, [user, fetchJobDescription, fetchProgress]);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { 
-          credentials: "include" 
-        });
-        
-        if (response.status === 401) {
-          // Not authenticated - redirect to login from frontend
-          console.log('Not authenticated, redirecting to login...');
-          window.location.href = `${API_BASE_URL}/auth/keycloak`;
-          return;
-        }
-        
-        if (!response.ok) {
-          console.error('Error response:', response.status);
-          setUser(null);
-          router.push("/");
-          return;
-        }
-
-        const userData = await response.json();
-        setUser(userData);
-        
-        // Fetch job description for this user
-        await fetchJobDescription(userData);
-        
-        // Fetch actual progress from database
-        const currentProgress = await fetchProgress(userData);
-        
-        // Set progress to what's actually in the database
-        setProgress(currentProgress);
-        localStorage.setItem("progress", currentProgress);
-        
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        router.push("/"); 
-      } finally {
-        setLoading(false);
-      }
+    if (!user) return;
+    
+    // Fetch job description for this user
+    fetchJobDescription(user);
+    
+    // Fetch actual progress from database
+    const loadProgress = async () => {
+      const currentProgress = await fetchProgress(user);
+      setProgress(currentProgress);
+      localStorage.setItem("progress", currentProgress);
     };
-
-    fetchUser();
-  }, [router, fetchJobDescription, fetchProgress]);
+    
+    loadProgress();
+  }, [user, fetchJobDescription, fetchProgress]);
 
   useEffect(() => {
     if (!socket || !user) return;
@@ -297,7 +257,7 @@ const Dashboard = () => {
     });
   };
 
-  if (loading) {
+  if (userloading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
