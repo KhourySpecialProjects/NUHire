@@ -501,23 +501,25 @@ export default function ResReviewGroup() {
                     isSelected ? 'border-blue-500 bg-blue-50' : 'border-northeasternRed'
                   }`}
                 >
-                  <h3 className="text-lg font-semibold text-navy mb-2">
-                    {resume.first_name} {resume.last_name}
-                  </h3>
-                  
-                  {/* Horizontal vote display */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-1">
-                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">✔</span>
-                      <span className="font-semibold text-sm">{votes.yes}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">✖</span>
-                      <span className="font-semibold text-sm">{votes.no}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">?</span>
-                      <span className="font-semibold text-sm">{votes.undecided}</span>
+                  {/* Name and votes on same line */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-navy">
+                      {resume.first_name} {resume.last_name}
+                    </h3>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">✔</span>
+                        <span className="font-semibold text-sm">{votes.yes}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">✖</span>
+                        <span className="font-semibold text-sm">{votes.no}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">?</span>
+                        <span className="font-semibold text-sm">{votes.undecided}</span>
+                      </div>
                     </div>
                   </div>
 
