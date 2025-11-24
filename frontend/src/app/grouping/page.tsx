@@ -7,6 +7,7 @@ import Tabs from "../components/tabs";
 import Popup from "../components/popup";
 import { StudentCSVTab } from "../components/StudentCSVTab";
 import { ManageGroupsTab } from "../components/ManageGroupsTab";
+import { useAuth } from "../components/AuthContext"; 
 
 const Grouping = () => {
   interface Student {
@@ -27,26 +28,11 @@ const Grouping = () => {
   const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { user: authUser, loading: userloading } = useAuth();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
- 
-  // Fetch user
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-        if (response.ok) setUser(userData);
-        else { setUser(null); router.push("/"); }
-      } catch {
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, [router]);
 
-  if (loading) {
+
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
