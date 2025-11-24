@@ -502,12 +502,12 @@ export default function ResReviewGroup() {
                   }`}
                 >
                   {/* Name & votes on same line */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-navy truncate">
                       {resume.first_name} {resume.last_name}
                     </h3>
                     
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center flex-shrink-0">
                       <div className="flex items-center gap-1">
                         <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">✔</span>
                         <span className="font-semibold text-sm">{votes.yes}</span>
