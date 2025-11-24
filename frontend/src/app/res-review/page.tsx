@@ -43,7 +43,6 @@ export default function ResumesPage() {
   const [currentResumeIndex, setCurrentResumeIndex] = useState(0);
   const [fadingEffect, setFadingEffect] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [disabled, setDisabled] = useState(true);
   const [resumeLoading, setResumeLoading] = useState(true);
   const [popup, setPopup] = useState<{
@@ -378,11 +377,10 @@ export default function ResumesPage() {
   const handleAccept = () => {
     console.log("✅ [ACTION] handleAccept called");
     console.log("✅ [ACTION] maxDecisions:", maxDecisions);
-    console.log("✅ [ACTION] loading:", loading);
     console.log("✅ [ACTION] resumeLoading:", resumeLoading);
     
     if (maxDecisions) return;
-    if (!user || loading || resumeLoading) {
+    if (!user || userloading || resumeLoading) {
       console.warn("⚠️ [ACTION] User data not ready or resume still loading, skipping vote");
       return;
     }
@@ -397,7 +395,7 @@ export default function ResumesPage() {
   const handleReject = () => {
     console.log("❌ [ACTION] handleReject called");
     if (maxDecisions) return;
-    if (!user || loading || resumeLoading) {
+    if (!user || userloading || resumeLoading) {
       console.warn("⚠️ [ACTION] User data not ready or resume still loading, skipping vote");
       return;
     }
@@ -412,7 +410,7 @@ export default function ResumesPage() {
   const handleNoResponse = () => {
     console.log("⏭️ [ACTION] handleNoResponse called");
     if (maxDecisions) return;
-    if (!user || loading || resumeLoading) {
+    if (!user || userloading || resumeLoading) {
       console.warn("⚠️ [ACTION] User data not ready or resume still loading, skipping vote");
       return;
     }
