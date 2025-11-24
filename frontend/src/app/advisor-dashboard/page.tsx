@@ -7,6 +7,7 @@ import Link from "next/link"; // Importing Link for client-side navigation
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
 import Slideshow from "../components/slideshow"; // Importing slideshow component for background
 import { useSocket } from "../components/socketContext"; // Importing custom hook to use socket context
+import { useAuth } from "../components/AuthContext"; // Importing custom hook to use authentication context
 
 const Dashboard = () => {
 
@@ -19,38 +20,10 @@ const Dashboard = () => {
   }
 
   // State variables to manage user data and loading state
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const socket = useSocket();
-
-
-  // Fetch user data from the API when the component mounts
-  // and handle redirection if the user is not an admin
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.push("/");
-          }
-          return;
-        }
-    
-        const userData = await response.json();
-        setUser(userData);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-
-    fetchUser();
-  }, [router]);
-
+  const { user, loading: userloading } = useAuth();
 
   // Socket connection - only run when both socket AND user are ready
   useEffect(() => {
@@ -65,7 +38,7 @@ const Dashboard = () => {
     };
   }, [socket, user?.email]);
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
