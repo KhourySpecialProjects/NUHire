@@ -62,7 +62,6 @@ const ModDashboard = () => {
         }
 
         setUser({ email: 'moderator', affiliation: 'admin' });
-        setLoading(false);
       } catch (error) {
         console.error('Error checking authentication:', error);
         setPopup({ 

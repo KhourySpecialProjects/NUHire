@@ -37,8 +37,6 @@ export default function AdminFactsPage() {
         }
       } catch (error) {
         setPopup({ headline: "Error", message: "Failed to fetch classes." });
-      } finally {
-        setLoading(false);
       }
     };
     fetchClasses();

@@ -118,7 +118,6 @@ export default function JobDescriptionPage() {
     const fetchJob = async () => {
       if (!user?.group_id || !user?.class) {
         console.log("No user group_id or class found");
-        setLoading(false);
         return; 
       }
       
@@ -131,7 +130,6 @@ export default function JobDescriptionPage() {
 
         if (!jobAssignmentResponse.ok) {
           console.log("No job assignment found for this group");
-          setLoading(false);
           return;
         }
 
@@ -159,9 +157,7 @@ export default function JobDescriptionPage() {
           headline: "No Job Assignment",
           message: "You haven't been assigned a job description yet. Please contact your instructor."
         });
-      } finally {
-        setLoading(false);
-      }
+      } 
     };
 
     fetchJob();
