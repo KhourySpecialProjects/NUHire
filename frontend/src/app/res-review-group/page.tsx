@@ -10,6 +10,7 @@ import Footer from "../components/footer";
 import Popup from "../components/popup";
 import { useProgressManager } from "../components/progress";
 import { useSocket } from "../components/socketContext";
+import { useAuth } from "../components/AuthContext";
 
 
 export default function ResReviewGroup() {
@@ -51,7 +52,6 @@ export default function ResReviewGroup() {
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const router = useRouter();
@@ -59,6 +59,7 @@ export default function ResReviewGroup() {
   const [selectedResumeNumber, setSelectedResumeNumber] = useState<number | "">("");
   const socket = useSocket();
   const initialFetchDone = useRef(false);
+  const { user, loading: userloading } = useAuth();
 
   // Team confirmation state
   const [teamConfirmations, setTeamConfirmations] = useState<string[]>([]);
@@ -91,30 +92,6 @@ export default function ResReviewGroup() {
       fetchGroupSize();
     }
   }, [user?.group_id]);
-             
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-        
-        if (response.ok) {
-          setUser(userData);
-          updateProgress(userData, "res_2");
-        } else {
-          setUser(null);
-          router.push("/");
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchUser();
-  }, [router]);
 
   // OPTIMIZED: Fetch resumes and votes ONCE on page load
   useEffect(() => {
@@ -452,7 +429,7 @@ export default function ResReviewGroup() {
   const selectedResume = resumes.find(r => r.resume_number === selectedResumeNumber);
   const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
 
-  if (loading) {
+  if (loading || userloading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
