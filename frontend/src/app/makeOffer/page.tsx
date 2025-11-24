@@ -10,6 +10,7 @@ import Popup from "../components/popup";
 import axios from "axios";
 import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
+import { useAuth } from "../components/AuthContext";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -46,11 +47,10 @@ interface Offer {
 export default function MakeOffer() {
   useProgress();
   const socket = useSocket();
-  const router = useRouter();
+  const { user, loading } = useAuth();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>({});
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
-  const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [popup, setPopup] = useState<{
     headline: string;
@@ -58,7 +58,6 @@ export default function MakeOffer() {
   } | null>(null);
   const pathname = usePathname();
   const [offerPending, setOfferPending] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [resumes, setResumes] = useState<any[]>([]);
   const [interviews, setInterviews] = useState<any[]>([]);
   const [candidates, setCandidates] = useState<any[]>([]);
@@ -80,7 +79,7 @@ export default function MakeOffer() {
     .map(([id]) => Number(id))[0];
   const [offerConfirmations, setOfferConfirmations] = useState<{[candidateId: number]: string[]}>({});
   const confirmations = selectedCandidateId ? (offerConfirmations[selectedCandidateId] || []) : [];
-  const hasConfirmed = confirmations.includes(user?.id || '');
+  const hasConfirmed = user?.id ? confirmations.includes(user.id.toString()) : false;  
   const confirmationCount = confirmations.length;
   const allConfirmed = confirmationCount >= groupSize;
   const [popupVotes, setPopupVotes] = useState<{ [key: number]: InterviewPopup }>({});
@@ -239,27 +238,6 @@ export default function MakeOffer() {
 
     fetchPopupVotes();
   }, [user, candidates]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, {
-          credentials: "include",
-        });
-        const userData = await response.json();
-        if (response.ok) { 
-          setUser(userData);
-          updateProgress(userData, "offer");
-        }
-        else router.push("/");
-      } catch (err) {
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, [router]);
 
   useEffect(() => {
     if (user && user.email) {
@@ -502,7 +480,8 @@ export default function MakeOffer() {
   }, [resumes]);
 
   const handleConfirmOfferClick = (candidateId: number) => {
-    if (!socket || !user || !candidateId) return;
+    if (!socket || !user?.id || !candidateId) return;
+    
     if (existingOffer && (existingOffer.status === 'pending' || existingOffer.status === 'accepted')) {
       let message = "";
       if (existingOffer.status === 'pending') {
@@ -519,10 +498,10 @@ export default function MakeOffer() {
     
     setOfferConfirmations(prev => {
       const currentConfirmations = prev[candidateId] || [];
-      if (!currentConfirmations.includes(user.id)) {
+      if (!currentConfirmations.includes(user.id.toString())) {
         return {
           ...prev,
-          [candidateId]: [...currentConfirmations, user.id]
+          [candidateId]: [...currentConfirmations, user.id.toString()]
         };
       }
       return prev;
