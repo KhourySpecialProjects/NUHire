@@ -1187,7 +1187,7 @@ export function ManageGroupsTab() {
     }
   };
 
-  if (userloading||loading) {
+  if (userloading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
         <div className="max-w-7xl mx-auto p-4">

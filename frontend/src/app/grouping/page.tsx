@@ -24,11 +24,8 @@ const Grouping = () => {
     status: 'pending' | 'accepted' | 'rejected';
   }
 
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
   const { user, loading: userloading } = useAuth();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-
 
   if (userloading) {
     return (
