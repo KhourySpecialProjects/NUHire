@@ -6,7 +6,8 @@ const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 interface User {
   id: number;
-  name: string;
+  f_name: string;
+  l_name: string;
   email: string;
   affiliation: string;
   group_id: number;
