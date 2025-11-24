@@ -1,27 +1,27 @@
 // src/config/database.ts
 
-import mysql, { Connection, ConnectionOptions } from 'mysql2';
+import mysql, { Pool, PoolOptions } from 'mysql2';
 
 export class DatabaseService {
-  private connection: Connection | null = null;
+  private pool: Pool | null = null;
   private readonly maxRetries = 30;
 
-  async connect(): Promise<Connection> {
-    if (this.connection) {
-      return this.connection;
+  async connect(): Promise<Pool> {
+    if (this.pool) {
+      return this.pool;
     }
 
     let retryCount = 0;
 
     while (retryCount < this.maxRetries) {
       try {
-        this.connection = await this.createConnection();
+        this.pool = await this.createPool();
         await this.initializeDatabase();
-        console.log('✅ Database connection established successfully');
-        return this.connection;
+        console.log('✅ Database connection pool established successfully');
+        return this.pool;
       } catch (error) {
         retryCount++;
-        console.error(`❌ Database connection attempt ${retryCount} failed:`, error);
+        console.error(`❌ Database pool creation attempt ${retryCount} failed:`, error);
 
         if (retryCount < this.maxRetries) {
           const delay = Math.min(10000, retryCount * 1000);
@@ -34,51 +34,60 @@ export class DatabaseService {
       }
     }
 
-    throw new Error('Failed to establish database connection');
+    throw new Error('Failed to establish database connection pool');
   }
 
-  private createConnection(): Promise<Connection> {
+  private createPool(): Promise<Pool> {
     return new Promise((resolve, reject) => {
-      console.log('🔌 Attempting to connect to MySQL using DATABASE_URL...');
+      console.log('🔌 Creating MySQL connection pool using DATABASE_URL...');
 
       const url = new URL(process.env.DATABASE_URL!);
-      const connectionConfig: ConnectionOptions = {
+      const poolConfig: PoolOptions = {
         host: url.hostname,
         port: parseInt(url.port) || 3306,
         user: url.username,
         password: url.password,
         database: url.pathname.slice(1),
+        connectionLimit: 15,  // Max 10 concurrent connections
+        waitForConnections: true,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
         ssl: {
           rejectUnauthorized: false
         }
       };
 
-      console.log(`Connecting to: host=${connectionConfig.host}, port=${connectionConfig.port}, database=${connectionConfig.database}`);
+      console.log(`Creating pool: host=${poolConfig.host}, port=${poolConfig.port}, database=${poolConfig.database}, connectionLimit=${poolConfig.connectionLimit}`);
 
-      const connection = mysql.createConnection(connectionConfig);
+      const pool = mysql.createPool(poolConfig);
 
-      connection.connect((err) => {
+      // Test the pool with a connection
+      pool.getConnection((err, connection) => {
         if (err) {
-          console.error('❌ Database connection failed:', err.message);
+          console.error('❌ Database pool connection test failed:', err.message);
           reject(err);
         } else {
-          console.log('✅ Connected to MySQL database successfully!');
-          this.setupErrorHandling(connection);
-          resolve(connection);
+          console.log('✅ Database pool connection test successful!');
+          connection.release(); // Release test connection back to pool
+          this.setupErrorHandling(pool);
+          resolve(pool);
         }
       });
     });
   }
 
-  private setupErrorHandling(connection: Connection): void {
-    connection.on('error', (err) => {
-      console.error('❌ Database error:', err);
+  private setupErrorHandling(pool: Pool): void {
+    pool.on('connection', (connection) => {
+      console.log('📌 New connection established in pool');
+    });
+
+    pool.on('error', (err) => {
+      console.error('❌ Database pool error:', err);
       if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-        console.log('🔄 Database connection lost. Reconnecting...');
-        this.connection = null;
-        this.connect().catch(console.error);
+        console.log('🔄 Database connection lost. Pool will reconnect automatically.');
       } else {
-        throw err;
+        console.error('Unexpected pool error:', err);
       }
     });
   }
@@ -86,7 +95,7 @@ export class DatabaseService {
   private async initializeDatabase(): Promise<void> {
     const queries = [
       "INSERT IGNORE INTO `Moderator` (`admin_email`, `crn`) VALUES ('labit.z@northeastern.edu', 1)",
-     ];
+    ];
 
     for (const query of queries) {
       try {
@@ -101,12 +110,12 @@ export class DatabaseService {
 
   private executeQuery(query: string, params: any[] = []): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (!this.connection) {
-        reject(new Error('Database connection not established'));
+      if (!this.pool) {
+        reject(new Error('Database pool not established'));
         return;
       }
 
-      this.connection.query(query, params, (err, result) => {
+      this.pool.query(query, params, (err, result) => {
         if (err) {
           reject(err);
         } else {
@@ -120,11 +129,11 @@ export class DatabaseService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  getConnection(): Connection {
-    if (!this.connection) {
-      throw new Error('Database connection not established');
+  getConnection(): Pool {
+    if (!this.pool) {
+      throw new Error('Database pool not established');
     }
-    return this.connection;
+    return this.pool;
   }
 }
 
