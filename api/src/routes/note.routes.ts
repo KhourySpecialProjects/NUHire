@@ -1,6 +1,6 @@
 // src/routes/note.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { NoteController } from '../controller/note.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 

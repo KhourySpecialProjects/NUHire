@@ -1,7 +1,7 @@
 // src/routes/user.routes.ts
 
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { UserController } from '../controller/user.controller';
 import { requireAuth, requireAdmin } from '../middleware/auth.middleware';
 import { Server as SocketIOServer } from 'socket.io';

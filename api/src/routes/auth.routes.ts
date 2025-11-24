@@ -1,6 +1,6 @@
 // src/routes/auth.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { AuthController } from '../controller/auth.controller';
 
 export default (db: Pool): Router => {

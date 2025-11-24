@@ -1,7 +1,7 @@
 
 import { Response } from 'express';
 import { AuthRequest } from '../models/types';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 
 export class NoteController {
   constructor(private db: Pool) {}

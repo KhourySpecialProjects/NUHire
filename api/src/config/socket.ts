@@ -1,7 +1,7 @@
 // src/config/socket.ts
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { SocketEvents } from '../models/types';
 
 export function initializeSocketHandlers(io: SocketIOServer, db: Pool): Record<string, string> {

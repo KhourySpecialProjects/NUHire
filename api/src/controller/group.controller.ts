@@ -2,7 +2,7 @@
 
 import { Response } from 'express';
 import { AuthRequest } from '../models/types';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 
 export class GroupController {
   constructor(private db: Pool, private io: any) {}

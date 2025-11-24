@@ -1,6 +1,6 @@
 // src/routes/resume-pdf.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { ResumeController } from '../controller/resume.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { Server as SocketIOServer } from 'socket.io';

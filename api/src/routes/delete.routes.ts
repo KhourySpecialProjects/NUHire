@@ -1,6 +1,6 @@
 // src/routes/delete.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { ResumeController } from '../controller/resume.controller';
 import { JobController } from '../controller/job.controller';
 import { requireAuth } from '../middleware/auth.middleware';

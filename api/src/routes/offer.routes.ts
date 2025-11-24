@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { OfferController } from '../controller/offer.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 

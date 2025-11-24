@@ -5,7 +5,7 @@
 import { Response, NextFunction } from 'express';
 import passport from 'passport';
 import { AuthRequest } from '../models/types';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 
 export class AuthController {
   constructor(private db: Pool) {}

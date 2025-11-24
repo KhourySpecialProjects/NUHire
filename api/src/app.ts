@@ -9,7 +9,7 @@ import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import MySQLStore from 'express-mysql-session';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 
 // Import routes
 import authRoutes from './routes/auth.routes';

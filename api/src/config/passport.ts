@@ -1,7 +1,7 @@
 // src/config/passport.ts
 
 import passport from 'passport';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 const KeycloakStrategy = require('passport-keycloak-oauth2-oidc').Strategy;
 
 interface KeycloakProfile {

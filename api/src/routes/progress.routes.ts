@@ -1,6 +1,6 @@
 // src/routes/progress.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { Server as SocketIOServer } from 'socket.io';
 import { ProgressController } from '../controller/progress.controller';
 import { requireAuth } from '../middleware/auth.middleware';

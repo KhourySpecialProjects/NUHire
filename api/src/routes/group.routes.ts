@@ -1,6 +1,6 @@
 // src/routes/group.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { Server as SocketIOServer } from 'socket.io';
 import { GroupController } from '../controller/group.controller';
 import { requireAuth } from '../middleware/auth.middleware';

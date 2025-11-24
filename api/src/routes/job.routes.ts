@@ -1,6 +1,6 @@
 // src/routes/job.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { Server as SocketIOServer } from 'socket.io';
 import { JobController } from '../controller/job.controller';
 import { requireAuth } from '../middleware/auth.middleware';

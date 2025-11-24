@@ -1,6 +1,6 @@
 // src/routes/moderator.routes.ts
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { ModeratorController } from '../controller/moderator.controller';
 import { requireAuth, requireAdmin } from '../middleware/auth.middleware';
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Connection } from 'mysql2';
+import { Pool } from 'mysql2';
 import { requireAuth } from '../middleware/auth.middleware';
 import { Server as SocketIOServer } from 'socket.io';
 import { FactsController } from '../controller/facts.controller';
