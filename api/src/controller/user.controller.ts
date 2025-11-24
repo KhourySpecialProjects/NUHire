@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest, User } from '../models/types';
-import { Connection, RowDataPacket } from 'mysql2';
+import { Pool, RowDataPacket } from 'mysql2';
 
 export class UserController {
   constructor(private db: Pool, private io: any) {}
