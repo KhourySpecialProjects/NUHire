@@ -2,6 +2,7 @@
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com"; // API base URL from environment variables
 import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
 import { io } from "socket.io-client";
+import { useAuth } from "./AuthContext";
 
 const socket = io(API_BASE_URL);
 const NotesPage = () => {
@@ -16,24 +17,13 @@ const NotesPage = () => {
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [userEmail, setUserEmail] = useState("");
-  
+  const { user, loading: userloading } = useAuth();
+
   useEffect(() => {
-    const fetchUserEmail = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-        if (response.ok) {
-          setUserEmail(userData.email);
-        } else {
-          console.error("Error fetching user");
-        }
-        console.log(userData.email);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-    fetchUserEmail();
-  }, []);
+    if (user && user.email) {
+      setUserEmail(user.email);
+    }
+  }, [user]);
 
   const fetchNotes = async () => {
     if (!userEmail) return;

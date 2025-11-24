@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from './socketContext';
 import Popup from './popup';
+import { useAuth } from './AuthContext';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -43,9 +44,9 @@ interface JobOption {
 export function ManageGroupsTab() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const {user, loading: userloading} = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isStartingAll, setIsStartingAll] = useState(false);
   const [startingGroups, setStartingGroups] = useState<Set<number>>(new Set());
@@ -114,41 +115,14 @@ export function ManageGroupsTab() {
     },
   ];
 
-    
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { 
-          credentials: 'include' 
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          console.log("the user data for auth/user", userData)
-          
-          if (userData.affiliation !== 'admin') {
-            setPopup({ 
-              headline: 'Access Denied', 
-              message: 'You must be a teacher to access this page.' 
-            });
-            setTimeout(() => router.push('/'), 2000);
-            return;
-          }
-          
-          setUser(userData);
-        } else {
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        router.push('/');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
+  if (user && user.affiliation !== 'admin') {
+    setPopup({ 
+      headline: 'Access Denied', 
+      message: 'You must be a teacher to access this page.' 
+    });
+    setTimeout(() => router.push('/'), 2000);
+    return;
+  }
 
   useEffect(() => {
     console.log("acceptedoffers updated", acceptedOffers);
@@ -1213,7 +1187,7 @@ export function ManageGroupsTab() {
     }
   };
 
-  if (loading) {
+  if (userloading||loading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
         <div className="max-w-7xl mx-auto p-4">
