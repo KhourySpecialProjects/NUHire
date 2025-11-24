@@ -44,6 +44,7 @@ const Grouping = () => {
   }
 
   if (!user || user.affiliation !== "admin") {
+    console.log("Unauthorized access attempt to /grouping by user:", user);
     return <div>This account is not authorized for this page</div>;
   }
 
