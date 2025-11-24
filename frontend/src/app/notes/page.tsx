@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/navbar';
 import { useRouter } from 'next/navigation';
 import { useSocket } from '../components/socketContext';
+import { useAuth } from '../components/AuthContext';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 const NotesPage: React.FC = () => {
@@ -26,26 +27,13 @@ const NotesPage: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState("");
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: userloading } = useAuth();
+
+  
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, {
-          credentials: "include",
-        });
-        const userData = await response.json();
-        if (response.ok) setUser(userData);
-        else router.push("/");
-      } catch (err) {
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
     fetchNotes();
-  }, [router]);
+  }, [user?.email]);
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
@@ -102,7 +90,7 @@ const NotesPage: React.FC = () => {
     fetchNotes();
   }, [user?.email]);
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
