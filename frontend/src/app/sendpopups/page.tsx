@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
 import Popup from "../components/popup";
 import { useSocket } from "../components/socketContext";
+import { useAuth } from "../components/AuthContext";
 
 const SendPopups = () => {
   const socket = useSocket(); 
@@ -37,7 +38,7 @@ const SendPopups = () => {
   }
     
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
-    const [user, setUser] = useState<{ affiliation: string; email?: string; class:number } | null>(null);
+    const { user, loading: userloading } = useAuth();
     const [loading, setLoading] = useState(true);
     const [groups, setGroups] = useState<Record<string, any>>({});
     const [selectedGroup, setSelectedGroup] = useState<string>(""); // Changed from selectedGroups array to single group
@@ -121,30 +122,6 @@ const SendPopups = () => {
       }
     },
   ];
-
-    // Fetch the logged-in user
-    useEffect(() => {
-      const fetchUser = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-          const userData = await response.json();
-          console.log("Fetched user data:", userData);
-
-          if (response.ok) {
-            setUser(userData);
-          } else {
-            setUser(null);
-            router.push("/");
-          }
-        } catch (error) {
-          console.error("Error fetching user:", error);
-          router.push("/");
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchUser();
-    }, []);
 
   useEffect(() => {
   const fetchCandidates = async () => {
@@ -267,7 +244,7 @@ const SendPopups = () => {
       }
   }, [selectedClass]);
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
