@@ -155,6 +155,31 @@ private async initializeDatabase(): Promise<void> {
     }
   }
 
+  const candidates = [
+    { resume_id: 1, f_name: 'John', l_name: 'Doe', interview: 'https://www.youtube.com/embed/VIDEO_ID_1' },
+    { resume_id: 2, f_name: 'Jane', l_name: 'Smith', interview: 'https://www.youtube.com/embed/VIDEO_ID_2' },
+    { resume_id: 3, f_name: 'Bob', l_name: 'Johnson', interview: 'https://www.youtube.com/embed/VIDEO_ID_3' },
+    { resume_id: 4, f_name: 'Alice', l_name: 'Williams', interview: 'https://www.youtube.com/embed/VIDEO_ID_4' },
+    { resume_id: 5, f_name: 'Charlie', l_name: 'Brown', interview: 'https://www.youtube.com/embed/VIDEO_ID_5' },
+    { resume_id: 6, f_name: 'Diana', l_name: 'Davis', interview: 'https://www.youtube.com/embed/VIDEO_ID_6' },
+    { resume_id: 7, f_name: 'Eve', l_name: 'Miller', interview: 'https://www.youtube.com/embed/VIDEO_ID_7' },
+    { resume_id: 8, f_name: 'Frank', l_name: 'Wilson', interview: 'https://www.youtube.com/embed/VIDEO_ID_8' },
+    { resume_id: 9, f_name: 'Grace', l_name: 'Moore', interview: 'https://www.youtube.com/embed/VIDEO_ID_9' },
+    { resume_id: 10, f_name: 'Henry', l_name: 'Taylor', interview: 'https://www.youtube.com/embed/VIDEO_ID_10' }
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      await this.executeQuery(
+        'INSERT IGNORE INTO Candidates (resume_id, f_name, l_name, interview) VALUES (?, ?, ?, ?)',
+        [candidate.resume_id, candidate.f_name, candidate.l_name, candidate.interview]
+      );
+      console.log(`✅ Seeded candidate: ${candidate.f_name} ${candidate.l_name}`);
+    } catch (error) {
+      console.error(`Error seeding candidate ${candidate.f_name}:`, error);
+    }
+  }
+
   console.log('✅ Database initialization completed!');
 }
 
