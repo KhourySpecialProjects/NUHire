@@ -19,7 +19,7 @@ export default function WaitingGroupPage() {
     group_id?: number;
   }
 
-  const [loading, setLoading] = useState(true);
+  
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [start, setStart] = useState(false);
   const socket = useSocket(); 

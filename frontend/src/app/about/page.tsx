@@ -7,8 +7,9 @@ import Image from "next/image";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
 export default function AboutPage() {
-  const [loading, setLoading] = useState(true);
+  
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkSeenStatus = async () => {

@@ -41,7 +41,7 @@ export default function Interview() {
   const socket = useSocket();
   const {updateProgress, fetchProgress} = useProgressManager();
   const { user, loading: userloading } = useAuth();
-  const [loading, setLoading] = useState(true);
+  
   const [error, setError] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);

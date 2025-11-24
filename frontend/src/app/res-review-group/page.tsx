@@ -50,7 +50,6 @@ export default function ResReviewGroup() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [checkedState, setCheckedState] = useState<{ [key: number]: boolean }>({});
   const [voteCounts, setVoteCounts] = useState<{ [key: number]: VoteData }>({});
-  const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [showInstructions, setShowInstructions] = useState(true);
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -429,7 +428,7 @@ export default function ResReviewGroup() {
   const selectedResume = resumes.find(r => r.resume_number === selectedResumeNumber);
   const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
 
-  if (loading || userloading) {
+  if (userloading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">

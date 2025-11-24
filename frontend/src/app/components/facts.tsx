@@ -13,7 +13,7 @@ interface Fact {
 const Facts: React.FC = () => {
   const {user, loading: userloading} = useAuth();
   const [facts, setFacts] = useState<Fact[]>([]);
-  const [loading, setLoading] = useState(true);
+  
   const socket = useSocket();
 
   useEffect(() => { 

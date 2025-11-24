@@ -39,7 +39,7 @@ const SendPopups = () => {
     
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
     const { user, loading: userloading } = useAuth();
-    const [loading, setLoading] = useState(true);
+    
     const [groups, setGroups] = useState<Record<string, any>>({});
     const [selectedGroup, setSelectedGroup] = useState<string>(""); // Changed from selectedGroups array to single group
     const [headline, setHeadline] = useState("");

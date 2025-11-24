@@ -27,7 +27,7 @@ const OffersManagement = () => {
 
   // General state
   const { user, loading: userloading } = useAuth();
-  const [loading, setLoading] = useState(true);
+  
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const socket = useSocket();

@@ -41,7 +41,7 @@ interface ClassInfo {
 
 const Upload = () => {
   const { user, loading: userloading } = useAuth();
-  const [loading, setLoading] = useState(true);
+  
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [resumes, setResumes] = useState<Resume[]>([]);

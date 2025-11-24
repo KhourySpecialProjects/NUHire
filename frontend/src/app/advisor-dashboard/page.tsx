@@ -20,7 +20,6 @@ const Dashboard = () => {
   }
 
   // State variables to manage user data and loading state
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const socket = useSocket();
   const { user, loading: userloading } = useAuth();

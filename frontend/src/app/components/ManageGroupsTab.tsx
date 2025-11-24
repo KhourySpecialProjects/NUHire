@@ -47,7 +47,7 @@ export function ManageGroupsTab() {
   const {user, loading: userloading} = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
+  
   const [isStartingAll, setIsStartingAll] = useState(false);
   const [startingGroups, setStartingGroups] = useState<Set<number>>(new Set());
   const [reassignModalOpen, setReassignModalOpen] = useState(false);

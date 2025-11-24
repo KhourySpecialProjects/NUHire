@@ -23,7 +23,7 @@ interface ClassItem {
 
 export default function UserProfile() {
     const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    
     const [classes, setClasses] = useState<ClassItem[]>([]);
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);  
     const router = useRouter();

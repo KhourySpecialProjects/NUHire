@@ -26,7 +26,7 @@ const NotesPage: React.FC = () => {
   }
   const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState("");
-  const [loading, setLoading] = useState(true);
+  
   const { user, loading: userloading } = useAuth();
 
   

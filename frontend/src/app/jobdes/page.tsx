@@ -46,7 +46,7 @@ export default function JobDescriptionPage() {
   const [comments, setComments] = useState<CommentType[]>([]);
   const [showInstructions, setShowInstructions] = useState(true);
   const [tool, setTool] = useState<"pointer" | "comment">("pointer");
-  const [loading, setLoading] = useState(true);
+  
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const pathname = usePathname();

@@ -32,7 +32,7 @@ export function StudentCSVTab() {
   const [csvStudents, setCsvStudents] = useState<CSVStudent[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [dragActive, setDragActive] = useState(false);
-  const [loading, setLoading] = useState(true);
+  
   const [isSubmitting, setIsSubmitting] = useState(false); // Add submit loading state
   const [submitSuccess, setSubmitSuccess] = useState(false); // Add submit success state
   const fileInputRef = useRef<HTMLInputElement>(null);

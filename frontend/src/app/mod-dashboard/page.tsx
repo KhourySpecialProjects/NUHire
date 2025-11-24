@@ -22,7 +22,7 @@ interface User {
 
 const ModDashboard = () => {
   const [info, setInfo] = useState<ModeratorInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [form, setForm] = useState({ admin_email: "", crn: "" });
   const [submitting, setSubmitting] = useState(false);
