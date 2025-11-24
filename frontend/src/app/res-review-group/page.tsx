@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Instructions from "../components/instructions";
 import Navbar from "../components/navbar";
 import { usePathname, useRouter } from "next/navigation";
@@ -58,6 +58,7 @@ export default function ResReviewGroup() {
   const pathname = usePathname();
   const [selectedResumeNumber, setSelectedResumeNumber] = useState<number | "">("");
   const socket = useSocket();
+  const initialFetchDone = useRef(false);
 
   // Team confirmation state
   const [teamConfirmations, setTeamConfirmations] = useState<string[]>([]);
@@ -89,7 +90,7 @@ export default function ResReviewGroup() {
     if (user?.group_id) {
       fetchGroupSize();
     }
-  }, [user]);
+  }, [user?.group_id]);
              
   useEffect(() => {
     const fetchUser = async () => {
@@ -102,11 +103,11 @@ export default function ResReviewGroup() {
           updateProgress(userData, "res_2");
         } else {
           setUser(null);
-          router.push("/"); // Redirect to login if unauthorized
+          router.push("/");
         }
       } catch (error) {
         console.error("Error fetching user:", error);
-        router.push("/"); // Redirect on error
+        router.push("/");
       } finally {
         setLoading(false);
       }
@@ -114,11 +115,74 @@ export default function ResReviewGroup() {
     
     fetchUser();
   }, [router]);
-    
-  useEffect(() => {
-    console.log("Resumes has changes:", resumes)
-  }, [resumes]);
 
+  // OPTIMIZED: Fetch resumes and votes ONCE on page load
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      if (!user?.class || initialFetchDone.current) return;
+      initialFetchDone.current = true;
+
+      try {
+        // Fetch resumes
+        console.log("📄 [INITIAL-FETCH] Fetching resumes for class:", user.class);
+        const resumeResponse = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${user.class}`, { credentials: "include" });
+        const resumeData: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await resumeResponse.json();
+
+        // Fetch votes
+        console.log("📊 [INITIAL-FETCH] Fetching votes for group:", user.group_id, "class:", user.class);
+        const voteResponse = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, {credentials: "include"});
+        const voteData: ResumeData[] = await voteResponse.json();
+
+        // Process vote data
+        const voteCounts: { [key: number]: VoteData } = {};
+        const checkboxData: { [key: number]: boolean } = {};
+
+        voteData.forEach((resume) => {
+          const { resume_number, vote, checked } = resume;
+          
+          if (!voteCounts[resume_number]) {
+            voteCounts[resume_number] = { yes: 0, no: 0, undecided: 0 };
+          }
+
+          if (vote === "yes") voteCounts[resume_number].yes += 1;
+          else if (vote === "no") voteCounts[resume_number].no += 1;
+          else if (vote === "unanswered") voteCounts[resume_number].undecided += 1;
+
+          checkboxData[resume_number] = checked;
+        });
+
+        console.log("📊 [INITIAL-FETCH] Processed vote counts:", voteCounts);
+        console.log("📊 [INITIAL-FETCH] Processed checkbox states:", checkboxData);
+
+        setVoteCounts(voteCounts);
+        setCheckedState(checkboxData);
+
+        // Format resumes
+        const formatted: Resume[] = resumeData.map(item => ({
+          resume_number: item.id,
+          file_path: item.file_path,
+          checked: checkboxData[item.id] || false,
+          vote: voteCounts[item.id]
+            ? voteCounts[item.id].yes > voteCounts[item.id].no
+              ? "yes"
+              : "no"
+            : "unanswered",
+          first_name: item.first_name,
+          last_name: item.last_name
+        }));
+
+        console.log("📄 [INITIAL-FETCH] Formatted resumes:", formatted);
+        setResumes(formatted);
+
+      } catch (error) {
+        console.error("❌ [INITIAL-FETCH] Error:", error);
+      }
+    };
+
+    fetchInitialData();
+  }, [user?.group_id, user?.class]);
+
+  // OPTIMIZED: Socket listeners with live updates (NO REFETCHING)
   useEffect(() => {
     if (!socket || !user) return;
 
@@ -129,12 +193,38 @@ export default function ResReviewGroup() {
     console.log("Joining room:", roomId);
     socket.emit("joinGroup", roomId);
 
+    // Update checkbox state live
     const handleCheckboxUpdated = ({ resume_number, checked }: { resume_number: number; checked: boolean }) => {
       console.log(`Received checkbox update: Resume ${resume_number}, Checked: ${checked}`);
       setCheckedState((prev) => ({
         ...prev,
         [resume_number]: checked,
       }));
+    };
+
+    // NEW: Update vote counts live WITHOUT refetching
+    const handleVoteUpdated = ({ resume_number, oldVote, newVote }: { 
+      resume_number: number; 
+      oldVote: string;
+      newVote: string;
+    }) => {
+      console.log(`Vote update: Resume ${resume_number}, ${oldVote} -> ${newVote}`);
+      setVoteCounts(prev => {
+        const current = prev[resume_number] || { yes: 0, no: 0, undecided: 0 };
+        const updated = { ...current };
+        
+        // Remove old vote
+        if (oldVote === "yes") updated.yes = Math.max(0, updated.yes - 1);
+        else if (oldVote === "no") updated.no = Math.max(0, updated.no - 1);
+        else if (oldVote === "unanswered") updated.undecided = Math.max(0, updated.undecided - 1);
+        
+        // Add new vote
+        if (newVote === "yes") updated.yes += 1;
+        else if (newVote === "no") updated.no += 1;
+        else if (newVote === "unanswered") updated.undecided += 1;
+        
+        return { ...prev, [resume_number]: updated };
+      });
     };
 
     const handleTeamConfirmSelection = ({ studentId, groupId, classId }: { 
@@ -152,7 +242,6 @@ export default function ResReviewGroup() {
       }
     };
 
-    // NEW: Handle team unconfirm event
     const handleTeamUnconfirmSelection = ({ studentId, groupId, classId }: { 
       studentId: string; 
       groupId: number; 
@@ -190,8 +279,9 @@ export default function ResReviewGroup() {
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("checkboxUpdated", handleCheckboxUpdated);
+    socket.on("voteUpdated", handleVoteUpdated); // NEW
     socket.on("teamConfirmSelection", handleTeamConfirmSelection);
-    socket.on("teamUnconfirmSelection", handleTeamUnconfirmSelection); // NEW
+    socket.on("teamUnconfirmSelection", handleTeamUnconfirmSelection);
     socket.on("moveGroup", handleMoveGroup);
 
     if (socket.connected) {
@@ -202,8 +292,9 @@ export default function ResReviewGroup() {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("checkboxUpdated", handleCheckboxUpdated);
+      socket.off("voteUpdated", handleVoteUpdated); // NEW
       socket.off("teamConfirmSelection", handleTeamConfirmSelection);
-      socket.off("teamUnconfirmSelection", handleTeamUnconfirmSelection); // NEW
+      socket.off("teamUnconfirmSelection", handleTeamUnconfirmSelection);
       socket.off("moveGroup", handleMoveGroup);
     };
   }, [socket, user]);
@@ -213,7 +304,6 @@ export default function ResReviewGroup() {
     if (!socket || !user || !user.email) return;
 
     socket.emit("studentOnline", { studentId: user.email }); 
-    
     socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
     
     const updateCurrentPage = async () => {
@@ -230,7 +320,7 @@ export default function ResReviewGroup() {
     };
     
     updateCurrentPage(); 
-  }, [socket, user, pathname]);
+  }, [socket, user?.email, pathname]);
 
   // Complete resumes function
   const completeResumes = () => {
@@ -245,7 +335,6 @@ export default function ResReviewGroup() {
       return;
     }
 
-    // Check if all team members have confirmed
     if (teamConfirmations.length < groupSize) {
       setPopup({ 
         headline: "Team Confirmation Required", 
@@ -278,116 +367,11 @@ export default function ResReviewGroup() {
     };
   }, []);
 
-  const fetchResumes = async (userClass: number) => {
-    try {
-      console.log("📄 [FETCH-RESUMES] Fetching resumes for class:", userClass);
-      const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
-      const data: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await response.json();
-
-      console.log("📄 [FETCH-RESUMES] Raw resume data from API:", data);
-      console.log("📄 [FETCH-RESUMES] Number of resumes:", data.length);
-      
-      data.forEach((resume, index) => {
-        console.log(`📄 [FETCH-RESUMES] Resume ${index}:`, {
-          id: resume.id,
-          title: resume.title,
-          first_name: resume.first_name,
-          last_name: resume.last_name,
-          file_path: resume.file_path
-        });
-      });
-    
-      const formatted: Resume[] = data.map(item => ({
-        resume_number: item.id,
-        file_path: item.file_path,
-        checked: checkedState[item.id] || false,
-        vote: voteCounts[item.id]
-          ? voteCounts[item.id].yes > voteCounts[item.id].no
-            ? "yes"
-            : "no"
-          : "unanswered",
-        first_name: item.first_name,
-        last_name: item.last_name
-      }));
-
-      console.log("📄 [FETCH-RESUMES] Formatted resumes:", formatted);
-      setResumes(formatted);
-    } catch (error) {
-      console.error("❌ [FETCH-RESUMES] Error fetching resumes:", error);
-    }
-  };
-
   const getResumeUrl = (filePath: string) => {
     const fileName = filePath.split('/').pop()!;
     return `${API_BASE_URL}/resume_pdf/resumes/${encodeURIComponent(fileName)}`;
   };
 
-  useEffect(() => {
-    if (user?.class) {
-      fetchResumes(user.class);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (!user || !user.class) {
-          console.log("⚠️ [FETCH-VOTES] User or class not available yet");
-          return;
-        }
-
-        console.log("📊 [FETCH-VOTES] Fetching vote data for group:", user.group_id, "class:", user.class);
-        
-        const response = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, {  credentials: "include"});
-        const data: ResumeData[] = await response.json();
-
-        console.log("📊 [FETCH-VOTES] Raw data from backend:", data);
-        console.log("📊 [FETCH-VOTES] Number of vote records:", data.length);
-
-        const voteData: { [key: number]: VoteData } = {};
-        const checkboxData: { [key: number]: boolean } = {};
-
-        data.forEach((resume, index) => {
-          const { resume_number, vote, checked } = resume;
-          
-          console.log(`📊 [FETCH-VOTES] Processing record ${index}:`, {
-            resume_number,
-            vote,
-            checked
-          });
-
-          if (!voteData[resume_number]) {
-            voteData[resume_number] = { yes: 0, no: 0, undecided: 0 };
-          }
-
-          if (vote === "yes") {
-            voteData[resume_number].yes += 1;
-            console.log(`✅ [FETCH-VOTES] Resume ${resume_number}: Added YES vote (total: ${voteData[resume_number].yes})`);
-          } else if (vote === "no") {
-            voteData[resume_number].no += 1;
-            console.log(`❌ [FETCH-VOTES] Resume ${resume_number}: Added NO vote (total: ${voteData[resume_number].no})`);
-          } else if (vote === "unanswered") {
-            voteData[resume_number].undecided += 1;
-            console.log(`⏭️ [FETCH-VOTES] Resume ${resume_number}: Added UNANSWERED vote (total: ${voteData[resume_number].undecided})`);
-          }
-
-          checkboxData[resume_number] = checked;
-        });
-
-        console.log("📊 [FETCH-VOTES] Final vote counts:", voteData);
-        console.log("📊 [FETCH-VOTES] Final checkbox states:", checkboxData);
-
-        setVoteCounts(voteData);
-        setCheckedState(checkboxData);
-      } catch (error) {
-        console.error("❌ [FETCH-VOTES] Error fetching resume data:", error);
-      }
-    };
-    
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
   const handleCheckboxChange = (resumeNumber: number) => {
     if (!socket || !isConnected) {
       console.warn("Socket not connected. Checkbox state not sent.");
@@ -400,9 +384,7 @@ export default function ResReviewGroup() {
     console.log(`Sending checkbox update to room ${roomId}:`);
     console.log(`Resume ${resumeNumber}, Checked: ${newCheckedState}`);
 
-    // If user has confirmed and they're changing the selection, unconfirm them
     if (hasConfirmed) {
-      // Check if this change would alter the confirmed selection
       const currentSelected = Object.entries(checkedState)
         .filter(([_, isChecked]) => isChecked)
         .map(([num, _]) => parseInt(num));
@@ -414,16 +396,12 @@ export default function ResReviewGroup() {
         newSelection = currentSelected.filter(num => num !== resumeNumber);
       }
 
-      // If the selection has changed from what was confirmed, unconfirm
       const selectionChanged = JSON.stringify(newSelection.sort()) !== JSON.stringify(confirmedSelection.sort());
       
       if (selectionChanged) {
         setHasConfirmed(false);
-        
-        // Remove user from team confirmations
         setTeamConfirmations(prev => prev.filter(id => id !== user!.id.toString()));
         
-        // Emit unconfirm event to other team members
         socket.emit("teamUnconfirmSelection", {
           groupId: user!.group_id,
           classId: user!.class,
@@ -447,9 +425,13 @@ export default function ResReviewGroup() {
     if (resume) console.log('Selected file path:', resume.file_path);
   };
 
-  // Team confirmation handler
   const handleTeamConfirm = () => {
     if (!socket || !user || hasConfirmed) return;
+    
+    const currentSelected = Object.entries(checkedState)
+      .filter(([_, isChecked]) => isChecked)
+      .map(([num, _]) => parseInt(num));
+    setConfirmedSelection(currentSelected);
     
     setHasConfirmed(true);
     setTeamConfirmations(prev => {
@@ -468,8 +450,6 @@ export default function ResReviewGroup() {
   };
 
   const selectedResume = resumes.find(r => r.resume_number === selectedResumeNumber);
-
-  // Calculate selected resume count
   const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
 
   if (loading) {
@@ -482,7 +462,6 @@ export default function ResReviewGroup() {
       </div>
     );
   }  
-  
 
   if (!user || user.affiliation !== "student") {
     return null;
@@ -501,9 +480,7 @@ export default function ResReviewGroup() {
       <Navbar />
 
       <div className="flex flex-1 px-12 py-8 gap-8">
-        {/* LEFT: Resume viewer section */}
         <div className="w-1/2 flex flex-col">
-          {/* Instructions for resume viewer */}
           <div className="mb-4 p-4 bg-gray-100 border-4 border-northeasternRed rounded-lg">
             <h3 className="font-bold text-navy mb-2">📖 Resume Viewer (Individual)</h3>
             <p className="text-sm text-navy">
@@ -539,9 +516,7 @@ export default function ResReviewGroup() {
           )}
         </div>
 
-        {/* RIGHT: Resume selection section */}
         <div className="w-1/2 flex flex-col">
-          {/* Instructions for resume selection */}
           <div className="mb-4 p-4 bg-gray-100 border-4 border-northeasternRed rounded-lg">
             <h3 className="font-bold text-navy mb-2">✅ Group Selection (Shared)</h3>
             <p className="text-sm text-navy">
@@ -549,7 +524,6 @@ export default function ResReviewGroup() {
             </p>
           </div>
 
-          {/* 2 columns × 5 rows of cards */}
           <div className="flex-1 grid grid-cols-2 grid-rows-5 gap-4 overflow-y-auto">
             {resumes.slice(0,10).map((resume) => {
               const n = resume.resume_number;
@@ -599,7 +573,6 @@ export default function ResReviewGroup() {
         </div>
       </div>
 
-      {/* Enhanced bottom navigation with team confirmation */}
       <div className="flex justify-between items-center px-12 py-6">
         <button
           onClick={() => router.push("/res-review")}
@@ -609,9 +582,7 @@ export default function ResReviewGroup() {
           ← Back: Resume Review Pt.1
         </button>
 
-        {/* Team Confirmation Section */}
         <div className="flex flex-col items-center gap-4">
-          {/* Selection Status */}
           <div className="text-center">
             <p className={`font-bold ${selectedCount === 4 ? 'text-green-600' : 'text-orange-600'}`}>
               {selectedCount}/4 candidates selected
@@ -623,9 +594,7 @@ export default function ResReviewGroup() {
             )}
           </div>
 
-          {/* Confirmation and Proceed Buttons */}
           <div className="flex gap-4">
-            {/* Team Confirm Button */}
             {selectedCount === 4 && teamConfirmations.length < groupSize && (
               <button
                 onClick={handleTeamConfirm}
@@ -642,7 +611,6 @@ export default function ResReviewGroup() {
               </button>
             )}
 
-            {/* Proceed Button */}
             <button
               onClick={completeResumes}
               disabled={selectedCount !== 4 || teamConfirmations.length < groupSize}
@@ -659,7 +627,6 @@ export default function ResReviewGroup() {
             </button>
           </div>
 
-          {/* Waiting message */}
           {selectedCount === 4 && teamConfirmations.length > 0 && teamConfirmations.length < groupSize && (
             <p className="text-xs text-orange-600 text-center">
               Waiting for {groupSize - teamConfirmations.length} more team member{groupSize - teamConfirmations.length !== 1 ? 's' : ''} to confirm
