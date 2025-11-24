@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import NavbarAdmin from "../components/navbar-admin";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../components/AuthContext";
 
 interface User {
     id: number;
@@ -26,29 +27,8 @@ export default function UserProfile() {
     const [classes, setClasses] = useState<ClassItem[]>([]);
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);  
     const router = useRouter();
-  
-    useEffect(() => {
-      const fetchUser = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-          const userData = await response.json();
-  
-          if (response.ok) {
-            setUser(userData);
-          } else {
-            setUser(null);
-            router.push("/");
-          }
-        } catch (error) {
-          console.error("Error fetching user:", error);
-          router.push("/");
-        } finally {
-          setLoading(false);
-        }
-      };
-  
-      fetchUser();
-    }, [router]);
+    const { user: authUser, loading: userloading } = useAuth();
+
 
     // Fetch available classes
     useEffect(() => {
@@ -82,7 +62,7 @@ export default function UserProfile() {
       }
     };
 
-    if (loading) {
+    if (userloading || loading) {
       return (
         <div className="flex items-center justify-center min-h-screen bg-sand">
           <div className="text-center">
