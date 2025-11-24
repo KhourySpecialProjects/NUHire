@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Popup from './popup';
+import { useAuth } from './AuthContext';
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
@@ -31,40 +32,17 @@ export function StudentCSVTab() {
   const [csvStudents, setCsvStudents] = useState<CSVStudent[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [dragActive, setDragActive] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // Add submit loading state
   const [submitSuccess, setSubmitSuccess] = useState(false); // Add submit success state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { user, loading: userloading } = useAuth();
+
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
 
   // const emailRegex = /^[^\s@]+@northeastern\.edu$/;
   const emailRegex = /^.*$/;
-  
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { 
-          credentials: 'include' 
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        } else {
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        router.push('/');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -287,7 +265,7 @@ const handleSubmit = async () => {
     }
   };
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
         <div className="max-w-4xl mx-auto p-4">
