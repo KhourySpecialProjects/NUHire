@@ -69,6 +69,7 @@ export default function ResReviewGroup() {
   
   const resumeInstructions = [
     "Review the resumes and decide as a group which 4 candidates continue.",
+    "Click on a candidate card to preview their resume.",
     "You will then watch the interviews of the candidates selected."
   ];  
 
@@ -394,11 +395,8 @@ export default function ResReviewGroup() {
     });
   };
 
-  const handleSelectPreview = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const num = parseInt(e.target.value, 10);
-    setSelectedResumeNumber(isNaN(num) ? '' : num);
-    const resume = resumes.find(r => r.resume_number === num);
-    if (resume) console.log('Selected file path:', resume.file_path);
+  const handleCardClick = (resumeNumber: number) => {
+    setSelectedResumeNumber(resumeNumber);
   };
 
   const handleTeamConfirm = () => {
@@ -456,32 +454,16 @@ export default function ResReviewGroup() {
       <Navbar />
 
       <div className="flex flex-1 px-12 py-8 gap-8">
+        {/* Resume Viewer */}
         <div className="w-1/2 flex flex-col">
           <div className="mb-4 p-4 bg-gray-100 border-4 border-northeasternRed rounded-lg">
-            <h3 className="font-bold text-navy mb-2">📖 Resume Viewer (Individual)</h3>
+            <h3 className="font-bold text-navy mb-2">📖 Resume Viewer</h3>
             <p className="text-sm text-navy">
-              Use the dropdown below to preview individual resumes. This viewer is for your personal use - other group members won't see what you're viewing here.
+              Click on any candidate card to preview their resume. This viewer is for your personal use - other group members won't see what you're viewing here.
             </p>
           </div>
 
-          <div className="mb-4 p-4 bg-white border-4 border-northeasternRed rounded-lg">
-            <label className="block mb-2 font-semibold text-navy">
-              Select a resume to preview
-            </label>
-            <select
-              className="w-full p-2 border border-wood bg-springWater rounded-md"
-              value={selectedResumeNumber}
-              onChange={handleSelectPreview}
-            >
-              <option value="">— choose resume —</option>
-              {resumes.slice(0,10).map(r => (
-                <option key={r.resume_number} value={r.resume_number}>
-                 {r.first_name} {r.last_name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {selectedResume && (
+          {selectedResume ? (
             <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden">
               <iframe
                 src={`${getResumeUrl(selectedResume.file_path)}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
@@ -489,14 +471,19 @@ export default function ResReviewGroup() {
                 className="w-full h-full rounded border-none"
               />
             </div>
+          ) : (
+            <div className="flex-1 border-4 border-gray-300 border-dashed rounded-lg flex items-center justify-center">
+              <p className="text-gray-500 text-lg">Click a candidate card to view their resume</p>
+            </div>
           )}
         </div>
 
+        {/* Candidate Cards */}
         <div className="w-1/2 flex flex-col">
           <div className="mb-4 p-4 bg-gray-100 border-4 border-northeasternRed rounded-lg">
             <h3 className="font-bold text-navy mb-2">✅ Group Selection (Shared)</h3>
             <p className="text-sm text-navy">
-              Select exactly 4 resumes as a group to advance to interviews. When anyone in your group checks or unchecks a resume, everyone will see the change in real-time.
+              Select exactly 4 resumes as a group to advance to interviews. Click a card to preview, check the box to select. Changes are visible to all team members in real-time.
             </p>
           </div>
 
@@ -504,43 +491,47 @@ export default function ResReviewGroup() {
             {resumes.slice(0,10).map((resume) => {
               const n = resume.resume_number;
               const votes = voteCounts[n] || { yes: 0, no: 0, undecided: 0 };
+              const isSelected = selectedResumeNumber === n;
+              
               return (
                 <div
                   key={n}
-                  className="bg-gray-100 border-4 border-northeasternRed rounded-2xl shadow-xl p-6 flex flex-col justify-between transition"
+                  onClick={() => handleCardClick(n)}
+                  className={`bg-gray-100 border-4 rounded-2xl shadow-xl p-4 flex flex-col justify-between transition cursor-pointer hover:shadow-2xl ${
+                    isSelected ? 'border-blue-500 bg-blue-50' : 'border-northeasternRed'
+                  }`}
                 >
-                  <h3 className="text-xl font-semibold text-navy mb-2">
+                  <h3 className="text-lg font-semibold text-navy mb-2">
                     {resume.first_name} {resume.last_name}
                   </h3>
-                  <a
-                    href={`${API_BASE_URL}/${resume.file_path}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-northeasternRed font-bold underline mb-4"
-                  >
-                    View Full
-                  </a>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded">✔ Yes</span>
-                      <span className="font-semibold">{votes.yes}</span>
+                  
+                  {/* Horizontal vote display */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-1">
+                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">✔</span>
+                      <span className="font-semibold text-sm">{votes.yes}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded">✖ No</span>
-                      <span className="font-semibold">{votes.no}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">✖</span>
+                      <span className="font-semibold text-sm">{votes.no}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">? Skip</span>
-                      <span className="font-semibold">{votes.undecided}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">?</span>
+                      <span className="font-semibold text-sm">{votes.undecided}</span>
                     </div>
                   </div>
-                  <label className="flex items-center mt-4">
+
+                  <label 
+                    className="flex items-center mt-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={checkedState[n] || false}
                       onChange={() => handleCheckboxChange(n)}
+                      className="mr-2"
                     />
-                    <span className="ml-2 text-navy">Select</span>
+                    <span className="text-navy font-semibold">Select for Interview</span>
                   </label>
                 </div>
               );
