@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
 import { useSocket } from "../components/socketContext";
 import Popup from "../components/popup";
+import { useAuth } from "../components/AuthContext";
 
 const OffersManagement = () => {
   interface Offer {
@@ -25,11 +26,9 @@ const OffersManagement = () => {
   }
 
   // General state
-  const [assignedClassIds, setAssignedClassIds] = useState<string[]>([]);
-  const [user, setUser] = useState<{ affiliation: string; email?: string; [key: string]: any } | null>(null);
+  const { user, loading: userloading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
-  const router = useRouter();
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const socket = useSocket();
   
@@ -118,23 +117,6 @@ const OffersManagement = () => {
       setOffersLoading(false);
     }
   };
-
-  // Fetch user
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-        if (response.ok) setUser(userData);
-        else { setUser(null); router.push("/"); }
-      } catch {
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, [router]);
 
   useEffect(() => {
     if (!socket || !user || user.affiliation !== "admin") return;
@@ -249,7 +231,6 @@ const OffersManagement = () => {
       fetch(`${API_BASE_URL}/moderator/classes-full/${user.email}`, { credentials: "include" })
         .then(res => res.json())
         .then((data) => {
-          setAssignedClassIds(data.map((item: any) => String(item.crn)));
           setClasses(data.map((item: any) => ({
             id: item.crn,
             name: `CRN ${item.crn}`
@@ -263,7 +244,7 @@ const OffersManagement = () => {
     setOffersTabClass(e.target.value);
   };
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
