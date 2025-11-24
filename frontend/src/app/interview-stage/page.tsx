@@ -191,6 +191,9 @@ export default function Interview() {
 
   // Reset video loaded state when video changes
   useEffect(() => {
+    console.log('[VIDEO STATE] Video index changed to:', videoIndex);
+    console.log('[VIDEO STATE] Current video:', interviews[videoIndex]);
+
     setVideoLoaded(false);
   }, [videoIndex]);
 
@@ -235,19 +238,30 @@ export default function Interview() {
   };
 
   useEffect(() => {
-    if (!user?.group_id) return;
+    if (!user?.group_id) {
+      console.log('[VIDEO LOADING] No user group_id found');
+      return;
+    }
+    
+    console.log('[VIDEO LOADING] Starting fetchCandidates for group:', user.group_id, 'class:', user.class);
     
     const fetchCandidates = async () => {
-      setVideosLoading(true); // Start loading
+      setVideosLoading(true);
+      console.log('[VIDEO LOADING] Set videosLoading to true');
       
       try {
         // Get all resumes for the group and filter by class
+        console.log('[VIDEO LOADING] Fetching resumes from:', `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`);
+        
         const resumeResponse = await axios.get(
           `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
           { withCredentials: true, timeout: 8000 }
         );
         
+        console.log('[VIDEO LOADING] Resume response received:', resumeResponse.data);
+        
         const allResumes: Resume[] = resumeResponse.data;
+        console.log('[VIDEO LOADING] Total resumes:', allResumes.length);
         
         // Filter to get only checked resumes and ensure no duplicates
         const checkedResumes = allResumes
@@ -259,19 +273,27 @@ export default function Interview() {
             return unique;
           }, []);
         
+        console.log('[VIDEO LOADING] Checked resumes (filtered):', checkedResumes.length);
+        console.log('[VIDEO LOADING] Checked resume IDs:', checkedResumes.map(r => r.resume_number));
+        
         if (checkedResumes.length === 0) {
+          console.log('[VIDEO LOADING] No checked resumes found, stopping');
           setInterviews([]);
-          setVideosLoading(false); // Stop loading
+          setVideosLoading(false);
           return;
         }
         
-        const candidatePromises = checkedResumes.map(resume => 
-          axios.get(`${API_BASE_URL}/candidates/resume/${resume.resume_number}`, { 
+        console.log('[VIDEO LOADING] Fetching candidate data for', checkedResumes.length, 'resumes');
+        
+        const candidatePromises = checkedResumes.map((resume, index) => {
+          console.log(`[VIDEO LOADING] Fetching candidate ${index + 1}/${checkedResumes.length} for resume:`, resume.resume_number);
+          
+          return axios.get(`${API_BASE_URL}/candidates/resume/${resume.resume_number}`, { 
             timeout: 8000, 
             withCredentials: true,
           })
           .then(response => {
-            console.log(`Raw response for resume ${resume.resume_number}:`, response.data);
+            console.log(`[VIDEO LOADING] ✓ Candidate ${index + 1} response:`, response.data);
             
             const candidateData = {
               resume_id: response.data.resume_id,
@@ -282,24 +304,26 @@ export default function Interview() {
               last_name: response.data.l_name,
             };
             
-            console.log(`Formatted candidate data for resume ${resume.resume_number}:`, candidateData);
+            console.log(`[VIDEO LOADING] ✓ Formatted candidate ${index + 1}:`, candidateData);
             return candidateData;
           })
           .catch(err => {
-            console.error(`Error fetching candidate for resume ${resume.resume_number}:`, err);
+            console.error(`[VIDEO LOADING] ✗ Error fetching candidate ${index + 1}:`, err.message);
+            console.error(`[VIDEO LOADING] ✗ Full error:`, err);
             return null;
-          })
-        );
+          });
+        });
 
+        console.log('[VIDEO LOADING] Waiting for all candidate promises...');
         const results = await Promise.allSettled(candidatePromises);
-        console.log("Promise.allSettled results:", results);
+        console.log('[VIDEO LOADING] All promises settled. Results:', results.length);
 
         // Log each result individually
         results.forEach((result, index) => {
           if (result.status === 'fulfilled') {
-            console.log(`Result ${index} (fulfilled):`, result.value);
+            console.log(`[VIDEO LOADING] Result ${index + 1} (fulfilled):`, result.value);
           } else {
-            console.log(`Result ${index} (rejected):`, result.reason);
+            console.log(`[VIDEO LOADING] Result ${index + 1} (rejected):`, result.reason);
           }
         });
 
@@ -308,14 +332,26 @@ export default function Interview() {
           .filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null)
           .slice(0,4);
 
+        console.log('[VIDEO LOADING] Final interviews count:', finalInterviews.length);
+        console.log('[VIDEO LOADING] Final interviews data:', finalInterviews);
+        
         setInterviews(finalInterviews);
-        console.log("Final interviews array:", finalInterviews);
+        console.log('[VIDEO LOADING] Interviews state updated');
         
       } catch (err) {
-        console.error("Error fetching interviews:", err);
+        console.error('[VIDEO LOADING] ✗ Critical error in fetchCandidates:', err);
+        if (axios.isAxiosError(err)) {
+          console.error('[VIDEO LOADING] ✗ Axios error details:', {
+            message: err.message,
+            code: err.code,
+            response: err.response?.data,
+            status: err.response?.status
+          });
+        }
         setError('Failed to load interview data. Please try refreshing the page.');
       } finally {
-        setVideosLoading(false); // Stop loading regardless of success or failure
+        console.log('[VIDEO LOADING] Setting videosLoading to false');
+        setVideosLoading(false);
       }
     };
     
@@ -780,9 +816,16 @@ const completeInterview = () => {
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
                 onLoad={() => {
+                  console.log('[VIDEO STATE] Iframe onLoad triggered for video:', videoIndex);
+                  console.log('[VIDEO STATE] Video URL:', currentVid.interview);
                   setTimeout(() => {
+                    console.log('[VIDEO STATE] Setting videoLoaded to true after delay');
                     setVideoLoaded(true);
                   }, 500);
+                }}
+                onError={(e) => {
+                  console.error('[VIDEO STATE] Iframe error:', e);
+                  console.error('[VIDEO STATE] Failed to load video URL:', currentVid.interview);
                 }}
               ></iframe>
             ) : (
