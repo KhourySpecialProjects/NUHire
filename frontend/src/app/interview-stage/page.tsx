@@ -293,7 +293,10 @@ export default function Interview() {
             withCredentials: true,
           })
           .then(response => {
-            console.log(`[VIDEO LOADING] ✓ Candidate ${index + 1} response:`, response.data);
+            console.log(`[VIDEO LOADING] ✓ Candidate ${index + 1} FULL response:`, response);
+            console.log(`[VIDEO LOADING] ✓ Candidate ${index + 1} response.data:`, response.data);
+            console.log(`[VIDEO LOADING] ✓ Candidate ${index + 1} response.data type:`, typeof response.data);
+            console.log(`[VIDEO LOADING] ✓ Candidate ${index + 1} response.data keys:`, Object.keys(response.data));
             
             const candidateData = {
               resume_id: response.data.resume_id,
