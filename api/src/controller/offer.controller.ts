@@ -7,7 +7,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class OfferController {
-  constructor(private db: Connection) {}
+  constructor(private db: Pool) {}
 
   createOffer = (req: AuthRequest, res: Response): void => {
     const { group_id, class_id, candidate_id, status } = req.body;

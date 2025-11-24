@@ -5,7 +5,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class GroupController {
-  constructor(private db: Connection, private io: any) {}
+  constructor(private db: Pool, private io: any) {}
 
   getGroups = async (req: AuthRequest, res: Response): Promise<void> => {
     const { class: classId } = req.query;

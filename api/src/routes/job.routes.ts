@@ -5,7 +5,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { JobController } from '../controller/job.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
-export default (db: Connection, io: SocketIOServer, onlineStudents: Record<string, string>): Router => {
+export default (db: Pool, io: SocketIOServer, onlineStudents: Record<string, string>): Router => {
   const router = Router();
   const jobController = new JobController(db, io, onlineStudents);
 

@@ -7,7 +7,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class ProgressController {
-  constructor(private db: Connection, private io: any) {}
+  constructor(private db: Pool, private io: any) {}
 
   getProgressByGroup = (req: AuthRequest, res: Response): void => {
     const { crn, group_id } = req.params;

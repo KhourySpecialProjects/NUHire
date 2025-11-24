@@ -8,7 +8,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class ModeratorController {
-  constructor(private db: Connection) {}
+  constructor(private db: Pool) {}
 
   addModeratorCRN = async (req: AuthRequest, res: Response): Promise<void> => {
     const { admin_email, crn } = req.body;

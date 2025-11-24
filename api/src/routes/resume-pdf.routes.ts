@@ -5,7 +5,7 @@ import { ResumeController } from '../controller/resume.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { Server as SocketIOServer } from 'socket.io';
 
-export default (db: Connection, io: SocketIOServer): Router => {
+export default (db: Pool, io: SocketIOServer): Router => {
   const router = Router();
   const resumeController = new ResumeController(db, io);
 

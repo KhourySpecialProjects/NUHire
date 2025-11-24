@@ -4,7 +4,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class NoteController {
-  constructor(private db: Connection) {}
+  constructor(private db: Pool) {}
 
   getNotes = (req: AuthRequest, res: Response): void => {
     const userEmail = req.query.user_email;

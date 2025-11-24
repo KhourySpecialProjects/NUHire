@@ -3,7 +3,7 @@ import { AuthRequest, User } from '../models/types';
 import { Connection, RowDataPacket } from 'mysql2';
 
 export class UserController {
-  constructor(private db: Connection, private io: any) {}
+  constructor(private db: Pool, private io: any) {}
 
   getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
     try {

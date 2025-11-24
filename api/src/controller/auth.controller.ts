@@ -8,7 +8,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class AuthController {
-  constructor(private db: Connection) {}
+  constructor(private db: Pool) {}
 
   initiateKeycloakAuth = (req: AuthRequest, res: Response, next: NextFunction): void => {
     passport.authenticate('keycloak')(req, res, next);

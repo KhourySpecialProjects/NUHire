@@ -8,7 +8,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class CSVController {
-  constructor(private db: Connection, private io: any) {}
+  constructor(private db: Pool, private io: any) {}
 
   importCSV = (req: AuthRequest, res: Response): void => {
     console.log('=== POST /importCSV endpoint hit ===');

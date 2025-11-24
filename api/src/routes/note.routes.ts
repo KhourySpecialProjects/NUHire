@@ -4,7 +4,7 @@ import { Connection } from 'mysql2';
 import { NoteController } from '../controller/note.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
-export default (db: Connection): Router => {
+export default (db: Pool): Router => {
   const router = Router();
   const noteController = new NoteController(db);
 

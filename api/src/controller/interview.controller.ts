@@ -7,7 +7,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class InterviewController {
-  constructor(private db: Connection, private io: any) {}
+  constructor(private db: Pool, private io: any) {}
 
   submitVote = (req: AuthRequest, res: Response): void => {
     const { student_id, group_id, studentClass, question1, question2, question3, question4, candidate_id } = req.body;

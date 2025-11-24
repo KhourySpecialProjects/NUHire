@@ -3,7 +3,7 @@ import { Connection } from 'mysql2';
 import { OfferController } from '../controller/offer.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
-export default (db: Connection): Router => {
+export default (db: Pool): Router => {
   const router = Router();
   const offerController = new OfferController(db);
 

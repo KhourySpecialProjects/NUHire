@@ -4,7 +4,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Connection } from 'mysql2';
 import { SocketEvents } from '../models/types';
 
-export function initializeSocketHandlers(io: SocketIOServer, db: Connection): Record<string, string> {
+export function initializeSocketHandlers(io: SocketIOServer, db: Pool): Record<string, string> {
   const onlineStudents: Record<string, string> = {};
 
   io.on('connection', (socket: Socket) => {

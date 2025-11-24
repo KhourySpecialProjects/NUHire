@@ -5,7 +5,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { GroupController } from '../controller/group.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
-export default (db: Connection, io: SocketIOServer): Router => {
+export default (db: Pool, io: SocketIOServer): Router => {
   const router = Router();
   const groupController = new GroupController(db, io);
 

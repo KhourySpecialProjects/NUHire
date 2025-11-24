@@ -16,7 +16,7 @@ interface KeycloakProfile {
   [key: string]: any;
 }
 
-export function configurePassport(db: Connection): void {
+export function configurePassport(db: Pool): void {
   const KEYCLOAK_URL = process.env.KEYCLOAK_URL!;
   const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM!;
 

@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 
 export class JobController {
-  constructor(private db: Connection, private io: any, private onlineStudents: Record<string, string>) {}
+  constructor(private db: Pool, private io: any, private onlineStudents: Record<string, string>) {}
 
   getAllJobs = (req: AuthRequest, res: Response): void => {
     const { class_id } = req.query; // Get class_id from query params

@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 
 export class ResumeController {
-  constructor(private db: Connection, private io: any) {}
+  constructor(private db: Pool, private io: any) {}
 
   getAllResumes = (req: AuthRequest, res: Response): void => {
     this.db.query('SELECT * FROM Resume', (err, results) => {

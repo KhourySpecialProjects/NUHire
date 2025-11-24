@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { Connection } from 'mysql2';
 import { AuthController } from '../controller/auth.controller';
 
-export default (db: Connection): Router => {
+export default (db: Pool): Router => {
   const router = Router();
   const authController = new AuthController(db);
 

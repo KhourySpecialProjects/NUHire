@@ -4,7 +4,7 @@ import { Connection } from 'mysql2';
 import { ModeratorController } from '../controller/moderator.controller';
 import { requireAuth, requireAdmin } from '../middleware/auth.middleware';
 
-export default (db: Connection): Router => {
+export default (db: Pool): Router => {
   const router = Router();
   const moderatorController = new ModeratorController(db);
 

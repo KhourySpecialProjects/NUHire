@@ -36,7 +36,7 @@ export class App {
   private sessionStore: any;
   public onlineStudents: Record<string, string> = {};
 
-  constructor(private db: Connection) {
+  constructor(private db: Pool) {
     this.app = express();
     this.server = require('http').createServer(this.app);
     this.io = new SocketIOServer(this.server, {

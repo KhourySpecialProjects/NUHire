@@ -7,7 +7,7 @@ import { AuthRequest } from '../models/types';
 import { Connection } from 'mysql2';
 
 export class CandidateController {
-  constructor(private db: Connection) {}
+  constructor(private db: Pool) {}
 
   getCandidatesByGroups = (req: AuthRequest, res: Response): void => {
     const { classId, groupIds } = req.params;
