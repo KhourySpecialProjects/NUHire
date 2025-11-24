@@ -11,7 +11,7 @@ import Popup from "../components/popup";
 import Footer from "../components/footer";
 import { usePathname } from "next/navigation";
 import { useSocket } from "../components/socketContext";
-import router from "next/router";
+import { useAuth } from "../components/AuthContext";
 import Instructions from "../components/instructions";
 import { useProgressManager } from "../components/progress";
 
@@ -38,6 +38,7 @@ interface User {
 
 export default function JobDescriptionPage() { 
   const socket = useSocket();
+  const { user, loading: userloading } = useAuth();
   const {updateProgress, fetchProgress} = useProgressManager();
   const [fileUrl, setJob] = useState("");
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -49,7 +50,6 @@ export default function JobDescriptionPage() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
   const jobDesInstructions = [
     "Read the job description that you are hiring for.",
     "Take notes by pressing the top right notes button, you can always access them.",
@@ -71,26 +71,6 @@ export default function JobDescriptionPage() {
       window.removeEventListener('showInstructions', handleShowInstructions);
     };
   }, []);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-        if (response.ok) {
-          setUser(userData);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-
-  }, [router]);
 
   useEffect(() => {
     if (user)
@@ -251,7 +231,7 @@ export default function JobDescriptionPage() {
         );
       };
     
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
