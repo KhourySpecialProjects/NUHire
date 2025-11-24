@@ -8,6 +8,7 @@ import Slideshow from "../components/slideshow";
 import Popup from "../components/popup";
 import {useSocket} from "../components/socketContext";
 import Facts from "../components/facts";
+import { useAuth } from "../components/AuthContext";
 
 export default function WaitingGroupPage() {
   interface User {
@@ -18,32 +19,12 @@ export default function WaitingGroupPage() {
     group_id?: number;
   }
 
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [start, setStart] = useState(false);
   const socket = useSocket(); 
   const router = useRouter();
-
-  // Fetch user information
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/user`, { credentials: "include" });
-        const userData = await response.json();
-
-        if (response.ok) {
-          setUser(userData);
-        }
-      } catch (error) {
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
+  const { user, loading: userloading } = useAuth();
 
   const groupStatusResponse = async () => {
     if (!user?.class || !user?.group_id) {
@@ -159,7 +140,7 @@ export default function WaitingGroupPage() {
     };
   }, [socket, user, router]);
 
-  if (loading) {
+  if (userloading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
         <div className="text-center">
@@ -200,7 +181,7 @@ export default function WaitingGroupPage() {
                   Waiting for Teacher
                 </h1>
                 <p className="text-xl text-northeasternBlack mb-4">
-                  Hello, {user.f_name} {user.l_name}!
+                  Hello, {user.name}!
                 </p>
                 {user.class && (
                   <p className="text-lg text-navy mb-6">
