@@ -503,7 +503,7 @@ export default function ResReviewGroup() {
                 >
                   {/* Name and votes on same line */}
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-navy">
+                    <h3 className="text-xl font-semibold text-navy">
                       {resume.first_name} {resume.last_name}
                     </h3>
                     
