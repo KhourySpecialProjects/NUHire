@@ -259,25 +259,6 @@ export default function JobDescriptionPage() {
           Job Description
         </div>
 
-        <div className="flex justify-center space-x-4 my-4">
-          <button
-            onClick={() => setTool("pointer")}
-            className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
-              tool === "pointer" ? "ring-2 ring-navy" : "hover:bg-redHeader"
-            }`}
-          >
-            Cursor
-          </button>
-          <button
-            onClick={() => setTool("comment")}
-            className={`px-5 py-2 rounded bg-navy font-rubik text-white transition duration-300 ease-in-out ${
-              tool === "comment" ? "ring-2 ring-navy" : "hover:bg-redHeader"
-            }`}
-          >
-            Comment
-          </button>
-        </div>
-
         <div
           id="pdf-container"
           className={`relative w-full mx-auto flex justify-center rounded-lg ${
