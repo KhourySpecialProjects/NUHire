@@ -508,15 +508,15 @@ export default function ResReviewGroup() {
                     </h3>
                     
                     <div className="flex items-center flex-shrink-0">
-                      <div className="flex items-center">
+                      <div className="flex items-center gap-1">
                         <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">✔</span>
                         <span className="font-semibold text-sm">{votes.yes}</span>
                       </div>
-                      <div className="flex items-center">
+                      <div className="flex items-center gap-1">
                         <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">✖</span>
                         <span className="font-semibold text-sm">{votes.no}</span>
                       </div>
-                      <div className="flex items-center">
+                      <div className="flex items-center gap-1">
                         <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">?</span>
                         <span className="font-semibold text-sm">{votes.undecided}</span>
                       </div>
@@ -542,7 +542,7 @@ export default function ResReviewGroup() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center px-12 py-6">
+      <div className="flex justify-between items-center px-12 py-4">
         <button
           onClick={() => router.push("/res-review")}
           disabled={true}
@@ -551,7 +551,7 @@ export default function ResReviewGroup() {
           ← Back: Resume Review Pt.1
         </button>
 
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-2">
           <div className="text-center">
             <p className={`font-bold ${selectedCount === 4 ? 'text-green-600' : 'text-orange-600'}`}>
               {selectedCount}/4 candidates selected
