@@ -44,7 +44,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar w-full relative">
+    <nav className="sticky top-0 z-50 navbar w-full relative">
       {/* Top bar */}
       <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full relative">
         <button
