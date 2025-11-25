@@ -12,16 +12,6 @@ const Footer: React.FC = () => {
           <span>Join our Discord</span>
         </Link>
       </div>
-      <div className="mt-1">
-        <a
-          href="https://www.northeastern.edu"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-rubik text-northeasternRed font-extrabold text-xs"
-        >
-          Northeastern Home Page
-        </a>
-      </div>
     </footer>
   );
 };

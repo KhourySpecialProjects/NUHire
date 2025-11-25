@@ -45,25 +45,24 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 navbar w-full relative">
-      {/* Top bar - reduced padding and font sizes */}
-      <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-4 py-2 font-rubik border-b-2 border-northeasternRed w-full relative">
+      {/* Top bar - much smaller */}
+      <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-3 py-1 font-rubik border-b border-northeasternRed w-full relative">
         <button
-          className="flex items-center gap-1 font-bold text-sm focus:outline-none"
+          className="flex items-center gap-1 font-bold text-xs focus:outline-none"
           onClick={() => setIsOpen((open) => !open)}
         >
           <span>Menu</span>
-          <span className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>▶</span>
+          <span className={`transform transition-transform duration-300 text-xs ${isOpen ? 'rotate-180' : ''}`}>▶</span>
         </button>
         <div className="absolute left-1/2 transform -translate-x-1/2">
-          <Link href="/dashboard" className="text-2xl font-rubik font-bold text-northeasternRed drop-shadow-lg">
+          <Link href="/dashboard" className="text-xl font-rubik font-bold text-northeasternRed drop-shadow-lg">
             NUHire
           </Link>
         </div>
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-1 ml-auto">
           {/* Help button - smaller */}
           {showHelpButton && (
-            <div className="bg-northeasternRed text-northeasterWhite px-3 py-1 rounded-md hover:bg-sand border-2 border-navy transition text-sm">
-
+            <div className="bg-northeasternRed text-northeasterWhite px-2 py-0.5 rounded-md hover:bg-sand border border-navy transition text-xs">
               <button
                 onClick={handleShowInstructions}
                 className="w-full"
@@ -72,15 +71,15 @@ const Navbar = () => {
               </button>
             </div>
           )}
-          <div className="w-40 flex items-center">
+          <div className="w-32 flex items-center">
             <NotesPage />
           </div>
           <Link
             href="/userProfile"
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-northeasternRed cursor-pointer transition duration-300 ease-in-out hover:bg-northeasternBlack hover:border-2 hover:border-northeasternRed relative"
+            className="flex items-center justify-center w-6 h-6 rounded-full bg-northeasternRed cursor-pointer transition duration-300 ease-in-out hover:bg-northeasternBlack hover:border hover:border-northeasternRed relative"
           >
             <div
-              className="w-5 h-5 bg-cover bg-center rounded-full border-2 border-northeasternWhite"
+              className="w-4 h-4 bg-cover bg-center rounded-full border border-northeasternWhite"
               style={{
                 backgroundImage:
                   "url('https://cdn-icons-png.flaticon.com/512/847/847969.png')",
