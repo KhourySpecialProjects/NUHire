@@ -45,24 +45,24 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 navbar w-full relative">
-      {/* Top bar */}
-      <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-6 py-4 font-rubik border-b-4 border-northeasternRed w-full relative">
+      {/* Top bar - reduced padding and font sizes */}
+      <div className="bg-northeasternBlack text-northeasternWhite flex items-center px-4 py-2 font-rubik border-b-2 border-northeasternRed w-full relative">
         <button
-          className="flex items-center gap-2 font-bold text-xl focus:outline-none"
+          className="flex items-center gap-1 font-bold text-sm focus:outline-none"
           onClick={() => setIsOpen((open) => !open)}
         >
           <span>Menu</span>
           <span className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>▶</span>
         </button>
         <div className="absolute left-1/2 transform -translate-x-1/2">
-          <Link href="/dashboard" className="text-4xl font-rubik font-bold text-northeasternRed drop-shadow-lg">
+          <Link href="/dashboard" className="text-2xl font-rubik font-bold text-northeasternRed drop-shadow-lg">
             NUHire
           </Link>
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          {/* Help button - styled like notes button */}
+          {/* Help button - smaller */}
           {showHelpButton && (
-            <div className="bg-northeasternRed text-northeasterWhite px-4 py-2 rounded-md hover:bg-sand border-4 border-navy transition">
+            <div className="bg-northeasternRed text-northeasterWhite px-3 py-1 rounded-md hover:bg-sand border-2 border-navy transition text-sm">
 
               <button
                 onClick={handleShowInstructions}
@@ -72,15 +72,15 @@ const Navbar = () => {
               </button>
             </div>
           )}
-          <div className="w-48 flex items-center">
+          <div className="w-40 flex items-center">
             <NotesPage />
           </div>
           <Link
             href="/userProfile"
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-northeasternRed cursor-pointer transition duration-300 ease-in-out hover:bg-northeasternBlack hover:border-2 hover:border-northeasternRed relative"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-northeasternRed cursor-pointer transition duration-300 ease-in-out hover:bg-northeasternBlack hover:border-2 hover:border-northeasternRed relative"
           >
             <div
-              className="w-6 h-6 bg-cover bg-center rounded-full border-2 border-northeasternWhite"
+              className="w-5 h-5 bg-cover bg-center rounded-full border-2 border-northeasternWhite"
               style={{
                 backgroundImage:
                   "url('https://cdn-icons-png.flaticon.com/512/847/847969.png')",
@@ -91,17 +91,17 @@ const Navbar = () => {
           </Link>
         </div>
       </div>
-      {/* Collapsible sidebar - slides in from the left */}
+      {/* Collapsible sidebar - smaller */}
       <div
         ref={dropdownRef}
-        className={`fixed top-0 left-0 z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-40 border-r-4 border-northeasternRed`}
-        style={{ borderTopRightRadius: isOpen ? '1rem' : '0', borderBottomRightRadius: isOpen ? '1rem' : '0', height: '220px', top: '0' }}
+        className={`fixed top-0 left-0 z-50 bg-northeasternWhite shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-36 border-r-2 border-northeasternRed`}
+        style={{ borderTopRightRadius: isOpen ? '0.5rem' : '0', borderBottomRightRadius: isOpen ? '0.5rem' : '0', height: '180px', top: '0' }}
       >
-        <div className="flex flex-col gap-2 pt-6 px-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-bold text-xl text-northeasternRed">Menu</span>
+        <div className="flex flex-col gap-1 pt-4 px-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-bold text-base text-northeasternRed">Menu</span>
             <button
-              className="text-xl text-gray-500 hover:text-northeasternRed"
+              className="text-lg text-gray-500 hover:text-northeasternRed"
               onClick={() => setIsOpen(false)}
               aria-label="Close menu"
             >
@@ -109,19 +109,19 @@ const Navbar = () => {
             </button>
           </div>
           <button
-            className="block px-4 py-2 font-rubik text-northeasternBlack hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
+            className="block px-3 py-1 font-rubik text-sm text-northeasternBlack hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
             onClick={() => { setIsOpen(false); router.push("/dashboard"); }}
           >
             Dashboard
           </button>
           <button
-            className="block px-4 py-2 font-rubik text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
+            className="block px-3 py-1 font-rubik text-sm text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
             onClick={() => { setIsOpen(false); router.push("/userProfile"); }}
           >
             Profile
           </button>
           <button
-            className="block px-4 py-2 font-rubik text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
+            className="block px-3 py-1 font-rubik text-sm text-northeasternRed hover:bg-northeasternRed hover:text-northeasternWhite rounded-md text-left"
             onClick={() => { setIsOpen(false); router.push("/notes"); }}
           >
             Notes
