@@ -508,15 +508,15 @@ export default function ResReviewGroup() {
                     </h3>
                     
                     <div className="flex items-center flex-shrink-0">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center">
                         <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">✔</span>
                         <span className="font-semibold text-sm">{votes.yes}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center">
                         <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">✖</span>
                         <span className="font-semibold text-sm">{votes.no}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center">
                         <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">?</span>
                         <span className="font-semibold text-sm">{votes.undecided}</span>
                       </div>

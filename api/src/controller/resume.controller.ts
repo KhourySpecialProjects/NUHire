@@ -229,7 +229,7 @@ export class ResumeController {
       FROM Resume_pdfs r
       LEFT JOIN Candidates c ON r.id = c.resume_id
       WHERE r.class_id = ?
-      ORDER BY r.id DESC
+      ORDER BY r.id ASC
     `;
 
     this.db.query(query, [class_id], (err, results) => {
