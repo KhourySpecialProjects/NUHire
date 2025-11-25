@@ -113,15 +113,7 @@ export class ResumeController {
       return;
     }
 
-    const getAllResumesQuery = `
-      SELECT DISTINCT
-        r.id as resume_number,
-        'unanswered' as vote,
-        0 as checked
-      FROM Resume_pdfs r
-      WHERE r.class_id = ?
-    `;
-
+    // Just return ALL votes for this group/class - don't merge them
     const getVotesQuery = `
       SELECT 
         res.resume_number,
@@ -132,48 +124,15 @@ export class ResumeController {
       WHERE res.group_id = ? AND u.class = ?
     `;
 
-    this.db.query(getAllResumesQuery, [studentClass], (err1, allResumes: any[]) => {
-      if (err1) {
-        console.error('❌ [BACKEND-GET-VOTES] Error fetching all resumes:', err1);
-        res.status(500).json({ error: err1.message });
+    this.db.query(getVotesQuery, [group_id, studentClass], (err, votes: any[]) => {
+      if (err) {
+        console.error('❌ [BACKEND-GET-VOTES] Error fetching votes:', err);
+        res.status(500).json({ error: err.message });
         return;
       }
 
-      console.log('📊 [BACKEND-GET-VOTES] All resumes for class:', allResumes);
-
-      this.db.query(getVotesQuery, [group_id, studentClass], (err2, votes: any[]) => {
-        if (err2) {
-          console.error('❌ [BACKEND-GET-VOTES] Error fetching votes:', err2);
-          res.status(500).json({ error: err2.message });
-          return;
-        }
-
-        console.log('📊 [BACKEND-GET-VOTES] Actual votes from Resume table:', votes);
-
-        const resumeMap = new Map();
-        
-        allResumes.forEach(r => {
-          resumeMap.set(r.resume_number, {
-            resume_number: r.resume_number,
-            vote: 'unanswered',
-            checked: 0
-          });
-        });
-
-        votes.forEach(v => {
-          const existing = resumeMap.get(v.resume_number) || { resume_number: v.resume_number };
-          console.log(`📊 [BACKEND-GET-VOTES] Merging vote for resume ${v.resume_number}:`, v);
-          resumeMap.set(v.resume_number, {
-            ...existing,
-            vote: v.vote,
-            checked: v.checked
-          });
-        });
-
-        const result = Array.from(resumeMap.values());
-        console.log('📊 [BACKEND-GET-VOTES] Final merged result:', result);
-        res.json(result);
-      });
+      console.log('📊 [BACKEND-GET-VOTES] All votes from Resume table:', votes);
+      res.json(votes); // Return ALL votes, not merged
     });
   };
 
