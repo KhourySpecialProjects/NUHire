@@ -6,24 +6,12 @@ import NavbarAdmin from "../components/navbar-admin";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../components/AuthContext";
 
-interface User {
-    id: number;
-    f_name: string;
-    l_name: string;
-    email: string;
-    affiliation: string;
-    group_id?: number;
-    class?: number;
-}
-
 interface ClassItem {
   id: number;
   name: string;
 }
 
 export default function UserProfile() {
-    const [user, setUser] = useState<User | null>(null);
-    
     const [classes, setClasses] = useState<ClassItem[]>([]);
     const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);  
     const router = useRouter();
@@ -75,24 +63,24 @@ export default function UserProfile() {
 
     return (
       <div>
-        {user?.affiliation !== "admin" ? <Navbar /> : <NavbarAdmin />}
+        {authUser?.affiliation !== "admin" ? <Navbar /> : <NavbarAdmin />}
         <div className="bg-sand flex flex-col items-center justify-center p-6 min-h-screen">
       
           <div className="bg-norteasternWhite p-8 rounded-2xl shadow-lg w-full max-w-lg border-2 border-black">
             <h1 className="text-4xl font-bold mb-4 text-northeasternRed text-center">User Profile</h1>
             
-            {user && (
+            {authUser && (
               <div className="space-y-6">
                 <div className="bg-northeasternWHite p-4 rounded-lg border border-black">
                   <h2 className="text-xl font-semibold text-northeasternRed mb-2">Personal Information</h2>
-                  <p className="text-black"><span className="font-semibold">Name:</span> {user.f_name} {user.l_name}</p>
-                  <p className="text-black"><span className="font-semibold">Email:</span> {user.email}</p>
-                  <p className="text-black"><span className="font-semibold">Role:</span> {user.affiliation}</p>
-                  {user.group_id && (
-                    <p className="text-black"><span className="font-semibold">Group:</span> {user.group_id}</p>
+                  <p className="text-black"><span className="font-semibold">Name:</span> {authUser.f_name} {authUser.l_name}</p>
+                  <p className="text-black"><span className="font-semibold">Email:</span> {authUser.email}</p>
+                  <p className="text-black"><span className="font-semibold">Role:</span> {authUser.affiliation}</p>
+                  {authUser.group_id && (
+                    <p className="text-black"><span className="font-semibold">Group:</span> {authUser.group_id}</p>
                   )}
-                  {user.class && (
-                    <p className="text-black"><span className="font-semibold">Class:</span> {user.class}</p>
+                  {authUser.class && (
+                    <p className="text-black"><span className="font-semibold">Class:</span> {authUser.class}</p>
                   )}
                 </div>
               </div>
