@@ -13,14 +13,32 @@ import axios from "axios";
 import { useAuth } from "../components/AuthContext";
 import { useProgressManager } from "../components/progress";
 import Facts from "../components/facts";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+import { Document, Page, pdfjs } from "react-pdf";
 
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 interface User {
   id: string;
   group_id: number;
   email: string;
   class: number;
+}
+
+interface CandidateInterview {
+  resume_id: number;
+  title: string;
+  interview: string;
+  video_path: string;
+  first_name: string;
+  last_name: string;
+  file_path?: string;
 }
 
 interface Interview {
@@ -36,6 +54,8 @@ interface Resume {
   checked: number;
 }
 
+type ViewMode = 'video' | 'resume' | 'jobDescription';
+
 export default function Interview() {
   useProgress();
   const socket = useSocket();
@@ -47,6 +67,14 @@ export default function Interview() {
   const pathname = usePathname();
   const [noShow, setNoShow] = useState(false);
   const [donePopup, setDonePopup] = useState(false);
+  
+  // View mode state
+  const [viewMode, setViewMode] = useState<ViewMode>('video');
+  const [jobDescPath, setJobDescPath] = useState("");
+  const [jobDescNumPages, setJobDescNumPages] = useState<number | null>(null);
+  const [jobDescPageNumber, setJobDescPageNumber] = useState(1);
+  const [resumeNumPages, setResumeNumPages] = useState<number | null>(null);
+  const [resumePageNumber, setResumePageNumber] = useState(1);
   
   // Rating states
   const [overall, setOverall] = useState(5); 
@@ -62,19 +90,20 @@ export default function Interview() {
   const [currentCandidateId, setCurrentCandidateId] = useState<number | null>(null);
   const [videosLoading, setVideosLoading] = useState(true);
 
-
-
   const [interviews, setInterviews] = useState<Array<{
     resume_id: number;
     title: string;
     video_path: string;
     interview: string;
     first_name: string;  
-    last_name: string;   
+    last_name: string;
+    file_path?: string;
   }>>([]);
+  
   const interviewInstructions = [
     "Watch each candidate's interview video carefully.",
     "Rate the candidate on Overall, Professional Presence, Quality of Answer, and Personality.",
+    "You can toggle between viewing the interview video, resume, and job description.",
     "Discuss with your group and submit your ratings for each candidate."
   ]; 
 
@@ -83,6 +112,36 @@ export default function Interview() {
   const [groupSubmissions, setGroupSubmissions] = useState(0);
   const [groupSize, setGroupSize] = useState(0);
   const [groupFinished, setGroupFinished] = useState(false);
+
+  // Fetch job description for the group
+  useEffect(() => {
+    const fetchJobDescription = async () => {
+      if (!user?.group_id || !user?.class) return;
+      
+      try {
+        const assignmentResponse = await fetch(
+          `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`,
+          { credentials: "include" }
+        );
+        const assignmentData = await assignmentResponse.json();
+        
+        if (assignmentData.job) {
+          const jobResponse = await fetch(
+            `${API_BASE_URL}/jobs/title?title=${encodeURIComponent(assignmentData.job)}&class_id=${user.class}`,
+            { credentials: "include" }
+          );
+          const jobData = await jobResponse.json();
+          if (jobData.file_path) {
+            setJobDescPath(jobData.file_path);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching job description:", error);
+      }
+    };
+
+    fetchJobDescription();
+  }, [user]);
 
   const fetchFinished = async () => {
     try {
@@ -191,6 +250,9 @@ export default function Interview() {
   // Reset video loaded state when video changes
   useEffect(() => {
     setVideoLoaded(false);
+    setViewMode('video'); // Reset to video view when changing candidates
+    setResumePageNumber(1); // Reset resume page
+    setJobDescPageNumber(1); // Reset job desc page
   }, [videoIndex]);
 
   useEffect(() => {
@@ -216,7 +278,7 @@ export default function Interview() {
       const response = await axios.post(`${API_BASE_URL}/interview/vote`, {
         student_id: user.id,
         group_id: user.group_id,
-        studentClass: user.class, // Make sure this matches the field in the server
+        studentClass: user.class,
         question1: overall,
         question2: professionalPresence,
         question3: qualityOfAnswer,
@@ -225,7 +287,6 @@ export default function Interview() {
       }, { withCredentials: true });
       if (response.status !== 200) {
         console.error("Failed to submit response:", response.statusText);
-      } else {
       }
     } catch (error) {
       console.error("Error submitting response:", error);
@@ -237,10 +298,9 @@ export default function Interview() {
     if (!user?.group_id) return;
     
     const fetchCandidates = async () => {
-      setVideosLoading(true); // Start loading
+      setVideosLoading(true);
       
       try {
-        // Get all resumes for the group and filter by class
         const resumeResponse = await axios.get(
           `${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, 
           { withCredentials: true, timeout: 8000 }
@@ -248,7 +308,6 @@ export default function Interview() {
         
         const allResumes: Resume[] = resumeResponse.data;
         
-        // Filter to get only checked resumes and ensure no duplicates
         const checkedResumes = allResumes
           .filter((resume: Resume) => resume.checked === 1)
           .reduce<Resume[]>((unique, resume) => {
@@ -260,7 +319,7 @@ export default function Interview() {
         
         if (checkedResumes.length === 0) {
           setInterviews([]);
-          setVideosLoading(false); // Stop loading
+          setVideosLoading(false);
           return;
         }
         
@@ -272,13 +331,14 @@ export default function Interview() {
           .then(response => {
             console.log(`Raw response for resume ${resume.resume_number}:`, response.data);
             
-            const candidateData = {
+            const candidateData: CandidateInterview = {
               resume_id: response.data.resume_id,
               title: response.data.title || `Candidate ${response.data.resume_id}`,
               interview: response.data.interview,
               video_path: response.data.interview,
               first_name: response.data.f_name,
               last_name: response.data.l_name,
+              file_path: response.data.file_path,
             };
             
             console.log(`Formatted candidate data for resume ${resume.resume_number}:`, candidateData);
@@ -293,7 +353,6 @@ export default function Interview() {
         const results = await Promise.allSettled(candidatePromises);
         console.log("Promise.allSettled results:", results);
 
-        // Log each result individually
         results.forEach((result, index) => {
           if (result.status === 'fulfilled') {
             console.log(`Result ${index} (fulfilled):`, result.value);
@@ -302,10 +361,10 @@ export default function Interview() {
           }
         });
 
-        const finalInterviews = results
-          .map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null)
-          .filter((item): item is { resume_id: number; title: string; interview: string; video_path: string, first_name: string, last_name: string} => item !== null)
-          .slice(0,4);
+      const finalInterviews = results
+        .map(result => (result.status === 'fulfilled' && result.value !== null) ? result.value : null)
+        .filter((item): item is CandidateInterview => item !== null)
+        .slice(0,4);
 
         setInterviews(finalInterviews);
         console.log("Final interviews array:", finalInterviews);
@@ -314,7 +373,7 @@ export default function Interview() {
         console.error("Error fetching interviews:", err);
         setError('Failed to load interview data. Please try refreshing the page.');
       } finally {
-        setVideosLoading(false); // Stop loading regardless of success or failure
+        setVideosLoading(false);
       }
     };
     
@@ -336,7 +395,6 @@ export default function Interview() {
     if (interviews.length > 0 && currentCandidateId !== null) {
       const currentVideoCandidate = interviews[videoIndex]?.resume_id;
       
-      // If stored candidate doesn't match current video, reset ratings
       if (currentVideoCandidate !== currentCandidateId) {
         console.log('Candidate mismatch after refresh, resetting ratings');
         resetRatings();
@@ -347,151 +405,141 @@ export default function Interview() {
     }
   }, [interviews, videoIndex, currentCandidateId]);
 
-  // First useEffect - Fetch data and emit interviewStageFinished
-useEffect(() => {
-  if (!socket || !user) return;
+  useEffect(() => {
+    if (!socket || !user) return;
 
-  fetchGroupSize();
-  fetchFinished();
-  console.log(groupFinished);
-
-  socket.emit("interviewStageFinished", {
-    group_id: user.group_id,
-    class_id: user.class,
-    student_id: user.id,
-  });
-}, [socket, user, finished]); // Add socket to dependencies
-
-// Second useEffect - Setup page and join group
-useEffect(() => {
-  if (!socket || !user?.email) return;
-  
-  // Setup socket connection and join group room
-  const roomId = `group_${user.group_id}_class_${user.class}`;
-  socket.emit("joinGroup", roomId);
-  
-  // Emit socket events
-  socket.emit("studentOnline", { studentId: user.email }); 
-  socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
-  
-  // Listen for group move events
-  const handleMoveGroup = ({ groupId, classId, targetPage }: { groupId: number; classId: number; targetPage: string }) => {
-    if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
-      updateProgress(user, "offer");
-      localStorage.setItem("progress", "offer");
-      window.location.href = targetPage; 
-    }
-  };
-
-  socket.on("moveGroup", handleMoveGroup);
-
-  // Update current page in database
-  const updateCurrentPage = async () => {
-    try {
-      await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
-        page: 'interviewpage', 
-        user_email: user.email
-      }, { withCredentials: true });
-    } catch (error) {
-      console.error("Error updating current page:", error);
-    }
-  };
-  
-  updateCurrentPage();
-  
-  // Cleanup function
-  return () => {
-    socket.off("moveGroup", handleMoveGroup);
-  };
-}, [socket, user?.email, pathname, updateProgress]); // Add dependencies
-
-// Third useEffect - Listen for popup and status updates
-useEffect(() => {
-  if (!socket) return;
-
-  const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
-    setPopup({ headline, message });
-  };
-
-  const handleInterviewStatusUpdated = ({ count, total }: { count: number; total: number }) => {
-    setGroupSubmissions(count);
-    setGroupSize(total);
-    setGroupFinished(count === total);
-  };
-
-  const handleInterviewStageFinished = () => {
-    fetchFinished();
     fetchGroupSize();
-  };
+    fetchFinished();
+    console.log(groupFinished);
 
-  socket.on("receivePopup", handleReceivePopup);
-  socket.on("interviewStatusUpdated", handleInterviewStatusUpdated);
-  socket.on("interviewStageFinished", handleInterviewStageFinished);
-  
-  return () => {
-    socket.off("receivePopup", handleReceivePopup);
-    socket.off("interviewStatusUpdated", handleInterviewStatusUpdated);
-    socket.off("interviewStageFinished", handleInterviewStageFinished);
-  };
-}, [socket, fetchFinished, fetchGroupSize]); // Add dependencies
-
-// Fourth useEffect - Handle preset ratings
-useEffect(() => {
-  if (!socket || !user || !currentVid) {
-    console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);
-    return;
-  }
-
-  console.log("Setting up socket listeners with user:", user.id, "and currentVid:", currentVid.resume_id);
-
-  const handleUpdateRatingsWithPreset = ({ classId, groupId, vote, isNoShow, candidateId }: {
-    classId: number;
-    groupId: number;
-    vote: { professionalPresence?: number; qualityOfAnswer?: number; personality?: number; overall?: number };
-    isNoShow: boolean;
-    candidateId: number;
-  }) => {
-    console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow, candidateId });
-    
-    const voteData = {
+    socket.emit("interviewStageFinished", {
+      group_id: user.group_id,
+      class_id: user.class,
       student_id: user.id,
-      group_id: groupId,
-      class: classId,
-      question1: isNoShow ? -10000 : (vote.professionalPresence || 0),
-      question2: isNoShow ? -10000 : (vote.qualityOfAnswer || 0),
-      question3: isNoShow ? -10000 : (vote.personality || 0),
-      question4: isNoShow ? -10000 : (vote.overall || 0),
-      candidate_id: candidateId
+    });
+  }, [socket, user, finished]);
+
+  useEffect(() => {
+    if (!socket || !user?.email) return;
+    
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+    socket.emit("joinGroup", roomId);
+    
+    socket.emit("studentOnline", { studentId: user.email }); 
+    socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+    
+    const handleMoveGroup = ({ groupId, classId, targetPage }: { groupId: number; classId: number; targetPage: string }) => {
+      if (user && groupId === user.group_id && classId === user.class && targetPage === "/makeOffer") {
+        updateProgress(user, "offer");
+        localStorage.setItem("progress", "offer");
+        window.location.href = targetPage; 
+      }
+    };
+
+    socket.on("moveGroup", handleMoveGroup);
+
+    const updateCurrentPage = async () => {
+      try {
+        await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
+          page: 'interviewpage', 
+          user_email: user.email
+        }, { withCredentials: true });
+      } catch (error) {
+        console.error("Error updating current page:", error);
+      }
     };
     
-    console.log("Emitting sentPresetVotes with data:", voteData);
-    socket.emit("sentPresetVotes", voteData);
+    updateCurrentPage();
+    
+    return () => {
+      socket.off("moveGroup", handleMoveGroup);
+    };
+  }, [socket, user?.email, pathname, updateProgress]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+      setPopup({ headline, message });
+    };
+
+    const handleInterviewStatusUpdated = ({ count, total }: { count: number; total: number }) => {
+      setGroupSubmissions(count);
+      setGroupSize(total);
+      setGroupFinished(count === total);
+    };
+
+    const handleInterviewStageFinished = () => {
+      fetchFinished();
+      fetchGroupSize();
+    };
+
+    socket.on("receivePopup", handleReceivePopup);
+    socket.on("interviewStatusUpdated", handleInterviewStatusUpdated);
+    socket.on("interviewStageFinished", handleInterviewStageFinished);
+    
+    return () => {
+      socket.off("receivePopup", handleReceivePopup);
+      socket.off("interviewStatusUpdated", handleInterviewStatusUpdated);
+      socket.off("interviewStageFinished", handleInterviewStageFinished);
+    };
+  }, [socket, fetchFinished, fetchGroupSize]);
+
+  useEffect(() => {
+    if (!socket || !user || !currentVid) {
+      console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);
+      return;
+    }
+
+    console.log("Setting up socket listeners with user:", user.id, "and currentVid:", currentVid.resume_id);
+
+    const handleUpdateRatingsWithPreset = ({ classId, groupId, vote, isNoShow, candidateId }: {
+      classId: number;
+      groupId: number;
+      vote: { professionalPresence?: number; qualityOfAnswer?: number; personality?: number; overall?: number };
+      isNoShow: boolean;
+      candidateId: number;
+    }) => {
+      console.log("Received updateRatingsWithPreset event", { classId, groupId, vote, isNoShow, candidateId });
+      
+      const voteData = {
+        student_id: user.id,
+        group_id: groupId,
+        class: classId,
+        question1: isNoShow ? -10000 : (vote.professionalPresence || 0),
+        question2: isNoShow ? -10000 : (vote.qualityOfAnswer || 0),
+        question3: isNoShow ? -10000 : (vote.personality || 0),
+        question4: isNoShow ? -10000 : (vote.overall || 0),
+        candidate_id: candidateId
+      };
+      
+      console.log("Emitting sentPresetVotes with data:", voteData);
+      socket.emit("sentPresetVotes", voteData);
+    };
+
+    socket.on("updateRatingsWithPresetFrontend", handleUpdateRatingsWithPreset);
+
+    return () => {
+      console.log("Cleaning up socket listeners");
+      socket.off("updateRatingsWithPresetFrontend", handleUpdateRatingsWithPreset);
+    };
+  }, [socket, user, currentVid]);
+
+  const completeInterview = () => {
+    if (!socket || !user) return;
+    
+    updateProgress(user, "offer");
+    localStorage.setItem("progress", "offer");
+    localStorage.removeItem('interviewStage_videoIndex');
+    localStorage.removeItem('interviewStage_candidateId');
+    localStorage.removeItem('interviewStage_overall');
+    localStorage.removeItem('interviewStage_professionalPresence');
+    localStorage.removeItem('interviewStage_qualityOfAnswer');
+    localStorage.removeItem('interviewStage_personality');
+    localStorage.removeItem('interviewStage_noShow');
+    window.location.href = '/makeOffer';
+    socket.emit("moveGroup", { groupId: user.group_id, classId: user.class, targetPage: "/makeOffer" });
   };
-
-  socket.on("updateRatingsWithPresetFrontend", handleUpdateRatingsWithPreset);
-
-  return () => {
-    console.log("Cleaning up socket listeners");
-    socket.off("updateRatingsWithPresetFrontend", handleUpdateRatingsWithPreset);
-  };
-}, [socket, user, currentVid]);
-
-// Fixed completeInterview function
-const completeInterview = () => {
-  if (!socket || !user) return;
-  
-  updateProgress(user, "offer");
-  localStorage.setItem("progress", "offer");
-  localStorage.removeItem('interviewStage_videoIndex');
-  localStorage.removeItem('interviewStage_candidateId');
-  localStorage.removeItem('interviewStage_overall');
-  localStorage.removeItem('interviewStage_professionalPresence');
-  localStorage.removeItem('interviewStage_qualityOfAnswer');
-  localStorage.removeItem('interviewStage_personality');
-  localStorage.removeItem('interviewStage_noShow');
-  window.location.href = '/makeOffer';
-  socket.emit("moveGroup", { groupId: user.group_id, classId: user.class, targetPage: "/makeOffer" });
-};
 
   // Rating change handlers
   const handleOverallSliderChange = (value: number) => {
@@ -584,7 +632,6 @@ const completeInterview = () => {
       </div>
     );
   }  
-  
   
   // Error state
   if (error) {
@@ -705,6 +752,95 @@ const completeInterview = () => {
             Submit to note your responses and move to the next interview.
           </h3>
 
+          {/* View toggle buttons */}
+          <div className="flex flex-col gap-2 w-full mb-4">
+            <button
+              className={`px-4 py-2 rounded-lg shadow-md transition duration-300 font-rubik ${
+                viewMode === 'video' 
+                  ? 'bg-redHeader text-white' 
+                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+              }`}
+              onClick={() => {
+                setViewMode('video');
+                setResumePageNumber(1);
+              }}
+            >
+              View Interview Video
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg shadow-md transition duration-300 font-rubik ${
+                viewMode === 'resume' 
+                  ? 'bg-redHeader text-white' 
+                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+              }`}
+              onClick={() => {
+                setViewMode('resume');
+                setResumePageNumber(1);
+              }}
+            >
+              View Resume
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg shadow-md transition duration-300 font-rubik ${
+                viewMode === 'jobDescription' 
+                  ? 'bg-redHeader text-white' 
+                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+              }`}
+              onClick={() => {
+                setViewMode('jobDescription');
+                setJobDescPageNumber(1);
+              }}
+            >
+              View Job Description
+            </button>
+          </div>
+
+          {/* Page navigation for resume */}
+          {viewMode === 'resume' && resumeNumPages && resumeNumPages > 1 && (
+            <div className="flex items-center justify-between bg-navy p-2 rounded-lg w-full mb-4">
+              <button
+                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                onClick={() => setResumePageNumber(prev => Math.max(1, prev - 1))}
+                disabled={resumePageNumber <= 1}
+              >
+                ←
+              </button>
+              <span className="text-sand text-sm">
+                Page {resumePageNumber} / {resumeNumPages}
+              </span>
+              <button
+                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                onClick={() => setResumePageNumber(prev => Math.min(resumeNumPages, prev + 1))}
+                disabled={resumePageNumber >= resumeNumPages}
+              >
+                →
+              </button>
+            </div>
+          )}
+
+          {/* Page navigation for job description */}
+          {viewMode === 'jobDescription' && jobDescNumPages && jobDescNumPages > 1 && (
+            <div className="flex items-center justify-between bg-navy p-2 rounded-lg w-full mb-4">
+              <button
+                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                onClick={() => setJobDescPageNumber(prev => Math.max(1, prev - 1))}
+                disabled={jobDescPageNumber <= 1}
+              >
+                ←
+              </button>
+              <span className="text-sand text-sm">
+                Page {jobDescPageNumber} / {jobDescNumPages}
+              </span>
+              <button
+                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                onClick={() => setJobDescPageNumber(prev => Math.min(jobDescNumPages, prev + 1))}
+                disabled={jobDescPageNumber >= jobDescNumPages}
+              >
+                →
+              </button>
+            </div>
+          )}
+
           {/* Rating sliders */}
           <div className="flex flex-col items-center text-center w-full max-w-xs mb-6">
             <h2 className="text-md text-redHeader font-semibold mb-2">
@@ -755,7 +891,7 @@ const completeInterview = () => {
           </div>
         </div>
 
-        {/* Video display */}
+        {/* Content display - video, resume, or job description */}
         <div className={`md:w-2/3 flex flex-col items-center justify-center p-4 md:p-8 ${fadingEffect ? 'opacity-50 transition-opacity duration-500' : 'opacity-100 transition-opacity duration-500'}`}>
           <h1 className="text-xl font-rubik font-bold mb-4 text-center">
             {noShow ? "Candidate No-Show" : 
@@ -763,35 +899,82 @@ const completeInterview = () => {
             `Evaluating ${currentVid.first_name} ${currentVid.last_name}` : 
             "Evaluation"}
           </h1>
-          <div className="w-full max-w-4xl aspect-video border-4 border-redHeader mb-5 rounded-lg shadow-lg mx-auto">
-            {noShow ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-xl font-bold">
-                  This candidate did not show up.
-                </p>
+          <div className="w-full max-w-4xl aspect-video border-4 border-redHeader mb-5 rounded-lg shadow-lg mx-auto overflow-auto">
+            {viewMode === 'video' && (
+              noShow ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-xl font-bold">
+                    This candidate did not show up.
+                  </p>
+                </div>
+              ) : currentVid && currentVid.interview ? (
+                <iframe
+                  key={`video-${videoIndex}`}
+                  className="w-full h-full rounded-lg shadow-lg"
+                  src={currentVid.interview}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  onLoad={() => {
+                    setTimeout(() => {
+                      setVideoLoaded(true);
+                    }, 500);
+                  }}
+                ></iframe>
+              ) : (
+                <div className="flex items-center justify-center h-full bg-gray-100">
+                  <p className="text-gray-500">Loading Interview Video...</p>
+                </div>
+              )
+            )}
+
+            {viewMode === 'resume' && currentVid?.file_path && (
+              <div className="h-full overflow-auto flex justify-center items-start">
+                <Document
+                  file={`${API_BASE_URL}/${currentVid.file_path}`}
+                  onLoadError={console.error}
+                  onLoadSuccess={({ numPages }) => {
+                    console.log("Resume loaded with", numPages, "pages");
+                    setResumeNumPages(numPages);
+                  }}
+                  loading={
+                    <div className="flex justify-center items-center h-96">
+                      <div className="text-lg text-gray-600">Loading resume...</div>
+                    </div>
+                  }
+                >
+                  <Page
+                    pageNumber={resumePageNumber}
+                    scale={1.3}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </Document>
               </div>
-            ) : currentVid && currentVid.interview ? (
-              <iframe
-                key={`video-${videoIndex}`}
-                className="w-full h-full rounded-lg shadow-lg"
-                src={currentVid.interview}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-                onLoad={() => {
-                  setTimeout(() => {
-                    setVideoLoaded(true);
-                  }, 500);
-                }}
-              ></iframe>
-            ) : (
-              <div className="flex items-center justify-center h-full bg-gray-100">
-                <p className="text-gray-500">
-                  {interviews.length === 0 ? "No interviews available" : 
-                   videoIndex >= interviews.length ? "All interviews completed" :
-                   !videoLoaded ? "Loading Interview Video..." :
-                   "Loading Interview Video..."}
-                </p>
+            )}
+
+            {viewMode === 'jobDescription' && jobDescPath && (
+              <div className="h-full overflow-auto flex justify-center items-start">
+                <Document
+                  file={`${API_BASE_URL}/${jobDescPath}`}
+                  onLoadError={console.error}
+                  onLoadSuccess={({ numPages }) => {
+                    console.log("Job description loaded with", numPages, "pages");
+                    setJobDescNumPages(numPages);
+                  }}
+                  loading={
+                    <div className="flex justify-center items-center h-96">
+                      <div className="text-lg text-gray-600">Loading job description...</div>
+                    </div>
+                  }
+                >
+                  <Page
+                    pageNumber={jobDescPageNumber}
+                    scale={1.3}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </Document>
               </div>
             )}
           </div>
