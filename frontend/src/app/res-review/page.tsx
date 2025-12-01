@@ -88,7 +88,7 @@ export default function ResumesPage() {
         if (assignmentData.job) {
           // Then get the job description details
           const jobResponse = await fetch(
-            `${API_BASE_URL}/job/title?title=${encodeURIComponent(assignmentData.job)}&class_id=${user.class}`,
+            `${API_BASE_URL}/jobs/title?title=${encodeURIComponent(assignmentData.job)}&class_id=${user.class}`,
             { credentials: "include" }
           );
           const jobData = await jobResponse.json();
