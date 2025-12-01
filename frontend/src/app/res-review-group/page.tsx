@@ -367,12 +367,10 @@ export default function ResReviewGroup() {
     }));
 
     if (socket && user) {
-      socket.emit("updateCheckbox", {
+      socket.emit("check", {
         resume_number,
-        checked: newChecked,
-        group_id: user.group_id,
-        class: user.class,
-        roomId: `group_${user.group_id}_class_${user.class}`
+        checked: newChecked ? 1 : 0,
+        group_id: `group_${user.group_id}_class_${user.class}`,
       });
     }
   };
@@ -478,25 +476,42 @@ export default function ResReviewGroup() {
             </p>
             
             {/* Job description page navigation */}
-            {showJobDescription && jobDescNumPages && jobDescNumPages > 1 && (
-              <div className="flex items-center justify-between mt-2 p-2 bg-navy rounded">
-                <button
-                  className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
-                  onClick={() => setJobDescPageNumber(prev => Math.max(1, prev - 1))}
-                  disabled={jobDescPageNumber <= 1}
-                >
-                  ←
-                </button>
-                <span className="text-sand text-sm">
-                  Page {jobDescPageNumber} / {jobDescNumPages}
-                </span>
-                <button
-                  className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
-                  onClick={() => setJobDescPageNumber(prev => Math.min(jobDescNumPages, prev + 1))}
-                  disabled={jobDescPageNumber >= jobDescNumPages}
-                >
-                  →
-                </button>
+            {showJobDescription && jobDescPath ? (
+              <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden bg-white">
+                <div className="w-full h-full">
+                  <Document
+                    file={`${API_BASE_URL}/${jobDescPath}`}
+                    onLoadError={console.error}
+                    onLoadSuccess={({ numPages }) => {
+                      console.log("Job description loaded with", numPages, "pages");
+                      setJobDescNumPages(numPages);
+                    }}
+                    loading={
+                      <div className="flex justify-center items-center h-96">
+                        <div className="text-lg text-gray-600">Loading job description...</div>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={jobDescPageNumber}
+                      scale={1.3}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                    />
+                  </Document>
+                </div>
+              </div>
+            ) : selectedResume ? (
+              <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden">
+                <iframe
+                  src={`${getResumeUrl(selectedResume.file_path)}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
+                  title={`Resume Preview ${selectedResume.resume_number}`}
+                  className="w-full h-full rounded border-none"
+                />
+              </div>
+            ) : (
+              <div className="flex-1 border-4 border-gray-300 border-dashed rounded-lg flex items-center justify-center">
+                <p className="text-gray-500 text-lg">Click a candidate card to view their resume or click "View Job Description"</p>
               </div>
             )}
           </div>
