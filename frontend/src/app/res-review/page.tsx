@@ -52,6 +52,8 @@ export default function ResumesPage() {
   const pathname = usePathname();
   const [restricted, setRestricted] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
+  const [showJobDescription, setShowJobDescription] = useState(false);
+  const [jobDescPath, setJobDescPath] = useState("");
   interface User {
     id: string;
     group_id: number;
@@ -69,6 +71,28 @@ export default function ResumesPage() {
     "The decisions you make here will not affect the candidate's overall application.",
     "They will just be another factor your group considers when making a final decision.",
   ];  
+
+  // Fetch job description for the group
+  useEffect(() => {
+    const fetchJobDescription = async () => {
+      if (!user?.group_id || !user?.class) return;
+      
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/job/${user.group_id}?class=${user.class}`,
+          { credentials: "include" }
+        );
+        const data = await response.json();
+        if (data.length > 0) {
+          setJobDescPath(data[0].file_path);
+        }
+      } catch (error) {
+        console.error("Error fetching job description:", error);
+      }
+    };
+
+    fetchJobDescription();
+  }, [user]);
 
   useEffect(() => {
     if (totalDecisions === 10) {
@@ -433,10 +457,10 @@ export default function ResumesPage() {
   
 
   return (
-    <div>
+    <div className="h-screen flex flex-col">
       <Navbar />
-      <div className="flex-1 flex flex-col px-4 py-8">
-        <div className="flex justify-center items-center font-rubik text-redHeader text-3xl font-bold mb-3">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex justify-center items-center font-rubik text-redHeader text-2xl font-bold py-2">
           <h1>Resume Review Part 1</h1>
         </div>
 
@@ -449,15 +473,16 @@ export default function ResumesPage() {
           />
         )}
 
-        <div className="flex justify-between w-full p-6">
-          <div className="flex flex-col gap-4 w-[350px] min-w-[300px]">
-            <div className="bg-navy shadow-lg rounded-lg p-6 text-sand text-lg text-center sticky top-0">
-              <h2 className="text-lg">Time Remaining:</h2>
-              <h2 className="text-3xl">{timeRemaining} sec</h2>
+        <div className="flex-1 flex gap-3 px-4 pb-2 overflow-hidden">
+          {/* Left sidebar - compact */}
+          <div className="flex flex-col gap-2 w-[280px] min-w-[280px]">
+            <div className="bg-navy shadow-lg rounded-lg p-3 text-sand text-center">
+              <h2 className="text-sm font-semibold">Time Remaining:</h2>
+              <h2 className="text-2xl font-bold">{timeRemaining} sec</h2>
             </div>
 
-            <div className="bg-navy shadow-lg rounded-lg p-6 text-sand text-lg">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="bg-navy shadow-lg rounded-lg p-3 text-sand text-sm">
+              <div className="grid grid-cols-2 gap-1">
                 <span className="text-left">Resume</span>
                 <span className="text-right">
                   {Math.min(currentResumeIndex + 1, 10)} / 10
@@ -471,14 +496,23 @@ export default function ResumesPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-center text-lg space-x-4 mt-4 sticky top-0">
+            {/* Toggle button for job description */}
+            <button
+              className="bg-blue-600 text-white font-rubik px-4 py-2 rounded-lg shadow-md transition duration-300 hover:bg-blue-700"
+              onClick={() => setShowJobDescription(!showJobDescription)}
+            >
+              {showJobDescription ? "← Back to Resume" : "View Job Description →"}
+            </button>
+
+            {/* Action buttons - compact */}
+            <div className="flex flex-col gap-2">
               {!restricted && (
                 <>
                   <button
-                    className={`bg-[#a2384f] text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
+                    className={`bg-[#a2384f] text-white font-rubik px-4 py-2 rounded-lg shadow-md transition duration-300 ${
                       resumes > 10 || resumeLoading 
                         ? "opacity-50 cursor-not-allowed" 
-                        : "hover:bg-red-600 hover:scale-105"
+                        : "hover:bg-red-600"
                     }`}
                     onClick={handleReject}
                     disabled={resumes > 10 || resumeLoading}
@@ -487,10 +521,10 @@ export default function ResumesPage() {
                   </button>
 
                   <button
-                    className={`bg-gray-500 text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
+                    className={`bg-gray-500 text-white font-rubik px-4 py-2 rounded-lg shadow-md transition duration-300 ${
                       resumes > 10 || resumeLoading 
                         ? "opacity-50 cursor-not-allowed" 
-                        : "hover:bg-gray-600 hover:scale-105"
+                        : "hover:bg-gray-600"
                     }`}
                     onClick={handleNoResponse}
                     disabled={resumes > 10 || resumeLoading}
@@ -501,10 +535,10 @@ export default function ResumesPage() {
               )}
 
               <button
-                className={`bg-[#367b62] text-white font-rubik px-6 py-2 rounded-lg shadow-md transition duration-300 ${
+                className={`bg-[#367b62] text-white font-rubik px-4 py-2 rounded-lg shadow-md transition duration-300 ${
                   resumes > 10 || resumeLoading 
                     ? "opacity-50 cursor-not-allowed" 
-                    : "hover:bg-green-600 hover:scale-105"
+                    : "hover:bg-green-600"
                 }`}
                 onClick={handleAccept}
                 disabled={resumes > 10 || resumeLoading}
@@ -514,51 +548,84 @@ export default function ResumesPage() {
             </div>
           </div>
 
-          <div className="flex-1 flex justify-center items-center h-screen overflow-auto bg-transparent">
+          {/* PDF viewer - takes remaining space */}
+          <div className="flex-1 flex justify-center items-center overflow-hidden bg-transparent">
             <div
-              className={`display-resumes ${fadingEffect ? "fade-out" : "fade-in"} shadow-lg rounded-lg bg-white flex flex-col justify-center items-center"`}
+              className={`${fadingEffect ? "fade-out" : "fade-in"} shadow-lg rounded-lg bg-white h-full w-full overflow-auto flex justify-center items-start p-2`}
               ref={resumeRef}
-              style={{
-                maxWidth: "1000px",
-                maxHeight: "100vh"
-              }}
             >
-              {resumesList.length > 0 && resumesList[currentResumeIndex] ? (
-                <div className="flex justify-center items-center w-full">
-                  <Document
-                    file={`${API_BASE_URL}/${resumesList[currentResumeIndex].file_path}`}
-                    onLoadError={console.error}
+              {showJobDescription && jobDescPath ? (
+                <Document
+                  file={`${API_BASE_URL}/${jobDescPath}`}
+                  onLoadError={console.error}
+                  loading={
+                    <div className="flex justify-center items-center h-96">
+                      <div className="text-lg text-gray-600">Loading job description...</div>
+                    </div>
+                  }
+                >
+                  <Page
+                    pageNumber={1}
+                    scale={window.innerWidth < 768 ? 0.5 : 1.2}
+                  />
+                </Document>
+              ) : resumesList.length > 0 && resumesList[currentResumeIndex] ? (
+                <Document
+                  file={`${API_BASE_URL}/${resumesList[currentResumeIndex].file_path}`}
+                  onLoadError={console.error}
+                  onLoadSuccess={() => {
+                    console.log("Resume loaded successfully");
+                    setResumeLoading(false);
+                  }}
+                  loading={
+                    <div className="flex justify-center items-center h-96">
+                      <div className="text-lg text-gray-600">Loading resume...</div>
+                    </div>
+                  }
+                >
+                  <Page
+                    pageNumber={1}
+                    scale={window.innerWidth < 768 ? 0.5 : 1.2}
                     onLoadSuccess={() => {
-                      console.log("Resume loaded successfully");
+                      console.log("Page rendered successfully");
                       setResumeLoading(false);
                     }}
-                    loading={
-                      <div className="flex justify-center items-center h-96">
-                        <div className="text-lg text-gray-600">Loading resume...</div>
-                      </div>
-                    }
-                  >
-                    <Page
-                      pageNumber={1}
-                      scale={
-                        window.innerWidth < 768
-                          ? 0.5
-                          : window.innerHeight < 800
-                          ? 1.0
-                          : 1.0
-                      }
-                      onLoadSuccess={() => {
-                        console.log("Page rendered successfully");
-                        setResumeLoading(false);
-                      }}
-                    />
-                  </Document>
-                </div>
+                  />
+                </Document>
               ) : (
                 <p>Loading resumes...</p>
               )}
             </div>
           </div>
+        </div>
+
+        {/* Compact footer navigation */}
+        <div className="flex justify-between px-4 pb-2 gap-2">
+          <button
+            onClick={() => (window.location.href = "/jobdes")}
+            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-blue-400 transition duration-300 font-rubik text-sm"
+          >
+            ← Back: Job Description
+          </button>
+          <button
+            onClick={completeResumes}
+            className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-blue-400 transition duration-300 font-rubik text-sm
+              ${
+                disabled
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer hover:bg-blue-400"
+              }`}
+            disabled={disabled}
+          >
+            {disabled && totalDecisions === 10 ? (
+              <span className="flex items-center">
+                <span className="w-4 h-4 mr-2 border-t-2 border-white border-solid rounded-full animate-spin"></span>
+                Waiting for teammates...
+              </span>
+            ) : (
+              "Next: Resume Review Pt. 2 →"
+            )}
+          </button>
         </div>
 
         {popup && (
@@ -575,49 +642,21 @@ export default function ResumesPage() {
             onDismiss={() => setDonePopup(false)}
           />
         )}
-      </div>
-      <footer>
-        <div className="flex justify-between mb-4">
-          <button
-            onClick={() => (window.location.href = "/jobdes")}
-            className="px-4 py-2 bg-redHeader text-white rounded-lg ml-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik"
-          >
-            ← Back: Job Description
-          </button>
-          <button
-            onClick={completeResumes}
-            className={`px-4 py-2 bg-redHeader text-white rounded-lg mr-4 shadow-md hover:bg-blue-400 transition duration-300 font-rubik
-              ${
-                disabled
-                  ? "cursor-not-allowed opacity-50"
-                  : "cursor-pointer hover:bg-blue-400"
-              }`}
-            disabled={disabled}
-          >
-            {disabled && totalDecisions === 10 ? (
-              <span className="flex items-center">
-                <span className="w-5 h-5 mr-2 border-t-2 border-white border-solid rounded-full animate-spin"></span>
-                Waiting for teammates...
-              </span>
-            ) : (
-              "Next: Resume Review Pt. 2 →"
-            )}
-          </button>
-          {disabled && totalDecisions === 10 && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-              <div className="bg-white border-4 border-navy rounded-lg shadow-lg p-8 text-center max-w-md mx-auto">
-                <h2 className="text-2xl font-bold text-navy mb-4">Waiting for Teammates</h2>
-                <p className="text-lg text-gray-700 mb-4">
-                  You have completed your resume decisions.<br />
-                  Waiting for other group members to finish...
-                </p>
-                <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto mb-4"></div>
-                <Facts />
-              </div>
+        
+        {disabled && totalDecisions === 10 && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+            <div className="bg-white border-4 border-navy rounded-lg shadow-lg p-8 text-center max-w-md mx-auto">
+              <h2 className="text-2xl font-bold text-navy mb-4">Waiting for Teammates</h2>
+              <p className="text-lg text-gray-700 mb-4">
+                You have completed your resume decisions.<br />
+                Waiting for other group members to finish...
+              </p>
+              <div className="w-16 h-16 border-t-4 border-navy border-solid rounded-full animate-spin mx-auto mb-4"></div>
+              <Facts />
             </div>
-          )}
-        </div>
-      </footer>
+          </div>
+        )}
+      </div>
       <Footer />
     </div>
   );

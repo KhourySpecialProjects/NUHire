@@ -12,26 +12,9 @@ interface ClassItem {
 }
 
 export default function UserProfile() {
-    const [classes, setClasses] = useState<ClassItem[]>([]);
-    const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);  
     const router = useRouter();
     const { user: authUser, loading: userloading } = useAuth();
 
-
-    // Fetch available classes
-    useEffect(() => {
-      const fetchClasses = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/classes`);
-          const data = await response.json();
-          setClasses(data);
-        } catch (error) {
-          console.error("Error fetching classes:", error);
-        }
-      };
-
-      fetchClasses();
-    }, []);
 
     const handleLogout = async () => {
       try {
