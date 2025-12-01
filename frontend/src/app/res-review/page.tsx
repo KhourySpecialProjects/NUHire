@@ -8,7 +8,6 @@ import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { Document, Page, pdfjs } from "react-pdf";
 import Footer from "../components/footer";
-import router from "next/router";
 import Popup from "../components/popup";
 import { usePathname } from "next/navigation";
 import Instructions from "../components/instructions";
@@ -54,6 +53,8 @@ export default function ResumesPage() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [showJobDescription, setShowJobDescription] = useState(false);
   const [jobDescPath, setJobDescPath] = useState("");
+  const [jobDescNumPages, setJobDescNumPages] = useState<number | null>(null);
+  const [jobDescPageNumber, setJobDescPageNumber] = useState(1);
   interface User {
     id: string;
     group_id: number;
@@ -509,10 +510,36 @@ export default function ResumesPage() {
             {/* Toggle button for job description */}
             <button
               className="bg-blue-600 text-white font-rubik px-4 py-2 rounded-lg shadow-md transition duration-300 hover:bg-blue-700"
-              onClick={() => setShowJobDescription(!showJobDescription)}
+              onClick={() => {
+                setShowJobDescription(!showJobDescription);
+                setJobDescPageNumber(1); // Reset to page 1 when toggling
+              }}
             >
               {showJobDescription ? "← Back to Resume" : "View Job Description →"}
             </button>
+
+            {/* Job description page navigation */}
+            {showJobDescription && jobDescNumPages && jobDescNumPages > 1 && (
+              <div className="flex items-center justify-between bg-navy p-2 rounded-lg">
+                <button
+                  className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                  onClick={() => setJobDescPageNumber(prev => Math.max(1, prev - 1))}
+                  disabled={jobDescPageNumber <= 1}
+                >
+                  ←
+                </button>
+                <span className="text-sand text-sm">
+                  Page {jobDescPageNumber} / {jobDescNumPages}
+                </span>
+                <button
+                  className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                  onClick={() => setJobDescPageNumber(prev => Math.min(jobDescNumPages, prev + 1))}
+                  disabled={jobDescPageNumber >= jobDescNumPages}
+                >
+                  →
+                </button>
+              </div>
+            )}
 
             {/* Action buttons - compact */}
             <div className="flex flex-col gap-2">
@@ -568,6 +595,10 @@ export default function ResumesPage() {
                 <Document
                   file={`${API_BASE_URL}/${jobDescPath}`}
                   onLoadError={console.error}
+                  onLoadSuccess={({ numPages }) => {
+                    console.log("Job description loaded with", numPages, "pages");
+                    setJobDescNumPages(numPages);
+                  }}
                   loading={
                     <div className="flex justify-center items-center h-96">
                       <div className="text-lg text-gray-600">Loading job description...</div>
@@ -575,7 +606,7 @@ export default function ResumesPage() {
                   }
                 >
                   <Page
-                    pageNumber={1}
+                    pageNumber={jobDescPageNumber}
                     scale={window.innerWidth < 768 ? 0.5 : 1.3}
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
