@@ -78,13 +78,23 @@ export default function ResumesPage() {
       if (!user?.group_id || !user?.class) return;
       
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/job/${user.group_id}?class=${user.class}`,
+        // First get the job assignment
+        const assignmentResponse = await fetch(
+          `${API_BASE_URL}/job/assignment/${user.group_id}/${user.class}`,
           { credentials: "include" }
         );
-        const data = await response.json();
-        if (data.length > 0) {
-          setJobDescPath(data[0].file_path);
+        const assignmentData = await assignmentResponse.json();
+        
+        if (assignmentData.job) {
+          // Then get the job description details
+          const jobResponse = await fetch(
+            `${API_BASE_URL}/job/title?title=${encodeURIComponent(assignmentData.job)}&class_id=${user.class}`,
+            { credentials: "include" }
+          );
+          const jobData = await jobResponse.json();
+          if (jobData.file_path) {
+            setJobDescPath(jobData.file_path);
+          }
         }
       } catch (error) {
         console.error("Error fetching job description:", error);
@@ -548,10 +558,10 @@ export default function ResumesPage() {
             </div>
           </div>
 
-          {/* PDF viewer - takes remaining space */}
-          <div className="flex-1 flex justify-center items-center overflow-hidden bg-transparent">
+          {/* PDF viewer - takes remaining space, no extra margins */}
+          <div className="flex-1 flex justify-center items-start overflow-hidden bg-gray-100">
             <div
-              className={`${fadingEffect ? "fade-out" : "fade-in"} shadow-lg rounded-lg bg-white h-full w-full overflow-auto flex justify-center items-start p-2`}
+              className={`${fadingEffect ? "fade-out" : "fade-in"} h-full w-full overflow-auto flex justify-center`}
               ref={resumeRef}
             >
               {showJobDescription && jobDescPath ? (
@@ -566,7 +576,9 @@ export default function ResumesPage() {
                 >
                   <Page
                     pageNumber={1}
-                    scale={window.innerWidth < 768 ? 0.5 : 1.2}
+                    scale={window.innerWidth < 768 ? 0.5 : 1.3}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
                   />
                 </Document>
               ) : resumesList.length > 0 && resumesList[currentResumeIndex] ? (
@@ -585,7 +597,9 @@ export default function ResumesPage() {
                 >
                   <Page
                     pageNumber={1}
-                    scale={window.innerWidth < 768 ? 0.5 : 1.2}
+                    scale={window.innerWidth < 768 ? 0.5 : 1.3}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
                     onLoadSuccess={() => {
                       console.log("Page rendered successfully");
                       setResumeLoading(false);
@@ -593,7 +607,7 @@ export default function ResumesPage() {
                   />
                 </Document>
               ) : (
-                <p>Loading resumes...</p>
+                <p className="mt-10">Loading resumes...</p>
               )}
             </div>
           </div>
