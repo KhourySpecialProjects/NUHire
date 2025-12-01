@@ -11,6 +11,14 @@ import Popup from "../components/popup";
 import { useProgressManager } from "../components/progress";
 import { useSocket } from "../components/socketContext";
 import { useAuth } from "../components/AuthContext";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+import { Document, Page, pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 
 export default function ResReviewGroup() {
@@ -59,6 +67,12 @@ export default function ResReviewGroup() {
   const socket = useSocket();
   const initialFetchDone = useRef(false);
   const { user, loading: userloading } = useAuth();
+  
+  // Job description state
+  const [showJobDescription, setShowJobDescription] = useState(false);
+  const [jobDescPath, setJobDescPath] = useState("");
+  const [jobDescNumPages, setJobDescNumPages] = useState<number | null>(null);
+  const [jobDescPageNumber, setJobDescPageNumber] = useState(1);
 
   // Team confirmation state
   const [teamConfirmations, setTeamConfirmations] = useState<string[]>([]);
@@ -72,6 +86,38 @@ export default function ResReviewGroup() {
     "Click on a candidate card to preview their resume.",
     "You will then watch the interviews of the candidates selected."
   ];  
+
+  // Fetch job description for the group
+  useEffect(() => {
+    const fetchJobDescription = async () => {
+      if (!user?.group_id || !user?.class) return;
+      
+      try {
+        // First get the job assignment
+        const assignmentResponse = await fetch(
+          `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`,
+          { credentials: "include" }
+        );
+        const assignmentData = await assignmentResponse.json();
+        
+        if (assignmentData.job) {
+          // Then get the job description details
+          const jobResponse = await fetch(
+            `${API_BASE_URL}/jobs/title?title=${encodeURIComponent(assignmentData.job)}&class_id=${user.class}`,
+            { credentials: "include" }
+          );
+          const jobData = await jobResponse.json();
+          if (jobData.file_path) {
+            setJobDescPath(jobData.file_path);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching job description:", error);
+      }
+    };
+
+    fetchJobDescription();
+  }, [user]);
 
   // Fetch group size
   useEffect(() => {
@@ -299,41 +345,8 @@ export default function ResReviewGroup() {
     updateCurrentPage(); 
   }, [socket, user?.email, pathname]);
 
-  // Complete resumes function
-  const completeResumes = () => {
-    if (!socket || !user) {
-      console.error('Socket or user not available');
-      return;
-    }
-
-    const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
-    if (selectedCount !== 4) {
-      setPopup({ headline: "Selection Error", message: "Please select exactly 4 resumes to proceed." });
-      return;
-    }
-
-    if (teamConfirmations.length < groupSize) {
-      setPopup({ 
-        headline: "Team Confirmation Required", 
-        message: `All ${groupSize} team members must confirm the selection before proceeding to interviews.` 
-      });
-      return;
-    }
-
-    localStorage.setItem("progress", "interview");
-    updateProgress(user, "interview");
-    window.location.href = "/interview-stage"; 
-    
-    socket.emit("moveGroup", {
-      groupId: user.group_id, 
-      classId: user.class, 
-      targetPage: "/interview-stage"
-    });
-  };
-
   useEffect(() => {
     const handleShowInstructions = () => {
-      console.log("Help button clicked - showing instructions");
       setShowInstructions(true);
     };
 
@@ -344,59 +357,47 @@ export default function ResReviewGroup() {
     };
   }, []);
 
+  const handleCheckboxChange = (resume_number: number) => {
+    const currentChecked = checkedState[resume_number] || false;
+    const newChecked = !currentChecked;
+    
+    setCheckedState((prev) => ({
+      ...prev,
+      [resume_number]: newChecked,
+    }));
+
+    if (socket && user) {
+      socket.emit("updateCheckbox", {
+        resume_number,
+        checked: newChecked,
+        group_id: user.group_id,
+        class: user.class,
+        roomId: `group_${user.group_id}_class_${user.class}`
+      });
+    }
+  };
+
+  const handleCardClick = (resume_number: number) => {
+    setSelectedResumeNumber(resume_number);
+    setShowJobDescription(false); // Switch back to resume when clicking a card
+  };
+
   const getResumeUrl = (filePath: string) => {
-    const fileName = filePath.split('/').pop()!;
-    return `${API_BASE_URL}/resume_pdf/resumes/${encodeURIComponent(fileName)}`;
+    return `${API_BASE_URL}/${filePath}`;
   };
 
-  const handleCheckboxChange = (resumeNumber: number) => {
-    if (!socket || !isConnected) {
-      console.warn("Socket not connected. Checkbox state not sent.");
-      return;
-    }
-
-    const newCheckedState = !checkedState[resumeNumber];
-    const roomId = `group_${user!.group_id}_class_${user!.class}`;
-
-    console.log(`Sending checkbox update to room ${roomId}:`);
-    console.log(`Resume ${resumeNumber}, Checked: ${newCheckedState}`);
-
-    if (hasConfirmed) {
-      const currentSelected = Object.entries(checkedState)
-        .filter(([_, isChecked]) => isChecked)
-        .map(([num, _]) => parseInt(num));
-      
-      let newSelection: number[];
-      if (newCheckedState) {
-        newSelection = [...currentSelected, resumeNumber];
-      } else {
-        newSelection = currentSelected.filter(num => num !== resumeNumber);
-      }
-
-      const selectionChanged = JSON.stringify(newSelection.sort()) !== JSON.stringify(confirmedSelection.sort());
-      
-      if (selectionChanged) {
-        setHasConfirmed(false);
-        setTeamConfirmations(prev => prev.filter(id => id !== user!.id.toString()));
-        
-        socket.emit("teamUnconfirmSelection", {
-          groupId: user!.group_id,
-          classId: user!.class,
-          studentId: user!.id.toString(),
-          roomId: roomId
-        });
-      }
-    }
-
-    socket.emit("check", {
-      group_id: roomId,
-      resume_number: resumeNumber,
-      checked: newCheckedState,
+  const completeResumes = () => {
+    if (!socket || !user) return;
+    
+    updateProgress(user, "interview");
+    localStorage.setItem("progress", "interview");
+    window.location.href = "/interview-stage";
+    
+    socket.emit("moveGroup", {
+      groupId: user.group_id,
+      classId: user.class,
+      targetPage: "/interview-stage"
     });
-  };
-
-  const handleCardClick = (resumeNumber: number) => {
-    setSelectedResumeNumber(resumeNumber);
   };
 
   const handleTeamConfirm = () => {
@@ -454,16 +455,76 @@ export default function ResReviewGroup() {
       <Navbar />
 
       <div className="flex flex-1 px-12 py-8 gap-8">
-        {/* Resume Viewer */}
+        {/* Resume/Job Description Viewer */}
         <div className="w-1/2 flex flex-col">
           <div className="mb-4 p-4 bg-gray-100 border-4 border-northeasternRed rounded-lg">
-            <h3 className="font-bold text-navy mb-2">📖 Resume Viewer</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-navy">📖 Document Viewer</h3>
+              <button
+                onClick={() => {
+                  setShowJobDescription(!showJobDescription);
+                  setJobDescPageNumber(1);
+                }}
+                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
+              >
+                {showJobDescription ? "View Resume" : "View Job Description"}
+              </button>
+            </div>
             <p className="text-sm text-navy">
-              Click on any candidate card to preview their resume. This viewer is for your personal use - other group members won't see what you're viewing here.
+              {showJobDescription 
+                ? "Viewing the job description. This viewer is for your personal use."
+                : "Click on any candidate card to preview their resume. This viewer is for your personal use - other group members won't see what you're viewing here."
+              }
             </p>
+            
+            {/* Job description page navigation */}
+            {showJobDescription && jobDescNumPages && jobDescNumPages > 1 && (
+              <div className="flex items-center justify-between mt-2 p-2 bg-navy rounded">
+                <button
+                  className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
+                  onClick={() => setJobDescPageNumber(prev => Math.max(1, prev - 1))}
+                  disabled={jobDescPageNumber <= 1}
+                >
+                  ←
+                </button>
+                <span className="text-sand text-sm">
+                  Page {jobDescPageNumber} / {jobDescNumPages}
+                </span>
+                <button
+                  className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
+                  onClick={() => setJobDescPageNumber(prev => Math.min(jobDescNumPages, prev + 1))}
+                  disabled={jobDescPageNumber >= jobDescNumPages}
+                >
+                  →
+                </button>
+              </div>
+            )}
           </div>
 
-          {selectedResume ? (
+          {showJobDescription && jobDescPath ? (
+            <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden bg-white">
+              <Document
+                file={`${API_BASE_URL}/${jobDescPath}`}
+                onLoadError={console.error}
+                onLoadSuccess={({ numPages }) => {
+                  console.log("Job description loaded with", numPages, "pages");
+                  setJobDescNumPages(numPages);
+                }}
+                loading={
+                  <div className="flex justify-center items-center h-96">
+                    <div className="text-lg text-gray-600">Loading job description...</div>
+                  </div>
+                }
+              >
+                <Page
+                  pageNumber={jobDescPageNumber}
+                  scale={1.3}
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                />
+              </Document>
+            </div>
+          ) : selectedResume ? (
             <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden">
               <iframe
                 src={`${getResumeUrl(selectedResume.file_path)}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
@@ -473,7 +534,7 @@ export default function ResReviewGroup() {
             </div>
           ) : (
             <div className="flex-1 border-4 border-gray-300 border-dashed rounded-lg flex items-center justify-center">
-              <p className="text-gray-500 text-lg">Click a candidate card to view their resume</p>
+              <p className="text-gray-500 text-lg">Click a candidate card to view their resume or click "View Job Description"</p>
             </div>
           )}
         </div>
@@ -503,7 +564,7 @@ export default function ResReviewGroup() {
                 >
                   {/* Name and votes on same line */}
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-semibold text-navy">
+                    <h3 className="text-sm font-semibold text-navy">
                       {resume.first_name} {resume.last_name}
                     </h3>
                     
@@ -533,7 +594,7 @@ export default function ResReviewGroup() {
                       onChange={() => handleCheckboxChange(n)}
                       className="mr-2"
                     />
-                    <span className="text-navy font-semibold">Select for Interview</span>
+                    <span className="text-navy font-semibold text-sm">Select for Interview</span>
                   </label>
                 </div>
               );
