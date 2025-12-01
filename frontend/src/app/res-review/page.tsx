@@ -80,7 +80,7 @@ export default function ResumesPage() {
       try {
         // First get the job assignment
         const assignmentResponse = await fetch(
-          `${API_BASE_URL}/job/assignment/${user.group_id}/${user.class}`,
+          `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`,
           { credentials: "include" }
         );
         const assignmentData = await assignmentResponse.json();
