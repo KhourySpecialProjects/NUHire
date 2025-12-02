@@ -157,6 +157,20 @@ export default function Interview() {
     }
   };
 
+  // Add this helper function near the top of your component, after the interfaces
+  const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return url;
+    
+    // Check if it's already an embed URL
+    if (url.includes('/embed/')) {
+      // Add parameters if not already present
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}rel=0&modestbranding=1&showinfo=0&controls=1`;
+    }
+    
+    return url;
+  };
+
   const fetchGroupSize = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/interview/group-size/${user?.group_id}/${user?.class}`, { credentials: "include" });
@@ -909,7 +923,7 @@ export default function Interview() {
                 <iframe
                   key={`video-${videoIndex}`}
                   className="w-full h-full"
-                  src={currentVid.interview}
+                  src={getYouTubeEmbedUrl(currentVid.interview)}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
