@@ -564,21 +564,21 @@ export default function ResReviewGroup() {
                 >
                   {/* Name and votes on same line */}
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xs font-semibold text-navy">
+                    <h3 className="text-XL font-semibold text-navy">
                       {resume.first_name} {resume.last_name}
                     </h3>
                     
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <div className="flex items-center">
-                        <span className="px-1 py-0.5 bg-green-100 text-green-700 rounded text-xs">✔</span>
+                        <span className="px-1 py-0.5 bg-green-100 text-green-700 rounded text-xl">✔</span>
                         <span className="font-semibold text-xs ml-0.5">{votes.yes}</span>
                       </div>
                       <div className="flex items-center">
-                        <span className="px-1 py-0.5 bg-red-100 text-red-700 rounded text-xs">✖</span>
+                        <span className="px-1 py-0.5 bg-red-100 text-red-700 rounded text-xl">✖</span>
                         <span className="font-semibold text-xs ml-0.5">{votes.no}</span>
                       </div>
                       <div className="flex items-center">
-                        <span className="px-1 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">?</span>
+                        <span className="px-1 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xl">?</span>
                         <span className="font-semibold text-xs ml-0.5">{votes.undecided}</span>
                       </div>
                     </div>
@@ -594,7 +594,7 @@ export default function ResReviewGroup() {
                       onChange={() => handleCheckboxChange(n)}
                       className="mr-1.5 h-3 w-3"
                     />
-                    <span className="text-navy font-semibold text-xs">Select for Interview</span>
+                    <span className="text-navy font-semibold text-m">Select for Interview</span>
                   </label>
                 </div>
               );
