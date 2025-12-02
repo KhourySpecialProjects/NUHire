@@ -13,6 +13,7 @@ export default (db: Pool): Router => {
   router.get('/', requireAuth, candidateController.getAllCandidates);
   router.get('/:id', requireAuth, candidateController.getCandidateById);
   router.get('/resume/:resume_number', requireAuth, candidateController.getCandidateByResumeNumber);
+  router.get('/resume-with-file/:resume_number', requireAuth, candidateController.getCandidateByResumeNumberWithFile);
 
   return router;
 };

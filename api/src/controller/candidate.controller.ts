@@ -112,4 +112,27 @@ export class CandidateController {
       res.json(results[0]);
     });
   };
+
+  getCandidateByResumeNumberWithFile = (req: AuthRequest, res: Response): void => {
+  const { resume_number } = req.params;
+  
+  const query = `
+    SELECT 
+      c.*,
+      r.file_path,
+      r.title
+    FROM Candidates c
+    LEFT JOIN Resume_pdfs r ON c.resume_id = r.id
+    WHERE c.resume_id = ?
+  `;
+  
+  this.db.query(query, [resume_number], (err, results: any[]) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    console.log(`Fetched candidate with resume number ${resume_number}:`, results[0]);
+    res.json(results[0]);
+  });
+};
 }

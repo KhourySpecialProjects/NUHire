@@ -324,8 +324,7 @@ export default function Interview() {
         }
         
         const candidatePromises = checkedResumes.map(resume => 
-          axios.get(`${API_BASE_URL}/candidates/resume/${resume.resume_number}`, { 
-            timeout: 8000, 
+            axios.get(`${API_BASE_URL}/candidates/resume-with-file/${resume.resume_number}`, {            timeout: 8000, 
             withCredentials: true,
           })
           .then(response => {
