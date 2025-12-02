@@ -412,6 +412,7 @@ const fetchResumes = async (userClass: number) => {
     if (currentResumeIndex < resumesList.length - 1) {
       setFadingEffect(true);
       setResumeLoading(true); // Set resume loading when changing resumes
+      setShowJobDescription(false); // Reset to resume view when moving to next candidate
       setTimeout(() => {
         setCurrentResumeIndex(currentResumeIndex + 1);
         setRestricted(false);
