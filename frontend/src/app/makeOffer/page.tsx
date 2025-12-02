@@ -496,17 +496,7 @@ export default function MakeOffer() {
       return;
     }
     
-    setOfferConfirmations(prev => {
-      const currentConfirmations = prev[candidateId] || [];
-      if (!currentConfirmations.includes(user.id.toString())) {
-        return {
-          ...prev,
-          [candidateId]: [...currentConfirmations, user.id.toString()]
-        };
-      }
-      return prev;
-    });
-    
+    // Don't update local state - let the socket handler do it for everyone including yourself
     socket.emit("confirmOffer", {
       groupId: user.group_id,
       classId: user.class,
@@ -515,7 +505,7 @@ export default function MakeOffer() {
       roomId: `group_${user.group_id}_class_${user.class}`
     });
   };
-
+  
   useEffect(() => {
     if (!socket || !user) return;
 
