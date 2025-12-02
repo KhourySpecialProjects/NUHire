@@ -722,8 +722,7 @@ export default function Interview() {
     );
   }
 
-  // Main content - interview page
-// Main content - interview page with fixed height layout
+
   return (
     <div className="h-screen flex flex-col bg-sand font-rubik overflow-hidden">
       {showInstructions && (
@@ -736,24 +735,24 @@ export default function Interview() {
       )}
       <Navbar />
       
-      <div className="flex justify-center items-center font-rubik text-redHeader text-2xl font-bold py-2">
+      <div className="flex justify-center items-center font-rubik text-redHeader text-xl font-bold py-1">
         Interview Page
       </div>
 
-      <div className="flex-1 flex overflow-hidden px-4 pb-2">
-        {/* Evaluation panel */}
-        <div key={videoIndex} className="w-1/3 bg-blue-50 shadow-lg p-3 mr-4 flex flex-col rounded-lg overflow-y-auto">
-          <h1 className="text-xl text-redHeader font-bold mb-2">
+      <div className="flex-1 flex overflow-hidden px-4 pb-2 gap-4">
+        {/* Evaluation panel - no scroll needed */}
+        <div key={videoIndex} className="w-1/3 bg-blue-50 shadow-lg p-3 flex flex-col rounded-lg overflow-hidden">
+          <h1 className="text-lg text-redHeader font-bold mb-1">
             Evaluation
           </h1>
-          <h3 className="text-sm text-navy text-center mb-2">
-            Please watch the interview and rate on a scale from 1 - 10. Submit to note your responses and move to the next interview.
+          <h3 className="text-xs text-navy text-center mb-2">
+            Watch the interview and rate on a scale from 1-10. Submit to move to the next interview.
           </h3>
 
           {/* View toggle buttons */}
-          <div className="flex flex-col gap-2 w-full mb-3">
+          <div className="flex flex-col gap-1 w-full mb-2">
             <button
-              className={`px-3 py-1.5 rounded-lg shadow-md transition duration-300 font-rubik text-sm ${
+              className={`px-2 py-1 rounded-lg shadow-md transition duration-300 font-rubik text-xs ${
                 viewMode === 'video' 
                   ? 'bg-redHeader text-white' 
                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -763,10 +762,10 @@ export default function Interview() {
                 setResumePageNumber(1);
               }}
             >
-              View Interview Video
+              Interview Video
             </button>
             <button
-              className={`px-3 py-1.5 rounded-lg shadow-md transition duration-300 font-rubik text-sm ${
+              className={`px-2 py-1 rounded-lg shadow-md transition duration-300 font-rubik text-xs ${
                 viewMode === 'resume' 
                   ? 'bg-redHeader text-white' 
                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -776,10 +775,10 @@ export default function Interview() {
                 setResumePageNumber(1);
               }}
             >
-              View Resume
+              Resume
             </button>
             <button
-              className={`px-3 py-1.5 rounded-lg shadow-md transition duration-300 font-rubik text-sm ${
+              className={`px-2 py-1 rounded-lg shadow-md transition duration-300 font-rubik text-xs ${
                 viewMode === 'jobDescription' 
                   ? 'bg-redHeader text-white' 
                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -789,25 +788,25 @@ export default function Interview() {
                 setJobDescPageNumber(1);
               }}
             >
-              View Job Description
+              Job Description
             </button>
           </div>
 
           {/* Page navigation for resume */}
           {viewMode === 'resume' && resumeNumPages && resumeNumPages > 1 && (
-            <div className="flex items-center justify-between bg-navy p-2 rounded-lg w-full mb-3">
+            <div className="flex items-center justify-between bg-navy p-1 rounded-lg w-full mb-2">
               <button
-                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
+                className="px-2 py-0.5 bg-sand text-navy rounded disabled:opacity-50 text-xs"
                 onClick={() => setResumePageNumber(prev => Math.max(1, prev - 1))}
                 disabled={resumePageNumber <= 1}
               >
                 ←
               </button>
               <span className="text-sand text-xs">
-                Page {resumePageNumber} / {resumeNumPages}
+                {resumePageNumber}/{resumeNumPages}
               </span>
               <button
-                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
+                className="px-2 py-0.5 bg-sand text-navy rounded disabled:opacity-50 text-xs"
                 onClick={() => setResumePageNumber(prev => Math.min(resumeNumPages, prev + 1))}
                 disabled={resumePageNumber >= resumeNumPages}
               >
@@ -818,19 +817,19 @@ export default function Interview() {
 
           {/* Page navigation for job description */}
           {viewMode === 'jobDescription' && jobDescNumPages && jobDescNumPages > 1 && (
-            <div className="flex items-center justify-between bg-navy p-2 rounded-lg w-full mb-3">
+            <div className="flex items-center justify-between bg-navy p-1 rounded-lg w-full mb-2">
               <button
-                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
+                className="px-2 py-0.5 bg-sand text-navy rounded disabled:opacity-50 text-xs"
                 onClick={() => setJobDescPageNumber(prev => Math.max(1, prev - 1))}
                 disabled={jobDescPageNumber <= 1}
               >
                 ←
               </button>
               <span className="text-sand text-xs">
-                Page {jobDescPageNumber} / {jobDescNumPages}
+                {jobDescPageNumber}/{jobDescNumPages}
               </span>
               <button
-                className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50 text-sm"
+                className="px-2 py-0.5 bg-sand text-navy rounded disabled:opacity-50 text-xs"
                 onClick={() => setJobDescPageNumber(prev => Math.min(jobDescNumPages, prev + 1))}
                 disabled={jobDescPageNumber >= jobDescNumPages}
               >
@@ -839,53 +838,55 @@ export default function Interview() {
             </div>
           )}
 
-          {/* Rating sliders */}
-          <div className="flex flex-col items-center text-center w-full mb-3">
-            <h2 className="text-sm text-redHeader font-semibold mb-1">
-              Overall
-            </h2>
-            <RatingSlider onChange={handleOverallSliderChange} value={overall} />
-          </div>
+          {/* Rating sliders - compact */}
+          <div className="flex-1 flex flex-col justify-around">
+            <div className="flex flex-col items-center text-center w-full">
+              <h2 className="text-xs text-redHeader font-semibold mb-0.5">
+                Overall
+              </h2>
+              <RatingSlider onChange={handleOverallSliderChange} value={overall} />
+            </div>
 
-          <div className="flex flex-col items-center text-center w-full mb-3">
-            <h2 className="text-sm text-redHeader font-semibold mb-1">
-              Professional Presence
-            </h2>
-            <RatingSlider onChange={handleProfessionalPresenceSliderChange} value={professionalPresence} />
-          </div>
+            <div className="flex flex-col items-center text-center w-full">
+              <h2 className="text-xs text-redHeader font-semibold mb-0.5">
+                Professional Presence
+              </h2>
+              <RatingSlider onChange={handleProfessionalPresenceSliderChange} value={professionalPresence} />
+            </div>
 
-          <div className="flex flex-col items-center text-center w-full mb-3">
-            <h2 className="text-sm text-redHeader font-semibold mb-1">
-              Quality of Answer
-            </h2>
-            <RatingSlider onChange={handleQualityOfAnswerSliderChange} value={qualityOfAnswer} />
-          </div>
+            <div className="flex flex-col items-center text-center w-full">
+              <h2 className="text-xs text-redHeader font-semibold mb-0.5">
+                Quality of Answer
+              </h2>
+              <RatingSlider onChange={handleQualityOfAnswerSliderChange} value={qualityOfAnswer} />
+            </div>
 
-          <div className="flex flex-col items-center text-center w-full mb-3">
-            <h2 className="text-sm text-redHeader font-semibold mb-1">
-              Personality & Creativeness
-            </h2>
-            <RatingSlider onChange={handlePersonalitySliderChange} value={personality} />
+            <div className="flex flex-col items-center text-center w-full">
+              <h2 className="text-xs text-redHeader font-semibold mb-0.5">
+                Personality & Creativeness
+              </h2>
+              <RatingSlider onChange={handlePersonalitySliderChange} value={personality} />
+            </div>
           </div>
 
           {/* Submit button */}
           <button
             onClick={handleSubmit}
             disabled={finished || !videoLoaded}
-            className={`px-4 py-2 rounded-lg shadow-md transition duration-300 font-rubik text-sm ${
+            className={`px-3 py-2 rounded-lg shadow-md transition duration-300 font-rubik text-xs mt-2 ${
               finished || !videoLoaded
                 ? "bg-gray-400 text-white opacity-50 cursor-not-allowed"
                 : "bg-blue-500 text-white hover:bg-blue-900"
             }`}
           >
-            {!videoLoaded ? "Loading Video..." : "Submit Response"}
+            {!videoLoaded ? "Loading..." : "Submit Response"}
           </button>
           
           {/* Video progress indicator */}
-          <div className="mt-3 text-xs text-gray-700 text-center">
+          <div className="mt-1 text-xs text-gray-700 text-center">
             {interviews.length > 0 ? 
               `Video ${Math.min(videoIndex + 1, interviews.length)} of ${interviews.length}` : 
-              "Loading videos..."}
+              "Loading..."}
           </div>
         </div>
 
@@ -926,56 +927,70 @@ export default function Interview() {
               )
             )}
 
-            {viewMode === 'resume' && currentVid?.file_path && (
+            {viewMode === 'resume' && (
               <div className="h-full w-full overflow-auto flex justify-center items-start bg-gray-100">
-                <Document
-                  file={`${API_BASE_URL}/${currentVid.file_path}`}
-                  onLoadError={(error) => {
-                    console.error("Resume PDF load error:", error);
-                    console.log("Attempted path:", `${API_BASE_URL}/${currentVid.file_path}`);
-                  }}
-                  onLoadSuccess={({ numPages }) => {
-                    console.log("Resume loaded with", numPages, "pages");
-                    setResumeNumPages(numPages);
-                  }}
-                  loading={
-                    <div className="flex justify-center items-center h-96">
-                      <div className="text-lg text-gray-600">Loading resume...</div>
-                    </div>
-                  }
-                >
-                  <Page
-                    pageNumber={resumePageNumber}
-                    scale={1.2}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </Document>
+                {currentVid?.file_path ? (
+                  <Document
+                    file={`${API_BASE_URL}/${currentVid.file_path}`}
+                    onLoadError={(error) => {
+                      console.error("Resume PDF load error:", error);
+                      console.log("Attempted path:", `${API_BASE_URL}/${currentVid.file_path}`);
+                      console.log("Current candidate data:", currentVid);
+                    }}
+                    onLoadSuccess={({ numPages }) => {
+                      console.log("Resume loaded successfully with", numPages, "pages");
+                      setResumeNumPages(numPages);
+                    }}
+                    loading={
+                      <div className="flex justify-center items-center h-96">
+                        <div className="text-lg text-gray-600">Loading resume...</div>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={resumePageNumber}
+                      scale={1.2}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                    />
+                  </Document>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <p className="text-gray-500 mb-2">Resume not available</p>
+                    <p className="text-xs text-gray-400">File path: {currentVid?.file_path || 'undefined'}</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {viewMode === 'jobDescription' && jobDescPath && (
+            {viewMode === 'jobDescription' && (
               <div className="h-full w-full overflow-auto flex justify-center items-start bg-gray-100">
-                <Document
-                  file={`${API_BASE_URL}/${jobDescPath}`}
-                  onLoadError={console.error}
-                  onLoadSuccess={({ numPages }) => {
-                    console.log("Job description loaded with", numPages, "pages");
-                    setJobDescNumPages(numPages);
-                  }}
-                  loading={
-                    <div className="flex justify-center items-center h-96">
-                      <div className="text-lg text-gray-600">Loading job description...</div>
-                    </div>
-                  }
-                >
-                  <Page
-                    pageNumber={jobDescPageNumber}
-                    scale={1.2}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </Document>
+                {jobDescPath ? (
+                  <Document
+                    file={`${API_BASE_URL}/${jobDescPath}`}
+                    onLoadError={console.error}
+                    onLoadSuccess={({ numPages }) => {
+                      console.log("Job description loaded with", numPages, "pages");
+                      setJobDescNumPages(numPages);
+                    }}
+                    loading={
+                      <div className="flex justify-center items-center h-96">
+                        <div className="text-lg text-gray-600">Loading job description...</div>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={jobDescPageNumber}
+                      scale={1.2}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                    />
+                  </Document>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500">Job description not available</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -983,17 +998,17 @@ export default function Interview() {
       </div>
 
       {/* Navigation footer - compact */}
-      <div className="flex justify-between px-4 py-2">
+      <div className="flex justify-between px-4 py-1">
         <button
           onClick={() => (window.location.href = "/res-review-group")}
-          className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik text-sm"
+          className="px-3 py-1.5 bg-redHeader text-white rounded-lg shadow-md cursor-not-allowed opacity-50 transition duration-300 font-rubik text-xs"
           disabled={true}
         >
           ← Back: Resume Review Pt.2
         </button>
         <button
           onClick={completeInterview}
-          className={`px-4 py-2 bg-redHeader text-white rounded-lg shadow-md transition duration-300 font-rubik text-sm
+          className={`px-3 py-1.5 bg-redHeader text-white rounded-lg shadow-md transition duration-300 font-rubik text-xs
             ${!finished || !groupFinished
               ? "cursor-not-allowed opacity-50"
               : "cursor-pointer hover:bg-navy"
@@ -1001,10 +1016,10 @@ export default function Interview() {
           disabled={!finished || !groupFinished}
         >
           {!finished
-            ? "Next: Make Offer page →"
+            ? "Next: Make Offer →"
             : !groupFinished
-              ? `Next: Make Offer page (${groupSubmissions}/${groupSize} submitted)`
-              : "Next: Make Offer page"}
+              ? `Next: Make Offer (${groupSubmissions}/${groupSize})`
+              : "Next: Make Offer →"}
         </button>
       </div>
 

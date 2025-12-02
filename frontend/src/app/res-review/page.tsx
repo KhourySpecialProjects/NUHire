@@ -271,14 +271,17 @@ export default function ResumesPage() {
     });
   }, [socket, totalDecisions, user]);
 
-
   const fetchResumes = async (userClass: number) => {
     try {
+      console.log("📄 [FETCH] Fetching resumes for class:", userClass);
       const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
       const data = await response.json();
+      console.log("📄 [FETCH] Received resumes data:", data);
+      console.log("📄 [FETCH] Number of resumes:", data.length);
+      console.log("📄 [FETCH] First resume (if exists):", data[0]);
       setResumesList(data);
     } catch (error) {
-      console.error("Error fetching resumes:", error);
+      console.error("❌ [FETCH] Error fetching resumes:", error);
     }
   };
 
@@ -287,6 +290,26 @@ export default function ResumesPage() {
       fetchResumes(user.class);
     }
   }, [user]);
+
+  // Add this new useEffect to log current resume info
+  useEffect(() => {
+    if (resumesList.length > 0 && resumesList[currentResumeIndex]) {
+      const currentResume = resumesList[currentResumeIndex];
+      console.log("📋 [CURRENT RESUME] Index:", currentResumeIndex);
+      console.log("📋 [CURRENT RESUME] Data:", currentResume);
+      console.log("📋 [CURRENT RESUME] ID:", currentResume.id);
+      console.log("📋 [CURRENT RESUME] File Path:", currentResume.file_path);
+      console.log("📋 [CURRENT RESUME] Full URL:", `${API_BASE_URL}/${currentResume.file_path}`);
+      console.log("📋 [CURRENT RESUME] Name:", `${currentResume.first_name} ${currentResume.last_name}`);
+      console.log("📋 [CURRENT RESUME] Title:", currentResume.title);
+    }
+  }, [currentResumeIndex, resumesList]);
+
+    useEffect(() => {
+      if (user?.class) {
+        fetchResumes(user.class);
+      }
+    }, [user]);
 
   useEffect(() => {
     if (!showInstructions) {
