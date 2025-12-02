@@ -274,22 +274,20 @@ export default function ResumesPage() {
 const fetchResumes = async (userClass: number) => {
   try {
     console.log("📄 [FETCH] Fetching resumes for class:", userClass);
+    console.log("📄 [FETCH] Request URL:", `${API_BASE_URL}/resume_pdf?class_id=${userClass}`);
+    
     const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
+    
+    console.log("📄 [FETCH] Response status:", response.status, response.statusText);
+    console.log("📄 [FETCH] Response headers:", response.headers);
+    
     const data = await response.json();
-    console.log("📄 [FETCH] Received resumes data:", data);
+    console.log("📄 [FETCH] Raw response data:", JSON.stringify(data, null, 2));
     console.log("📄 [FETCH] Number of resumes:", data.length);
     
     // Log ALL resumes to see what's in the database
     data.forEach((resume: any, index: number) => {
-      console.log(`📄 [FETCH] Resume ${index}:`, {
-        id: resume.id,
-        title: resume.title,
-        file_path: resume.file_path,
-        first_name: resume.first_name,
-        last_name: resume.last_name,
-        interview: resume.interview,
-        class_id: resume.class_id
-      });
+      console.log(`📄 [FETCH] Resume ${index}:`, JSON.stringify(resume, null, 2));
     });
     
     // Check if any resumes are missing file_path
