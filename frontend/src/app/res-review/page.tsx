@@ -271,19 +271,39 @@ export default function ResumesPage() {
     });
   }, [socket, totalDecisions, user]);
 
-  const fetchResumes = async (userClass: number) => {
-    try {
-      console.log("📄 [FETCH] Fetching resumes for class:", userClass);
-      const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
-      const data = await response.json();
-      console.log("📄 [FETCH] Received resumes data:", data);
-      console.log("📄 [FETCH] Number of resumes:", data.length);
-      console.log("📄 [FETCH] First resume (if exists):", data[0]);
-      setResumesList(data);
-    } catch (error) {
-      console.error("❌ [FETCH] Error fetching resumes:", error);
+const fetchResumes = async (userClass: number) => {
+  try {
+    console.log("📄 [FETCH] Fetching resumes for class:", userClass);
+    const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
+    const data = await response.json();
+    console.log("📄 [FETCH] Received resumes data:", data);
+    console.log("📄 [FETCH] Number of resumes:", data.length);
+    
+    // Log ALL resumes to see what's in the database
+    data.forEach((resume: any, index: number) => {
+      console.log(`📄 [FETCH] Resume ${index}:`, {
+        id: resume.id,
+        title: resume.title,
+        file_path: resume.file_path,
+        first_name: resume.first_name,
+        last_name: resume.last_name,
+        interview: resume.interview,
+        class_id: resume.class_id
+      });
+    });
+    
+    // Check if any resumes are missing file_path
+    const missingPaths = data.filter((r: any) => !r.file_path);
+    if (missingPaths.length > 0) {
+      console.warn(`⚠️ [FETCH] ${missingPaths.length} resumes are missing file_path!`);
+      console.warn("⚠️ [FETCH] Resumes missing file_path:", missingPaths);
     }
-  };
+    
+    setResumesList(data);
+  } catch (error) {
+    console.error("❌ [FETCH] Error fetching resumes:", error);
+  }
+};
 
   useEffect(() => {
     if (user?.class) {
