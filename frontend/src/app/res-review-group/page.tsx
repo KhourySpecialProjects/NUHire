@@ -474,46 +474,6 @@ export default function ResReviewGroup() {
                 : "Click on any candidate card to preview their resume. This viewer is for your personal use - other group members won't see what you're viewing here."
               }
             </p>
-            
-            {/* Job description page navigation */}
-            {showJobDescription && jobDescPath ? (
-              <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden bg-white">
-                <div className="w-full h-full">
-                  <Document
-                    file={`${API_BASE_URL}/${jobDescPath}`}
-                    onLoadError={console.error}
-                    onLoadSuccess={({ numPages }) => {
-                      console.log("Job description loaded with", numPages, "pages");
-                      setJobDescNumPages(numPages);
-                    }}
-                    loading={
-                      <div className="flex justify-center items-center h-96">
-                        <div className="text-lg text-gray-600">Loading job description...</div>
-                      </div>
-                    }
-                  >
-                    <Page
-                      pageNumber={jobDescPageNumber}
-                      scale={1.3}
-                      renderTextLayer={true}
-                      renderAnnotationLayer={true}
-                    />
-                  </Document>
-                </div>
-              </div>
-            ) : selectedResume ? (
-              <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden">
-                <iframe
-                  src={`${getResumeUrl(selectedResume.file_path)}#toolbar=0&navpanes=0&statusbar=0&messages=0`}
-                  title={`Resume Preview ${selectedResume.resume_number}`}
-                  className="w-full h-full rounded border-none"
-                />
-              </div>
-            ) : (
-              <div className="flex-1 border-4 border-gray-300 border-dashed rounded-lg flex items-center justify-center">
-                <p className="text-gray-500 text-lg">Click a candidate card to view their resume or click "View Job Description"</p>
-              </div>
-            )}
           </div>
 
           {showJobDescription && jobDescPath ? (
