@@ -477,27 +477,52 @@ export default function ResReviewGroup() {
           </div>
 
           {showJobDescription && jobDescPath ? (
-            <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden bg-white">
-              <Document
-                file={`${API_BASE_URL}/${jobDescPath}`}
-                onLoadError={console.error}
-                onLoadSuccess={({ numPages }) => {
-                  console.log("Job description loaded with", numPages, "pages");
-                  setJobDescNumPages(numPages);
-                }}
-                loading={
-                  <div className="flex justify-center items-center h-96">
-                    <div className="text-lg text-gray-600">Loading job description...</div>
-                  </div>
-                }
-              >
-                <Page
-                  pageNumber={jobDescPageNumber}
-                  scale={1.3}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                />
-              </Document>
+            <div className="flex-1 flex flex-col border-4 border-northeasternBlack rounded-lg overflow-hidden bg-white">
+              {/* Page navigation for job description */}
+              {jobDescNumPages && jobDescNumPages > 1 && (
+                <div className="flex items-center justify-between bg-navy p-2">
+                  <button
+                    className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                    onClick={() => setJobDescPageNumber(prev => Math.max(1, prev - 1))}
+                    disabled={jobDescPageNumber <= 1}
+                  >
+                    ← Previous
+                  </button>
+                  <span className="text-sand text-sm font-semibold">
+                    Page {jobDescPageNumber} / {jobDescNumPages}
+                  </span>
+                  <button
+                    className="px-3 py-1 bg-sand text-navy rounded disabled:opacity-50"
+                    onClick={() => setJobDescPageNumber(prev => Math.min(jobDescNumPages, prev + 1))}
+                    disabled={jobDescPageNumber >= jobDescNumPages}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+              
+              <div className="flex-1 overflow-auto">
+                <Document
+                  file={`${API_BASE_URL}/${jobDescPath}`}
+                  onLoadError={console.error}
+                  onLoadSuccess={({ numPages }) => {
+                    console.log("Job description loaded with", numPages, "pages");
+                    setJobDescNumPages(numPages);
+                  }}
+                  loading={
+                    <div className="flex justify-center items-center h-96">
+                      <div className="text-lg text-gray-600">Loading job description...</div>
+                    </div>
+                  }
+                >
+                  <Page
+                    pageNumber={jobDescPageNumber}
+                    scale={1.3}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </Document>
+              </div>
             </div>
           ) : selectedResume ? (
             <div className="flex-1 border-4 border-northeasternBlack rounded-lg overflow-hidden">
