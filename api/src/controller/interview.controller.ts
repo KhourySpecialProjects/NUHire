@@ -219,4 +219,46 @@ export class InterviewController {
       res.json(results);
     });
   };
+
+  batchVote = async (req: AuthRequest, res: Response): Promise<void> => {
+    const { votes } = req.body;
+    
+    if (!Array.isArray(votes) || votes.length === 0) {
+      res.status(400).json({ error: "Invalid votes array" });
+      return;
+    }
+
+    try {
+      // Insert all votes in a single transaction
+      const values = votes.map(vote => [
+        vote.student_id,
+        vote.group_id,
+        vote.studentClass,
+        vote.question1,
+        vote.question2,
+        vote.question3,
+        vote.question4,
+        vote.candidate_id
+      ]);
+
+      const query = `
+        INSERT INTO interview_votes (student_id, group_id, class, question1, question2, question3, question4, candidate_id)
+        VALUES ?
+      `;
+
+      this.db.query(query, [values], (err, result) => {
+        if (err) {
+          console.error("Error saving batch interview votes:", err);
+          res.status(500).json({ error: "Failed to save votes" });
+          return;
+        }
+        
+        console.log(`✅ Saved ${votes.length} interview votes successfully`);
+        res.json({ success: true, votesCount: votes.length });
+      });
+    } catch (error) {
+      console.error("Error in batchVote:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  };
 }

@@ -111,20 +111,27 @@ const Dashboard = () => {
     if (!user) return;
     
     try {
-      // Refresh job description
-      await fetchJobDescription(user);
+      // Inline the job description fetch
+      const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`, {credentials: "include"});
+      if (jobResponse.ok) {
+        const jobData = await jobResponse.json();
+        setJobDescription(jobData.job);
+      }
       
-      // Fetch current progress from server
-      const currentProgress = await fetchProgress(user);
-      
-      setProgress(currentProgress);
-      localStorage.setItem("progress", currentProgress);
+      // Inline the progress fetch
+      const progressResponse = await fetch(`${API_BASE_URL}/progress/user/${user.email}`, {credentials: "include"});
+      if (progressResponse.ok) {
+        const progressData = await progressResponse.json();
+        const currentProgress = progressData.progress || "none";
+        setProgress(currentProgress);
+        localStorage.setItem("progress", currentProgress);
+      }
       
       setFlipped(Array(steps.length).fill(false));
     } catch (error) {
       console.error("Error refreshing dashboard UI:", error);
     }
-  }, [user, fetchJobDescription, fetchProgress]);
+  }, [user]); // ✅ Only depends on user
 
   useEffect(() => {
     if (!user) return;

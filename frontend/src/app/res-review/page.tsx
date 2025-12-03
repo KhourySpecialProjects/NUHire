@@ -55,12 +55,14 @@ export default function ResumesPage() {
   const [jobDescPath, setJobDescPath] = useState("");
   const [jobDescNumPages, setJobDescNumPages] = useState<number | null>(null);
   const [jobDescPageNumber, setJobDescPageNumber] = useState(1);
-  interface User {
-    id: string;
+  const [votes, setVotes] = useState<{
+    student_id: string;
     group_id: number;
-    email: string;
     class: number;
-  }
+    timespent: number;
+    resume_number: number;
+    vote: "yes" | "no" | "unanswered";
+  }[]>([]);
   const [donePopup, setDonePopup] = useState(false);
   const totalDecisions = accepted + rejected + noResponse;
   const maxDecisions = totalDecisions >= 10;
@@ -192,8 +194,8 @@ export default function ResumesPage() {
 
       updateCurrentPage();
     }
-  }, [socket, user, pathname]);
-  
+  }, [socket, user?.email, pathname]);
+
   // Popup and group move listeners
   useEffect(() => {
     if (!socket || !user) return;
@@ -245,10 +247,42 @@ export default function ResumesPage() {
   }, [socket]);
 
   // Complete resumes function
-  const completeResumes = () => {
+  const completeResumes = async () => {
     if (!socket || !user) {
       console.error('Socket or user not available');
       return;
+    }
+
+    // Send all votes to backend before moving on
+    if (votes.length > 0) {
+      console.log(`📤 [BATCH-VOTE] Sending ${votes.length} votes to backend`);
+      try {
+        const response = await fetch(`${API_BASE_URL}/resume/batch-vote`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ votes }),
+          credentials: "include"
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("❌ [BATCH-VOTE] Error response from backend:", errorData);
+          throw new Error("Failed to save votes");
+        }
+        
+        const responseData = await response.json();
+        console.log("✅ [BATCH-VOTE] All votes saved successfully:", responseData);
+      } catch (error) {
+        console.error("❌ [BATCH-VOTE] Error sending votes to backend:", error);
+        // Show error to user - don't proceed if votes failed to save
+        setPopup({
+          headline: "Error Saving Votes",
+          message: "Failed to save your resume decisions. Please try again."
+        });
+        return;
+      }
     }
 
     updateProgress(user, "res_2");
@@ -343,75 +377,49 @@ const fetchResumes = async (userClass: number) => {
     }
   }, [currentResumeIndex, showInstructions]);
 
-    const sendVoteToBackend = async (vote: "yes" | "no" | "unanswered") => {
-      console.log("🗳️ [VOTE] Starting sendVoteToBackend");
-      console.log("🗳️ [VOTE] Current resume index:", currentResumeIndex);
-      console.log("🗳️ [VOTE] Resume at index:", resumesList[currentResumeIndex]);
-      console.log("🗳️ [VOTE] Vote type:", vote);
-      
-      if (!user || !user.id || !user.group_id || !user.class) {
-        console.error("❌ [VOTE] Missing user data:", {
-          hasUser: !!user,
-          hasId: !!user?.id,
-          hasGroupId: !!user?.group_id,
-          hasClass: !!user?.class,
-          userValue: user
-        });
-        return;
-      }
+  const sendVoteToBackend = (vote: "yes" | "no" | "unanswered") => {
+    console.log("🗳️ [VOTE] Adding vote to queue");
+    console.log("🗳️ [VOTE] Current resume index:", currentResumeIndex);
+    console.log("🗳️ [VOTE] Resume at index:", resumesList[currentResumeIndex]);
+    console.log("🗳️ [VOTE] Vote type:", vote);
+    
+    if (!user || !user.id || !user.group_id || !user.class) {
+      console.error("❌ [VOTE] Missing user data");
+      return;
+    }
 
-      if (timeSpent < 0) {
-        console.error("❌ [VOTE] Invalid time spent:", timeSpent);
-        return;
-      }
+    if (timeSpent < 0) {
+      console.error("❌ [VOTE] Invalid time spent:", timeSpent);
+      return;
+    }
 
-      if (currentResumeIndex < 0) {
-        console.error("❌ [VOTE] Invalid resume index:", currentResumeIndex);
-        return;
-      }
+    if (currentResumeIndex < 0) {
+      console.error("❌ [VOTE] Invalid resume index:", currentResumeIndex);
+      return;
+    }
 
-      const resumeId = resumesList[currentResumeIndex]?.id;
-      const fallbackId = currentResumeIndex + 1;
-      
-      console.log("🗳️ [VOTE] Resume ID from list:", resumeId);
-      console.log("🗳️ [VOTE] Fallback ID:", fallbackId);
-      console.log("🗳️ [VOTE] Will use ID:", resumeId || fallbackId);
+    const resumeId = resumesList[currentResumeIndex]?.id;
+    const fallbackId = currentResumeIndex + 1;
 
-      const voteData = {
-        student_id: user.id,
-        group_id: user.group_id,
-        class: user.class,
-        timespent: timeSpent,
-        resume_number: resumeId || fallbackId,
-        vote: vote,
-      };
-
-      console.log("🗳️ [VOTE] Sending vote data to backend:", voteData);
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/resume/vote`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(voteData),
-          credentials: "include"
-        });
-
-        console.log("✅ [VOTE] Response status:", response.status, response.statusText);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("❌ [VOTE] Error response from backend:", errorData);
-          throw new Error("Failed to save vote");
-        }
-        
-        const responseData = await response.json();
-        console.log("✅ [VOTE] Vote saved successfully:", responseData);
-      } catch (error) {
-        console.error("❌ [VOTE] Error sending vote to backend:", error);
-      }
+    const voteData: {
+      student_id: string;
+      group_id: number;
+      class: number;
+      timespent: number;
+      resume_number: number;
+      vote: "yes" | "no" | "unanswered";
+    } = {
+      student_id: String(user.id), // ✅ Explicitly convert to string
+      group_id: user.group_id,
+      class: user.class,
+      timespent: timeSpent,
+      resume_number: resumeId || fallbackId,
+      vote: vote,
     };
+
+    console.log("🗳️ [VOTE] Adding vote to array:", voteData);
+    setVotes(prev => [...prev, voteData]);
+  };
 
   const nextResume = () => {
     if (currentResumeIndex < resumesList.length - 1) {

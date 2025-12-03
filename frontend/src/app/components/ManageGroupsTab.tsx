@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from './socketContext';
 import Popup from './popup';
@@ -294,7 +294,7 @@ export function ManageGroupsTab() {
     setIsLoadingGroups(false);
   };
 
-  const refreshGroupsAndStudents = async () => {
+  const refreshGroupsAndStudents = useCallback(async () => {
     if (!selectedClass) return;
 
     try {
@@ -325,7 +325,7 @@ export function ManageGroupsTab() {
     } catch (error) {
       console.error('Error refreshing groups and students:', error);
     }
-  };
+  }, [selectedClass]); // ✅ Only re-create when selectedClass changes
 
   useEffect(() => {
     if (!socket) return;

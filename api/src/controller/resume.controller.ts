@@ -357,4 +357,44 @@ export class ResumeController {
     });
   };
 
+
+  batchVote = async (req: AuthRequest, res: Response): Promise<void> => {
+    const { votes } = req.body;
+    
+    if (!Array.isArray(votes) || votes.length === 0) {
+      res.status(400).json({ error: "Invalid votes array" });
+      return;
+    }
+
+    try {
+      // Insert all votes in a single transaction
+      const values = votes.map(vote => [
+        vote.student_id,
+        vote.group_id,
+        vote.class,
+        vote.timespent,
+        vote.resume_number,
+        vote.vote
+      ]);
+
+      const query = `
+        INSERT INTO resume_votes (student_id, group_id, class, timespent, resume_number, vote)
+        VALUES ?
+      `;
+
+      this.db.query(query, [values], (err, result) => {
+        if (err) {
+          console.error("Error saving batch votes:", err);
+          res.status(500).json({ error: "Failed to save votes" });
+          return;
+        }
+        
+        console.log(`✅ Saved ${votes.length} votes successfully`);
+        res.json({ success: true, votesCount: votes.length });
+      });
+    } catch (error) {
+      console.error("Error in batchVote:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  };
 }

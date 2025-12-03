@@ -67,6 +67,17 @@ export default function Interview() {
   const pathname = usePathname();
   const [noShow, setNoShow] = useState(false);
   const [donePopup, setDonePopup] = useState(false);
+
+  const [votes, setVotes] = useState<{
+    student_id: string;
+    group_id: number;
+    studentClass: number;
+    question1: number;
+    question2: number;
+    question3: number;
+    question4: number;
+    candidate_id: number;
+  }[]>([]);
   
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>('video');
@@ -277,37 +288,43 @@ export default function Interview() {
     }
   }, [finished]);
 
-  // Send interview ratings to backend
-  const sendResponseToBackend = async (
+  // Send interview ratings to backend (add to queue)
+  const sendResponseToBackend = (
     overall: number,
     professionalPresence: number,
     qualityOfAnswer: number,
     personality: number,
     candidate_id: number
   ) => {
+    console.log("🗳️ [INTERVIEW-VOTE] Adding vote to queue");
+    
     if (!user || !user.id || !user.group_id) {
-      console.error("Student ID or Group ID not found");
+      console.error("❌ [INTERVIEW-VOTE] Student ID or Group ID not found");
       return;
     }
     
-    try {
-      const response = await axios.post(`${API_BASE_URL}/interview/vote`, {
-        student_id: user.id,
-        group_id: user.group_id,
-        studentClass: user.class,
-        question1: overall,
-        question2: professionalPresence,
-        question3: qualityOfAnswer,
-        question4: personality,
-        candidate_id
-      }, { withCredentials: true });
-      if (response.status !== 200) {
-        console.error("Failed to submit response:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error submitting response:", error);
-      setPopup({ headline: "Submission Error", message: "Failed to submit your ratings. Please try again." });
-    }
+    const voteData: {
+      student_id: string;
+      group_id: number;
+      studentClass: number;
+      question1: number;
+      question2: number;
+      question3: number;
+      question4: number;
+      candidate_id: number;
+    } = {
+      student_id: String(user.id),
+      group_id: user.group_id,
+      studentClass: user.class,
+      question1: overall,
+      question2: professionalPresence,
+      question3: qualityOfAnswer,
+      question4: personality,
+      candidate_id
+    };
+    
+    console.log("🗳️ [INTERVIEW-VOTE] Adding vote to array:", voteData);
+    setVotes(prev => [...prev, voteData]);
   };
 
   useEffect(() => {
@@ -549,8 +566,33 @@ export default function Interview() {
     };
   }, [socket, user, currentVid]);
 
-  const completeInterview = () => {
+  const completeInterview = async () => {
     if (!socket || !user) return;
+    
+    // Send all interview votes to backend before moving on
+    if (votes.length > 0) {
+      console.log(`📤 [BATCH-INTERVIEW-VOTE] Sending ${votes.length} interview votes to backend`);
+      try {
+        const response = await axios.post(`${API_BASE_URL}/interview/batch-vote`, {
+          votes
+        }, { withCredentials: true });
+
+        if (response.status !== 200) {
+          console.error("❌ [BATCH-INTERVIEW-VOTE] Error response from backend");
+          throw new Error("Failed to save interview votes");
+        }
+        
+        console.log("✅ [BATCH-INTERVIEW-VOTE] All interview votes saved successfully:", response.data);
+      } catch (error) {
+        console.error("❌ [BATCH-INTERVIEW-VOTE] Error sending votes to backend:", error);
+        // Show error to user - don't proceed if votes failed to save
+        setPopup({
+          headline: "Error Saving Ratings",
+          message: "Failed to save your interview ratings. Please try again."
+        });
+        return;
+      }
+    }
     
     updateProgress(user, "offer");
     localStorage.setItem("progress", "offer");
@@ -590,7 +632,6 @@ export default function Interview() {
     setPersonality(5); 
   }
 
-  // Handle submission of current interview
   const handleSubmit = async () => {
     if (!currentVid) {
       console.error("No current video selected");
@@ -602,22 +643,17 @@ export default function Interview() {
       return;
     }
 
-    try {
-        if (noShow) {
-          await sendResponseToBackend(1, 1, 1, 1, currentVid.resume_id);
-        } else {
-          await sendResponseToBackend(
-            overall,
-            professionalPresence,
-            qualityOfAnswer,
-            personality,
-            currentVid.resume_id
-          );
-        }
-      }
-    catch (error) {
-      console.error("Error during submission:", error);
-      return;
+    // Just add to queue, don't await
+    if (noShow) {
+      sendResponseToBackend(1, 1, 1, 1, currentVid.resume_id);
+    } else {
+      sendResponseToBackend(
+        overall,
+        professionalPresence,
+        qualityOfAnswer,
+        personality,
+        currentVid.resume_id
+      );
     }
 
     const nextVideoIndex = videoIndex + 1;
