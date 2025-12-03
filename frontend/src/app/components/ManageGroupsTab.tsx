@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from './socketContext';
 import Popup from './popup';
@@ -84,7 +83,7 @@ export function ManageGroupsTab() {
   const [acceptedOffers, setAcceptedOffers] = useState<{groupId: number, candidateName: string}[]>([]);
   const [dismissedOffers, setDismissedOffers] = useState<Set<number>>(new Set());
 
-  const presetPopups = [
+  const presetPopups = useMemo(() => [
     {
       title: "Internal Referral",
       headline: "Internal Referral",
@@ -113,7 +112,7 @@ export function ManageGroupsTab() {
       location: "interview",
       vote: { overall: -5, professionalPresence: -10, qualityOfAnswer: 0, personality: 0 }
     },
-  ];
+  ], []);
 
   if (user && user.affiliation !== 'admin') {
     setPopup({ 
@@ -128,7 +127,7 @@ export function ManageGroupsTab() {
     console.log("acceptedoffers updated", acceptedOffers);
   }, [acceptedOffers]);
 
-  const fetchGroupJobAndProgress = async (groupId: number, classId: string) => {
+  const fetchGroupJobAndProgress = useCallback(async (groupId: number, classId: string) => {
     try {
       const jobResponse = await fetch(`${API_BASE_URL}/jobs/assignment/${groupId}/${classId}`, {
         credentials: 'include'
@@ -155,9 +154,9 @@ export function ManageGroupsTab() {
       console.error(`Error fetching job/progress for group ${groupId}:`, error);
       return { jobAssignment: 'No job assigned', progress: 'none' };
     }
-  };
+  }, []);
 
-  const fetchGroupStartStatuses = async (classId: string, groupIds: number[]) => {
+  const fetchGroupStartStatuses = useCallback(async (classId: string, groupIds: number[]) => {
     const statusPromises = groupIds.map(async (groupId) => {
       try {
         const response = await fetch(`${API_BASE_URL}/groups/started/${classId}/${groupId}`, {
@@ -179,7 +178,7 @@ export function ManageGroupsTab() {
 
     const statuses = await Promise.all(statusPromises);
     return statuses;
-  };
+  }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>, groupId: number) => {
     const element = e.currentTarget;
@@ -222,7 +221,7 @@ export function ManageGroupsTab() {
     setScrollStates(initialStates);
   }, [groups]);
 
-  const organizeStudentsIntoGroups = async (studentList: Student[], groupIds: number[]) => {
+  const organizeStudentsIntoGroups = useCallback(async (studentList: Student[], groupIds: number[]) => {
     setIsLoadingGroups(true);
     
     const groupMap = new Map<number | null, Student[]>();
@@ -292,7 +291,7 @@ export function ManageGroupsTab() {
 
     setGroups(groupsArray);
     setIsLoadingGroups(false);
-  };
+  }, [selectedClass, fetchGroupStartStatuses, fetchGroupJobAndProgress]);
 
   const refreshGroupsAndStudents = useCallback(async () => {
     if (!selectedClass) return;
@@ -325,7 +324,7 @@ export function ManageGroupsTab() {
     } catch (error) {
       console.error('Error refreshing groups and students:', error);
     }
-  }, [selectedClass]); // ✅ Only re-create when selectedClass changes
+  }, [selectedClass, organizeStudentsIntoGroups]); 
 
   useEffect(() => {
     if (!socket) return;
@@ -340,7 +339,7 @@ export function ManageGroupsTab() {
     return () => {
       socket.off('userAdded', handleUserAdded);
     };
-  }, [socket, selectedClass]);
+  }, [socket, refreshGroupsAndStudents]);
 
   useEffect(() => {
     if (!socket || !selectedClass) return;
@@ -388,7 +387,6 @@ export function ManageGroupsTab() {
     };
   }, [socket, selectedClass]);
 
-  // Socket listener for offers
   useEffect(() => {
     if (!socket || !user || user.affiliation !== 'admin') return;
 
@@ -453,7 +451,6 @@ export function ManageGroupsTab() {
     fetchClasses();
   }, [user]);
 
-  // Fetch candidates for the selected class
   useEffect(() => {
     const fetchCandidates = async () => {
       if (!selectedClass) {
@@ -513,7 +510,6 @@ export function ManageGroupsTab() {
     fetchAvailableGroups();
   }, [selectedClass]);
 
-  // Fetch accepted offers for the selected class
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
       if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
@@ -534,7 +530,6 @@ export function ManageGroupsTab() {
         const allOffers = await Promise.all(offerPromises);
         const flattenedOffers = allOffers.flat();
         
-        // Format offers with candidate names from the candidates state
         const formattedOffers = flattenedOffers.map((offer: any) => {
           const candidate = candidates.find(c => c.id === offer.candidate_id);
           return {
@@ -552,7 +547,6 @@ export function ManageGroupsTab() {
     fetchAcceptedOffers();
   }, [selectedClass, availableGroups, candidates]);
 
-  // Fetch pending offers for the selected class
   useEffect(() => {
     const fetchPendingOffers = async () => {
       if (!selectedClass || availableGroups.length === 0 || candidates.length === 0) return;
@@ -573,7 +567,6 @@ export function ManageGroupsTab() {
         const allOffers = await Promise.all(offerPromises);
         const flattenedOffers = allOffers.flat();
         
-        // Format offers with candidate names from the candidates state
         const formattedOffers = flattenedOffers.map((offer: any) => {
           const candidate = candidates.find(c => c.id === offer.candidate_id);
           return {
@@ -602,6 +595,11 @@ export function ManageGroupsTab() {
         return;
       }
 
+      if (availableGroups.length === 0) {
+        setIsLoadingGroups(false);
+        return;
+      }
+
       try {
         const response = await fetch(`${API_BASE_URL}/groups/students-by-class/${selectedClass}`, {
           credentials: 'include'
@@ -610,12 +608,7 @@ export function ManageGroupsTab() {
         if (response.ok) {
           const studentData = await response.json();
           setStudents(studentData);
-          
-          if (availableGroups.length > 0) {
-            await organizeStudentsIntoGroups(studentData, availableGroups);
-          } else {
-            setIsLoadingGroups(false);
-          }
+          await organizeStudentsIntoGroups(studentData, availableGroups);
         } else {
           setIsLoadingGroups(false);
         }
@@ -626,9 +619,8 @@ export function ManageGroupsTab() {
     };
 
     fetchStudentsAndOrganize();
-  }, [selectedClass, availableGroups]);
+  }, [selectedClass, availableGroups, organizeStudentsIntoGroups]);
 
-// Change around line 657-677:
   useEffect(() => {
     const fetchJobs = async () => {
       if (!assignJobModalOpen || !selectedClass) return;
@@ -651,8 +643,7 @@ export function ManageGroupsTab() {
     };
 
     fetchJobs();
-  }, [assignJobModalOpen, selectedClass]); // Add selectedClass dependency
-
+  }, [assignJobModalOpen, selectedClass]);
 
   const assignJobToAllGroups = async () => {
     if (!selectedJobId || !selectedClass) {
@@ -1115,7 +1106,6 @@ export function ManageGroupsTab() {
     try {
       console.log(`Responding to offer: ${accepted ? 'ACCEPT' : 'REJECT'}`);
       
-      // First, fetch the offer ID if not provided
       let actualOfferId = offerId;
       if (!actualOfferId) {
         const response = await fetch(`${API_BASE_URL}/offers/group/${groupId}/class/${classId}`, {
@@ -1137,7 +1127,6 @@ export function ManageGroupsTab() {
         throw new Error('Offer ID not found');
       }
 
-      // Update offer status via API
       const updateResponse = await fetch(`${API_BASE_URL}/offers/${actualOfferId}`, {
         method: 'PUT',
         headers: {
@@ -1153,7 +1142,6 @@ export function ManageGroupsTab() {
         throw new Error('Failed to update offer status');
       }
 
-      // Emit socket event
       if (!socket) {
         throw new Error('Socket not connected');
       }
@@ -1162,7 +1150,6 @@ export function ManageGroupsTab() {
       
       console.log("Socket response emitted");
 
-      // Update local state
       setPendingOffers(prev => 
         prev.filter(o => !(o.classId === classId && o.groupId === groupId && o.candidateId === candidateId))
       );
@@ -1223,63 +1210,18 @@ export function ManageGroupsTab() {
             <h1 className="text-3xl font-bold text-gray-900">📚 Manage Groups 📚</h1>
             {selectedClass && (
               <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={createNewGroup}
-                  disabled={isCreatingGroup}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    isCreatingGroup
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'
-                  }`}
-                >
-                  {isCreatingGroup ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
-                      Creating...
-                    </div>
-                  ) : (
-                    '➕ New Group'
-                  )}
+                <button onClick={createNewGroup} disabled={isCreatingGroup} className={`px-4 py-2 rounded-lg font-medium transition-colors ${isCreatingGroup ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'}`}>
+                  {isCreatingGroup ? (<div className="flex items-center"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>Creating...</div>) : ('➕ New Group')}
                 </button>
                 {groups.length > 0 && (
                   <>
-                    <button
-                      onClick={startAllGroups}
-                      disabled={isStartingAll || groups.every(g => g.isStarted)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        isStartingAll || groups.every(g => g.isStarted)
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'
-                      }`}
-                    >
-                      {isStartingAll ? (
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
-                          Starting All...
-                        </div>
-                      ) : (
-                        '🚀 Start All Groups'
-                      )}
+                    <button onClick={startAllGroups} disabled={isStartingAll || groups.every(g => g.isStarted)} className={`px-4 py-2 rounded-lg font-medium transition-colors ${isStartingAll || groups.every(g => g.isStarted) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'}`}>
+                      {isStartingAll ? (<div className="flex items-center"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>Starting All...</div>) : ('🚀 Start All Groups')}
                     </button>
-                    <button
-                      onClick={() => {
-                        setSelectedGroupForJob(null);
-                        setAssignJobModalOpen(true);
-                      }}
-                      disabled={availableGroups.filter(g => g !== -1).length === 0}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        availableGroups.filter(g => g !== -1).length === 0
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'
-                      }`}
-                    >
+                    <button onClick={() => { setSelectedGroupForJob(null); setAssignJobModalOpen(true); }} disabled={availableGroups.filter(g => g !== -1).length === 0} className={`px-4 py-2 rounded-lg font-medium transition-colors ${availableGroups.filter(g => g !== -1).length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600'}`}>
                       💼 Assign Job to All Groups
                     </button>
-                    <button
-                      onClick={downloadCSV}
-                      disabled={!selectedClass}
-                      className="px-4 py-2 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600"
-                    >
+                    <button onClick={downloadCSV} disabled={!selectedClass} className="px-4 py-2 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-white hover:text-red-600 border-2 border-red-600">
                       📥 Download CSV
                     </button>
                   </>
@@ -1288,69 +1230,35 @@ export function ManageGroupsTab() {
             )}
           </div>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Class to Manage:
-            </label>
-            <select
-              value={selectedClass}
-              onChange={(e) => handleClassChange(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">Select Class to Manage:</label>
+            <select value={selectedClass} onChange={(e) => handleClassChange(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">Choose a class...</option>
-              {classes.map((cls) => (
-                <option key={cls.crn} value={cls.crn}>
-                  {cls.class_name} (CRN: {cls.crn})
-                </option>
-              ))}
+              {classes.map((cls) => (<option key={cls.crn} value={cls.crn}>{cls.class_name} (CRN: {cls.crn})</option>))}
             </select>
           </div>
 
           {selectedClass && groups.length > 0 && !isLoadingGroups && (
             <div>
               <div className="mb-4 flex justify-between items-center">  
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Class Groups ({groups.length} groups, {students.length} students total)
-                </h2>
+                <h2 className="text-xl font-semibold text-gray-900">Class Groups ({groups.length} groups, {students.length} students total)</h2>
               </div>
               <div className="flex justify-center">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4">
                     {groups.map((group) => {
-                      const groupOffer = pendingOffers.find(
-                        o => o.groupId === group.group_id && o.classId === Number(selectedClass)
-                      );
-                      
-                      const acceptedOffer = acceptedOffers.find(
-                        o => o.groupId === group.group_id
-                      );
-                      
+                      const groupOffer = pendingOffers.find(o => o.groupId === group.group_id && o.classId === Number(selectedClass));
+                      const acceptedOffer = acceptedOffers.find(o => o.groupId === group.group_id);
                       const showAcceptedOverlay = acceptedOffer && !dismissedOffers.has(group.group_id);
                       
                       return (
-                        <div key={group.group_id} className={`bg-white rounded-lg shadow-sm p-6 flex flex-col h-full min-w-[400px] relative ${
-                          acceptedOffer ? 'border-4 border-green-500' : groupOffer ? 'border-4 border-yellow-500' : 'border border-gray-200'
-                        }`}>
+                        <div key={group.group_id} className={`bg-white rounded-lg shadow-sm p-6 flex flex-col h-full min-w-[400px] relative ${acceptedOffer ? 'border-4 border-green-500' : groupOffer ? 'border-4 border-yellow-500' : 'border border-gray-200'}`}>
                           {showAcceptedOverlay && (
                             <div className="absolute inset-0 bg-green-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-green-400">
-                              <button
-                                onClick={() => setDismissedOffers(prev => new Set(prev).add(group.group_id))}
-                                className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-2xl font-bold"
-                                title="Dismiss"
-                              >
-                                ×
-                              </button>
+                              <button onClick={() => setDismissedOffers(prev => new Set(prev).add(group.group_id))} className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-2xl font-bold" title="Dismiss">×</button>
                               <div className="text-center w-full">
-                                <h4 className="text-2xl font-bold text-green-800 mb-3">
-                                  ✓ Offer Accepted!
-                                </h4>
-                                <p className="text-lg font-semibold text-gray-800 mb-2">
-                                  Group {group.group_id} has hired:
-                                </p>
-                                <p className="text-2xl font-bold text-green-600">
-                                  {acceptedOffer.candidateName}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-4">
-                                  🎉 Congratulations! 🎉
-                                </p>
+                                <h4 className="text-2xl font-bold text-green-800 mb-3">✓ Offer Accepted!</h4>
+                                <p className="text-lg font-semibold text-gray-800 mb-2">Group {group.group_id} has hired:</p>
+                                <p className="text-2xl font-bold text-green-600">{acceptedOffer.candidateName}</p>
+                                <p className="text-sm text-gray-600 mt-4">🎉 Congratulations! 🎉</p>
                               </div>
                             </div>
                           )}
@@ -1358,43 +1266,13 @@ export function ManageGroupsTab() {
                           {groupOffer && (
                             <div className="absolute inset-0 bg-yellow-50 bg-opacity-95 rounded-lg z-20 flex items-center justify-center p-6 border-2 border-yellow-400">
                               <div className="text-center w-full">
-                                <h4 className="text-xl font-bold text-yellow-800 mb-3">
-                                  🎯 Pending Offer
-                                </h4>
-                                <p className="text-lg font-semibold text-gray-800 mb-2">
-                                  Group {group.group_id} wants to offer:
-                                </p>
-                                <p className="text-xl font-bold text-red-600 mb-4">
-                                  {groupOffer.candidateName}
-                                </p>
-                                <p className="text-sm text-gray-600 mb-6">
-                                  Do you approve this offer?
-                                </p>
+                                <h4 className="text-xl font-bold text-yellow-800 mb-3">🎯 Pending Offer</h4>
+                                <p className="text-lg font-semibold text-gray-800 mb-2">Group {group.group_id} wants to offer:</p>
+                                <p className="text-xl font-bold text-red-600 mb-4">{groupOffer.candidateName}</p>
+                                <p className="text-sm text-gray-600 mb-6">Do you approve this offer?</p>
                                 <div className="flex space-x-3 justify-center">
-                                  <button
-                                    onClick={() => respondToOffer(
-                                      groupOffer.classId, 
-                                      groupOffer.groupId, 
-                                      groupOffer.candidateId, 
-                                      true, 
-                                      groupOffer.candidateName
-                                    )}
-                                    className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
-                                  >
-                                    ✓ Accept
-                                  </button>
-                                  <button
-                                    onClick={() => respondToOffer(
-                                      groupOffer.classId, 
-                                      groupOffer.groupId, 
-                                      groupOffer.candidateId, 
-                                      false, 
-                                      groupOffer.candidateName
-                                    )}
-                                    className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-                                  >
-                                    × Reject
-                                  </button>
+                                  <button onClick={() => respondToOffer(groupOffer.classId, groupOffer.groupId, groupOffer.candidateId, true, groupOffer.candidateName)} className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">✓ Accept</button>
+                                  <button onClick={() => respondToOffer(groupOffer.classId, groupOffer.groupId, groupOffer.candidateId, false, groupOffer.candidateName)} className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">× Reject</button>
                                 </div>
                               </div>
                             </div>
@@ -1402,13 +1280,9 @@ export function ManageGroupsTab() {
                           
                           <div className="flex justify-between items-center mb-4">
                             <div className="flex items-center">
-                              <h3 className="text-xl font-semibold text-gray-900">
-                                {group.group_id !== -1 ? `Group ${group.group_id}` : 'No Group'}
-                              </h3>
+                              <h3 className="text-xl font-semibold text-gray-900">{group.group_id !== -1 ? `Group ${group.group_id}` : 'No Group'}</h3>
                             </div>
-                            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                              {group.students.length} student{group.students.length !== 1 ? 's' : ''}
-                            </span>
+                            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{group.students.length} student{group.students.length !== 1 ? 's' : ''}</span>
                           </div>
                           
                           {group.group_id !== -1 && (
@@ -1432,57 +1306,23 @@ export function ManageGroupsTab() {
                               <div className="relative">
                                 {scrollStates[group.group_id]?.canScrollUp && (
                                   <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
-                                    <div className="text-blue-600 text-xs font-semibold animate-bounce">
-                                      ▲ Scroll up
-                                    </div>
+                                    <div className="text-blue-600 text-xs font-semibold animate-bounce">▲ Scroll up</div>
                                   </div>
                                 )}
                                 
-                                <div 
-                                  className="space-y-3 max-h-[400px] overflow-y-auto pr-2"
-                                  onScroll={(e) => handleScroll(e, group.group_id)}
-                                >
+                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2" onScroll={(e) => handleScroll(e, group.group_id)}>
                                   {group.students.map((student) => (
                                     <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                       <div className="mb-3">
-                                        <p className="font-medium text-gray-900 text-base">
-                                          {student.f_name && student.l_name 
-                                            ? `${student.f_name} ${student.l_name}`
-                                            : student.f_name || student.l_name || 'No Name'
-                                          }
-                                        </p>
-                                        <p className="text-sm text-gray-600 truncate" title={student.email}>
-                                          {student.email}
-                                        </p>
+                                        <p className="font-medium text-gray-900 text-base">{student.f_name && student.l_name ? `${student.f_name} ${student.l_name}` : student.f_name || student.l_name || 'No Name'}</p>
+                                        <p className="text-sm text-gray-600 truncate" title={student.email}>{student.email}</p>
                                       </div>
                                       <div className="flex space-x-2">
-                                        <button
-                                          onClick={() => {
-                                            setSelectedStudent(student);
-                                            setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1);
-                                            setReassignModalOpen(true);
-                                          }}
-                                          className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                          title="Reassign student"
-                                        >
-                                          ↻ Reassign
-                                        </button>
+                                        <button onClick={() => { setSelectedStudent(student); setNewGroupId(availableGroups.length > 0 ? availableGroups[0] : 1); setReassignModalOpen(true); }} className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 px-3 rounded-md text-sm font-medium transition-colors" title="Reassign student">↻ Reassign</button>
                                         {group.group_id === -1 ? (
-                                          <button
-                                            onClick={() => deleteStudent(student.email)}
-                                            className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                            title="Delete student"
-                                          >
-                                            × Delete
-                                          </button>
+                                          <button onClick={() => deleteStudent(student.email)} className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors" title="Delete student">× Delete</button>
                                         ) : (
-                                          <button
-                                            onClick={() => removeStudentFromGroup(student.email)}
-                                            className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                                            title="Remove from group"
-                                          >
-                                            × Remove
-                                          </button>
+                                          <button onClick={() => removeStudentFromGroup(student.email)} className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-3 rounded-md text-sm font-medium transition-colors" title="Remove from group">× Remove</button>
                                         )}
                                       </div>
                                     </div>
@@ -1491,85 +1331,25 @@ export function ManageGroupsTab() {
                                 
                                 {scrollStates[group.group_id]?.canScrollDown && (
                                   <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
-                                    <div className="text-blue-600 text-xs font-semibold animate-bounce">
-                                      ▼ Scroll down
-                                    </div>
+                                    <div className="text-blue-600 text-xs font-semibold animate-bounce">▼ Scroll down</div>
                                   </div>
                                 )}
                               </div>
                             )}
-                            <button
-                              onClick={() => {
-                                setAddStudentGroupId(group.group_id);
-                                setAddStudentEmail('');
-                                setAddStudentModalOpen(true);
-                              }}
-                              className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors"
-                            >
-                              ➕ Add Student to Group
-                            </button>
+                            <button onClick={() => { setAddStudentGroupId(group.group_id); setAddStudentEmail(''); setAddStudentModalOpen(true); }} className="w-full mt-2 bg-green-100 text-green-700 hover:bg-green-200 py-2 px-3 rounded-md text-sm font-medium transition-colors">➕ Add Student to Group</button>
                           </div>
                           <div className="mt-auto pt-4 border-t border-gray-100 space-y-2">
                             {group.group_id !== -1 && (
                               <>
-                                <button
-                                  onClick={() => {
-                                    setSelectedGroupForJob(group.group_id);
-                                    setAssignJobModalOpen(true);
-                                  }}
-                                  className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-red-600 text-white hover:bg-red-700"
-                                >
-                                  💼 Assign Job
-                                </button>
-                                <button
-                                  onClick={() => openPopupModal(group.group_id)}
-                                  disabled={group.progress !== 'interview'}
-                                  className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                                    group.progress === 'interview'
-                                      ? 'bg-red-600 text-white hover:bg-red-700'
-                                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                  }`}
-                                  title={group.progress !== 'interview' ? 'Only available during interview stage' : 'Send popup to this group'}
-                                >
-                                  📢 Send Popup
-                                </button>
+                                <button onClick={() => { setSelectedGroupForJob(group.group_id); setAssignJobModalOpen(true); }} className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-red-600 text-white hover:bg-red-700">💼 Assign Job</button>
+                                <button onClick={() => openPopupModal(group.group_id)} disabled={group.progress !== 'interview'} className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${group.progress === 'interview' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`} title={group.progress !== 'interview' ? 'Only available during interview stage' : 'Send popup to this group'}>📢 Send Popup</button>
                               </>
                             )}
                             {acceptedOffer && (
-                              <button
-                                onClick={() => setDismissedOffers(prev => {
-                                  const newSet = new Set(prev);
-                                  if (newSet.has(group.group_id)) {
-                                    newSet.delete(group.group_id);
-                                  } else {
-                                    newSet.add(group.group_id);
-                                  }
-                                  return newSet;
-                                })}
-                                className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
-                              >
-                                {dismissedOffers.has(group.group_id) ? '👁️ Show Hired Info' : '🎉 View Hired Candidate'}
-                              </button>
+                              <button onClick={() => setDismissedOffers(prev => { const newSet = new Set(prev); if (newSet.has(group.group_id)) { newSet.delete(group.group_id); } else { newSet.add(group.group_id); } return newSet; })} className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700">{dismissedOffers.has(group.group_id) ? '👁️ Show Hired Info' : '🎉 View Hired Candidate'}</button>
                             )}
-                            <button
-                              onClick={() => startGroup(group.group_id)}
-                              disabled={group.isStarted || startingGroups.has(group.group_id)}
-                              className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors ${
-                                group.isStarted || startingGroups.has(group.group_id)
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                  : 'bg-blue-600 text-white hover:bg-blue-700'
-                              }`}
-                            >
-                              {startingGroups.has(group.group_id) ? (
-                                <div className="flex items-center justify-center">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                  Starting...
-                                </div>
-                              ) : group.isStarted ? (
-                                '✅ Started'
-                              ) : (
-                                '🚀 Start Group'
-                              )}
+                            <button onClick={() => startGroup(group.group_id)} disabled={group.isStarted || startingGroups.has(group.group_id)} className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors ${group.isStarted || startingGroups.has(group.group_id) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                              {startingGroups.has(group.group_id) ? (<div className="flex items-center justify-center"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Starting...</div>) : group.isStarted ? ('✅ Started') : ('🚀 Start Group')}
                             </button>
                           </div>
                         </div>
@@ -1592,9 +1372,7 @@ export function ManageGroupsTab() {
           {selectedClass && groups.length === 0 && !isLoadingGroups && (
             <div className="text-center py-8">
               <p className="text-gray-500 text-lg">No groups found for this class.</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Students need to be imported via CSV first.
-              </p>
+              <p className="text-gray-400 text-sm mt-2">Students need to be imported via CSV first.</p>
             </div>
           )}
 
@@ -1609,19 +1387,9 @@ export function ManageGroupsTab() {
       {assignJobModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">
-              {selectedGroupForJob 
-                ? `Assign Job to Group ${selectedGroupForJob}` 
-                : 'Assign Job to All Groups'}
-            </h3>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Job:
-            </label>
-            <select
-              value={selectedJobId || ''}
-              onChange={e => setSelectedJobId(parseInt(e.target.value))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
-            >
+            <h3 className="text-lg font-semibold mb-4">{selectedGroupForJob ? `Assign Job to Group ${selectedGroupForJob}` : 'Assign Job to All Groups'}</h3>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Select Job:</label>
+            <select value={selectedJobId || ''} onChange={e => setSelectedJobId(parseInt(e.target.value))} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4">
               <option value="">-- Select a Job --</option>
               {availableJobs.map((job) => (
                 <option key={job.id} value={job.id}>
