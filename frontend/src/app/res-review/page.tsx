@@ -65,6 +65,7 @@ export default function ResumesPage() {
   const totalDecisions = accepted + rejected + noResponse;
   const maxDecisions = totalDecisions >= 10;
   const resumeRef = useRef<HTMLDivElement | null>(null);
+  const hasUpdatedPageRef = useRef(false);
   const resumeInstructions = [
     "Review the resume and decide whether to accept, reject, or mark as no-response.",
     "You may accept as many as you like out of the 10.",
@@ -170,25 +171,29 @@ export default function ResumesPage() {
       currentPage: pathname,
     });
 
-    const updateCurrentPage = async () => {
-      try {
-        await fetch(`${API_BASE_URL}/users/update-currentpage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            page: "resumepage",
-            user_email: user.email,
-          }),
-          credentials: "include"
-        });
-      } catch (error) {
-        console.error("Error updating current page:", error);
-      }
-    };
+    // Only update the database once per page visit
+    if (!hasUpdatedPageRef.current) {
+      const updateCurrentPage = async () => {
+        try {
+          await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              page: "resumepage",
+              user_email: user.email,
+            }),
+            credentials: "include"
+          });
+          hasUpdatedPageRef.current = true; // Mark as updated
+        } catch (error) {
+          console.error("Error updating current page:", error);
+        }
+      };
 
-    updateCurrentPage();
+      updateCurrentPage();
+    }
   }, [socket, user, pathname]);
-
+  
   // Popup and group move listeners
   useEffect(() => {
     if (!socket || !user) return;

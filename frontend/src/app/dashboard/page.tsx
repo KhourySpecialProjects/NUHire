@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
@@ -138,7 +138,7 @@ const Dashboard = () => {
     
     loadDashboardData();
   }, [user]); // ✅ Only depends on user
-  
+
   useEffect(() => {
     if (!socket || !user) return;
 
@@ -157,12 +157,18 @@ const Dashboard = () => {
     };
   }, [socket, user]);
 
+  const hasUpdatedPageRef = useRef(false);
+
   useEffect(() => {
     if (!socket || !user?.email) return;
 
+    // Emit socket events (these are fine to run multiple times)
     socket.emit("studentOnline", { studentId: user.email }); 
     socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
 
+    // Only update the database once per page visit
+    if (hasUpdatedPageRef.current) return;
+    
     const updateCurrentPage = async () => {
       try {
         await fetch(`${API_BASE_URL}/users/update-currentpage`, {
@@ -171,6 +177,7 @@ const Dashboard = () => {
           body: JSON.stringify({ page: 'dashboard', user_email: user.email }),
           credentials: "include"
         });
+        hasUpdatedPageRef.current = true; // Mark as updated
       } catch (error) {
         console.error("Error updating current page:", error);
       }
@@ -178,7 +185,7 @@ const Dashboard = () => {
 
     updateCurrentPage();
   }, [socket, user?.email, pathname]);
-
+  
   useEffect(() => {
     if (!socket || !user) return;
       

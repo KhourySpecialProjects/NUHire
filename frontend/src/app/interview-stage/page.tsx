@@ -107,6 +107,8 @@ export default function Interview() {
     "Discuss with your group and submit your ratings for each candidate."
   ]; 
 
+  const hasUpdatedPageRef = useRef(false);
+
   // Use ref to always have access to current interviews state
   const interviewsRef = useRef(interviews);
   const [groupSubmissions, setGroupSubmissions] = useState(0);
@@ -437,6 +439,7 @@ export default function Interview() {
     });
   }, [finished, socket, user]);  
 
+
   useEffect(() => {
     if (!socket || !user?.email) return;
     
@@ -456,24 +459,27 @@ export default function Interview() {
 
     socket.on("moveGroup", handleMoveGroup);
 
-    const updateCurrentPage = async () => {
-      try {
-        await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
-          page: 'interviewpage', 
-          user_email: user.email
-        }, { withCredentials: true });
-      } catch (error) {
-        console.error("Error updating current page:", error);
-      }
-    };
-    
-    updateCurrentPage();
+    // Only update the database once per page visit
+    if (!hasUpdatedPageRef.current) {
+      const updateCurrentPage = async () => {
+        try {
+          await axios.post(`${API_BASE_URL}/users/update-currentpage`, {
+            page: 'interviewpage', 
+            user_email: user.email
+          }, { withCredentials: true });
+          hasUpdatedPageRef.current = true; // Mark as updated
+        } catch (error) {
+          console.error("Error updating current page:", error);
+        }
+      };
+      
+      updateCurrentPage();
+    }
     
     return () => {
       socket.off("moveGroup", handleMoveGroup);
     };
   }, [socket, user?.email, pathname, updateProgress]);
-
   useEffect(() => {
     if (!socket) return;
 

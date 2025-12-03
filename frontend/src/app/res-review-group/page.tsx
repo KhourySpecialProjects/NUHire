@@ -66,8 +66,8 @@ export default function ResReviewGroup() {
   const [selectedResumeNumber, setSelectedResumeNumber] = useState<number | "">("");
   const socket = useSocket();
   const initialFetchDone = useRef(false);
-  const { user, loading: userloading } = useAuth();
-  
+  const hasUpdatedPageRef = useRef(false);  const { user, loading: userloading } = useAuth();
+    
   // Job description state
   const [showJobDescription, setShowJobDescription] = useState(false);
   const [jobDescPath, setJobDescPath] = useState("");
@@ -329,22 +329,26 @@ export default function ResReviewGroup() {
     socket.emit("studentOnline", { studentId: user.email }); 
     socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
     
-    const updateCurrentPage = async () => {
-      try {
-        await fetch(`${API_BASE_URL}/users/update-currentpage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ page: 'resumepage2', user_email: user.email }),
-          credentials: "include"
-        });
-      } catch (error) {
-        console.error("Error updating current page:", error);
-      }
-    };
-    
-    updateCurrentPage(); 
+    // Only update the database once per page visit
+    if (!hasUpdatedPageRef.current) {
+      const updateCurrentPage = async () => {
+        try {
+          await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ page: 'resumepage2', user_email: user.email }),
+            credentials: "include"
+          });
+          hasUpdatedPageRef.current = true; // Mark as updated
+        } catch (error) {
+          console.error("Error updating current page:", error);
+        }
+      };
+      
+      updateCurrentPage();
+    }
   }, [socket, user?.email, pathname]);
-
+  
   useEffect(() => {
     const handleShowInstructions = () => {
       setShowInstructions(true);

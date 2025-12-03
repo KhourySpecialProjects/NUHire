@@ -50,6 +50,7 @@ export default function JobDescriptionPage() {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const pathname = usePathname();
+  const hasUpdatedPageRef = useRef(false);
   const jobDesInstructions = [
     "Read the job description that you are hiring for.",
     "Take notes by pressing the top right notes button, you can always access them.",
@@ -83,20 +84,24 @@ export default function JobDescriptionPage() {
     socket.emit("studentOnline", { studentId: user.email }); 
     socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
 
-    const updateCurrentPage = async () => {
-      try {
-        await fetch(`${API_BASE_URL}/users/update-currentpage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ page: 'jobdes', user_email: user.email }),
-          credentials: "include"
-        });
-      } catch (error) {
-        console.error("Error updating current page:", error);
-      }
-    };
+    // Only update the database once per page visit
+    if (!hasUpdatedPageRef.current) {
+      const updateCurrentPage = async () => {
+        try {
+          await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ page: 'jobdes', user_email: user.email }),
+            credentials: "include"
+          });
+          hasUpdatedPageRef.current = true; // Mark as updated
+        } catch (error) {
+          console.error("Error updating current page:", error);
+        }
+      };
 
-    updateCurrentPage();
+      updateCurrentPage();
+    }
   }, [socket, user?.email, pathname]);
 
   useEffect(() => {
