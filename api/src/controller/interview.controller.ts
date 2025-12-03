@@ -242,7 +242,7 @@ export class InterviewController {
       ]);
 
       const query = `
-        INSERT INTO interview_votes (student_id, group_id, class, question1, question2, question3, question4, candidate_id)
+        INSERT INTO InterviewPage (student_id, group_id, class, question1, question2, question3, question4, candidate_id)
         VALUES ?
       `;
 
