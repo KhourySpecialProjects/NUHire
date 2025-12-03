@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useProgress } from "../components/useProgress";
 import Navbar from "../components/navbar";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
@@ -68,6 +68,8 @@ export default function ResumesPage() {
   const maxDecisions = totalDecisions >= 10;
   const resumeRef = useRef<HTMLDivElement | null>(null);
   const hasUpdatedPageRef = useRef(false);
+  const lastLoggedIndexRef = useRef(-1);
+
   const resumeInstructions = [
     "Review the resume and decide whether to accept, reject, or mark as no-response.",
     "You may accept as many as you like out of the 10.",
@@ -76,13 +78,41 @@ export default function ResumesPage() {
     "They will just be another factor your group considers when making a final decision.",
   ];  
 
-  // Fetch job description for the group
+  const fetchResumes = useCallback(async (userClass: number) => {
+    try {
+      console.log("📄 [FETCH] Fetching resumes for class:", userClass);
+      console.log("📄 [FETCH] Request URL:", `${API_BASE_URL}/resume_pdf?class_id=${userClass}`);
+      
+      const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
+      
+      console.log("📄 [FETCH] Response status:", response.status, response.statusText);
+      console.log("📄 [FETCH] Response headers:", response.headers);
+      
+      const data = await response.json();
+      console.log("📄 [FETCH] Raw response data:", JSON.stringify(data, null, 2));
+      console.log("📄 [FETCH] Number of resumes:", data.length);
+      
+      data.forEach((resume: any, index: number) => {
+        console.log(`📄 [FETCH] Resume ${index}:`, JSON.stringify(resume, null, 2));
+      });
+      
+      const missingPaths = data.filter((r: any) => !r.file_path);
+      if (missingPaths.length > 0) {
+        console.warn(`⚠️ [FETCH] ${missingPaths.length} resumes are missing file_path!`);
+        console.warn("⚠️ [FETCH] Resumes missing file_path:", missingPaths);
+      }
+      
+      setResumesList(data);
+    } catch (error) {
+      console.error("❌ [FETCH] Error fetching resumes:", error);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchJobDescription = async () => {
       if (!user?.group_id || !user?.class) return;
       
       try {
-        // First get the job assignment
         const assignmentResponse = await fetch(
           `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`,
           { credentials: "include" }
@@ -90,7 +120,6 @@ export default function ResumesPage() {
         const assignmentData = await assignmentResponse.json();
         
         if (assignmentData.job) {
-          // Then get the job description details
           const jobResponse = await fetch(
             `${API_BASE_URL}/jobs/title?title=${encodeURIComponent(assignmentData.job)}&class_id=${user.class}`,
             { credentials: "include" }
@@ -128,7 +157,6 @@ export default function ResumesPage() {
     if (savedNoResponse !== null) setNoResponse(Number(savedNoResponse));
   }, []);
 
-  // Save progress to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('resumeReviewIndex', String(currentResumeIndex));
   }, [currentResumeIndex]);
@@ -163,7 +191,6 @@ export default function ResumesPage() {
 
     socket.emit("studentOnline", { studentId: user.email });
 
-    // Join the proper room for group coordination
     const roomId = `group_${user.group_id}_class_${user.class}`;
     console.log("Joining room:", roomId);
     socket.emit("joinGroup", roomId);
@@ -173,7 +200,6 @@ export default function ResumesPage() {
       currentPage: pathname,
     });
 
-    // Only update the database once per page visit
     if (!hasUpdatedPageRef.current) {
       const updateCurrentPage = async () => {
         try {
@@ -186,7 +212,7 @@ export default function ResumesPage() {
             }),
             credentials: "include"
           });
-          hasUpdatedPageRef.current = true; // Mark as updated
+          hasUpdatedPageRef.current = true;
         } catch (error) {
           console.error("Error updating current page:", error);
         }
@@ -196,7 +222,6 @@ export default function ResumesPage() {
     }
   }, [socket, user?.email, pathname]);
 
-  // Popup and group move listeners
   useEffect(() => {
     if (!socket || !user) return;
 
@@ -231,7 +256,6 @@ export default function ResumesPage() {
     };
   }, [socket, user]);
 
-  // Group completed res review listener
   useEffect(() => {
     if (!socket) return;
 
@@ -246,14 +270,12 @@ export default function ResumesPage() {
     };
   }, [socket]);
 
-  // Complete resumes function
   const completeResumes = async () => {
     if (!socket || !user) {
       console.error('Socket or user not available');
       return;
     }
 
-    // Send all votes to backend before moving on
     if (votes.length > 0) {
       console.log(`📤 [BATCH-VOTE] Sending ${votes.length} votes to backend`);
       try {
@@ -276,7 +298,6 @@ export default function ResumesPage() {
         console.log("✅ [BATCH-VOTE] All votes saved successfully:", responseData);
       } catch (error) {
         console.error("❌ [BATCH-VOTE] Error sending votes to backend:", error);
-        // Show error to user - don't proceed if votes failed to save
         setPopup({
           headline: "Error Saving Votes",
           message: "Failed to save your resume decisions. Please try again."
@@ -300,7 +321,6 @@ export default function ResumesPage() {
     });
   };
 
-  // User completed res review
   useEffect(() => {
     if (!socket || totalDecisions !== 10 || !user || !user.email) return;
 
@@ -310,47 +330,16 @@ export default function ResumesPage() {
     });
   }, [socket, totalDecisions, user]);
 
-const fetchResumes = async (userClass: number) => {
-  try {
-    console.log("📄 [FETCH] Fetching resumes for class:", userClass);
-    console.log("📄 [FETCH] Request URL:", `${API_BASE_URL}/resume_pdf?class_id=${userClass}`);
-    
-    const response = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${userClass}`, { credentials: "include" });
-    
-    console.log("📄 [FETCH] Response status:", response.status, response.statusText);
-    console.log("📄 [FETCH] Response headers:", response.headers);
-    
-    const data = await response.json();
-    console.log("📄 [FETCH] Raw response data:", JSON.stringify(data, null, 2));
-    console.log("📄 [FETCH] Number of resumes:", data.length);
-    
-    // Log ALL resumes to see what's in the database
-    data.forEach((resume: any, index: number) => {
-      console.log(`📄 [FETCH] Resume ${index}:`, JSON.stringify(resume, null, 2));
-    });
-    
-    // Check if any resumes are missing file_path
-    const missingPaths = data.filter((r: any) => !r.file_path);
-    if (missingPaths.length > 0) {
-      console.warn(`⚠️ [FETCH] ${missingPaths.length} resumes are missing file_path!`);
-      console.warn("⚠️ [FETCH] Resumes missing file_path:", missingPaths);
-    }
-    
-    setResumesList(data);
-  } catch (error) {
-    console.error("❌ [FETCH] Error fetching resumes:", error);
-  }
-};
-
   useEffect(() => {
     if (user?.class) {
       fetchResumes(user.class);
     }
-  }, [user]);
+  }, [user?.class, fetchResumes]);
 
-  // Add this new useEffect to log current resume info
   useEffect(() => {
-    if (resumesList.length > 0 && resumesList[currentResumeIndex]) {
+    if (resumesList.length > 0 && 
+        resumesList[currentResumeIndex] && 
+        lastLoggedIndexRef.current !== currentResumeIndex) {
       const currentResume = resumesList[currentResumeIndex];
       console.log("📋 [CURRENT RESUME] Index:", currentResumeIndex);
       console.log("📋 [CURRENT RESUME] Data:", currentResume);
@@ -359,14 +348,9 @@ const fetchResumes = async (userClass: number) => {
       console.log("📋 [CURRENT RESUME] Full URL:", `${API_BASE_URL}/${currentResume.file_path}`);
       console.log("📋 [CURRENT RESUME] Name:", `${currentResume.first_name} ${currentResume.last_name}`);
       console.log("📋 [CURRENT RESUME] Title:", currentResume.title);
+      lastLoggedIndexRef.current = currentResumeIndex;
     }
   }, [currentResumeIndex, resumesList]);
-
-    useEffect(() => {
-      if (user?.class) {
-        fetchResumes(user.class);
-      }
-    }, [user]);
 
   useEffect(() => {
     if (!showInstructions) {
@@ -409,7 +393,7 @@ const fetchResumes = async (userClass: number) => {
       resume_number: number;
       vote: "yes" | "no" | "unanswered";
     } = {
-      student_id: String(user.id), // ✅ Explicitly convert to string
+      student_id: String(user.id),
       group_id: user.group_id,
       class: user.class,
       timespent: timeSpent,
@@ -424,8 +408,8 @@ const fetchResumes = async (userClass: number) => {
   const nextResume = () => {
     if (currentResumeIndex < resumesList.length - 1) {
       setFadingEffect(true);
-      setResumeLoading(true); // Set resume loading when changing resumes
-      setShowJobDescription(false); // Reset to resume view when moving to next candidate
+      setResumeLoading(true);
+      setShowJobDescription(false);
       setTimeout(() => {
         setCurrentResumeIndex(currentResumeIndex + 1);
         setRestricted(false);
@@ -496,7 +480,6 @@ const fetchResumes = async (userClass: number) => {
     nextResume();
   };
 
-
   const handleNoResponse = () => {
     console.log("⏭️ [ACTION] handleNoResponse called");
     if (maxDecisions) return;
@@ -510,6 +493,20 @@ const fetchResumes = async (userClass: number) => {
     nextResume();
   };
 
+  const currentResumeFile = useMemo(() => {
+    if (resumesList.length > 0 && resumesList[currentResumeIndex]) {
+      return `${API_BASE_URL}/${resumesList[currentResumeIndex].file_path}`;
+    }
+    return null;
+  }, [currentResumeIndex, resumesList]);
+
+  const currentJobDescFile = useMemo(() => {
+    if (jobDescPath) {
+      return `${API_BASE_URL}/${jobDescPath}`;
+    }
+    return null;
+  }, [jobDescPath]);
+
   if (userloading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
@@ -520,7 +517,6 @@ const fetchResumes = async (userClass: number) => {
       </div>
     );
   }  
-  
 
   return (
     <div className="h-screen flex flex-col">
@@ -540,7 +536,6 @@ const fetchResumes = async (userClass: number) => {
         )}
 
         <div className="flex-1 flex gap-3 px-4 pb-2 overflow-hidden">
-          {/* Left sidebar - compact */}
           <div className="flex flex-col gap-2 w-[280px] min-w-[280px]">
             <div className="bg-navy shadow-lg rounded-lg p-3 text-sand text-center">
               <h2 className="text-sm font-semibold">Time Remaining:</h2>
@@ -562,18 +557,16 @@ const fetchResumes = async (userClass: number) => {
               </div>
             </div>
 
-            {/* Toggle button for job description */}
             <button
               className="bg-blue-600 text-white font-rubik px-4 py-2 rounded-lg shadow-md transition duration-300 hover:bg-blue-700"
               onClick={() => {
                 setShowJobDescription(!showJobDescription);
-                setJobDescPageNumber(1); // Reset to page 1 when toggling
+                setJobDescPageNumber(1);
               }}
             >
               {showJobDescription ? "← Back to Resume" : "View Job Description →"}
             </button>
 
-            {/* Job description page navigation */}
             {showJobDescription && jobDescNumPages && jobDescNumPages > 1 && (
               <div className="flex items-center justify-between bg-navy p-2 rounded-lg">
                 <button
@@ -596,7 +589,6 @@ const fetchResumes = async (userClass: number) => {
               </div>
             )}
 
-            {/* Action buttons - compact */}
             <div className="flex flex-col gap-2">
               {!restricted && (
                 <>
@@ -640,15 +632,14 @@ const fetchResumes = async (userClass: number) => {
             </div>
           </div>
 
-          {/* PDF viewer - takes remaining space, no extra margins */}
           <div className="flex-1 flex justify-center items-start overflow-hidden bg-gray-100">
             <div
               className={`${fadingEffect ? "fade-out" : "fade-in"} h-full w-full overflow-auto flex justify-center`}
               ref={resumeRef}
             >
-              {showJobDescription && jobDescPath ? (
+              {showJobDescription && currentJobDescFile ? (
                 <Document
-                  file={`${API_BASE_URL}/${jobDescPath}`}
+                  file={currentJobDescFile}
                   onLoadError={console.error}
                   onLoadSuccess={({ numPages }) => {
                     console.log("Job description loaded with", numPages, "pages");
@@ -667,9 +658,9 @@ const fetchResumes = async (userClass: number) => {
                     renderAnnotationLayer={true}
                   />
                 </Document>
-              ) : resumesList.length > 0 && resumesList[currentResumeIndex] ? (
+              ) : currentResumeFile ? (
                 <Document
-                  file={`${API_BASE_URL}/${resumesList[currentResumeIndex].file_path}`}
+                  file={currentResumeFile}
                   onLoadError={console.error}
                   onLoadSuccess={() => {
                     console.log("Resume loaded successfully");
@@ -699,7 +690,6 @@ const fetchResumes = async (userClass: number) => {
           </div>
         </div>
 
-        {/* Compact footer navigation */}
         <div className="flex justify-between px-4 pb-2 gap-2">
           <button
             onClick={() => (window.location.href = "/jobdes")}
