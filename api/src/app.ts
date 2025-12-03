@@ -29,6 +29,9 @@ import csvRoutes from './routes/csv.routes';
 import deleteRoutes from './routes/delete.routes';
 import factsRoutes from './routes/facts.routes';
 
+const routeCallCount: Record<string, number> = {};
+const routeCallTimestamps: Record<string, number[]> = {};
+
 export class App {
   public app: Application;
   public server: HTTPServer;
@@ -102,6 +105,28 @@ export class App {
 
     // Logging middleware
     this.app.use((req, res, next) => {
+      const route = `${req.method} ${req.path}`;
+      
+      // Increment call count
+      if (!routeCallCount[route]) {
+        routeCallCount[route] = 0;
+        routeCallTimestamps[route] = [];
+      }
+      routeCallCount[route]++;
+      routeCallTimestamps[route].push(Date.now());
+      
+      // Log every request with count
+      console.log(`📊 [${new Date().toISOString()}] ${route} - Call #${routeCallCount[route]}`);
+      
+      // Warn if same route called many times in short period
+      const recentCalls = routeCallTimestamps[route].filter(
+        timestamp => Date.now() - timestamp < 60000 // Last minute
+      );
+      
+      if (recentCalls.length > 50) {
+        console.warn(`⚠️  WARNING: ${route} called ${recentCalls.length} times in the last minute!`);
+      }
+      
       next();
     });
   }
@@ -115,6 +140,34 @@ export class App {
     this.app.get('/health', (req, res) => {
       res.json({ status: 'ok', port: process.env.PORT });
     });
+
+    // Stats endpoint
+    this.app.get('/api/stats', (req, res) => {
+      const stats = Object.entries(routeCallCount)
+        .map(([route, count]) => {
+          const timestamps = routeCallTimestamps[route];
+          const lastMinute = timestamps.filter(t => Date.now() - t < 60000).length;
+          const lastHour = timestamps.filter(t => Date.now() - t < 3600000).length;
+          
+          return {
+            route,
+            totalCalls: count,
+            callsLastMinute: lastMinute,
+            callsLastHour: lastHour,
+            lastCall: new Date(timestamps[timestamps.length - 1]).toISOString()
+          };
+        })
+        .sort((a, b) => b.totalCalls - a.totalCalls);
+      
+      res.json({
+        stats,
+        topRoutes: stats.slice(0, 10),
+        warnings: stats.filter(s => s.callsLastMinute > 50)
+      });
+    });
+
+    // API routes
+    this.app.use('/auth', authRoutes(this.db));
 
     // API routes
     this.app.use('/auth', authRoutes(this.db));

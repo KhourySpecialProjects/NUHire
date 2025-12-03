@@ -423,14 +423,19 @@ export default function Interview() {
 
     fetchGroupSize();
     fetchFinished();
-    console.log(groupFinished);
+  }, [socket, user]); 
+  
+
+
+  useEffect(() => {
+    if (!socket || !user || !finished) return;
 
     socket.emit("interviewStageFinished", {
       group_id: user.group_id,
       class_id: user.class,
       student_id: user.id,
     });
-  }, [socket, user, finished]);
+  }, [finished, socket, user]);  
 
   useEffect(() => {
     if (!socket || !user?.email) return;
