@@ -129,19 +129,16 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Fetch job description for this user
-    fetchJobDescription(user);
-    
-    // Fetch actual progress from database
-    const loadProgress = async () => {
+    const loadDashboardData = async () => {
+      await fetchJobDescription(user);
       const currentProgress = await fetchProgress(user);
       setProgress(currentProgress);
       localStorage.setItem("progress", currentProgress);
     };
     
-    loadProgress();
-  }, [user, fetchJobDescription, fetchProgress]);
-
+    loadDashboardData();
+  }, [user]); // ✅ Only depends on user
+  
   useEffect(() => {
     if (!socket || !user) return;
 
