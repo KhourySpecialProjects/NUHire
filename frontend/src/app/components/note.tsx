@@ -1,6 +1,6 @@
 "use client"; // Declares that this page is a client component
 const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com"; // API base URL from environment variables
-import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
+import React, { useState, useCallback, useEffect } from "react"; // Importing React and hooks for state and effect management
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 
@@ -25,7 +25,7 @@ const NotesPage = () => {
     }
   }, [user]);
 
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     if (!userEmail) return;
     try {
       const response = await fetch(`${API_BASE_URL}/notes?user_email=${encodeURIComponent(userEmail)}`, {
@@ -37,7 +37,12 @@ const NotesPage = () => {
     } catch (error) {
       console.error("Error fetching notes:", error);
     }
-  };
+  }, [userEmail]); // ✅ Make fetchNotes stable with useCallback
+
+// Then the useEffect becomes:
+useEffect(() => {
+  fetchNotes();
+}, [fetchNotes]); // ✅ Now depends on the stable callback
 
   useEffect(() => {
     socket.on("jobUpdated", () => {
@@ -49,9 +54,6 @@ const NotesPage = () => {
     };
   }, []);
   
-  useEffect(() => {
-    fetchNotes();
-  }, [userEmail]);
 
   const saveNote = async () => {
     if (!note.trim()) return;
@@ -75,12 +77,6 @@ const NotesPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchNotes();
-    }
-  }, [isOpen]);
-
   return (
     <div className="relative p-4">
       {/* Toggle Notes Button */}
@@ -100,7 +96,7 @@ const NotesPage = () => {
               className="w-full p-2 border border-gray-300 bg-northeasternWhite text-northeasternBlack rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-            />
+            />t
             <button
               onClick={saveNote}
               className="mt-2 w-full bg-northeasternWhite border border-gray-300 text-northeasternBlack py-2 rounded-md hover:bg-sand transition"

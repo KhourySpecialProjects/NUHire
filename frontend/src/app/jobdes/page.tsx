@@ -166,7 +166,7 @@ export default function JobDescriptionPage() {
     };
 
     fetchJob();
-  }, [user]);
+  }, [user?.group_id, user?.class]);
 
 
       useEffect(() => {

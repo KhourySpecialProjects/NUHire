@@ -154,7 +154,7 @@ export default function Interview() {
     };
 
     fetchJobDescription();
-  }, [user]);
+  }, [user?.group_id, user?.class]);
 
   const fetchFinished = async () => {
     try {
@@ -569,31 +569,8 @@ export default function Interview() {
   const completeInterview = async () => {
     if (!socket || !user) return;
     
-    // Send all interview votes to backend before moving on
-    if (votes.length > 0) {
-      console.log(`📤 [BATCH-INTERVIEW-VOTE] Sending ${votes.length} interview votes to backend`);
-      try {
-        const response = await axios.post(`${API_BASE_URL}/interview/batch-vote`, {
-          votes
-        }, { withCredentials: true });
-
-        if (response.status !== 200) {
-          console.error("❌ [BATCH-INTERVIEW-VOTE] Error response from backend");
-          throw new Error("Failed to save interview votes");
-        }
-        
-        console.log("✅ [BATCH-INTERVIEW-VOTE] All interview votes saved successfully:", response.data);
-      } catch (error) {
-        console.error("❌ [BATCH-INTERVIEW-VOTE] Error sending votes to backend:", error);
-        // Show error to user - don't proceed if votes failed to save
-        setPopup({
-          headline: "Error Saving Ratings",
-          message: "Failed to save your interview ratings. Please try again."
-        });
-        return;
-      }
-    }
-    
+    // Votes are already submitted when the last interview was submitted
+    // Just update progress and navigate
     updateProgress(user, "offer");
     localStorage.setItem("progress", "offer");
     localStorage.removeItem('interviewStage_videoIndex');
@@ -643,29 +620,62 @@ export default function Interview() {
       return;
     }
 
-    // Just add to queue, don't await
+    // Add current vote to the queue
+    let updatedVotes;
     if (noShow) {
-      sendResponseToBackend(1, 1, 1, 1, currentVid.resume_id);
+      const voteData = {
+        student_id: String(user!.id),
+        group_id: user!.group_id,
+        studentClass: user!.class,
+        question1: 1,
+        question2: 1,
+        question3: 1,
+        question4: 1,
+        candidate_id: currentVid.resume_id
+      };
+      updatedVotes = [...votes, voteData];
+      setVotes(updatedVotes);
     } else {
-      sendResponseToBackend(
-        overall,
-        professionalPresence,
-        qualityOfAnswer,
-        personality,
-        currentVid.resume_id
-      );
+      const voteData = {
+        student_id: String(user!.id),
+        group_id: user!.group_id,
+        studentClass: user!.class,
+        question1: overall,
+        question2: professionalPresence,
+        question3: qualityOfAnswer,
+        question4: personality,
+        candidate_id: currentVid.resume_id
+      };
+      updatedVotes = [...votes, voteData];
+      setVotes(updatedVotes);
     }
 
     const nextVideoIndex = videoIndex + 1;
     const isLastInterview = nextVideoIndex >= interviews.length;
 
     if (!isLastInterview) {
+      // Not the last interview - just move to next video
       setVideoIndex(nextVideoIndex);
       setVideoLoaded(false); 
       resetRatings();
       setNoShow(false);
     } else {
+      // This is the last interview - submit all votes to database
+      console.log(`📤 [BATCH-INTERVIEW-VOTE] Last interview submitted - sending ${updatedVotes.length} votes to backend`);
+      
       try {
+        const response = await axios.post(`${API_BASE_URL}/interview/batch-vote`, {
+          votes: updatedVotes
+        }, { withCredentials: true });
+
+        if (response.status !== 200) {
+          console.error("❌ [BATCH-INTERVIEW-VOTE] Error response from backend");
+          throw new Error("Failed to save interview votes");
+        }
+        
+        console.log("✅ [BATCH-INTERVIEW-VOTE] All interview votes saved successfully:", response.data);
+        
+        // Mark as finished in the database
         await axios.post(`${API_BASE_URL}/interview/status/finished`, {
           student_id: user?.id,
           finished: 1,
@@ -674,9 +684,14 @@ export default function Interview() {
         }, {
           withCredentials: true,
         });
+        
         setFinished(true);
       } catch (err) {
-        console.error("Failed to mark as finished:", err);
+        console.error("❌ [BATCH-INTERVIEW-VOTE] Error saving votes:", err);
+        setPopup({
+          headline: "Error Saving Ratings",
+          message: "Failed to save your interview ratings. Please try again."
+        });
       }
     }
   };

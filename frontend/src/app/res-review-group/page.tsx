@@ -117,7 +117,7 @@ export default function ResReviewGroup() {
     };
 
     fetchJobDescription();
-  }, [user]);
+  }, [user?.group_id, user?.class]);
 
   // Fetch group size
   useEffect(() => {

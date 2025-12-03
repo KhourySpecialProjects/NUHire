@@ -105,7 +105,7 @@ const Dashboard = () => {
     } finally {
       setJobLoading(false);
     }
-  }, []);
+  }, [user?.group_id, user?.class]);
 
   const refreshDashboardUI = useCallback(async () => {
     if (!user) return;
@@ -131,7 +131,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error refreshing dashboard UI:", error);
     }
-  }, [user]); // ✅ Only depends on user
+  }, [user?.group_id, user?.class]); // ✅ Only depends on user
 
   useEffect(() => {
     if (!user) return;

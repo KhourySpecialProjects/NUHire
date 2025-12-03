@@ -276,36 +276,8 @@ export default function ResumesPage() {
       return;
     }
 
-    if (votes.length > 0) {
-      console.log(`📤 [BATCH-VOTE] Sending ${votes.length} votes to backend`);
-      try {
-        const response = await fetch(`${API_BASE_URL}/resume/batch-vote`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ votes }),
-          credentials: "include"
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("❌ [BATCH-VOTE] Error response from backend:", errorData);
-          throw new Error("Failed to save votes");
-        }
-        
-        const responseData = await response.json();
-        console.log("✅ [BATCH-VOTE] All votes saved successfully:", responseData);
-      } catch (error) {
-        console.error("❌ [BATCH-VOTE] Error sending votes to backend:", error);
-        setPopup({
-          headline: "Error Saving Votes",
-          message: "Failed to save your resume decisions. Please try again."
-        });
-        return;
-      }
-    }
-
+    // Votes are already submitted when the 10th vote was cast
+    // Just update progress and navigate
     updateProgress(user, "res_2");
     localStorage.setItem("progress", "res_2");
     localStorage.removeItem('resumeReviewIndex');
@@ -320,15 +292,6 @@ export default function ResumesPage() {
       targetPage: "/res-review-group"
     });
   };
-
-  useEffect(() => {
-    if (!socket || totalDecisions !== 10 || !user || !user.email) return;
-
-    console.log(`User ${user.email} completed res-review with 10 decisions`);
-    socket.emit("userCompletedResReview", {
-      groupId: user.group_id,
-    });
-  }, [socket, totalDecisions, user]);
 
   useEffect(() => {
     if (user?.class) {
@@ -361,7 +324,7 @@ export default function ResumesPage() {
     }
   }, [currentResumeIndex, showInstructions]);
 
-  const sendVoteToBackend = (vote: "yes" | "no" | "unanswered") => {
+  const sendVoteToBackend = async (vote: "yes" | "no" | "unanswered") => {
     console.log("🗳️ [VOTE] Adding vote to queue");
     console.log("🗳️ [VOTE] Current resume index:", currentResumeIndex);
     console.log("🗳️ [VOTE] Resume at index:", resumesList[currentResumeIndex]);
@@ -402,7 +365,45 @@ export default function ResumesPage() {
     };
 
     console.log("🗳️ [VOTE] Adding vote to array:", voteData);
-    setVotes(prev => [...prev, voteData]);
+    const updatedVotes = [...votes, voteData];
+    setVotes(updatedVotes);
+
+    // If this is the 10th vote, submit immediately
+    if (updatedVotes.length === 10) {
+      console.log("📤 [BATCH-VOTE] 10th vote cast - submitting all votes immediately");
+      try {
+        const response = await fetch(`${API_BASE_URL}/resume/batch-vote`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ votes: updatedVotes }),
+          credentials: "include"
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("❌ [BATCH-VOTE] Error response from backend:", errorData);
+          throw new Error("Failed to save votes");
+        }
+        
+        const responseData = await response.json();
+        console.log("✅ [BATCH-VOTE] All 10 votes saved successfully:", responseData);
+        
+        // Emit socket event that user completed
+        if (socket) {
+          socket.emit("userCompletedResReview", {
+            groupId: user.group_id,
+          });
+        }
+      } catch (error) {
+        console.error("❌ [BATCH-VOTE] Error sending votes to backend:", error);
+        setPopup({
+          headline: "Error Saving Votes",
+          message: "Failed to save your resume decisions. Please try again."
+        });
+      }
+    }
   };
 
   const nextResume = () => {
