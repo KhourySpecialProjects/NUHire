@@ -378,7 +378,7 @@ export class ResumeController {
       ]);
 
       const query = `
-        INSERT INTO resume_votes (student_id, group_id, class, timespent, resume_number, vote)
+        INSERT INTO Resume (student_id, group_id, class, timespent, resume_number, vote)
         VALUES ?
       `;
 

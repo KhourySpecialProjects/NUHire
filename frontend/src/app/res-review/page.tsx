@@ -106,8 +106,8 @@ export default function ResumesPage() {
     };
 
     fetchJobDescription();
-  }, [user]);
-
+  }, [user?.group_id, user?.class]); 
+  
   useEffect(() => {
     if (totalDecisions === 10) {
       localStorage.removeItem('resumeReviewIndex');
