@@ -324,7 +324,7 @@ export function ManageGroupsTab() {
     } catch (error) {
       console.error('Error refreshing groups and students:', error);
     }
-  }, [selectedClass, organizeStudentsIntoGroups]); 
+  }, [selectedClass]); 
 
   useEffect(() => {
     if (!socket) return;
@@ -339,7 +339,7 @@ export function ManageGroupsTab() {
     return () => {
       socket.off('userAdded', handleUserAdded);
     };
-  }, [socket, refreshGroupsAndStudents]);
+  }, [socket]);
 
   useEffect(() => {
     if (!socket || !selectedClass) return;

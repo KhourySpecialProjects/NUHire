@@ -231,7 +231,8 @@ const Dashboard = () => {
       socket.off("jobUpdated", handleJobUpdated);
       socket.off("receivePopup", handleReceivePopup);
     };
-  }, [socket, user, updateProgress, refreshDashboardUI]);
+  }, [socket, user?.email, user?.group_id, user?.class, updateProgress]); 
+
 
   const isStepUnlocked = (stepKey: string) => {
     
