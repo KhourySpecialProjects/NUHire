@@ -613,14 +613,14 @@ export default function MakeOffer() {
     };
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (groupId === user.group_id && classId === user.class) {
+      if (groupId === user.group_id && classId == user.class) {
         console.log("📡 Student removed from group - refreshing group size");
         fetchGroupSize();
       }
     };
 
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (groupId === user.group_id && classId === user.class) {
+      if (groupId === user.group_id && classId == user.class) {
         console.log("📡 Student added to group - refreshing group size");
         fetchGroupSize();
       }

@@ -217,7 +217,7 @@ export default function ResReviewGroup() {
     socket.emit("joinGroup", roomId);
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (groupId === user.group_id && classId === user.class) {
+      if (groupId === user.group_id && classId == user.class) {
         console.log("📡 Student removed from group - refreshing group size");
         // Refetch group size
         fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
@@ -266,7 +266,7 @@ export default function ResReviewGroup() {
       groupId: number; 
       classId: number 
     }) => {
-      if (groupId === user.group_id && classId === user.class) {
+      if (groupId === user.group_id && classId == user.class) {
         setTeamConfirmations(prev => {
           if (!prev.includes(studentId)) {
             return [...prev, studentId];
@@ -300,7 +300,7 @@ export default function ResReviewGroup() {
     };
 
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (groupId === user.group_id && classId === user.class) {
+      if (groupId === user.group_id && classId == user.class) {
         console.log("📡 Student added to group - refreshing group size");
         // Refetch group size
         fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
@@ -348,6 +348,25 @@ export default function ResReviewGroup() {
     };
   }, [socket, user]);
 
+  // Add this useEffect after the groupSize fetch useEffect (around line 140)
+  useEffect(() => {
+    // Reset confirmations when group size changes (student added/removed)
+    if (groupSize > 0) {
+      console.log("📊 [GROUP-SIZE-CHANGE] Group size changed to:", groupSize);
+      console.log("📊 [GROUP-SIZE-CHANGE] Current confirmations:", teamConfirmations.length);
+      
+      // If confirmations >= old group size, but new size is larger, we need to reset
+      // This handles the case where 2/2 confirmed, then 3rd person joins
+      const previousGroupSize = teamConfirmations.length; // Assuming if everyone confirmed, length = size
+      
+      if (teamConfirmations.length > 0 && teamConfirmations.length >= groupSize) {
+        console.log("📊 [GROUP-SIZE-CHANGE] Resetting confirmations - group size increased");
+        setTeamConfirmations([]);
+        setHasConfirmed(false);
+      }
+    }
+  }, [groupSize]);
+      
   // Student online and page change
   useEffect(() => {
     if (!socket || !user || !user.email) return;
@@ -454,6 +473,15 @@ export default function ResReviewGroup() {
 
   const selectedResume = resumes.find(r => r.resume_number === selectedResumeNumber);
   const selectedCount = Object.values(checkedState).filter((checked) => checked).length;
+
+
+  // Add this useEffect to res-review-group to log state changes
+useEffect(() => {
+  console.log("🔍 [BUTTON-STATE] selectedCount:", selectedCount);
+  console.log("🔍 [BUTTON-STATE] teamConfirmations.length:", teamConfirmations.length);
+  console.log("🔍 [BUTTON-STATE] groupSize:", groupSize);
+  console.log("🔍 [BUTTON-STATE] Button should be disabled:", selectedCount !== 4 || teamConfirmations.length < groupSize);
+}, [selectedCount, teamConfirmations, groupSize]);
 
   if (userloading) {
     return (

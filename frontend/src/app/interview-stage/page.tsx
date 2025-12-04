@@ -169,7 +169,7 @@ export default function Interview() {
       const newGroupSubmissions = response.data.finishedCount;
       setGroupSubmissions(newGroupSubmissions);
       setGroupFinished(newGroupSubmissions >= groupSize);
-      
+
     } catch (err) {
       console.error("❌ [FETCH-FINISHED] Failed to fetch finished count:", err);
     }
@@ -527,7 +527,7 @@ export default function Interview() {
     };
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (user && groupId === user.group_id && classId === user.class) {
+      if (user && groupId === user.group_id && classId == user.class) {
         console.log("📡 [STUDENT-REMOVED] Event received - groupId:", groupId, "classId:", classId);
         console.log("📡 [STUDENT-REMOVED] Current state - finished:", finished, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
         console.log("📡 [STUDENT-REMOVED] Refreshing group size and finished count...");
@@ -543,7 +543,7 @@ export default function Interview() {
 
     // Update handleStudentAdded (around line 528-538)
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (user && groupId === user.group_id && classId === user.class) {
+      if (user && groupId === user.group_id && classId == user.class) {
         console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "classId:", classId);
         console.log("📡 [STUDENT-ADDED] Current state - finished:", finished, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
         console.log("📡 [STUDENT-ADDED] Refreshing group size and finished count...");
