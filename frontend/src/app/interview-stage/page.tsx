@@ -520,6 +520,7 @@ export default function Interview() {
       if (user && groupId === user.group_id && classId === user.class) {
         console.log("📡 Student removed from group - refreshing group size");
         fetchGroupSize();
+        fetchFinished();
       }
     };
 
@@ -548,6 +549,14 @@ export default function Interview() {
       socket.off("studentRemovedFromGroup", handleStudentRemoved);
     };
   }, [socket, user]);
+
+    // Auto-complete if group size changes and all remaining members are done
+  useEffect(() => {
+    if (finished && groupSize > 0 && groupSubmissions >= groupSize) {
+      console.log("📡 Group size changed - all remaining members finished, enabling progression");
+      setGroupFinished(true);
+    }
+  }, [groupSize, groupSubmissions, finished]);
 
   useEffect(() => {
     if (!socket || !user || !currentVid) {

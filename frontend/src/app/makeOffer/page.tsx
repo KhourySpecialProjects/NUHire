@@ -361,6 +361,15 @@ export default function MakeOffer() {
   }, [interviews]);
 
   useEffect(() => {
+    if (selectedCandidateId && groupSize > 0) {
+      const confirmations = offerConfirmations[selectedCandidateId] || [];
+      if (confirmations.length >= groupSize) {
+        console.log("📡 Group size changed - all remaining members confirmed");
+      }
+    }
+  }, [groupSize, offerConfirmations, selectedCandidateId]);
+
+  useEffect(() => {
     const handleShowInstructions = () => {
       setShowInstructions(true);
     };
