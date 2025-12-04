@@ -557,8 +557,15 @@ export class GroupController {
           }
 
           console.log('✅ New student created successfully:', insertResult);
-          this.io.emit('userAdded');
-          console.log('Emitted userAdded event via WebSocket');
+          
+          // Emit socket event to notify the group
+          const roomId = `group_${group_id}_class_${class_id}`;
+          this.io.to(roomId).emit('studentAddedToGroup', {
+            email,
+            groupId: group_id,
+            classId: class_id
+          });
+          console.log(`📡 Emitted studentAddedToGroup to room: ${roomId}`);
           
           res.status(201).json({
             message: 'Student created and added to group successfully',
@@ -603,8 +610,15 @@ export class GroupController {
         }
 
         console.log(`✅ Student ${email} successfully added to group ${group_id} in class ${class_id}`);
-        this.io.emit('userAdded');
-        console.log('Emitted userAdded event via WebSocket');
+        
+        // Emit socket event to notify the group
+        const roomId = `group_${group_id}_class_${class_id}`;
+        this.io.to(roomId).emit('studentAddedToGroup', {
+          email,
+          groupId: group_id,
+          classId: class_id
+        });
+        console.log(`📡 Emitted studentAddedToGroup to room: ${roomId}`);
         
         res.json({
           message: 'Student added to group successfully',
