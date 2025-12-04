@@ -561,7 +561,6 @@ export class GroupController {
           // Emit socket event to notify the group
           const roomId = `group_${group_id}_class_${class_id}`;
           this.io.to(roomId).emit('studentAddedToGroup', {
-            email,
             groupId: group_id,
             classId: class_id
           });
@@ -614,7 +613,6 @@ export class GroupController {
         // Emit socket event to notify the group
         const roomId = `group_${group_id}_class_${class_id}`;
         this.io.to(roomId).emit('studentAddedToGroup', {
-          email,
           groupId: group_id,
           classId: class_id
         });
