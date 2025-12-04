@@ -300,13 +300,27 @@ export default function ResReviewGroup() {
     };
 
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "typeof:", typeof groupId);
+      console.log("📡 [STUDENT-ADDED] Event received - classId:", classId, "typeof:", typeof classId);
+      console.log("📡 [STUDENT-ADDED] User check - user.group_id:", user?.group_id, "typeof:", typeof user?.group_id);
+      console.log("📡 [STUDENT-ADDED] User check - user.class:", user?.class, "typeof:", typeof user?.class);
+      console.log("📡 [STUDENT-ADDED] Comparison - groupId == user.group_id:", groupId == user.group_id);
+      console.log("📡 [STUDENT-ADDED] Comparison - classId == user.class:", classId == user.class);
+      
       if (groupId == user.group_id && classId == user.class) {
-        console.log("📡 Student added to group - refreshing group size");
-        // Refetch group size
+        console.log("📡 [STUDENT-ADDED] ✅ Event is for this user's group - refreshing group size");
         fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
-          .then(res => res.json())
-          .then(data => setGroupSize(data.count))
-          .catch(err => console.error("Failed to fetch group size:", err));
+          .then(res => {
+            console.log("📡 [STUDENT-ADDED] Fetch response status:", res.status);
+            return res.json();
+          })
+          .then(data => {
+            console.log("📡 [STUDENT-ADDED] New group size:", data.count);
+            setGroupSize(data.count);
+          })
+          .catch(err => console.error("❌ [STUDENT-ADDED] Failed to fetch group size:", err));
+      } else {
+        console.log("📡 [STUDENT-ADDED] ❌ Event ignored - not for this group/class");
       }
     };
 
