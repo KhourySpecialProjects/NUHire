@@ -527,11 +527,8 @@ export default function Interview() {
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (user && groupId === user.group_id && classId === user.class) {
         console.log("📡 Student added to group - refreshing group size");
-        // Refetch group size
-        fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
-          .then(res => res.json())
-          .then(data => setGroupSize(data.count))
-          .catch(err => console.error("Failed to fetch group size:", err));
+        fetchGroupSize();
+        fetchFinished();
       }
     };
 
