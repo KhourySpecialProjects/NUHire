@@ -299,6 +299,17 @@ export default function ResReviewGroup() {
       }
     };
 
+    const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      if (groupId === user.group_id && classId === user.class) {
+        console.log("📡 Student added to group - refreshing group size");
+        // Refetch group size
+        fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
+          .then(res => res.json())
+          .then(data => setGroupSize(data.count))
+          .catch(err => console.error("Failed to fetch group size:", err));
+      }
+    };
+
     const handleDisconnect = () => {
       setIsConnected(false);
     };
@@ -311,6 +322,7 @@ export default function ResReviewGroup() {
     };
 
     socket.on("connect", handleConnect);
+    socket.on("studentAddedToGroup", handleStudentAdded); // ADD THIS
     socket.on("studentRemovedFromGroup", handleStudentRemoved);
     socket.on("disconnect", handleDisconnect);
     socket.on("checkboxUpdated", handleCheckboxUpdated);
@@ -325,6 +337,7 @@ export default function ResReviewGroup() {
 
     return () => {
       socket.off("connect", handleConnect);
+      socket.off("studentAddedToGroup", handleStudentAdded); // ADD THIS
       socket.off("studentRemovedFromGroup", handleStudentRemoved);
       socket.off("disconnect", handleDisconnect);
       socket.off("checkboxUpdated", handleCheckboxUpdated);

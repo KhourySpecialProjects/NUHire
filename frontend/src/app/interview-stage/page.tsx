@@ -523,19 +523,32 @@ export default function Interview() {
       }
     };
 
+    const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      if (user && groupId === user.group_id && classId === user.class) {
+        console.log("📡 Student added to group - refreshing group size");
+        // Refetch group size
+        fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
+          .then(res => res.json())
+          .then(data => setGroupSize(data.count))
+          .catch(err => console.error("Failed to fetch group size:", err));
+      }
+    };
+
     socket.on("receivePopup", handleReceivePopup);
+    socket.on("studentAddedToGroup", handleStudentAdded);
     socket.on("interviewStatusUpdated", handleInterviewStatusUpdated);
     socket.on("interviewStageFinished", handleInterviewStageFinished);
     socket.on("studentRemovedFromGroup", handleStudentRemoved);
     
     return () => {
       socket.off("receivePopup", handleReceivePopup);
+      socket.off("studentAddedToGroup", handleStudentAdded);
       socket.off("interviewStatusUpdated", handleInterviewStatusUpdated);
       socket.off("interviewStageFinished", handleInterviewStageFinished);
       socket.off("studentRemovedFromGroup", handleStudentRemoved);
     };
   }, [socket, user]);
-  
+
   useEffect(() => {
     if (!socket || !user || !currentVid) {
       console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);

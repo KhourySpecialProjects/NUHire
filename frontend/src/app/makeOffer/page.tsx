@@ -277,22 +277,22 @@ export default function MakeOffer() {
       }
     };
 
-    const fetchGroupSize = async () => {
-      if (!user?.group_id) return;
-      try {
-        const response = await fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" });
-        if (response.ok) {
-          const data = await response.json();
-          setGroupSize(data.count);
-        }
-      } catch (err) {
-        console.error("Failed to fetch group size:", err);
-      }
-    };
-
     fetchGroupSize();
     fetchInterviews();
   }, [user]);
+
+  const fetchGroupSize = async () => {
+    if (!user?.group_id) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" });
+      if (response.ok) {
+        const data = await response.json();
+        setGroupSize(data.count);
+      }
+    } catch (err) {
+      console.error("Failed to fetch group size:", err);
+    }
+  };
 
   useEffect(() => {
     if (!interviews.length) {
@@ -606,17 +606,21 @@ export default function MakeOffer() {
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (groupId === user.group_id && classId === user.class) {
         console.log("📡 Student removed from group - refreshing group size");
-        // Refetch group size
-        fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
-          .then(res => res.json())
-          .then(data => setGroupSize(data.count))
-          .catch(err => console.error("Failed to fetch group size:", err));
+        fetchGroupSize();
+      }
+    };
+
+    const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      if (groupId === user.group_id && classId === user.class) {
+        console.log("📡 Student added to group - refreshing group size");
+        fetchGroupSize();
       }
     };
 
     socket.on("connect", handleConnect);
     socket.on("studentRemovedFromGroup", handleStudentRemoved);
     socket.on("disconnect", handleDisconnect);
+    socket.on("studentAddedToGroup", handleStudentAdded);
     socket.on("groupMemberOffer", handleGroupMemberOffer);
     socket.on("confirmOffer", handleConfirmOfferSocket);
     socket.on("makeOfferResponse", handleMakeOfferResponse);
@@ -625,6 +629,7 @@ export default function MakeOffer() {
     return () => {
       socket.off("studentRemovedFromGroup", handleStudentRemoved);
       socket.off("connect", handleConnect);
+      socket.off("studentAddedToGroup", handleStudentAdded);
       socket.off("disconnect", handleDisconnect);
       socket.off("groupMemberOffer", handleGroupMemberOffer);
       socket.off("confirmOffer", handleConfirmOfferSocket);

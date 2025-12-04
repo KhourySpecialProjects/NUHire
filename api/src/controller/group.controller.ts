@@ -329,9 +329,9 @@ export class GroupController {
         console.log(`✅ Student ${email} successfully removed from group ${studentGroupId} in class ${class_id}`);
         
         // Emit socket event to notify the group
-        if (studentGroupId && req.io) {
+        if (studentGroupId && this.io) {
           const roomId = `group_${studentGroupId}_class_${class_id}`;
-          req.io.to(roomId).emit('studentRemovedFromGroup', {
+          this.io.to(roomId).emit('studentRemovedFromGroup', {
             email,
             groupId: studentGroupId,
             classId: class_id
