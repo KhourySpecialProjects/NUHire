@@ -614,14 +614,34 @@ export default function MakeOffer() {
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (groupId === user.group_id && classId == user.class) {
-        console.log("📡 Student removed from group - refreshing group size");
+        console.log("📡 [STUDENT-REMOVED] Event received");
+        console.log("📡 [STUDENT-REMOVED] Resetting offer confirmations due to group change");
+        
+        // Reset confirmations for the selected candidate
+        if (selectedCandidateId) {
+          setOfferConfirmations(prev => ({
+            ...prev,
+            [selectedCandidateId]: []
+          }));
+        }
+        
         fetchGroupSize();
       }
     };
 
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (groupId === user.group_id && classId == user.class) {
-        console.log("📡 Student added to group - refreshing group size");
+        console.log("📡 [STUDENT-ADDED] Event received");
+        console.log("📡 [STUDENT-ADDED] Resetting offer confirmations due to group change");
+        
+        // Reset confirmations for the selected candidate
+        if (selectedCandidateId) {
+          setOfferConfirmations(prev => ({
+            ...prev,
+            [selectedCandidateId]: []
+          }));
+        }
+        
         fetchGroupSize();
       }
     };
