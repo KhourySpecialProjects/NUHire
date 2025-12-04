@@ -217,7 +217,7 @@ export default function ResReviewGroup() {
     socket.emit("joinGroup", roomId);
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (groupId === user.group_id && classId == user.class) {
+      if (groupId == user.group_id && classId == user.class) {
         console.log("📡 Student removed from group - refreshing group size");
         // Refetch group size
         fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
@@ -300,7 +300,7 @@ export default function ResReviewGroup() {
     };
 
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      if (groupId === user.group_id && classId == user.class) {
+      if (groupId == user.group_id && classId == user.class) {
         console.log("📡 Student added to group - refreshing group size");
         // Refetch group size
         fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
