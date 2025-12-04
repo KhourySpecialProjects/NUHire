@@ -244,12 +244,20 @@ export class InterviewController {
       const query = `
         INSERT INTO InterviewPage (student_id, group_id, class, question1, question2, question3, question4, candidate_id)
         VALUES ?
+        ON DUPLICATE KEY UPDATE
+          question1 = VALUES(question1),
+          question2 = VALUES(question2),
+          question3 = VALUES(question3),
+          question4 = VALUES(question4)
       `;
 
       this.db.query(query, [values], (err, result) => {
         if (err) {
           console.error("Error saving batch interview votes:", err);
-          res.status(500).json({ error: "Failed to save votes" });
+          console.error("Error details:", err.message);
+          console.error("SQL:", query);
+          console.error("Values:", values);
+          res.status(500).json({ error: "Failed to save votes", details: err.message });
           return;
         }
         
