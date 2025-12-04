@@ -142,12 +142,7 @@ export default function ResumesPage() {
         console.log("🔍 [FETCH-FINISHED] Response received - finishedCount:", newGroupSubmissions);
         
         setGroupSubmissions(newGroupSubmissions);
-        
-        // Check if all remaining members are done
-        if (newGroupSubmissions >= groupSize && totalDecisions === 10) {
-          console.log("✅ [FETCH-FINISHED] All members finished - enabling button");
-          setDisabled(false);
-        }
+      
         
         console.log("🔍 [FETCH-FINISHED] State updated - groupSubmissions:", newGroupSubmissions);
       }
@@ -293,6 +288,13 @@ export default function ResumesPage() {
       }
     };
 
+    const handleUserCompletedResReview = ({ groupId }: { groupId: number }) => {
+      if (groupId === user.group_id) {
+        console.log("📡 [USER-COMPLETED] Another group member finished - refreshing count");
+        fetchFinished();
+      }
+    };
+
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
       console.log("📡 [STUDENT-REMOVED] Event received - groupId:", groupId, "classId:", classId);
       console.log("📡 [STUDENT-REMOVED] User check - user.group_id:", user?.group_id, "user.class:", user?.class);
@@ -329,6 +331,7 @@ export default function ResumesPage() {
       }
     };
 
+    socket.on("userCompletedResReview", handleUserCompletedResReview);
     socket.on("receivePopup", handleReceivePopup);
     socket.on("moveGroup", handleMoveGroup);
     socket.on("studentRemovedFromGroup", handleStudentRemoved);
@@ -336,6 +339,7 @@ export default function ResumesPage() {
 
     return () => {
       socket.off("receivePopup", handleReceivePopup);
+      socket.off("userCompletedResReview", handleUserCompletedResReview);
       socket.off("moveGroup", handleMoveGroup);
       socket.off("studentRemovedFromGroup", handleStudentRemoved);
       socket.off("studentAddedToGroup", handleStudentAdded);
