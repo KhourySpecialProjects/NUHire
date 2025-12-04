@@ -279,6 +279,14 @@ export class GroupController {
 
       console.log(`✅ Student ${email} successfully reassigned to group ${new_group_id} in class ${class_id}`);
 
+      // Emit socket event to notify the NEW group
+      const roomId = `group_${new_group_id}_class_${class_id}`;
+      this.io.to(roomId).emit('studentAddedToGroup', {
+        groupId: new_group_id,
+        classId: class_id
+      });
+      console.log(`📡 Emitted studentAddedToGroup to room: ${roomId}`);
+
       res.json({
         message: 'Student reassigned successfully',
         email,

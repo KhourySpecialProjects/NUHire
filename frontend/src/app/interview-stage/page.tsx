@@ -541,7 +541,7 @@ export default function Interview() {
       }
     };
 
-    // Update handleStudentAdded (around line 528-538)
+    // Update  (around line 528-538)
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (user && groupId === user.group_id && classId == user.class) {
         console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "classId:", classId);
