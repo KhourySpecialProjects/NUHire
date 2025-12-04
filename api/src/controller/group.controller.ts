@@ -300,25 +300,50 @@ export class GroupController {
       return;
     }
 
-    const updateQuery = 'UPDATE Users SET group_id = NULL WHERE email = ? AND class = ?';
-
-    this.db.query(updateQuery, [email, class_id], (err, result: any) => {
+    // First get the student's group_id before removing them
+    const getGroupQuery = 'SELECT group_id FROM Users WHERE email = ? AND class = ?';
+    
+    this.db.query(getGroupQuery, [email, class_id], (err, results: any) => {
       if (err) {
-        console.error('Error removing student from group:', err);
-        res.status(500).json({ error: 'Failed to remove student from group' });
+        console.error('Error fetching student group:', err);
+        res.status(500).json({ error: 'Failed to fetch student information' });
         return;
       }
 
-      if (result.affectedRows === 0) {
-        res.status(404).json({ error: 'Student not found in this class' });
-        return;
-      }
+      const studentGroupId = results[0]?.group_id;
 
-      console.log(`✅ Student ${email} successfully removed from group in class ${class_id}`);
-      res.json({
-        message: 'Student removed from group successfully',
-        email,
-        class_id
+      const updateQuery = 'UPDATE Users SET group_id = NULL WHERE email = ? AND class = ?';
+
+      this.db.query(updateQuery, [email, class_id], (err, result: any) => {
+        if (err) {
+          console.error('Error removing student from group:', err);
+          res.status(500).json({ error: 'Failed to remove student from group' });
+          return;
+        }
+
+        if (result.affectedRows === 0) {
+          res.status(404).json({ error: 'Student not found in this class' });
+          return;
+        }
+
+        console.log(`✅ Student ${email} successfully removed from group ${studentGroupId} in class ${class_id}`);
+        
+        // Emit socket event to notify the group
+        if (studentGroupId && req.io) {
+          const roomId = `group_${studentGroupId}_class_${class_id}`;
+          req.io.to(roomId).emit('studentRemovedFromGroup', {
+            email,
+            groupId: studentGroupId,
+            classId: class_id
+          });
+          console.log(`📡 Emitted studentRemovedFromGroup to room: ${roomId}`);
+        }
+        
+        res.json({
+          message: 'Student removed from group successfully',
+          email,
+          class_id
+        });
       });
     });
   };

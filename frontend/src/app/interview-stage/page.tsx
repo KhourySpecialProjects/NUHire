@@ -497,6 +497,7 @@ export default function Interview() {
       socket.off("moveGroup", handleMoveGroup);
     };
   }, [socket, user?.email, pathname, updateProgress]);
+
   useEffect(() => {
     if (!socket) return;
 
@@ -515,17 +516,26 @@ export default function Interview() {
       fetchGroupSize();
     };
 
+    const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      if (user && groupId === user.group_id && classId === user.class) {
+        console.log("📡 Student removed from group - refreshing group size");
+        fetchGroupSize();
+      }
+    };
+
     socket.on("receivePopup", handleReceivePopup);
     socket.on("interviewStatusUpdated", handleInterviewStatusUpdated);
     socket.on("interviewStageFinished", handleInterviewStageFinished);
+    socket.on("studentRemovedFromGroup", handleStudentRemoved);
     
     return () => {
       socket.off("receivePopup", handleReceivePopup);
       socket.off("interviewStatusUpdated", handleInterviewStatusUpdated);
       socket.off("interviewStageFinished", handleInterviewStageFinished);
+      socket.off("studentRemovedFromGroup", handleStudentRemoved);
     };
-  }, [socket, fetchFinished, fetchGroupSize]);
-
+  }, [socket, user]);
+  
   useEffect(() => {
     if (!socket || !user || !currentVid) {
       console.log("Missing user or currentVid, not setting up socket listeners", user, currentVid);

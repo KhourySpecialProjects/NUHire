@@ -216,6 +216,17 @@ export default function ResReviewGroup() {
     console.log("Joining room:", roomId);
     socket.emit("joinGroup", roomId);
 
+    const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      if (groupId === user.group_id && classId === user.class) {
+        console.log("📡 Student removed from group - refreshing group size");
+        // Refetch group size
+        fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
+          .then(res => res.json())
+          .then(data => setGroupSize(data.count))
+          .catch(err => console.error("Failed to fetch group size:", err));
+      }
+    };
+
     // Update checkbox state live
     const handleCheckboxUpdated = ({ resume_number, checked }: { resume_number: number; checked: boolean }) => {
       console.log(`Received checkbox update: Resume ${resume_number}, Checked: ${checked}`);
@@ -300,6 +311,7 @@ export default function ResReviewGroup() {
     };
 
     socket.on("connect", handleConnect);
+    socket.on("studentRemovedFromGroup", handleStudentRemoved);
     socket.on("disconnect", handleDisconnect);
     socket.on("checkboxUpdated", handleCheckboxUpdated);
     socket.on("voteUpdated", handleVoteUpdated); // NEW
@@ -313,9 +325,10 @@ export default function ResReviewGroup() {
 
     return () => {
       socket.off("connect", handleConnect);
+      socket.off("studentRemovedFromGroup", handleStudentRemoved);
       socket.off("disconnect", handleDisconnect);
       socket.off("checkboxUpdated", handleCheckboxUpdated);
-      socket.off("voteUpdated", handleVoteUpdated); // NEW
+      socket.off("voteUpdated", handleVoteUpdated); 
       socket.off("teamConfirmSelection", handleTeamConfirmSelection);
       socket.off("teamUnconfirmSelection", handleTeamUnconfirmSelection);
       socket.off("moveGroup", handleMoveGroup);

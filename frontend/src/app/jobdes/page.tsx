@@ -54,7 +54,6 @@ export default function JobDescriptionPage() {
   const jobDesInstructions = [
     "Read the job description that you are hiring for.",
     "Take notes by pressing the top right notes button, you can always access them.",
-    "Leaving comments on the description are only accessible on this page.",
     "Pay attention to the required skills and qualifications.",
     "Look for specific technologies or tools mentioned.",
     "Note any soft skills that are emphasized in the job description."

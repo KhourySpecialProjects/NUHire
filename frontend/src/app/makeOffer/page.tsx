@@ -603,7 +603,19 @@ export default function MakeOffer() {
       setCheckedState((prev) => ({ ...prev, [interview_number]: checked }));
     };
 
+    const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      if (groupId === user.group_id && classId === user.class) {
+        console.log("📡 Student removed from group - refreshing group size");
+        // Refetch group size
+        fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
+          .then(res => res.json())
+          .then(data => setGroupSize(data.count))
+          .catch(err => console.error("Failed to fetch group size:", err));
+      }
+    };
+
     socket.on("connect", handleConnect);
+    socket.on("studentRemovedFromGroup", handleStudentRemoved);
     socket.on("disconnect", handleDisconnect);
     socket.on("groupMemberOffer", handleGroupMemberOffer);
     socket.on("confirmOffer", handleConfirmOfferSocket);
@@ -611,6 +623,7 @@ export default function MakeOffer() {
     socket.on("checkboxUpdated", handleCheckboxUpdated);
 
     return () => {
+      socket.off("studentRemovedFromGroup", handleStudentRemoved);
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("groupMemberOffer", handleGroupMemberOffer);
