@@ -647,6 +647,23 @@ export default function MakeOffer() {
     };
   }, [socket, user, checkExistingOffer]);
 
+  useEffect(() => {
+    if (groupSize > 0 && selectedCandidateId) {
+      const currentConfirmations = offerConfirmations[selectedCandidateId] || [];
+      console.log("📊 [GROUP-SIZE-CHANGE] Group size changed to:", groupSize);
+      console.log("📊 [GROUP-SIZE-CHANGE] Current confirmations for candidate", selectedCandidateId, ":", currentConfirmations.length);
+      
+      // If everyone confirmed but group size increased, reset confirmations
+      if (currentConfirmations.length > 0 && currentConfirmations.length >= groupSize) {
+        console.log("📊 [GROUP-SIZE-CHANGE] Resetting confirmations - group size increased");
+        setOfferConfirmations(prev => ({
+          ...prev,
+          [selectedCandidateId]: []
+        }));
+      }
+    }
+  }, [groupSize, selectedCandidateId]);
+
   const handleCheckboxChange = (interviewNumber: number) => {
     if (!socket || !isConnected) return;
 
