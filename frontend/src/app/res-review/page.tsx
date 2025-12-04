@@ -42,6 +42,8 @@ export default function ResumesPage() {
   const [currentResumeIndex, setCurrentResumeIndex] = useState(0);
   const [fadingEffect, setFadingEffect] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
+  const [groupSize, setGroupSize] = useState(0);
+  const [groupSubmissions, setGroupSubmissions] = useState(0);
   const [disabled, setDisabled] = useState(true);
   const [resumeLoading, setResumeLoading] = useState(true);
   const [popup, setPopup] = useState<{
@@ -107,6 +109,52 @@ export default function ResumesPage() {
       console.error("❌ [FETCH] Error fetching resumes:", error);
     }
   }, []);
+
+  const fetchGroupSize = async () => {
+    console.log("🔍 [FETCH-GROUP-SIZE] Starting fetchGroupSize...");
+    console.log("🔍 [FETCH-GROUP-SIZE] Current groupSize:", groupSize);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/interview/group-size/${user?.group_id}/${user?.class}`, { credentials: "include" });
+        if (response.ok) {
+          const data = await response.json();
+          console.log("🔍 [FETCH-GROUP-SIZE] Response received - new size:", data.count);
+          setGroupSize(data.count);
+          console.log("🔍 [FETCH-GROUP-SIZE] State updated - groupSize:", data.count);
+        }
+    } catch (err) {
+      console.error("❌ [FETCH-GROUP-SIZE] Failed to fetch group size:", err);
+    }
+  };
+
+  const fetchFinished = async () => {
+    console.log("🔍 [FETCH-FINISHED] Starting fetchFinished...");
+    console.log("🔍 [FETCH-FINISHED] Current state - groupSubmissions:", groupSubmissions, "groupSize:", groupSize);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/resume/finished-count/${user?.group_id}/${user?.class}`, { 
+        credentials: "include" 
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const newGroupSubmissions = data.finishedCount;
+        console.log("🔍 [FETCH-FINISHED] Response received - finishedCount:", newGroupSubmissions);
+        
+        setGroupSubmissions(newGroupSubmissions);
+        
+        // Check if all remaining members are done
+        if (newGroupSubmissions >= groupSize && totalDecisions === 10) {
+          console.log("✅ [FETCH-FINISHED] All members finished - enabling button");
+          setDisabled(false);
+        }
+        
+        console.log("🔍 [FETCH-FINISHED] State updated - groupSubmissions:", newGroupSubmissions);
+      }
+    } catch (err) {
+      console.error("❌ [FETCH-FINISHED] Failed to fetch finished count:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchJobDescription = async () => {
@@ -225,34 +273,72 @@ export default function ResumesPage() {
   useEffect(() => {
     if (!socket || !user) return;
 
+    console.log("🔌 [SOCKET-SETUP] Setting up socket listeners for user:", user.email, "group:", user.group_id, "class:", user.class);
+
+    const roomId = `group_${user.group_id}_class_${user.class}`;
+    console.log("🚪 [JOIN-ROOM] Joining socket room:", roomId);
+    socket.emit("joinGroup", roomId);
+    socket.emit("studentOnline", { studentId: user.email });
+    socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+
     const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
       setPopup({ headline, message });
+    };
 
-      if (headline === "Internal Referral") {
-        setRestricted(true);
-      } else {
-        setRestricted(false);
+    const handleMoveGroup = ({ groupId, classId, targetPage }: { groupId: number; classId: number; targetPage: string }) => {
+      if (groupId === user.group_id && classId === user.class && targetPage === "/res-review-group") {
+        updateProgress(user, "res_2");
+        localStorage.setItem("progress", "res_2");
+        window.location.href = targetPage;
       }
     };
 
-    const handleMoveGroup = ({ groupId, classId, targetPage }: { 
-      groupId: number; 
-      classId: number; 
-      targetPage: string 
-    }) => {
-      if (groupId === user.group_id && classId === user.class && targetPage === "/res-review-group") {
-        console.log(`Group navigation triggered: moving to ${targetPage}`);
-        localStorage.setItem("progress", "res_2");
-        window.location.href = targetPage; 
+    const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      console.log("📡 [STUDENT-REMOVED] Event received - groupId:", groupId, "classId:", classId);
+      console.log("📡 [STUDENT-REMOVED] User check - user.group_id:", user?.group_id, "user.class:", user?.class);
+      
+      if (user && groupId === user.group_id && classId === user.class) {
+        console.log("📡 [STUDENT-REMOVED] ✅ Event is for this user's group");
+        console.log("📡 [STUDENT-REMOVED] Current state - totalDecisions:", totalDecisions, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
+        console.log("📡 [STUDENT-REMOVED] Refreshing group size and finished count...");
+        
+        fetchGroupSize();
+        fetchFinished();
+        
+        console.log("📡 [STUDENT-REMOVED] Fetch calls completed");
+      } else {
+        console.log("📡 [STUDENT-REMOVED] ❌ Event ignored - not for this group/class");
+      }
+    };
+
+    const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
+      console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "classId:", classId);
+      console.log("📡 [STUDENT-ADDED] User check - user.group_id:", user?.group_id, "user.class:", user?.class);
+      
+      if (user && groupId === user.group_id && classId === user.class) {
+        console.log("📡 [STUDENT-ADDED] ✅ Event is for this user's group");
+        console.log("📡 [STUDENT-ADDED] Current state - totalDecisions:", totalDecisions, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
+        console.log("📡 [STUDENT-ADDED] Refreshing group size and finished count...");
+        
+        fetchGroupSize();
+        fetchFinished();
+        
+        console.log("📡 [STUDENT-ADDED] Fetch calls completed");
+      } else {
+        console.log("📡 [STUDENT-ADDED] ❌ Event ignored - not for this group/class");
       }
     };
 
     socket.on("receivePopup", handleReceivePopup);
     socket.on("moveGroup", handleMoveGroup);
+    socket.on("studentRemovedFromGroup", handleStudentRemoved);
+    socket.on("studentAddedToGroup", handleStudentAdded);
 
     return () => {
       socket.off("receivePopup", handleReceivePopup);
       socket.off("moveGroup", handleMoveGroup);
+      socket.off("studentRemovedFromGroup", handleStudentRemoved);
+      socket.off("studentAddedToGroup", handleStudentAdded);
     };
   }, [socket, user]);
 
@@ -269,6 +355,30 @@ export default function ResumesPage() {
       socket.off("groupCompletedResReview", handleGroupCompletedResReview);
     };
   }, [socket]);
+
+  useEffect(() => {
+    console.log("🔄 [AUTO-PROGRESS] useEffect triggered");
+    console.log("🔄 [AUTO-PROGRESS] Dependencies - totalDecisions:", totalDecisions, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
+    console.log("🔄 [AUTO-PROGRESS] Condition check - totalDecisions === 10 && groupSize > 0 && groupSubmissions >= groupSize:", 
+      totalDecisions === 10 && groupSize > 0 && groupSubmissions >= groupSize);
+    
+    if (totalDecisions === 10 && groupSize > 0 && groupSubmissions >= groupSize) {
+      console.log("✅ [AUTO-PROGRESS] All conditions met - enabling progression");
+      setDisabled(false);
+    } else {
+      console.log("⏸️ [AUTO-PROGRESS] Conditions not met - waiting");
+      if (totalDecisions < 10) console.log("   - User has not finished yet (decisions:", totalDecisions, "/10)");
+      if (groupSize <= 0) console.log("   - Group size is 0 or invalid");
+      if (groupSubmissions < groupSize) console.log(`   - Waiting for more submissions (${groupSubmissions}/${groupSize})`);
+    }
+  }, [groupSize, groupSubmissions, totalDecisions]);
+
+  useEffect(() => {
+    if (!user?.group_id) return;
+    
+    fetchGroupSize();
+    fetchFinished();
+  }, [user?.group_id]);
 
   const completeResumes = async () => {
     if (!socket || !user) {
