@@ -528,7 +528,6 @@ export default function Interview() {
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (user && groupId === user.group_id && classId == user.class) {
-        setFinished(false); 
         console.log("📡 [STUDENT-REMOVED] Event received - groupId:", groupId, "classId:", classId);
         console.log("📡 [STUDENT-REMOVED] Current state - finished:", finished, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
         console.log("📡 [STUDENT-REMOVED] Refreshing group size and finished count...");
@@ -548,7 +547,6 @@ export default function Interview() {
         console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "classId:", classId);
         console.log("📡 [STUDENT-ADDED] Current state - finished:", finished, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
         console.log("📡 [STUDENT-ADDED] Refreshing group size and finished count...");
-        setFinished(false); 
         fetchGroupSize();
         fetchFinished();
         
