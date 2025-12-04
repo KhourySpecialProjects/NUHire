@@ -157,16 +157,21 @@ export default function Interview() {
   }, [user?.group_id, user?.class]);
 
   const fetchFinished = async () => {
+    console.log("🔍 [FETCH-FINISHED] Starting fetchFinished...");
+    console.log("🔍 [FETCH-FINISHED] Current state - groupSubmissions:", groupSubmissions, "groupSize:", groupSize);
+    
     try {
       const response = await axios.get(`${API_BASE_URL}/interview/status/finished-count`, {
         params: { group_id: user?.group_id, class_id: user?.class },
         withCredentials: true,
       });      
-      setGroupSubmissions(response.data.finishedCount);
-      console.log("Group submissions fetched:", groupSubmissions);
-      setGroupFinished(groupSubmissions === groupSize);
+      
+      const newGroupSubmissions = response.data.finishedCount;
+      setGroupSubmissions(newGroupSubmissions);
+      setGroupFinished(newGroupSubmissions >= groupSize);
+      
     } catch (err) {
-      console.error("Failed to fetch group size:", err);
+      console.error("❌ [FETCH-FINISHED] Failed to fetch finished count:", err);
     }
   };
 
@@ -185,14 +190,19 @@ export default function Interview() {
   };
 
   const fetchGroupSize = async () => {
+    console.log("🔍 [FETCH-GROUP-SIZE] Starting fetchGroupSize...");
+    console.log("🔍 [FETCH-GROUP-SIZE] Current groupSize:", groupSize);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/interview/group-size/${user?.group_id}/${user?.class}`, { credentials: "include" });
         if (response.ok) {
           const data = await response.json();
+          console.log("🔍 [FETCH-GROUP-SIZE] Response received - new size:", data.count);
           setGroupSize(data.count);
+          console.log("🔍 [FETCH-GROUP-SIZE] State updated - groupSize:", data.count);
         }
     } catch (err) {
-      console.error("Failed to fetch group size:", err);
+      console.error("❌ [FETCH-GROUP-SIZE] Failed to fetch group size:", err);
     }
   };
 
@@ -518,17 +528,32 @@ export default function Interview() {
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (user && groupId === user.group_id && classId === user.class) {
-        console.log("📡 Student removed from group - refreshing group size");
+        console.log("📡 [STUDENT-REMOVED] Event received - groupId:", groupId, "classId:", classId);
+        console.log("📡 [STUDENT-REMOVED] Current state - finished:", finished, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
+        console.log("📡 [STUDENT-REMOVED] Refreshing group size and finished count...");
+        
         fetchGroupSize();
         fetchFinished();
+        
+        console.log("📡 [STUDENT-REMOVED] Fetch calls completed");
+      } else {
+        console.log("📡 [STUDENT-REMOVED] Event ignored - not for this group/class");
       }
     };
 
+    // Update handleStudentAdded (around line 528-538)
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (user && groupId === user.group_id && classId === user.class) {
-        console.log("📡 Student added to group - refreshing group size");
+        console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "classId:", classId);
+        console.log("📡 [STUDENT-ADDED] Current state - finished:", finished, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
+        console.log("📡 [STUDENT-ADDED] Refreshing group size and finished count...");
+        
         fetchGroupSize();
         fetchFinished();
+        
+        console.log("📡 [STUDENT-ADDED] Fetch calls completed");
+      } else {
+        console.log("📡 [STUDENT-ADDED] Event ignored - not for this group/class");
       }
     };
 
@@ -549,11 +574,22 @@ export default function Interview() {
 
     // Auto-complete if group size changes and all remaining members are done
   useEffect(() => {
+    console.log("🔄 [AUTO-PROGRESS] useEffect triggered");
+    console.log("🔄 [AUTO-PROGRESS] Dependencies - finished:", finished, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
+    console.log("🔄 [AUTO-PROGRESS] Condition check - finished && groupSize > 0 && groupSubmissions >= groupSize:", 
+      finished && groupSize > 0 && groupSubmissions >= groupSize);
+    
     if (finished && groupSize > 0 && groupSubmissions >= groupSize) {
-      console.log("📡 Group size changed - all remaining members finished, enabling progression");
+      console.log("✅ [AUTO-PROGRESS] All conditions met - enabling progression");
       setGroupFinished(true);
+    } else {
+      console.log("⏸️ [AUTO-PROGRESS] Conditions not met - waiting");
+      if (!finished) console.log("   - User has not finished yet");
+      if (groupSize <= 0) console.log("   - Group size is 0 or invalid");
+      if (groupSubmissions < groupSize) console.log(`   - Waiting for more submissions (${groupSubmissions}/${groupSize})`);
     }
   }, [groupSize, groupSubmissions, finished]);
+
 
   useEffect(() => {
     if (!socket || !user || !currentVid) {
