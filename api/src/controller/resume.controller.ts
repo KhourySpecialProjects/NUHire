@@ -22,6 +22,40 @@ export class ResumeController {
     });
   };
 
+  getFinishedCount = (req: AuthRequest, res: Response): void => {
+    const { group_id, class_id } = req.params;
+    
+    console.log('📊 [GET-FINISHED-COUNT] Request received for group:', group_id, 'class:', class_id);
+
+    if (!group_id || !class_id) {
+      res.status(400).json({ error: 'group_id and class_id are required' });
+      return;
+    }
+
+    // Count how many students in this group have completed their 10 resume reviews
+    const query = `
+      SELECT COUNT(DISTINCT student_id) as finishedCount
+      FROM Resume
+      WHERE group_id = ? AND class = ?
+      GROUP BY student_id
+      HAVING COUNT(*) >= 10
+    `;
+
+    this.db.query(query, [group_id, class_id], (err, results: any[]) => {
+      if (err) {
+        console.error('❌ [GET-FINISHED-COUNT] Database error:', err);
+        res.status(500).json({ error: 'Database error' });
+        return;
+      }
+
+      // Count the number of students who have finished
+      const finishedCount = results.length;
+      
+      console.log('✅ [GET-FINISHED-COUNT] Finished count:', finishedCount);
+      res.json({ finishedCount });
+    });
+  };
+
   submitVote = (req: AuthRequest, res: Response): void => {
     const { student_id, group_id, class: classId, timespent, resume_number, vote } = req.body;
 

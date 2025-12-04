@@ -17,6 +17,7 @@ export default (db: Pool, io: SocketIOServer): Router => {
   router.post('/check', requireAuth, resumeController.checkResume);
   router.get('/checked/:group_id', requireAuth, resumeController.getCheckedResumes);
   router.post('/batch-vote', requireAuth, resumeController.batchVote);
+  router.get('/finished-count/:group_id/:class_id', requireAuth, resumeController.getFinishedCount);
 
   return router;
 };
