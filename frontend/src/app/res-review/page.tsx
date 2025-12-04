@@ -297,7 +297,7 @@ export default function ResumesPage() {
       console.log("📡 [STUDENT-REMOVED] Event received - groupId:", groupId, "classId:", classId);
       console.log("📡 [STUDENT-REMOVED] User check - user.group_id:", user?.group_id, "user.class:", user?.class);
       
-      if (user && groupId === user.group_id && classId === user.class) {
+      if (user && groupId === user.group_id && classId == user.class) {
         console.log("📡 [STUDENT-REMOVED] ✅ Event is for this user's group");
         console.log("📡 [STUDENT-REMOVED] Current state - totalDecisions:", totalDecisions, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
         console.log("📡 [STUDENT-REMOVED] Refreshing group size and finished count...");
@@ -315,7 +315,7 @@ export default function ResumesPage() {
       console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "classId:", classId);
       console.log("📡 [STUDENT-ADDED] User check - user.group_id:", user?.group_id, "user.class:", user?.class);
       
-      if (user && groupId === user.group_id && classId === user.class) {
+      if (user && groupId === user.group_id && classId == user.class) {
         console.log("📡 [STUDENT-ADDED] ✅ Event is for this user's group");
         console.log("📡 [STUDENT-ADDED] Current state - totalDecisions:", totalDecisions, "groupSize:", groupSize, "groupSubmissions:", groupSubmissions);
         console.log("📡 [STUDENT-ADDED] Refreshing group size and finished count...");
