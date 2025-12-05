@@ -44,7 +44,7 @@ export class App {
     this.server = require('http').createServer(this.app);
     this.io = new SocketIOServer(this.server, {
       cors: {
-        origin: 'https://nuhire-wgez.onrender.com', 
+        origin: process.env.REACT_APP_FRONT_URL, 
         credentials: true
       }
     });
@@ -57,7 +57,7 @@ export class App {
     this.app.set("trust proxy", 1);
 
     this.app.use(cors({
-      origin: "https://nuhire-wgez.onrender.com",
+      origin: process.env.REACT_APP_FRONT_URL,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization']

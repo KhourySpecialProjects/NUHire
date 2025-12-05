@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSocket } from "../components/socketContext";
 
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const StudentPage = () => {
   const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);

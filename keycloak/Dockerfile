@@ -1,6 +1,6 @@
 FROM quay.io/keycloak/keycloak:latest
 
-ENV KC_HOSTNAME=https://nuhire-keycloak-rhow.onrender.com
+ENV KC_HOSTNAME=${KC_HOSTNAME}
 ENV KC_HOSTNAME_STRICT=false
 
 ENV KC_PROXY=passthrough

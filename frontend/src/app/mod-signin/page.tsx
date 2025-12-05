@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Slideshow from "../components/slideshow";
 import Link from "next/link";
 import Popup from "../components/popup";
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ModeratorSignIn() {
   const [username, setUsername] = useState("");

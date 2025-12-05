@@ -1,6 +1,6 @@
 'use client'; //Declares that this page is a client component
 export const dynamic = "force-dynamic";
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com"; // API base URL from environment variables
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL // API base URL from environment variables
 import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
 import { useRouter } from "next/navigation"; // Importing useRouter for navigation
 import Link from "next/link"; // Importing Link for client-side navigation
@@ -51,10 +51,10 @@ const Dashboard = () => {
   if (!user || user.affiliation !== "admin") {
     // If the user is not an admin, redirect to the home page
     router.push("/");
-    return null; // Return null to avoid rendering anything else
+    return null; // Return null to avoid  anything else
   }
 
-  // Render the dashboard if the user is an admin
+  //  the dashboard if the user is an admin
   return (
     <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
       <div className="fixed inset-0 z-0">

@@ -8,7 +8,7 @@ import { useAuth } from "../components/AuthContext";
 export default function InstructionsPage() {
   const { user, loading: userLoading } = useAuth();
   const router = useRouter();
-  const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const updateUserSeeDash = async () => {
     if (!user?.email) return false;
@@ -47,7 +47,7 @@ export default function InstructionsPage() {
     
     await updateUserSeeDash();
     const fullName = `${user.f_name} ${user.l_name}`.trim();
-    window.location.href = `https://nuhire-wgez.onrender.com/dashboard?name=${encodeURIComponent(fullName)}`;
+    window.location.href = `${process.env.NEXT_PUBLIC_FRONT_URL}/dashboard?name=${encodeURIComponent(fullName)}`;
   };
 
   if (userLoading) {

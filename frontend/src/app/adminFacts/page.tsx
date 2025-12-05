@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
 import { useSocket } from "../components/socketContext"; // Importing custom hook to use socket context
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL; // "https://nuhire-api-cz6c.onrender.com";
 
 interface ModeratorClass {
   crn: number;

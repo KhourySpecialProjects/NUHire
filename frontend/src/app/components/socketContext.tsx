@@ -3,8 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const API_BASE_URL = 'https://nuhire-api-cz6c.onrender.com';
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const SocketContext = createContext<Socket | null>(null);
 
 export function SocketProvider({ children }: { children: ReactNode }) {

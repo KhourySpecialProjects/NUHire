@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Popup from './popup';
 import { useAuth } from './AuthContext';
 
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface CSVStudent {
   email: string;

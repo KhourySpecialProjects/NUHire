@@ -28,7 +28,7 @@ export function configurePassport(db: Pool): void {
         realm: KEYCLOAK_REALM,
         clientID: process.env.KEYCLOAK_CLIENT_ID!,
         clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
-        callbackURL: 'https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback',
+        callbackURL: process.env.KEYCLOAK_CALLBACK_URL, // 'https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback',
         scope: 'openid profile email',
         authorizationURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/auth`,
         tokenURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/token`,

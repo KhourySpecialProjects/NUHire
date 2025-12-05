@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useSocket } from "./socketContext";
 import { useAuth } from "./AuthContext";
 
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface Fact {
   fact: string;

@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import Slideshow from "../components/slideshow";
 import Image from "next/image";
 
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL; 
 
 export default function AboutPage() {
   
@@ -40,7 +41,7 @@ export default function AboutPage() {
 
   const handleContinue = () => {
     console.log("Continuing to instructions page");
-    window.location.href = `https://nuhire-wgez.onrender.com/instructions`;
+    window.location.href = `${process.env.NEXT_PUBLIC_FRONT_URL}/instructions`;
   };
 
   if (loading) {

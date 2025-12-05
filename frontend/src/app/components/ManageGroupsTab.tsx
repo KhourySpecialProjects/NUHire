@@ -6,7 +6,7 @@ import { useSocket } from './socketContext';
 import Popup from './popup';
 import { useAuth } from './AuthContext';
 
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface Student {
   id: number;

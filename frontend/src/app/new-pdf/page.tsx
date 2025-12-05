@@ -1,6 +1,6 @@
 'use client';
 export const dynamic = "force-dynamic";
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarAdmin from "../components/navbar-admin";
@@ -617,7 +617,7 @@ const Upload = () => {
         </div>
       )}
 
-      {/* Render pending offers as popups */}
+      {/*  pending offers as popups */}
       {pendingOffers.map(({classId, groupId, candidateId }) => (
         <div
           key={`offer-${classId}-${groupId}-${candidateId}`}
