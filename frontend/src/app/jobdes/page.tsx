@@ -51,6 +51,10 @@ export default function JobDescriptionPage() {
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const pathname = usePathname();
   const hasUpdatedPageRef = useRef(false);
+  const [showScrollUp, setShowScrollUp] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+
   const jobDesInstructions = [
     "Read the job description that you are hiring for.",
     "Take notes by pressing the top right notes button, you can always access them.",
@@ -76,6 +80,35 @@ export default function JobDescriptionPage() {
     if (user)
       updateProgress(user, "job_description");
   }, [user]);
+
+  // Handle scroll indicators
+  useEffect(() => {
+    const handleScroll = () => {
+      const container = pdfContainerRef.current;
+      if (!container) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      
+      // Show scroll up indicator if not at top
+      setShowScrollUp(scrollTop > 20);
+      
+      // Show scroll down indicator if not at bottom
+      setShowScrollDown(scrollTop < scrollHeight - clientHeight - 20);
+    };
+
+    const container = pdfContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      // Initial check
+      handleScroll();
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [pdfLoaded]);
 
   useEffect(() => {
     if (!socket || !user?.email) return;
@@ -266,15 +299,24 @@ export default function JobDescriptionPage() {
         </div>
 
         {/* Scrollable PDF Container */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Scroll Up Indicator */}
+          {showScrollUp && (
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 bg-navy text-white px-4 py-2 rounded-b-lg shadow-lg animate-bounce">
+              ▲ Scroll Up
+            </div>
+          )}
+
           <div
+            ref={pdfContainerRef}
             id="pdf-container"
-            className={`flex-1 overflow-y-auto w-full mx-auto flex justify-center rounded-lg ${
+            className={`flex-1 overflow-y-scroll bg-gray-100 border-2 border-gray-300 rounded-lg shadow-lg p-6 mx-auto max-w-5xl ${
               tool === "comment" ? "cursor-crosshair" : ""
             }`}
+            style={{ scrollbarWidth: 'thin' }}
             onClick={handlePdfClick}
           >
-            <div className="border border-northeasternBlack p-4 rounded-lg h-fit">
+            <div className="bg-white border border-gray-400 rounded-lg shadow-md p-4 h-fit mx-auto w-fit">
               <Document
                 file={fileUrl}
                 onLoadSuccess={({ numPages }) => {
@@ -347,6 +389,13 @@ export default function JobDescriptionPage() {
               />
             )}
           </div>
+
+          {/* Scroll Down Indicator */}
+          {showScrollDown && (
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20 bg-navy text-white px-4 py-2 rounded-t-lg shadow-lg animate-bounce">
+              ▼ Scroll Down
+            </div>
+          )}
 
           {/* Page Navigation - Fixed below PDF */}
           <div className="flex justify-center items-center gap-5 mt-5 mb-3 w-full flex-shrink-0">
