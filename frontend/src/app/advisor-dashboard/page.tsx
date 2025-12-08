@@ -1,42 +1,269 @@
-'use client'; //Declares that this page is a client component
+'use client'
 export const dynamic = "force-dynamic";
-const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com"; // API base URL from environment variables
-import React, { useState, useEffect } from "react"; // Importing React and hooks for state and effect management
-import { useRouter } from "next/navigation"; // Importing useRouter for navigation
-import Link from "next/link"; // Importing Link for client-side navigation
-import NavbarAdmin from "../components/navbar-admin"; // Importing the admin navbar component
-import Slideshow from "../components/slideshow"; // Importing slideshow component for background
-import { useSocket } from "../components/socketContext"; // Importing custom hook to use socket context
-import { useAuth } from "../components/AuthContext"; // Importing custom hook to use authentication context
+const API_BASE_URL = "https://nuhire-api-cz6c.onrender.com";
 
-const Dashboard = () => {
+import { useState, useEffect, JSX, useRef } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+import Navbar from "../components/navbar";
+import Popup from "../components/popup";
+import Footer from "../components/footer";
+import { usePathname } from "next/navigation";
+import { useSocket } from "../components/socketContext";
+import { useAuth } from "../components/AuthContext";
+import Instructions from "../components/instructions";
+import { useProgressManager } from "../components/progress";
 
-  // Define the User interface to match the expected user data structure
-  interface User {
-    id: number;
-    name: string;
-    email: string;
-    affiliation: string;
-  }
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
-  // State variables to manage user data and loading state
-  const router = useRouter();
+
+interface CommentType {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  page: number;
+  isEditing?: boolean;
+}
+
+interface User { 
+  email: string;
+  class: number;
+  group_id: number;
+}
+
+export default function JobDescriptionPage() { 
   const socket = useSocket();
   const { user, loading: userloading } = useAuth();
+  const {updateProgress, fetchProgress} = useProgressManager();
+  const [fileUrl, setJob] = useState("");
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [showInstructions, setShowInstructions] = useState(true);
+  const [tool, setTool] = useState<"pointer" | "comment">("pointer");
+  
+  const [popup, setPopup] = useState<{ headline: string; message: string } | null>(null);
+  const [pdfLoaded, setPdfLoaded] = useState(false);
+  const pathname = usePathname();
+  const hasUpdatedPageRef = useRef(false);
+  const [showScrollUp, setShowScrollUp] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
 
-  // Socket connection - only run when both socket AND user are ready
-  useEffect(() => {
-    if (!socket || !user?.email) return; // ✅ Check both socket and user
+  const jobDesInstructions = [
+    "Read the job description that you are hiring for.",
+    "Take notes by pressing the top right notes button, you can always access them.",
+    "Pay attention to the required skills and qualifications.",
+    "Look for specific technologies or tools mentioned.",
+    "Note any soft skills that are emphasized in the job description."
+  ];
 
-    console.log('Admin coming online:', user.email); // Debug log
-    socket.emit("adminOnline", { adminEmail: user.email });
+   useEffect(() => {
+    const handleShowInstructions = () => {
+      console.log("Help button clicked - showing instructions");
+      setShowInstructions(true);
+    };
+
+    window.addEventListener('showInstructions', handleShowInstructions);
 
     return () => {
-      console.log('Admin going offline:', user.email); // Debug log
-      socket.emit("adminOffline", { adminEmail: user.email });
+      window.removeEventListener('showInstructions', handleShowInstructions);
     };
-  }, [socket, user?.email]);
+  }, []);
 
+  useEffect(() => {
+    if (user)
+      updateProgress(user, "job_description");
+  }, [user]);
+
+  // Handle scroll indicators
+  useEffect(() => {
+    const handleScroll = () => {
+      const container = pdfContainerRef.current;
+      if (!container) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      
+      // Show scroll up indicator if not at top
+      setShowScrollUp(scrollTop > 20);
+      
+      // Show scroll down indicator if not at bottom
+      setShowScrollDown(scrollTop < scrollHeight - clientHeight - 20);
+    };
+
+    const container = pdfContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      // Initial check
+      handleScroll();
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [pdfLoaded]);
+
+  useEffect(() => {
+    if (!socket || !user?.email) return;
+
+    socket.emit("studentOnline", { studentId: user.email }); 
+    socket.emit("studentPageChanged", { studentId: user.email, currentPage: pathname });
+
+    // Only update the database once per page visit
+    if (!hasUpdatedPageRef.current) {
+      const updateCurrentPage = async () => {
+        try {
+          await fetch(`${API_BASE_URL}/users/update-currentpage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ page: 'jobdes', user_email: user.email }),
+            credentials: "include"
+          });
+          hasUpdatedPageRef.current = true; // Mark as updated
+        } catch (error) {
+          console.error("Error updating current page:", error);
+        }
+      };
+
+      updateCurrentPage();
+    }
+  }, [socket, user?.email, pathname]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceivePopup = ({ headline, message }: { headline: string; message: string }) => {
+      setPopup({ headline, message });
+    };
+
+    socket.on("receivePopup", handleReceivePopup);
+
+    return () => {
+      socket.off("receivePopup", handleReceivePopup);
+    };
+  }, [socket]);
+
+  // Update your fetchJob useEffect in jobdes/page.tsx
+  useEffect(() => {
+    const fetchJob = async () => {
+      if (!user?.group_id || !user?.class) {
+        console.log("No user group_id or class found");
+        return; 
+      }
+      
+      try {
+        // First, get the job assignment for this group/class
+        console.log(`Fetching job assignment for group ${user.group_id} in class ${user.class}`);
+        const jobAssignmentResponse = await fetch(
+          `${API_BASE_URL}/jobs/assignment/${user.group_id}/${user.class}`, {credentials: "include"},
+        );
+
+        if (!jobAssignmentResponse.ok) {
+          console.log("No job assignment found for this group");
+          return;
+        }
+
+        const jobAssignmentData = await jobAssignmentResponse.json();
+      const jobTitle = jobAssignmentData.job;
+        console.log("Found job assignment:", jobTitle);
+
+        // Then fetch the PDF file using the job title
+      const response = await fetch(`${API_BASE_URL}/jobs/title?title=${encodeURIComponent(jobTitle)}&class_id=${user.class}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include"
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch job description PDF");
+        }
+
+        const job = await response.json();
+        console.log("Job PDF data:", job);
+        setJob(`${API_BASE_URL}/${job.file_path}`);
+      } catch (error) {
+        console.error("Error fetching job description:", error);
+        setPopup({
+          headline: "No Job Assignment",
+          message: "You haven't been assigned a job description yet. Please contact your instructor."
+        });
+      } 
+    };
+
+    fetchJob();
+  }, [user?.group_id, user?.class]);
+
+
+      useEffect(() => {
+        const savedComments = localStorage.getItem("pdf-comments");
+        if (savedComments) {
+          setComments(JSON.parse(savedComments));
+        }
+      }, []);
+    
+      useEffect(() => {
+        localStorage.setItem("pdf-comments", JSON.stringify(comments));
+      }, [comments]);
+    
+      const handlePdfClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if (tool !== "comment") return;
+        const pdfPage = document.querySelector(".react-pdf__Page") as HTMLElement | null;
+        if (!pdfPage) {
+          console.log("PDF page not found.");
+          return;
+        }
+        const pageRect = pdfPage.getBoundingClientRect();
+        if (
+          event.clientX >= pageRect.left &&
+          event.clientX <= pageRect.right &&
+          event.clientY >= pageRect.top &&
+          event.clientY <= pageRect.bottom
+        ) {
+          // Calculate coordinates relative to PDF
+          const x = (event.clientX - pageRect.left) / pageRect.width * 100;
+          const y = (event.clientY - pageRect.top) / pageRect.height * 100;
+          const newComment: CommentType = {
+            id: String(Date.now()),
+            x,
+            y,
+            text: "",
+            page: pageNumber,
+            isEditing: true,
+          };
+          setComments([...comments, newComment]);
+        } else {
+          console.log("Clicked outside the PDF page, comment not added.");
+        }
+      };
+    
+      // Update comment text and turn off editing mode
+      const updateComment = (id: string, newText: string) => {
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === id ? { ...comment, text: newText, isEditing: false } : comment
+          )
+        );
+      };
+    
+      const deleteComment = (id: string) => {
+        setComments((prevComments) => prevComments.filter((comment) => comment.id !== id));
+      };
+    
+      const toggleEditComment = (id: string) => {
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === id ? { ...comment, isEditing: true } : comment
+          )
+        );
+      };
+    
   if (userloading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand">
@@ -47,55 +274,171 @@ const Dashboard = () => {
       </div>
     );
   }  
+  
+  if (!user) return <div>Error: User not found.</div>;
 
-  if (!user || user.affiliation !== "admin") {
-    // If the user is not an admin, redirect to the home page
-    router.push("/");
-    return null; // Return null to avoid rendering anything else
-  }
 
-  // Render the dashboard if the user is an admin
+
   return (
-    <div className="flex flex-col min-h-screen bg-northeasternWhite font-rubik">
-      <div className="fixed inset-0 z-0">
-          <Slideshow />
-      </div>        
-      <div className="fixed inset-0 bg-sand/80 z-5" />
-      <NavbarAdmin />
-      <div className="mt-6"/>
-      <div className="flex justify-center items-center py-1 z-10">
-        <h1 className="text-4xl font-bold text-northeasternBlack text-center drop-shadow-lg">
-          Advisor Dashboard
-        </h1>
+    <div className="h-screen flex flex-col bg-sand font-rubik overflow-hidden">
+      {showInstructions && (
+        <Instructions 
+          instructions={jobDesInstructions}
+          onDismiss={() => setShowInstructions(false)}
+          title="Job Description Instructions"
+          progress={0}
+        />
+      )}
+      <Navbar />
+      
+      {/* Main content area with fixed height */}
+      <div className="flex-1 flex flex-col px-4 py-8 overflow-hidden">
+        {/* Title */}
+        <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
+          Job Description
+        </div>
+
+        {/* Scrollable PDF Container */}
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Scroll Up Indicator */}
+          {showScrollUp && (
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 bg-navy text-white px-4 py-2 rounded-b-lg shadow-lg animate-bounce">
+              ▲ Scroll Up
+            </div>
+          )}
+
+          <div
+            ref={pdfContainerRef}
+            id="pdf-container"
+            className={`flex-1 overflow-y-scroll bg-gray-100 border-2 border-gray-300 rounded-lg shadow-lg p-6 mx-auto max-w-5xl ${
+              tool === "comment" ? "cursor-crosshair" : ""
+            }`}
+            style={{ scrollbarWidth: 'thin' }}
+            onClick={handlePdfClick}
+          >
+            <div className="bg-white border border-gray-400 rounded-lg shadow-md p-4 h-fit mx-auto w-fit">
+              <Document
+                file={fileUrl}
+                onLoadSuccess={({ numPages }) => {
+                  setNumPages(numPages);
+                  setPdfLoaded(true);
+                }}
+                className={`relative`}
+              >
+                <Page
+                  pageNumber={pageNumber}
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                  className="flex justify-center"
+                  scale={1.3}
+                />
+
+              {comments
+                .filter((comment) => comment.page === pageNumber)
+                .map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="comment-overlay absolute bg-white shadow-md p-2 rounded-md"
+                    style={{
+                      left: `${comment.x}%`,
+                      top: `${comment.y}%`,
+                    }}
+                  >
+                    {comment.isEditing ? (
+                      <input
+                        type="text"
+                        placeholder="Enter comment..."
+                        autoFocus
+                        className="border border-gray-400 rounded-md p-1 text-sm"
+                        defaultValue={comment.text}
+                        onBlur={(e) => updateComment(comment.id, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateComment(comment.id, (e.target as HTMLInputElement).value);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="relative">
+                        <div
+                          className="bg-gray-200 text-sm p-2 rounded-md cursor-pointer"
+                          onClick={() => toggleEditComment(comment.id)}
+                        >
+                          {comment.text}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteComment(comment.id);
+                          }}
+                          className="absolute top-0 right-0 text-red-500 text-xs"
+                        >
+                          X
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </Document>
+            </div>
+            {popup && (
+              <Popup
+                headline={popup.headline}
+                message={popup.message}
+                onDismiss={() => setPopup(null)}
+              />
+            )}
+          </div>
+
+          {/* Scroll Down Indicator */}
+          {showScrollDown && (
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20 bg-navy text-white px-4 py-2 rounded-t-lg shadow-lg animate-bounce">
+              ▼ Scroll Down
+            </div>
+          )}
+
+          {/* Page Navigation - Fixed below PDF */}
+          <div className="flex justify-center items-center gap-5 mt-5 mb-3 w-full flex-shrink-0">
+            <button
+              disabled={pageNumber <= 1}
+              onClick={() => setPageNumber(pageNumber - 1)}
+              className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              ← Previous
+            </button>
+
+            <span className="font-bold text-lg mx-4">
+              Page {pageNumber} of {numPages}
+            </span>
+
+            <button
+              disabled={pageNumber >= (numPages || 1)}
+              onClick={() => setPageNumber(pageNumber + 1)}
+              className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
       </div>
 
-      <main className="flex flex-col items-center justify-center flex-grow z-10">
-        <div className="mt-6 gap-6 flex flex-row justify-center items-center">
-            <Link
-              href="/grouping"
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-72 h-72"
-            >
-              <span className="text-4xl mb-2">👥</span>
-              <span>Manage Groups</span>
-            </Link>
-            <Link 
-              href="/new-pdf" 
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-72 h-72"
-            >
-              <span className="text-4xl mb-2">📤</span>
-              <span>Upload Job and Resumes</span>
-            </Link>
-            <Link 
-              href="/adminFacts" 
-              className="px-8 py-8 bg-northeasternWhite text-northeasternRed border-4 border-northeasternRed font-semibold rounded-2xl shadow-xl hover:bg-northeasternRed hover:text-northeasternWhite transition flex flex-col items-center justify-center text-center text-lg w-72 h-72"
-            >
-              <span className="text-4xl mb-2">🔍</span>
-              <span>Waiting Facts</span>
-            </Link>
-          </div>
-      </main>
+      {/* Fixed Footer */}
+      <footer className="flex-shrink-0">
+        <div className="flex justify-end mt-4 mb-4 mr-4">
+          <button
+            onClick={() => {
+              updateProgress(user, "res_1");
+              localStorage.setItem("progress", "res_1");
+              console.log("Progress updated to res_1");
+              window.location.href = '/res-review';
+            }}
+            className="px-4 py-2 bg-redHeader text-white rounded-lg shadow-md hover:bg-navy transition duration-300 font-rubik"
+          >
+            Next: Resume Review pt. 1 →
+          </button>
+        </div>
+      </footer>
+    <Footer />
     </div>
   );
-};
-
-export default Dashboard;
+}
