@@ -299,25 +299,23 @@ export default function JobDescriptionPage() {
         </div>
 
         {/* Scrollable PDF Container */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Scroll Up Indicator */}
-          {showScrollUp && (
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
-              <div className="bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed px-4 py-2 rounded-lg shadow-lg font-semibold">
-                ↑ Scroll Up for More
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 bg-gray-100 border-2 border-gray-300 rounded-lg shadow-lg p-6 mx-auto max-w-5xl relative overflow-hidden">
+            {/* Scroll Up Indicator */}
+            {showScrollUp && (
+              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
+                <div className="text-blue-600 text-xs font-semibold animate-bounce">▲ Scroll up</div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div
-            ref={pdfContainerRef}
-            id="pdf-container"
-            className={`flex-1 overflow-y-scroll bg-gray-100 border-2 border-gray-300 rounded-lg shadow-lg p-6 mx-auto max-w-5xl ${
-              tool === "comment" ? "cursor-crosshair" : ""
-            }`}
-            style={{ scrollbarWidth: 'thin' }}
-            onClick={handlePdfClick}
-          >
+            <div
+              ref={pdfContainerRef}
+              id="pdf-container"
+              className={`h-full overflow-y-auto ${
+                tool === "comment" ? "cursor-crosshair" : ""
+              }`}
+              onClick={handlePdfClick}
+            >
             <div className="bg-white border border-gray-400 rounded-lg shadow-md p-4 h-fit mx-auto w-fit">
               <Document
                 file={fileUrl}
@@ -394,14 +392,13 @@ export default function JobDescriptionPage() {
 
           {/* Scroll Down Indicator */}
           {showScrollDown && (
-            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
-              <div className="bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed px-4 py-2 rounded-lg shadow-lg font-semibold">
-                ↓ Scroll Down for More
-              </div>
+            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
+              <div className="text-blue-600 text-xs font-semibold animate-bounce">▼ Scroll down</div>
             </div>
           )}
+        </div>
 
-          {/* Page Navigation - Fixed below PDF */}
+        {/* Page Navigation - Fixed below PDF */}
           <div className="flex justify-center items-center gap-5 mt-5 mb-3 w-full flex-shrink-0">
             <button
               disabled={pageNumber <= 1}
