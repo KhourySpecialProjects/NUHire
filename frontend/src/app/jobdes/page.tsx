@@ -302,8 +302,10 @@ export default function JobDescriptionPage() {
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Scroll Up Indicator */}
           {showScrollUp && (
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 bg-navy text-white px-4 py-2 rounded-b-lg shadow-lg animate-bounce">
-              ▲ Scroll Up
+            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
+              <div className="bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed px-4 py-2 rounded-lg shadow-lg font-semibold">
+                ↑ Scroll Up for More
+              </div>
             </div>
           )}
 
@@ -392,8 +394,10 @@ export default function JobDescriptionPage() {
 
           {/* Scroll Down Indicator */}
           {showScrollDown && (
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20 bg-navy text-white px-4 py-2 rounded-t-lg shadow-lg animate-bounce">
-              ▼ Scroll Down
+            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
+              <div className="bg-northeasternWhite text-northeasternRed border-2 border-northeasternRed px-4 py-2 rounded-lg shadow-lg font-semibold">
+                ↓ Scroll Down for More
+              </div>
             </div>
           )}
 
