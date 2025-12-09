@@ -480,7 +480,7 @@ const Upload = () => {
                           <span className="font-medium text-gray-700">{job.title}</span>
                           <div className="flex gap-2">
                             <a
-                              href={`${API_BASE_URL}${job.file_path}`}
+                              href={`${API_BASE_URL}/${job.file_path.replace(/^\//, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3 py-1 bg-navy text-white rounded hover:bg-opacity-90 transition duration-200"
@@ -581,7 +581,7 @@ const Upload = () => {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <a
-                              href={`${API_BASE_URL}${resume.file_path}`}
+                              href={`${API_BASE_URL}/${resume.file_path.replace(/^\//, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3 py-1 bg-navy text-white rounded hover:bg-opacity-90 transition duration-200 text-sm"
