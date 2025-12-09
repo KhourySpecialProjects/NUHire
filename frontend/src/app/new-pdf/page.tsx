@@ -70,6 +70,11 @@ const Upload = () => {
     canScrollDown: false,
     canScrollUp: false
   });
+
+  const router = useRouter();
+  const [pendingOffers, setPendingOffers] = useState<
+    { classId: number; groupId: number; candidateId: number }[]
+  >([]);
   const socket = useSocket();
 
   const handleJobsScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -141,6 +146,46 @@ const Upload = () => {
       fetchResumes();
     }
   }, [selectedClass]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
+      const { classId, groupId, candidateId } = data;
+      setPendingOffers((prev) => [...prev, { classId, groupId, candidateId }]);
+    };
+
+    socket.on("makeOfferRequest", onRequest);
+
+    return () => {
+      socket.off("makeOfferRequest", onRequest);
+    };
+  }, [socket]);
+
+  const respondToOffer = (
+    classId: number,
+    groupId: number,
+    candidateId: number,
+    accepted: boolean
+  ) => {
+    if (!socket) {
+      console.error('Socket not connected');
+      return;
+    }
+
+    socket.emit("makeOfferResponse", {
+      classId,
+      groupId,
+      candidateId,
+      accepted,
+    });
+
+    setPendingOffers((prev) =>
+      prev.filter((o) =>
+        o.classId !== classId || o.groupId !== groupId || o.candidateId !== candidateId
+      )
+    );
+  };
 
   const fetchJobs = async () => {
     if (!selectedClass) return;
@@ -258,6 +303,18 @@ const Upload = () => {
   const isValidYouTubeUrl = (url: string): boolean => {
     const extractedUrl = extractYouTubeUrl(url);
     return extractedUrl !== null;
+  };
+
+  const handleJobFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setJobFile(e.target.files[0]);
+    }
+  };
+
+  const handleResumeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setResumeFile(e.target.files[0]);
+    }
   };
 
   const uploadJobDescription = async () => {
@@ -534,12 +591,12 @@ const Upload = () => {
                     className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy"
                   />
                 </div>
-                <textarea
-                  placeholder="Paste YouTube link or embed code here (e.g., https://youtube.com/watch?v=... or full <iframe> code)"
+                <input
+                  type="text"
+                  placeholder="YouTube Video URL or Embed Code"
                   value={resYouTubeVideo}
                   onChange={(e) => setResYouTubeVideo(e.target.value)}
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy resize-none"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy"
                 />
                 <input
                   type="file"
@@ -620,11 +677,28 @@ const Upload = () => {
           </div>
         )}
 
+        {/* Render pending offers as popups */}
+        {pendingOffers.map(({ classId, groupId, candidateId }) => (
+          <div key={`${classId}-${groupId}-${candidateId}`}>
+            <AdminReactionPopup
+              classId={classId}
+              groupId={groupId}
+              candidateId={candidateId}
+              onAccept={() =>
+                respondToOffer(classId, groupId, candidateId, true)
+              }
+              onReject={() =>
+                respondToOffer(classId, groupId, candidateId, false)
+              }
+            />
+          </div>
+        ))}
+
         {popup && (
           <Popup
             headline={popup.headline}
             message={popup.message}
-            onDismiss={() => setPopup(null)}
+            onClose={() => setPopup(null)}
           />
         )}
       </div>
