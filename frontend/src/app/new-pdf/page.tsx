@@ -71,10 +71,6 @@ const Upload = () => {
     canScrollUp: false
   });
 
-  const router = useRouter();
-  const [pendingOffers, setPendingOffers] = useState<
-    { classId: number; groupId: number; candidateId: number }[]
-  >([]);
   const socket = useSocket();
 
   const handleJobsScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -146,46 +142,6 @@ const Upload = () => {
       fetchResumes();
     }
   }, [selectedClass]);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const onRequest = (data: { classId: number; groupId: number; candidateId: number }) => {
-      const { classId, groupId, candidateId } = data;
-      setPendingOffers((prev) => [...prev, { classId, groupId, candidateId }]);
-    };
-
-    socket.on("makeOfferRequest", onRequest);
-
-    return () => {
-      socket.off("makeOfferRequest", onRequest);
-    };
-  }, [socket]);
-
-  const respondToOffer = (
-    classId: number,
-    groupId: number,
-    candidateId: number,
-    accepted: boolean
-  ) => {
-    if (!socket) {
-      console.error('Socket not connected');
-      return;
-    }
-
-    socket.emit("makeOfferResponse", {
-      classId,
-      groupId,
-      candidateId,
-      accepted,
-    });
-
-    setPendingOffers((prev) =>
-      prev.filter((o) =>
-        o.classId !== classId || o.groupId !== groupId || o.candidateId !== candidateId
-      )
-    );
-  };
 
   const fetchJobs = async () => {
     if (!selectedClass) return;
@@ -267,9 +223,8 @@ const Upload = () => {
     }
   };
 
-  // New function to extract YouTube URL from HTML embed code or regular URL
+  // Extract YouTube URL from HTML embed code or regular URL
   const extractYouTubeUrl = (input: string): string | null => {
-    // Remove extra whitespace
     const cleanInput = input.trim();
     
     // Pattern 1: Extract from iframe src attribute
@@ -303,18 +258,6 @@ const Upload = () => {
   const isValidYouTubeUrl = (url: string): boolean => {
     const extractedUrl = extractYouTubeUrl(url);
     return extractedUrl !== null;
-  };
-
-  const handleJobFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setJobFile(e.target.files[0]);
-    }
-  };
-
-  const handleResumeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setResumeFile(e.target.files[0]);
-    }
   };
 
   const uploadJobDescription = async () => {
@@ -677,28 +620,11 @@ const Upload = () => {
           </div>
         )}
 
-        {/* Render pending offers as popups */}
-        {pendingOffers.map(({ classId, groupId, candidateId }) => (
-          <div key={`${classId}-${groupId}-${candidateId}`}>
-            <AdminReactionPopup
-              classId={classId}
-              groupId={groupId}
-              candidateId={candidateId}
-              onAccept={() =>
-                respondToOffer(classId, groupId, candidateId, true)
-              }
-              onReject={() =>
-                respondToOffer(classId, groupId, candidateId, false)
-              }
-            />
-          </div>
-        ))}
-
         {popup && (
           <Popup
             headline={popup.headline}
             message={popup.message}
-            onClose={() => setPopup(null)}
+            onDismiss={() => setPopup(null)}
           />
         )}
       </div>
