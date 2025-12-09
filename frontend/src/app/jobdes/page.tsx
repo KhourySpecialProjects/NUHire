@@ -51,6 +51,10 @@ export default function JobDescriptionPage() {
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const pathname = usePathname();
   const hasUpdatedPageRef = useRef(false);
+  const [showScrollUp, setShowScrollUp] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+
   const jobDesInstructions = [
     "Read the job description that you are hiring for.",
     "Take notes by pressing the top right notes button, you can always access them.",
@@ -76,6 +80,35 @@ export default function JobDescriptionPage() {
     if (user)
       updateProgress(user, "job_description");
   }, [user]);
+
+  // Handle scroll indicators
+  useEffect(() => {
+    const handleScroll = () => {
+      const container = pdfContainerRef.current;
+      if (!container) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      
+      // Show scroll up indicator if not at top
+      setShowScrollUp(scrollTop > 20);
+      
+      // Show scroll down indicator if not at bottom
+      setShowScrollDown(scrollTop < scrollHeight - clientHeight - 20);
+    };
+
+    const container = pdfContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      // Initial check
+      handleScroll();
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [pdfLoaded]);
 
   useEffect(() => {
     if (!socket || !user?.email) return;
@@ -247,7 +280,7 @@ export default function JobDescriptionPage() {
 
 
   return (
-    <div className="bg-sand font-rubik">
+    <div className="h-screen flex flex-col bg-sand font-rubik overflow-hidden">
       {showInstructions && (
         <Instructions 
           instructions={jobDesInstructions}
@@ -257,122 +290,146 @@ export default function JobDescriptionPage() {
         />
       )}
       <Navbar />
-      <div className="flex-1 flex flex-col px-4 py-8">
-
+      
+      {/* Main content area with fixed height */}
+      <div className="flex-1 flex flex-col px-4 py-8 overflow-hidden">
+        {/* Title */}
         <div className="flex justify-center items-center font-rubik text-redHeader text-4xl font-bold mb-4">
           Job Description
         </div>
 
-        <div
-          id="pdf-container"
-          className={`relative w-full mx-auto flex justify-center rounded-lg ${
-            tool === "comment" ? "cursor-crosshair" : ""
-          }`}
-          onClick={handlePdfClick}
-        >
-          <div className="border border-northeasternBlack p-4 rounded-lg">
-            <Document
-              file={fileUrl}
-              onLoadSuccess={({ numPages }) => {
-                setNumPages(numPages);
-                setPdfLoaded(true);
-              }}
-              className={`relative`}
-            >
-              <Page
-                pageNumber={pageNumber}
-                renderTextLayer={true}
-                renderAnnotationLayer={true}
-                className="flex justify-center"
-                scale={1.3}
-              />
+        {/* Scrollable PDF Container */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 bg-gray-100 border-2 border-gray-300 rounded-lg shadow-lg p-6 mx-auto max-w-5xl relative overflow-hidden">
+            {/* Scroll Up Indicator */}
+            {showScrollUp && (
+              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none flex items-start justify-center">
+                <div className="text-blue-600 text-xs font-semibold animate-bounce">▲ Scroll up</div>
+              </div>
+            )}
 
-            {comments
-              .filter((comment) => comment.page === pageNumber)
-              .map((comment) => (
-                <div
-                  key={comment.id}
-                  className="comment-overlay absolute bg-white shadow-md p-2 rounded-md"
-                  style={{
-                    left: `${comment.x}%`,
-                    top: `${comment.y}%`,
-                  }}
-                >
-                  {comment.isEditing ? (
-                    <input
-                      type="text"
-                      placeholder="Enter comment..."
-                      autoFocus
-                      className="border border-gray-400 rounded-md p-1 text-sm"
-                      defaultValue={comment.text}
-                      onBlur={(e) => updateComment(comment.id, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          updateComment(comment.id, (e.target as HTMLInputElement).value);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="relative">
-                      <div
-                        className="bg-gray-200 text-sm p-2 rounded-md cursor-pointer"
-                        onClick={() => toggleEditComment(comment.id)}
-                      >
-                        {comment.text}
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteComment(comment.id);
+            <div
+              ref={pdfContainerRef}
+              id="pdf-container"
+              className={`h-full overflow-y-auto ${
+                tool === "comment" ? "cursor-crosshair" : ""
+              }`}
+              onClick={handlePdfClick}
+            >
+            <div className="bg-white border border-gray-400 rounded-lg shadow-md p-4 h-fit mx-auto w-fit">
+              <Document
+                file={fileUrl}
+                onLoadSuccess={({ numPages }) => {
+                  setNumPages(numPages);
+                  setPdfLoaded(true);
+                }}
+                className={`relative`}
+              >
+                <Page
+                  pageNumber={pageNumber}
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                  className="flex justify-center"
+                  scale={1.3}
+                />
+
+              {comments
+                .filter((comment) => comment.page === pageNumber)
+                .map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="comment-overlay absolute bg-white shadow-md p-2 rounded-md"
+                    style={{
+                      left: `${comment.x}%`,
+                      top: `${comment.y}%`,
+                    }}
+                  >
+                    {comment.isEditing ? (
+                      <input
+                        type="text"
+                        placeholder="Enter comment..."
+                        autoFocus
+                        className="border border-gray-400 rounded-md p-1 text-sm"
+                        defaultValue={comment.text}
+                        onBlur={(e) => updateComment(comment.id, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateComment(comment.id, (e.target as HTMLInputElement).value);
+                          }
                         }}
-                        className="absolute top-0 right-0 text-red-500 text-xs"
-                      >
-                        X
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </Document>
+                      />
+                    ) : (
+                      <div className="relative">
+                        <div
+                          className="bg-gray-200 text-sm p-2 rounded-md cursor-pointer"
+                          onClick={() => toggleEditComment(comment.id)}
+                        >
+                          {comment.text}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteComment(comment.id);
+                          }}
+                          className="absolute top-0 right-0 text-red-500 text-xs"
+                        >
+                          X
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </Document>
+            </div>
+            {popup && (
+              <Popup
+                headline={popup.headline}
+                message={popup.message}
+                onDismiss={() => setPopup(null)}
+              />
+            )}
           </div>
-          {popup && (
-            <Popup
-              headline={popup.headline}
-              message={popup.message}
-              onDismiss={() => setPopup(null)}
-            />
+
+          {/* Scroll Down Indicator */}
+          {showScrollDown && (
+            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none flex items-end justify-center">
+              <div className="text-blue-600 text-xs font-semibold animate-bounce">▼ Scroll down</div>
+            </div>
           )}
         </div>
 
-        <div className="flex justify-center items-center gap-5 mt-5 mb-5 w-full">
-          <button
-            disabled={pageNumber <= 1}
-            onClick={() => setPageNumber(pageNumber - 1)}
-            className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            ← Previous
-          </button>
+        {/* Page Navigation - Fixed below PDF */}
+          <div className="flex justify-center items-center gap-5 mt-5 mb-3 w-full flex-shrink-0">
+            <button
+              disabled={pageNumber <= 1}
+              onClick={() => setPageNumber(pageNumber - 1)}
+              className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              ← Previous
+            </button>
 
-          <span className="font-bold text-lg mx-4">
-            Page {pageNumber} of {numPages}
-          </span>
+            <span className="font-bold text-lg mx-4">
+              Page {pageNumber} of {numPages}
+            </span>
 
-          <button
-            disabled={pageNumber >= (numPages || 1)}
-            onClick={() => setPageNumber(pageNumber + 1)}
-            className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Next →
-          </button>
+            <button
+              disabled={pageNumber >= (numPages || 1)}
+              onClick={() => setPageNumber(pageNumber + 1)}
+              className="px-4 py-2 rounded bg-navy font-rubik text-white transition duration-300 hover:bg-redHeader disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          </div>
         </div>
       </div>
 
-      <footer>
+      {/* Fixed Footer */}
+      <footer className="flex-shrink-0">
         <div className="flex justify-end mt-4 mb-4 mr-4">
           <button
             onClick={() => {
               updateProgress(user, "res_1");
-              localStorage.setItem("progress", "res_1"); // update to commmit
+              localStorage.setItem("progress", "res_1");
               console.log("Progress updated to res_1");
               window.location.href = '/res-review';
             }}
