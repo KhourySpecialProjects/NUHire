@@ -450,6 +450,7 @@ export default function ResReviewGroup() {
   const completeResumes = () => {
     if (!socket || !user) return;
     
+    console.log("Completing resume review, moving to interview stage AAAAA");
     updateProgress(user, "interview");
     localStorage.setItem("progress", "interview");
     window.location.href = "/interview-stage";
