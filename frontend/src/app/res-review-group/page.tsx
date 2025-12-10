@@ -147,12 +147,10 @@ export default function ResReviewGroup() {
 
       try {
         // Fetch resumes
-        console.log("📄 [INITIAL-FETCH] Fetching resumes for class:", user.class);
         const resumeResponse = await fetch(`${API_BASE_URL}/resume_pdf?class_id=${user.class}`, { credentials: "include" });
         const resumeData: { file_path: string; id: number; title: string, first_name: string, last_name: string }[] = await resumeResponse.json();
 
         // Fetch votes
-        console.log("📊 [INITIAL-FETCH] Fetching votes for group:", user.group_id, "class:", user.class);
         const voteResponse = await fetch(`${API_BASE_URL}/resume/group/${user.group_id}?class=${user.class}`, {credentials: "include"});
         const voteData: ResumeData[] = await voteResponse.json();
 
@@ -174,9 +172,6 @@ export default function ResReviewGroup() {
           checkboxData[resume_number] = checked;
         });
 
-        console.log("📊 [INITIAL-FETCH] Processed vote counts:", voteCounts);
-        console.log("📊 [INITIAL-FETCH] Processed checkbox states:", checkboxData);
-
         setVoteCounts(voteCounts);
         setCheckedState(checkboxData);
 
@@ -194,7 +189,6 @@ export default function ResReviewGroup() {
           last_name: item.last_name
         }));
 
-        console.log("📄 [INITIAL-FETCH] Formatted resumes:", formatted);
         setResumes(formatted);
 
       } catch (error) {
@@ -209,16 +203,13 @@ export default function ResReviewGroup() {
   useEffect(() => {
     if (!socket || !user) return;
 
-    console.log("Socket connected:", socket.id);
     setIsConnected(true);
     
     const roomId = `group_${user.group_id}_class_${user.class}`;
-    console.log("Joining room:", roomId);
     socket.emit("joinGroup", roomId);
 
     const handleStudentRemoved = ({ groupId, classId }: { groupId: number; classId: number }) => {
       if (groupId == user.group_id && classId == user.class) {
-        console.log("📡 Student removed from group - refreshing group size");
         // Refetch group size
         fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
           .then(res => res.json())
@@ -229,7 +220,6 @@ export default function ResReviewGroup() {
 
     // Update checkbox state live
     const handleCheckboxUpdated = ({ resume_number, checked }: { resume_number: number; checked: boolean }) => {
-      console.log(`Received checkbox update: Resume ${resume_number}, Checked: ${checked}`);
       setCheckedState((prev) => ({
         ...prev,
         [resume_number]: checked,
@@ -242,7 +232,6 @@ export default function ResReviewGroup() {
       oldVote: string;
       newVote: string;
     }) => {
-      console.log(`Vote update: Resume ${resume_number}, ${oldVote} -> ${newVote}`);
       setVoteCounts(prev => {
         const current = prev[resume_number] || { yes: 0, no: 0, undecided: 0 };
         const updated = { ...current };
@@ -300,27 +289,17 @@ export default function ResReviewGroup() {
     };
 
     const handleStudentAdded = ({ groupId, classId }: { groupId: number; classId: number }) => {
-      console.log("📡 [STUDENT-ADDED] Event received - groupId:", groupId, "typeof:", typeof groupId);
-      console.log("📡 [STUDENT-ADDED] Event received - classId:", classId, "typeof:", typeof classId);
-      console.log("📡 [STUDENT-ADDED] User check - user.group_id:", user?.group_id, "typeof:", typeof user?.group_id);
-      console.log("📡 [STUDENT-ADDED] User check - user.class:", user?.class, "typeof:", typeof user?.class);
-      console.log("📡 [STUDENT-ADDED] Comparison - groupId == user.group_id:", groupId == user.group_id);
-      console.log("📡 [STUDENT-ADDED] Comparison - classId == user.class:", classId == user.class);
-      
+
       if (groupId == user.group_id && classId == user.class) {
-        console.log("📡 [STUDENT-ADDED] ✅ Event is for this user's group - refreshing group size");
         fetch(`${API_BASE_URL}/interview/group-size/${user.group_id}/${user.class}`, { credentials: "include" })
           .then(res => {
-            console.log("📡 [STUDENT-ADDED] Fetch response status:", res.status);
             return res.json();
           })
           .then(data => {
-            console.log("📡 [STUDENT-ADDED] New group size:", data.count);
             setGroupSize(data.count);
           })
           .catch(err => console.error("❌ [STUDENT-ADDED] Failed to fetch group size:", err));
       } else {
-        console.log("📡 [STUDENT-ADDED] ❌ Event ignored - not for this group/class");
       }
     };
 
@@ -329,7 +308,6 @@ export default function ResReviewGroup() {
     };
 
     const handleConnect = () => {
-      console.log("Socket reconnected:", socket.id);
       setIsConnected(true);
       const roomId = `group_${user.group_id}_class_${user.class}`;
       socket.emit("joinGroup", roomId);
@@ -366,15 +344,11 @@ export default function ResReviewGroup() {
   useEffect(() => {
     // Reset confirmations when group size changes (student added/removed)
     if (groupSize > 0) {
-      console.log("📊 [GROUP-SIZE-CHANGE] Group size changed to:", groupSize);
-      console.log("📊 [GROUP-SIZE-CHANGE] Current confirmations:", teamConfirmations.length);
-      
       // If confirmations >= old group size, but new size is larger, we need to reset
       // This handles the case where 2/2 confirmed, then 3rd person joins
       const previousGroupSize = teamConfirmations.length; // Assuming if everyone confirmed, length = size
       
       if (teamConfirmations.length > 0 && teamConfirmations.length >= groupSize) {
-        console.log("📊 [GROUP-SIZE-CHANGE] Resetting confirmations - group size increased");
         setTeamConfirmations([]);
         setHasConfirmed(false);
       }
@@ -488,10 +462,7 @@ export default function ResReviewGroup() {
 
   // Add this useEffect to res-review-group to log state changes
 useEffect(() => {
-  console.log("🔍 [BUTTON-STATE] selectedCount:", selectedCount);
-  console.log("🔍 [BUTTON-STATE] teamConfirmations.length:", teamConfirmations.length);
-  console.log("🔍 [BUTTON-STATE] groupSize:", groupSize);
-  console.log("🔍 [BUTTON-STATE] Button should be disabled:", selectedCount !== 4 || teamConfirmations.length < groupSize);
+
 }, [selectedCount, teamConfirmations, groupSize]);
 
   if (userloading) {
@@ -575,7 +546,6 @@ useEffect(() => {
                   file={`${API_BASE_URL}/${jobDescPath}`}
                   onLoadError={console.error}
                   onLoadSuccess={({ numPages }) => {
-                    console.log("Job description loaded with", numPages, "pages");
                     setJobDescNumPages(numPages);
                   }}
                   loading={
