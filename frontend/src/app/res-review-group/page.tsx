@@ -448,6 +448,7 @@ export default function ResReviewGroup() {
   };
 
   const completeResumes = () => {
+    console.log(socket, user);
     if (!socket || !user) return;
     
     console.log("Completing resume review, moving to interview stage AAAAA");
