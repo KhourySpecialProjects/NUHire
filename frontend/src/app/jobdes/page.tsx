@@ -427,8 +427,8 @@ export default function JobDescriptionPage() {
       <footer className="flex-shrink-0">
         <div className="flex justify-end mt-4 mb-4 mr-4">
           <button
-            onClick={() => {
-              updateProgress(user, "res_1");
+            onClick={async () => {  // ✅ Make async
+              await updateProgress(user, "res_1");  // ✅ Await
               localStorage.setItem("progress", "res_1");
               console.log("Progress updated to res_1");
               window.location.href = '/res-review';
