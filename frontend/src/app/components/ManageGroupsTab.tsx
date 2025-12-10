@@ -1459,11 +1459,15 @@ export function ManageGroupsTab() {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Select a Candidate --</option>
-                  {availableCandidates.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.name} (ID: {candidate.id})
-                    </option>
-                  ))}
+                  {availableCandidates
+                    .sort((a, b) => (a.id || 0) - (b.id || 0))
+                    .map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        {candidate.name} (ID: {candidate.id})
+                      </option>
+                    ))}
+
+                  
                 </select>
                 {availableCandidates.length === 0 && (
                   <p className="text-sm text-gray-600 mt-1">
