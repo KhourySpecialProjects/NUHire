@@ -384,15 +384,14 @@ export default function ResumesPage() {
     fetchFinished();
   }, [user?.group_id]);
 
-  const completeResumes = async () => {
+  const completeResumes = async () => {  // ✅ Make it async
     if (!socket || !user) {
       console.error('Socket or user not available');
       return;
     }
 
-    // Votes are already submitted when the 10th vote was cast
-    // Just update progress and navigate
-    updateProgress(user, "res_2");
+    // Wait for progress update before navigating
+    await updateProgress(user, "res_2");  // ✅ Await
     localStorage.setItem("progress", "res_2");
     localStorage.removeItem('resumeReviewIndex');
     localStorage.removeItem('resumeReviewAccepted');

@@ -274,8 +274,8 @@ export default function ResReviewGroup() {
         setTeamConfirmations(prev => prev.filter(id => id !== studentId));
       }
     };
-    
-    const handleMoveGroup = ({ groupId, classId, targetPage }: { 
+
+    const handleMoveGroup = async ({ groupId, classId, targetPage }: { 
       groupId: number; 
       classId: number; 
       targetPage: string 
@@ -285,30 +285,21 @@ export default function ResReviewGroup() {
         console.log("[handleMoveGroup] No user found, aborting.");
         return;
       }
-      console.log("[handleMoveGroup] user.group_id:", user.group_id, "user.class:", user.class);
-
+      
       if (groupId == user.group_id && classId == user.class) {
         console.log("[handleMoveGroup] Group/class match. Attempting progress update...");
         try {
-          updateProgress(user, "interview");
-          console.log("[handleMoveGroup] updateProgress called.");
-        } catch (err) {
-          console.error("[handleMoveGroup] updateProgress error:", err);
-        }
-        try {
+          await updateProgress(user, "interview");  // ✅ Wait for DB update
+          console.log("[handleMoveGroup] updateProgress completed.");
+          
           localStorage.setItem("progress", "interview");
           console.log("[handleMoveGroup] localStorage set.");
-        } catch (err) {
-          console.error("[handleMoveGroup] localStorage error:", err);
-        }
-        try {
+          
           console.log("[handleMoveGroup] Navigating to:", targetPage);
-          window.location.href = targetPage; 
+          window.location.href = targetPage;
         } catch (err) {
-          console.error("[handleMoveGroup] Navigation error:", err);
+          console.error("[handleMoveGroup] Error:", err);
         }
-      } else {
-        console.log("[handleMoveGroup] Group/class did not match. No action taken.");
       }
     };
 
@@ -449,6 +440,8 @@ export default function ResReviewGroup() {
     console.log(socket, user);
     if (!socket || !user) return;
   
+    updateProgress(user, "interview");
+    localStorage.setItem("progress", "interview");
     socket.emit("moveGroup", {
       groupId: user.group_id,
       classId: user.class,

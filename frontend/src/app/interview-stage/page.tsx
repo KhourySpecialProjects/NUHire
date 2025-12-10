@@ -649,7 +649,7 @@ export default function Interview() {
     
     // Votes are already submitted when the last interview was submitted
     // Just update progress and navigate
-    updateProgress(user, "offer");
+    await updateProgress(user, "offer");  // ✅ Await the database update
     localStorage.setItem("progress", "offer");
     localStorage.removeItem('interviewStage_videoIndex');
     localStorage.removeItem('interviewStage_candidateId');
