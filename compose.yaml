@@ -10,7 +10,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
-      - "3307:3306"
+      - "${DB_PORT}:3306"
     healthcheck:
       test:
         [
@@ -30,7 +30,7 @@ services:
     container_name: api_container
     restart: on-failure:5
     ports:
-      - "5001:5001"
+      - "${API_PORT}:5001"
     depends_on:
       db:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
       dockerfile: Dockerfile.prod
     container_name: frontend_container
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:3000"
     depends_on:
       - api
 
