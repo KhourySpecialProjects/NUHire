@@ -22,7 +22,8 @@ services:
       retries: 10
       start_period: 30s
     volumes:
-      - ./database-files:/docker-entrypoint-initdb.d/:ro
+      - db_data:/var/lib/mysql
+      - ./database-files:/docker-entrypoint-initdb.d:ro
 
   api:
     platform: linux/amd64
@@ -53,6 +54,5 @@ services:
 
 volumes:
   db_data:
-  keycloak_data:
   apicode:
   frontendcode:
