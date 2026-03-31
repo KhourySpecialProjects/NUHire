@@ -28,11 +28,11 @@ export function configurePassport(db: Pool): void {
         realm: KEYCLOAK_REALM,
         clientID: process.env.KEYCLOAK_CLIENT_ID!,
         clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
-        callbackURL: process.env.KEYCLOAK_CALLBACK_URL, // 'https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback',
+        callbackURL: process.env.KEYCLOAK_CALLBACK_URL,
         scope: 'openid profile email',
-        authorizationURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/auth`,
-        tokenURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/token`,
-        userInfoURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/userinfo`
+        authorizationURL: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth`,
+        tokenURL: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`,
+        userInfoURL: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/userinfo`
       },
       async (accessToken: string, refreshToken: string, profile: KeycloakProfile, done: (error: any, user?: any) => void) => {
         try {
