@@ -22,7 +22,6 @@ services:
       retries: 10
       start_period: 30s
     volumes:
-      - db_data:/var/lib/mysql
       - ./database-files:/docker-entrypoint-initdb.d:ro
 
   api:
