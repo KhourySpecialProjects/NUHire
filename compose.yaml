@@ -9,8 +9,10 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3307:3306"
+      - "${DB_PORT}:3306"
     healthcheck:
       test:
         [
@@ -22,32 +24,9 @@ services:
       retries: 10
       start_period: 30s
     volumes:
-      - ./database-files:/docker-entrypoint-initdb.d/:ro
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0.1
-    container_name: keycloak
-    entrypoint: /bin/bash
-    command: >
-      -c "/opt/keycloak/bin/kc.sh build && /opt/keycloak/bin/kc.sh start --optimized  --hostname=localhost --https-certificate-file=/etc/x509/https/tls.crt --https-certificate-key-file=/etc/x509/https/tls.key  --import-realm"
-    environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_DB: mysql
-      KC_DB_URL: jdbc:mysql://db:3306/pandployer
-      KC_DB_USERNAME: root
-      KC_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      KC_FEATURES: "preview"
-      KC_IMPORT_FILES_LOCATIONS: "/opt/keycloak/data/import/realm-export.json"
-    volumes:
-      - ./certs:/etc/x509/https
-      - keycloak_data:/opt/keycloak/data
-      - ./keycloak:/opt/keycloak/data/import
-    ports:
-      - "8443:8443"
-    depends_on:
-      db:
-        condition: service_healthy
+      # db_data not persisted for dev
+      # - db_data:/var/lib/mysql
+      - ./database-files:/docker-entrypoint-initdb.d:ro
 
   api:
     platform: linux/amd64
@@ -55,7 +34,7 @@ services:
     container_name: api_container
     restart: on-failure:5
     ports:
-      - "5001:5001"
+      - "${API_PORT}:5001"
     depends_on:
       db:
         condition: service_healthy
@@ -72,12 +51,11 @@ services:
       dockerfile: Dockerfile.prod
     container_name: frontend_container
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:3000"
     depends_on:
       - api
 
 volumes:
-  db_data:
-  keycloak_data:
+  # db_data not persisted for dev
+  # db_data: 
   apicode:
-  frontendcode:

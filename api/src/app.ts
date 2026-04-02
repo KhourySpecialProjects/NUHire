@@ -138,11 +138,11 @@ export class App {
     });
 
     this.app.get('/health', (req, res) => {
-      res.json({ status: 'ok', port: process.env.PORT });
+      res.json({ status: 'ok', port: process.env.BACKEND_PORT });
     });
 
     // Stats endpoint
-    this.app.get('/api/stats', (req, res) => {
+    this.app.get('/stats', (req, res) => {
       const stats = Object.entries(routeCallCount)
         .map(([route, count]) => {
           const timestamps = routeCallTimestamps[route];

@@ -34,7 +34,7 @@ async function bootstrap() {
     console.log('✅ Socket handlers initialized');
 
     // Start server
-    const PORT = parseInt(process.env.PORT || '10000', 10);
+    const PORT = parseInt(process.env.BACKEND_PORT || '10000', 10);
     app.listen(PORT);
 
     console.log('✅ NUHire Backend started successfully!');

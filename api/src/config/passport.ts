@@ -17,22 +17,22 @@ interface KeycloakProfile {
 }
 
 export function configurePassport(db: Pool): void {
-  const KEYCLOAK_URL = process.env.KEYCLOAK_URL!;
-  const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM!;
+  const keycloak_url = process.env.KEYCLOAK_URL!;
+  const keycloak_realm = process.env.KEYCLOAK_REALM!;
 
   passport.use(
     'keycloak',
     new KeycloakStrategy(
       {
-        authServerURL: KEYCLOAK_URL,
-        realm: KEYCLOAK_REALM,
-        clientID: process.env.KEYCLOAK_CLIENT_ID!,
-        clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
-        callbackURL: process.env.KEYCLOAK_CALLBACK_URL, // 'https://nuhire-api-cz6c.onrender.com/auth/keycloak/callback',
+        authServerURL: process.env.KEYCLOAK_URL,
+        realm: process.env.KEYCLOAK_REALM,
+        clientID: process.env.KEYCLOAK_CLIENT_ID,
+        clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
+        callbackURL: process.env.KEYCLOAK_CALLBACK_URL,
         scope: 'openid profile email',
-        authorizationURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/auth`,
-        tokenURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/token`,
-        userInfoURL: `${KEYCLOAK_URL}/realms/NUHire-Realm/protocol/openid-connect/userinfo`
+        authorizationURL: `${keycloak_url}/realms/${keycloak_realm}/protocol/openid-connect/auth`,
+        tokenURL: `${keycloak_url}/realms/${keycloak_realm}/protocol/openid-connect/token`,
+        userInfoURL: `${keycloak_url}/realms/${keycloak_realm}/protocol/openid-connect/userinfo`
       },
       async (accessToken: string, refreshToken: string, profile: KeycloakProfile, done: (error: any, user?: any) => void) => {
         try {
