@@ -142,7 +142,7 @@ export class App {
     });
 
     // Stats endpoint
-    this.app.get('/api/stats', (req, res) => {
+    this.app.get('/stats', (req, res) => {
       const stats = Object.entries(routeCallCount)
         .map(([route, count]) => {
           const timestamps = routeCallTimestamps[route];
